@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 0.7 (In Progress) |
-| **Status** | Draft — Modules 1–4 Approved; Module 5 of 12 Submitted for Review |
+| **Version** | 0.8 (In Progress) |
+| **Status** | Draft — Modules 1–5 Approved; Module 6 of 12 Submitted for Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
@@ -24,6 +24,7 @@
 | 0.5 | 2026-07-24 | Module 3 — Debt Register drafted for review (FR-017–FR-025). | Claude |
 | 0.6 | 2026-07-24 | Module 3 polish pass: FR-017 no longer hardcodes initial Recovery Stage, now references Module 5 / `04_Business_Rules.md`. Module 3 approved and frozen. Module 4 — Credit & Risk Management drafted for review (FR-026–FR-028). | Claude |
 | 0.7 | 2026-07-24 | Module 4 polish pass: FR-026 no longer hardcodes Credit Score point values (referenced as not-yet-formally-approved), FR-028 clarified once-per-qualifying-event notification with re-trigger/suppression deferred to `04_Business_Rules.md`. Module 4 approved and frozen. Module 5 — Recovery Workflow drafted for review (FR-029–FR-033). | Claude |
+| 0.8 | 2026-07-24 | Module 5 approved and frozen. Module 6 — Payment Tracking drafted for review (FR-034–FR-039). | Claude |
 
 ---
 
@@ -41,8 +42,8 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 2 | Customer Management | Approved |
 | 3 | Debt Register | Approved |
 | 4 | Credit & Risk Management | Approved |
-| 5 | Recovery Workflow | Submitted for Review |
-| 6 | Payment Tracking | Not Started |
+| 5 | Recovery Workflow | Approved |
+| 6 | Payment Tracking | Submitted for Review |
 | 7 | Professional Collection | Not Started |
 | 8 | Documents | Not Started |
 | 9 | Reporting & Analytics | Not Started |
@@ -1231,4 +1232,240 @@ None of these items change Version 1 scope.
 
 ---
 
-**End of Module 5.** Awaiting review and approval before proceeding to Module 6 — Payment Tracking.
+**End of Module 5.** Approved.
+
+---
+
+# Module 6 — Payment Tracking
+
+## 1. Functional Overview
+
+This module specifies the recording and lifecycle of payments made against a Debt. Payment Tracking is the **sole owner** of payment records in Version 1: Customer Management (Module 2), Debt Register (Module 3), Recovery Workflow (Module 5), Professional Collection (Module 7), and Reporting (Module 9) may all *consume* payment state, but none of them may create, modify, or directly derive Outstanding Balance or Debt Status independently of this module.
+
+Recording a payment is the mechanism through which a Debt's financial position changes, a Customer's Outstanding Balance and Remaining Credit are recalculated, a Debt's status may progress to Partial Paid or Paid, a Digital Receipt is generated, and qualifying events are emitted to Credit Scoring, Promise to Pay fulfillment, and Notifications.
+
+## Scope Boundary
+
+- **Outstanding Balance** (Customer-level, Module 2) is modified only by two events in the entire system: Debt Creation (Module 3, FR-017) and Payment Recording (this module, FR-034). No other module may modify it directly; Module 2 only displays it (Module 2, FR-013, as already clarified).
+- **Debt Status** transitions to **Partial Paid** or **Paid** occur only through this module (FR-037). Module 3, FR-021 already excludes these two transitions from its general-purpose Debt Update, deferring them here.
+- **Credit Score** is never calculated in this module. This module only emits qualifying payment-behavior events to Module 4 — Credit & Risk Management, which retains sole ownership of the scoring computation (FR-039).
+- **Promise to Pay fulfillment** evaluation is triggered by this module but owned by Module 5 — Recovery Workflow (FR-031); this module does not redefine that logic.
+- **Receipt generation** (template, PDF structure, Auto Numbering format) is owned by Module 8 — Documents. This module triggers generation automatically upon payment (FR-038) but does not restate Module 8's generation mechanics.
+- **Professional Collection** (Module 7) consumes payment state (e.g., to determine whether a Collection Case can be closed) but does not modify payment records; not redefined here.
+- **Reporting** (Module 9) and **Notifications** (Module 10) consume payment records/events; neither may edit them.
+
+## 2. Functional Requirements
+
+| ID | Requirement | Traces To |
+|---|---|---|
+| FR-034 | The system shall allow an authorized user to record a full or partial payment against a specific Debt. | BR-018 |
+| FR-035 | The system shall allow an authorized user to view the chronological payment history of a Debt or Customer. | BR-018 |
+| FR-036 | The system shall recalculate a Customer's Outstanding Balance and Remaining Credit whenever a payment is recorded. | BR-003, BR-008 |
+| FR-037 | The system shall update a Debt's Status to Partial Paid or Paid based on cumulative payments recorded against it. | BR-008 |
+| FR-038 | The system shall automatically trigger Digital Receipt generation upon successful payment recording. | BR-019 |
+| FR-039 | The system shall emit qualifying payment-behavior events to Credit & Risk Management and Recovery Workflow without performing their computations itself. | BR-004, BR-013 |
+
+---
+
+### FR-034 — Payment Recording
+
+**Preconditions**
+- The Debt exists, is not Archived, and is not already in Cancelled or Written Off status.
+- User is authenticated and holds permission to record payments.
+
+**Triggers**
+- User selects "Receive Payment" against a specific Debt and submits a payment amount, date, and any optional reference details.
+
+**Main Flow**
+1. User selects the specific Debt being paid and submits the payment amount (full or partial), date, and optional reference details.
+2. System validates the payment amount is positive and numeric.
+3. System creates the Payment record against the selected Debt.
+4. System recalculates the Debt's remaining balance and the Customer's Outstanding Balance and Remaining Credit (FR-036).
+5. System updates the Debt Status accordingly (FR-037).
+6. System records a **Payment Added** event in the Audit Trail (User, Timestamp, Action = Payment Added, Entity = Debt).
+7. System triggers downstream processing: Receipt generation (FR-038) and event emission (FR-039).
+
+**Alternate Flows**
+- **A1 — Partial payment (amount is less than the remaining balance):** Debt Status moves toward Partial Paid (FR-037); the Debt remains open for further payments.
+- **A2 — Full payment (amount completes the remaining balance):** Debt Status moves to Paid (FR-037).
+
+**Exceptions**
+- **E1 — Payment amount exceeds the remaining balance (overpayment):** Exact handling (reject, cap, or record a credit) is not defined in the approved Feature Freeze and is not assumed here — deferred to `04_Business_Rules.md`. See Open Items.
+- **E2 — Debt is Archived:** Action is not permitted; the Debt must be restored first (Module 3, FR-023).
+- **E3 — User lacks permission to record payments:** Action is not available.
+- **E4 — Payment submitted against a Debt already Paid, Cancelled, or Written Off:** Exact handling is not defined in the approved Feature Freeze — deferred to `04_Business_Rules.md`. See Open Items.
+
+**Business Rule References:** BC-002 (payments are financial records; correction mechanics deferred — see Open Items); full payment-validation rules in `04_Business_Rules.md`.
+**Related APIs (reference only):** `POST /debts/{id}/payments` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Payment, Debt, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-034.
+
+---
+
+### FR-035 — Payment History
+
+**Preconditions**
+- Debt or Customer exists; user holds view permission.
+
+**Triggers**
+- User opens Debt Details or a Customer Profile and requests payment history.
+
+**Main Flow**
+1. User requests payment history for a Debt or a Customer.
+2. System retrieves and displays all Payment records in chronological order, including amount, date, and reference details.
+3. Payment History entries feed the Recovery Timeline (Module 3, FR-024) and Follow-up History (Module 5, FR-033).
+
+**Alternate Flows**
+- **A1 — Customer-level view:** Aggregates payment history across all of the Customer's Debts.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — No payments recorded:** System displays an empty-result state.
+
+**Business Rule References:** None beyond general view permissions (`08_Security_and_RBAC.md`).
+**Related APIs (reference only):** `GET /debts/{id}/payments`, `GET /customers/{id}/payments` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Payment, Debt, Customer — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-035.
+
+---
+
+### FR-036 — Outstanding Balance & Remaining Credit Recalculation
+
+**Preconditions**
+- A Payment has been recorded (FR-034) or a new Debt has been created (Module 3, FR-017) — the only two events permitted to affect Outstanding Balance.
+
+**Triggers**
+- Successful Payment Recording (FR-034).
+
+**Main Flow**
+1. A Payment is recorded against a Debt.
+2. System recalculates the Debt's remaining balance (original amount minus cumulative payments).
+3. System recalculates the Customer's aggregate Outstanding Balance (sum of remaining balances across the Customer's open Debts).
+4. System recalculates the Customer's Remaining Credit (Credit Limit minus Outstanding Balance), reflected on the Customer Profile (Module 2, FR-013).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- None beyond FR-034's exceptions.
+
+**Business Rule References:** Enforces the approved architecture principle that Outstanding Balance is modified only by Debt Creation (Module 3) and Payment Recording (this module); no other module may modify it directly.
+**Related APIs (reference only):** Internal recalculation; reflected via `GET /customers/{id}/credit-profile` (Module 2) — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Payment, Debt, Customer — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-036.
+
+---
+
+### FR-037 — Debt Status Update via Payment
+
+**Preconditions**
+- A Payment has been recorded against a Debt (FR-034).
+
+**Triggers**
+- Successful Payment Recording.
+
+**Main Flow**
+1. System compares cumulative payments recorded against the Debt to the Debt's total amount.
+2. If cumulative payments are greater than zero but less than the total amount, system sets Debt Status to **Partial Paid**.
+3. If cumulative payments equal or complete the total amount, system sets Debt Status to **Paid**.
+4. System records a **Status Changed** event in the Audit Trail (User = "System", Timestamp, Action = Status Changed, Entity = Debt).
+5. Updated Debt Status is reflected on Debt Details (Module 3, FR-019, FR-021).
+
+**Alternate Flows**
+- None beyond the two transition paths above.
+
+**Exceptions**
+- **E1 — Overpayment scenario:** Resulting status treatment deferred to `04_Business_Rules.md` (see FR-034, Open Items).
+
+**Business Rule References:** This FR is the only approved mechanism by which a Debt reaches Partial Paid or Paid status; Module 3, FR-021 explicitly excludes these transitions from general Debt Update. Exact numeric thresholds/rounding rules in `04_Business_Rules.md`.
+**Related APIs (reference only):** Internal; reflected via `GET /debts/{id}` (Module 3) — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Debt, Payment, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-037.
+
+---
+
+### FR-038 — Payment Receipt Generation Trigger
+
+**Preconditions**
+- A Payment has been successfully recorded (FR-034).
+
+**Triggers**
+- Successful Payment Recording.
+
+**Main Flow**
+1. Upon successful Payment Recording, system automatically triggers Digital Receipt generation for the payment.
+2. System invokes the Document Generation Service (Module 8 — Documents; not restated here) to produce the Receipt as a PDF, assigned its own Auto Numbering identifier (`RCT-000001`, per BR-036).
+3. System records a **Receipt Generated** event in the Audit Trail.
+4. The generated Receipt is linked to the Payment and Debt records and made available to the Customer (Module 8; Customer Mobile App).
+
+**Alternate Flows**
+- None; per BR-019, receipt generation is automatic, not user-initiated.
+
+**Exceptions**
+- **E1 — Document Generation Service fails to produce the Receipt:** Payment Recording itself is not rolled back; exact retry/failure-handling behavior deferred to `04_Business_Rules.md`.
+
+**Business Rule References:** BR-019 (automatic receipt generation). Full generation and template logic is specified in Module 8 — Documents and is not restated here.
+**Related APIs (reference only):** Internal trigger to Module 8's receipt-generation endpoint — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Payment, Receipt (schema owned by Module 8) — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-038.
+
+---
+
+### FR-039 — Downstream Event Emission
+
+**Preconditions**
+- A Payment has been recorded (FR-034).
+
+**Triggers**
+- Successful Payment Recording.
+
+**Main Flow**
+1. System emits a qualifying payment-behavior event (On-Time Payment, Late Payment, or Partial Payment, based on payment timing/completeness relative to the Debt's due date) to Module 4 — Credit & Risk Management for Credit Score recalculation. This module does not calculate the Credit Score itself.
+2. If an open Promise to Pay exists against the Debt, system notifies Module 5 — Recovery Workflow to evaluate promise fulfillment (Module 5, FR-031).
+3. System emits a Payment Received event to the Reminder Engine, which feeds the Notification Center (Module 10; not restated here).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- None beyond FR-034's exceptions; this is an internal event-emission step.
+
+**Business Rule References:** Enforces the approved architecture boundary that Payment Tracking never calculates Credit Score directly (Module 4 retains sole computation ownership); exact event-classification rules (on-time vs. late) in `04_Business_Rules.md`.
+**Related APIs (reference only):** Internal event emission consumed by Modules 4, 5, and 10 — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Payment, Debt — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-039.
+
+---
+
+## Module 6 — Traceability Summary
+
+| FR | Business Requirement(s) | Related Modules |
+|---|---|---|
+| FR-034 | BR-018 | Module 3 (Debt Register) |
+| FR-035 | BR-018 | Module 3 (Recovery Timeline); Module 5 (Follow-up History) |
+| FR-036 | BR-003, BR-008 | Module 2 (Customer Profile — Outstanding Balance, Remaining Credit) |
+| FR-037 | BR-008 | Module 3 (Debt Status, FR-021) |
+| FR-038 | BR-019 | Module 8 (Documents) |
+| FR-039 | BR-004, BR-013 | Module 4 (Credit & Risk Management); Module 5 (Recovery Workflow — Promise to Pay); Module 10 (Notifications & Calendar) |
+
+---
+
+## Open Items Identified During Module 6 Specification
+
+The following behaviors are not addressed in the approved Feature Freeze or Business Requirements. None are assumed or invented here; all are deferred to `04_Business_Rules.md` for an explicit decision:
+
+1. **Payment editing:** Whether a recorded payment can be corrected after the fact, and if so, how, is not specified.
+2. **Payment deletion / archival:** Whether a Payment record can be removed at all is not specified. If permitted, BC-002 (financial records are never permanently deleted) would require it to follow the Archive/Restore pattern already established for Customers and Debts — but this module does not assume that mechanism applies without confirmation, since Payment was not explicitly named alongside Customer and Debt in the approved Soft Delete/Archive scope.
+3. **Payment reversal:** Not specified whether a distinct "reversal" action (as opposed to edit or delete) exists.
+4. **Overpayment handling:** Not specified whether an overpayment is rejected, capped at the remaining balance, or recorded as a credit (see FR-034, E1).
+5. **Payment against a closed Debt (Paid, Cancelled, Written Off):** Not specified whether this is permitted (see FR-034, E4).
+6. **Refund behavior:** Not specified whether refunds are in scope at all for Version 1.
+7. **Payment method catalog:** Not specified whether payment method is a fixed, enumerated list (e.g., Cash, Bank Transfer, Mobile Money) or a free-text reference field.
+
+**Resolved, not an open item — Multi-debt payment allocation:** BR-018 already scopes payment recording to "a specific debt" (singular). Version 1 therefore does not support splitting a single payment across multiple Debts; this is a scope boundary already established by the approved Business Requirements, not a gap requiring further decision.
+
+None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 6 fully unambiguous before `04_Business_Rules.md` is finalized.
+
+---
+
+**End of Module 6. Awaiting review and approval before proceeding to Module 7 — Professional Collection.**
