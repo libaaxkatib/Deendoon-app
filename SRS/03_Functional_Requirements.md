@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.2 (In Progress) |
-| **Status** | Draft — Modules 1–9 Approved; Module 10 of 12 Submitted for Review |
+| **Version** | 1.3 (In Progress) |
+| **Status** | Draft — Modules 1–10 Approved; Module 11 of 12 Submitted for Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
@@ -29,6 +29,7 @@
 | 1.0 | 2026-07-24 | Module 7 approved and frozen. Module 8 — Documents drafted for review (FR-047–FR-052). Included Customer Statement of Account (approved BR-021, not listed in this module's scope message but already forward-referenced by Modules 2/3) and preserved previously approved DL-000001 numbering for Legal Notice (a Demand Letter template, not a separate numbered document type) — both flagged as consistency notes rather than silently decided. | Claude |
 | 1.1 | 2026-07-24 | Module 8 approved and frozen. Module 9 — Reporting & Analytics drafted for review (FR-053–FR-057). Consolidated five named report categories into one FR (no per-report detail was ever approved beyond Aging Analysis/KPI Cards); excluded Scheduled Reports as unapproved and logged as an Open Item rather than invented. | Claude |
 | 1.2 | 2026-07-24 | Module 9 approved and frozen. Module 10 — Notifications & Calendar drafted for review (FR-058–FR-062). Excluded Email as an unapproved channel; scoped SMS/WhatsApp strictly to Module 5's already-approved ownership, implementing this module as in-app-only per the frozen Notification Center definition in `01_Project_Overview.md`. | Claude |
+| 1.3 | 2026-07-24 | Module 10 approved and frozen. Module 11 — Search & Productivity drafted for review (FR-063–FR-065). Excluded Saved Views, Recent Activity, and Favorites as unapproved Version 1 scope; implemented Quick Actions (approved) in place of "Quick Navigation"; flagged a pre-existing traceability gap (Quick Actions has no dedicated BR in `02_Business_Requirements.md`). | Claude |
 
 ---
 
@@ -51,8 +52,8 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 7 | Professional Collection | Approved |
 | 8 | Documents | Approved |
 | 9 | Reporting & Analytics | Approved |
-| 10 | Notifications & Calendar | Submitted for Review |
-| 11 | Search & Productivity | Not Started |
+| 10 | Notifications & Calendar | Approved |
+| 11 | Search & Productivity | Submitted for Review |
 | 12 | Administration & Settings | Not Started |
 
 ---
@@ -2373,4 +2374,156 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ---
 
-**End of Module 10. Awaiting review and approval before proceeding to Module 11 — Search & Productivity.**
+**End of Module 10. Approved.**
+
+---
+
+# Module 11 — Search & Productivity
+
+## 1. Functional Overview
+
+This module owns the cross-cutting search and filter architecture referenced but not defined by earlier modules: Global Search (referenced by Module 2, FR-015, and Module 9, FR-055) and Advanced Filtering (referenced by Module 2, FR-015, and Module 9, FR-056). It also specifies Quick Actions — the dashboard shortcut mechanism named in the approved Version 1 scope (`01_Project_Overview.md` §1.6). This module consumes data owned entirely by other modules; it never creates, edits, or deletes any business entity.
+
+## Scope Boundary
+
+- **Customer Management (Module 2):** Owns Customer records, Profile, and Status. This module only searches and filters that data; it never edits Customer information.
+- **Debt Register (Module 3):** Owns Debt records, Debt Status, and Recovery Timeline. This module consumes searchable Debt metadata only.
+- **Credit & Risk Management (Module 4):** Owns Credit Score and Risk Level. This module may search and filter these values; it never recalculates or modifies them.
+- **Recovery Workflow (Module 5):** Owns reminder history, Follow-up History, and Promise to Pay. This module may locate workflow records; it never changes workflow state.
+- **Payment Tracking (Module 6):** Owns Payments, Outstanding Balance, and Payment History. This module only searches authorized payment records.
+- **Professional Collection (Module 7):** Owns Collection Cases and Collection Status. This module provides search and navigation only.
+- **Documents (Module 8):** Owns Receipts, Demand Letters, and Statements. This module may locate document records; it never generates documents.
+- **Reporting & Analytics (Module 9):** Owns Reports and Dashboard Metrics. This module may provide navigation into reports; it never generates reports.
+- **Notifications & Calendar (Module 10):** Owns the Notification Center and Calendar View. This module may locate notification records; it never creates notifications.
+- **Ownership boundary:** This module owns no business entity and never becomes the source of truth for Customers, Debts, Credit Scores, Recovery Workflows, Payments, Collection Cases, Documents, Reports, or Notifications.
+- **Indexing technology:** Search indexing is an implementation concern (e.g., database indexing strategy) and is not defined in this functional specification; it belongs in technical design, not the SRS.
+
+**Scope note — Saved Views, Recent Activity, and Favorites excluded:** These three items appear in your message's Functional Scope but do not appear anywhere in the approved Version 1 scope. `01_Project_Overview.md` §1.6 (Scope of Version 1, frozen and approved) enumerates the complete Productivity & UX feature set — Notification Center, Calendar View, Global Search, Quick Actions, Advanced Search & Filters, Duplicate Customer Detection, Customer Import — and none of these three appear in it, in the Business Requirements, or in any prior module. Implementing them here would introduce new Version 1 functionality with invented business rules (e.g., how many favorites a user may have, how long recent activity is retained), which the standing instructions direct me not to do. They are recorded as Open Items, not implemented, and flagged as candidates for the Version 2+ Roadmap rather than decided here.
+
+**Scope note — "Quick Navigation" implemented as the approved "Quick Actions":** Your message lists "Quick Navigation" as a distinct item. The approved Version 1 scope names "Quick Actions" (dashboard shortcuts to Add Debt, Receive Payment, Send WhatsApp, Call Customer, Generate Receipt, Generate Statement) — this module implements that approved capability (FR-065). A broader "jump to any recently viewed record" interpretation of Quick Navigation is not separately approved and is not assumed here.
+
+**Numbering note:** Only three Functional Requirements in this module trace to approved scope (Global Search, Advanced Filtering, Quick Actions). To avoid assigning identifiers to unapproved functionality, this module uses FR-063–FR-065 only; FR-066 onward is reserved for Module 12.
+
+## 2. Functional Requirements
+
+| ID | Requirement | Traces To |
+|---|---|---|
+| FR-063 | The system shall allow an authorized user to search across Customers, Debts, Payments, Documents, and Collection Cases from a single Global Search entry point. | BR-026 |
+| FR-064 | The system shall allow an authorized user to filter operational data by criteria relevant to recovery work, applicable across list and report views. | BR-027 |
+| FR-065 | The system shall provide Quick Action shortcuts from the Dashboard into existing workflows, without introducing independent business logic or bypassing the destination workflow's own rules. | BG-005 |
+
+---
+
+### FR-063 — Global Search
+
+**Preconditions**
+- User is authenticated.
+
+**Triggers**
+- User enters a search term into Global Search, accessible from the Customer Mobile App and Super Admin Web Panel.
+
+**Main Flow**
+1. User enters a search term into Global Search.
+2. System searches across Customer (Module 2), Debt (Module 3), Payment (Module 6), Receipt/Demand Letter/Statement (Module 8), and Collection Case (Module 7) records for matches against the entered term (e.g., name, phone number, identifier).
+3. System returns matching records, grouped by entity type, filtered to only what the requesting user's role permits (RBAC).
+4. Archived records are excluded by default, consistent with the Soft Delete/Archive policy (BRL-004), unless the user explicitly includes them.
+
+**Alternate Flows**
+- **A1 — User selects a result:** System navigates to that record's detail view in its owning module.
+
+**Exceptions**
+- **E1 — No matches:** System displays an empty-result state.
+- **E2 — User has no permission to search a given entity type:** That entity type is omitted from results entirely, not merely hidden after retrieval.
+
+**Business Rule References:** BR-026; BRL-004. Search ranking, result ordering, and pagination deferred to `04_Business_Rules.md`. Indexing technology is an implementation concern and is not defined here.
+**Related APIs (reference only):** `GET /search?q=` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Read-only aggregation over Customer, Debt, Payment, Receipt, DemandLetter, Statement, CollectionCase — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-063.
+
+---
+
+### FR-064 — Advanced Filtering
+
+**Preconditions**
+- User is authenticated and viewing a filterable list or report (Modules 2, 3, 6, 7, 9).
+
+**Triggers**
+- User applies one or more filter criteria.
+
+**Main Flow**
+1. User applies filter criteria relevant to the list or report being viewed: Customer, Debt Status, Recovery Stage, Risk Level, Credit Score, Date Range, Outstanding Amount, Payment Status, Collection Status.
+2. System returns the filtered result set, respecting RBAC and the default Archive exclusion (BRL-004).
+
+**Alternate Flows**
+- **A1 — User combines multiple filter criteria:** System applies them cumulatively; exact combination logic (AND vs. OR across values within the same filter) deferred to `04_Business_Rules.md`.
+
+**Exceptions**
+- **E1 — No matches:** System displays an empty-result state.
+
+**Business Rule References:** BR-027; BRL-004. This module owns the general cross-cutting filter architecture already referenced (and not restated) by Module 2 (FR-015, Customer Search) and Module 9 (FR-056, Report Filtering).
+**Related APIs (reference only):** Shared filter query parameters across `GET /customers`, `GET /debts`, `GET /reports/*` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** No new entities; filters existing Customer, Debt, Payment, CollectionCase data — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-064.
+
+---
+
+### FR-065 — Quick Actions
+
+**Preconditions**
+- User is authenticated and holds permission for the underlying action.
+
+**Triggers**
+- User selects a Quick Action shortcut from the Dashboard.
+
+**Main Flow**
+1. User selects a Quick Action shortcut from the Dashboard (Add Debt, Receive Payment, Send WhatsApp, Call Customer, Generate Receipt, Generate Statement).
+2. System navigates the user directly into the corresponding workflow already specified in its owning module (Module 3 — Debt Creation; Module 6 — Payment Recording; Module 5 — Manual WhatsApp/Call; Module 8 — Receipt/Statement generation), pre-selecting context where applicable (e.g., a previously selected Customer).
+3. The underlying workflow proceeds exactly as specified in its owning module; this FR provides only the shortcut entry point and performs no independent business logic, validation bypass, or data mutation.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission for the underlying action:** The shortcut is not shown, or the destination workflow rejects the action per its own owning module's rules; no separate validation is introduced here.
+
+**Business Rule References:** This FR never bypasses authentication, authorization, or workflow validation owned by the destination module (Modules 3, 5, 6, 8). Approved as part of Version 1 scope per `01_Project_Overview.md` §1.6; no dedicated Business Requirement individually enumerates it — see Open Items regarding this traceability gap.
+**Related APIs (reference only):** None new; navigates to existing endpoints of Modules 3, 5, 6, 8 — see `07_API_Design.md`.
+**Related Database Entities (reference only):** None new.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-065.
+
+---
+
+## Module 11 — Traceability Summary
+
+| FR | Business Requirement(s) | Related Modules |
+|---|---|---|
+| FR-063 | BR-026 | Module 2 (Customer); Module 3 (Debt); Module 6 (Payment); Module 7 (Collection Case); Module 8 (Documents) |
+| FR-064 | BR-027 | Module 2 (FR-015); Module 9 (FR-056) |
+| FR-065 | BG-005 (no dedicated BR — see Open Items) | Module 3 (Debt Creation); Module 5 (Manual WhatsApp/Call); Module 6 (Payment Recording); Module 8 (Receipt/Statement) |
+
+---
+
+## Out of Scope (Explicitly Confirmed)
+
+Per your instruction, none of the following appear in this module, consistent with their absence from the approved Feature Freeze: AI Search, Semantic Search, OCR Search, full-text document indexing beyond approved scope, Elasticsearch/OpenSearch/Solr, Vector Search, Voice Search, Natural Language Search, Search Recommendations, Smart Suggestions, or Cross-device Recent Activity Synchronization.
+
+## Open Items Identified During Module 11 Specification
+
+The following behaviors are not addressed in the approved Feature Freeze or Business Requirements. None are assumed or invented here; all are deferred to `04_Business_Rules.md`, except items 1–3, which are scope decisions for the Version 2+ Roadmap rather than Business Rules:
+
+1. **Saved Views:** Not part of approved Version 1 scope (see Scope Note above). Not implemented; candidate for Version 2+ Roadmap if desired.
+2. **Recent Activity:** Not part of approved Version 1 scope. Not implemented; candidate for Version 2+ Roadmap if desired.
+3. **Favorites:** Not part of approved Version 1 scope. Not implemented; candidate for Version 2+ Roadmap if desired.
+4. **Quick Actions traceability gap (FR-065):** This is approved Version 1 scope (`01_Project_Overview.md` §1.6) but has no dedicated Business Requirement in `02_Business_Requirements.md`. Traced here at the Business Goal level (BG-005) instead. `02_Business_Requirements.md` is frozen and not modified by this observation; flagging it for your awareness rather than editing that document.
+5. **Search ranking / result ordering (FR-063):** Not specified.
+6. **Pagination limits (FR-063, FR-064):** Not specified.
+7. **Filter combination logic — AND vs. OR (FR-064, A1):** Not specified.
+8. **Filter persistence across sessions (FR-064):** Not specified whether the last-used filter is remembered between sessions.
+9. **Default sorting (FR-063, FR-064):** Not specified.
+10. **Wildcard / partial-match search behavior (FR-063):** Not specified.
+
+None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 11 fully unambiguous before `04_Business_Rules.md` is finalized.
+
+---
+
+**End of Module 11. Awaiting review and approval before proceeding to Module 12 — Administration & Settings.**
