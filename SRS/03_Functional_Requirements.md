@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 0.8 (In Progress) |
-| **Status** | Draft — Modules 1–5 Approved; Module 6 of 12 Submitted for Review |
+| **Version** | 0.9 (In Progress) |
+| **Status** | Draft — Modules 1–6 Approved; Module 7 of 12 Submitted for Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
@@ -25,6 +25,7 @@
 | 0.6 | 2026-07-24 | Module 3 polish pass: FR-017 no longer hardcodes initial Recovery Stage, now references Module 5 / `04_Business_Rules.md`. Module 3 approved and frozen. Module 4 — Credit & Risk Management drafted for review (FR-026–FR-028). | Claude |
 | 0.7 | 2026-07-24 | Module 4 polish pass: FR-026 no longer hardcodes Credit Score point values (referenced as not-yet-formally-approved), FR-028 clarified once-per-qualifying-event notification with re-trigger/suppression deferred to `04_Business_Rules.md`. Module 4 approved and frozen. Module 5 — Recovery Workflow drafted for review (FR-029–FR-033). | Claude |
 | 0.8 | 2026-07-24 | Module 5 approved and frozen. Module 6 — Payment Tracking drafted for review (FR-034–FR-039). | Claude |
+| 0.9 | 2026-07-24 | Module 6 approved and frozen. Module 7 — Professional Collection drafted for review (FR-040–FR-046). | Claude |
 
 ---
 
@@ -43,8 +44,8 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 3 | Debt Register | Approved |
 | 4 | Credit & Risk Management | Approved |
 | 5 | Recovery Workflow | Approved |
-| 6 | Payment Tracking | Submitted for Review |
-| 7 | Professional Collection | Not Started |
+| 6 | Payment Tracking | Approved |
+| 7 | Professional Collection | Submitted for Review |
 | 8 | Documents | Not Started |
 | 9 | Reporting & Analytics | Not Started |
 | 10 | Notifications & Calendar | Not Started |
@@ -1468,4 +1469,271 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ---
 
-**End of Module 6. Awaiting review and approval before proceeding to Module 7 — Professional Collection.**
+**End of Module 6. Approved.**
+
+---
+
+# Module 7 — Professional Collection
+
+## 1. Functional Overview
+
+This module specifies the formal escalation path a Debt follows once the standard Recovery Workflow (Module 5) determines it is eligible for structured collection action. It governs the **Collection Case** — its creation, assignment to a Collection Officer, progress tracking, activity recording, and closure.
+
+Professional Collection is a case-management layer over an existing Debt; it does not own the Debt, the Customer, payments, receipts, or Credit Score. It reacts to state owned elsewhere (Recovery Stage, Debt Status, payment events) and contributes its own activity back into the shared Follow-up History and Recovery Timeline without duplicating ownership of either.
+
+## Scope Boundary
+
+- **Debt Register (Module 3):** Professional Collection consumes the Debt, its Recovery Stage, and its Debt Status. It never modifies Debt financial values.
+- **Recovery Workflow (Module 5):** Escalation begins only once Module 5's stage-progression logic determines the Debt has reached Recovery Stage 5 — Professional Collection (or an authorized manual escalation, per FR-040). Module 5 retains sole ownership of stage-transition logic; this module does not redefine it.
+- **Payment Tracking (Module 6):** Payments remain owned exclusively by Module 6. Professional Collection never creates, edits, or deletes payments — it only consumes the payment events Module 6 emits (FR-039).
+- **Documents (Module 8):** Professional Collection may request document generation (e.g., a Demand Letter); the generation logic, templates, and numbering remain owned by Module 8 and are not restated here.
+- **Reporting (Module 9):** Collection KPIs (e.g., Active Collection Cases, SM-006) are consumed by Module 9; this module does not define reports.
+- **Notifications (Module 10):** Collection events may be surfaced as notifications; delivery and display remain owned by Module 10.
+- **Ownership boundary:** Professional Collection owns only the Collection Case entity. It never owns Customer, Debt, Payment, Receipt, or Credit Score — those remain owned by Modules 2, 3, 6, 8, and 4 respectively.
+- **Cardinality:** A Collection Case references exactly one Debt. Version 1 does not support multi-debt Collection Cases.
+- **No implied payment:** Closing a Collection Case never implies or creates a payment. Collection closure and Debt payment are separate concepts owned by different modules (this module and Module 6, respectively).
+
+## 2. Functional Requirements
+
+| ID | Requirement | Traces To |
+|---|---|---|
+| FR-040 | The system shall create a Collection Case referencing exactly one Debt when the Debt becomes eligible for escalation to Professional Collection. | BR-014, BR-036 |
+| FR-041 | The system shall allow an authorized user to assign a Collection Case to a Collection Officer. | BR-014 |
+| FR-042 | The system shall allow an authorized user to view a Collection Case's details. | BR-014 |
+| FR-043 | The system shall allow an authorized user to update a Collection Case's non-financial details. | BR-014, BR-030 |
+| FR-044 | The system shall allow an authorized user to record a collection activity against a Collection Case. | BR-014, BR-010 |
+| FR-045 | The system shall allow an authorized user to close a Collection Case with a recorded outcome. | BR-014 |
+| FR-046 | The system shall allow an authorized user to view the chronological history of a Collection Case. | BR-010, BR-014 |
+
+---
+
+### FR-040 — Escalation & Collection Case Creation
+
+**Preconditions**
+- The Debt exists, is not Archived, and does not already have an open Collection Case referencing it.
+- User is authenticated; escalation is either system-initiated (Module 5) or initiated by a user holding escalation permission.
+
+**Triggers**
+- Recovery Workflow (Module 5) determines the Debt has reached Recovery Stage 5 — Professional Collection, or an authorized user manually initiates escalation from Debt Details (Module 3).
+
+**Main Flow**
+1. The Debt reaches Recovery Stage 5 — Professional Collection per Module 5's stage-transition logic, or an authorized user manually initiates escalation from Debt Details.
+2. System creates a Collection Case referencing exactly one Debt.
+3. System assigns the Collection Case a unique Auto Numbering identifier (`COL-000001`, per BR-036).
+4. System sets the Collection Case's initial status (exact default value confirmed in `04_Business_Rules.md`; see Open Items).
+5. System records a **Collection Requested** event in the Audit Trail (User or "System", Timestamp, Action = Collection Requested, Entity = Debt / Collection Case).
+6. The Collection Case becomes visible in Active Collection Cases reporting (Module 9; not restated here).
+
+**Alternate Flows**
+- **A1 — Debt already has an open Collection Case:** A duplicate case is not created for the same Debt; exact handling (reject the request vs. surface the existing case) confirmed in `04_Business_Rules.md`.
+- **A2 — Manual escalation initiated before Recovery Stage 5 is reached:** Whether early manual escalation is permitted, and under what authorization, is confirmed in `04_Business_Rules.md` — not assumed here.
+
+**Exceptions**
+- **E1 — User lacks permission to escalate:** Action is not available.
+- **E2 — Referenced Debt is Archived:** Action is not permitted; the Debt must be restored first (Module 3, FR-023).
+
+**Business Rule References:** Recovery Stage eligibility is owned by Module 5 and not redefined here; BR-036 (Auto Numbering); duplicate-case handling and early-escalation eligibility deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `POST /debts/{id}/collection-cases` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CollectionCase, Debt, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-040.
+
+---
+
+### FR-041 — Collection Case Assignment
+
+**Preconditions**
+- Collection Case exists and is open; user holds permission to assign cases.
+
+**Triggers**
+- Authorized user selects a Collection Officer to assign to a Collection Case.
+
+**Main Flow**
+1. User selects a Collection Officer to assign to an open Collection Case.
+2. System updates the Collection Case's assigned officer.
+3. System records an **Edited** event in the Audit Trail (Entity = Collection Case, Field = Assigned Officer).
+
+**Alternate Flows**
+- **A1 — Reassignment of an already-assigned case:** Follows the same flow; exact reassignment policy (e.g., prior-assignee notification) confirmed in `04_Business_Rules.md`.
+
+**Exceptions**
+- **E1 — User lacks permission to assign:** Action is not available.
+- **E2 — Assigned user does not hold the Collection Officer role:** Restricted per `08_Security_and_RBAC.md`.
+
+**Business Rule References:** Automatic assignment rules, collector workload balancing, and reassignment policy are explicitly deferred to `04_Business_Rules.md`; this FR covers only manual assignment.
+**Related APIs (reference only):** `PATCH /collection-cases/{id}/assign` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CollectionCase, User, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-041.
+
+---
+
+### FR-042 — Collection Case Details
+
+**Preconditions**
+- Collection Case exists; user holds view permission.
+
+**Triggers**
+- User selects a Collection Case from a list or from its linked Debt's details.
+
+**Main Flow**
+1. User selects a Collection Case.
+2. System displays the Case's referenced Debt, assigned Collection Officer, current status, and associated Notes & Attachments (Module 8, reference only).
+
+**Alternate Flows**
+- **A1 — Case is Closed:** Displayed in a read-only state.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+
+**Business Rule References:** BRL-004 (if archived); role-based field visibility per `08_Security_and_RBAC.md`.
+**Related APIs (reference only):** `GET /collection-cases/{id}` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CollectionCase, Debt, User — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-042.
+
+---
+
+### FR-043 — Collection Case Update
+
+**Preconditions**
+- Collection Case exists and is open; user holds edit permission.
+
+**Triggers**
+- User edits non-financial Collection Case details.
+
+**Main Flow**
+1. User submits updated Collection Case details.
+2. System validates and saves the update.
+3. System records an **Edited** event in the Audit Trail.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Required fields invalid:** Update is rejected.
+- **E2 — User lacks permission:** Action is not available.
+- **E3 — Attempted edit of a Closed case:** Rejected; whether a Closed case can be reopened is not specified (see Open Items).
+
+**Business Rule References:** This FR explicitly excludes any financial fields (Outstanding Balance, Remaining Credit, Credit Score, Payment), which remain owned by Modules 2, 4, and 6 respectively — Professional Collection never modifies them.
+**Related APIs (reference only):** `PUT /collection-cases/{id}` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CollectionCase, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-043.
+
+---
+
+### FR-044 — Collection Activity Recording
+
+**Preconditions**
+- Collection Case exists and is open; user holds permission to record collection activity.
+
+**Triggers**
+- Authorized user logs a collection activity (e.g., negotiation call, formal notice sent, field visit) against a Collection Case.
+
+**Main Flow**
+1. User logs a collection activity against the Collection Case.
+2. System records the activity with User, Timestamp, and activity details.
+3. The activity is reflected in the Debt's Follow-up History (Module 5, FR-033) and Recovery Timeline (Module 3, FR-024) without duplicating ownership of either.
+4. System records the applicable Audit Trail event (an **Edited** event on the Collection Case, or the specific approved event type when the activity corresponds to one already defined elsewhere, such as **Demand Letter Generated** when a letter is requested via Module 8).
+
+**Alternate Flows**
+- **A1 — Activity corresponds to a payment received:** Professional Collection consumes the Payment Added event emitted by Module 6 (FR-039) and reflects it in the Case's activity log; it never creates or edits the payment itself.
+
+**Exceptions**
+- **E1 — User lacks permission:** Action is not available.
+- **E2 — Case is Closed:** Activity logging is rejected; whether a Closed case can be reopened is not specified (see Open Items).
+
+**Business Rule References:** This FR enforces that Collection Activity Recording never creates, edits, or deletes Payment records (Module 6 exclusive ownership); it only consumes payment events.
+**Related APIs (reference only):** `POST /collection-cases/{id}/activities` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CollectionCase, FollowUpHistory, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-044.
+
+---
+
+### FR-045 — Collection Case Closure
+
+**Preconditions**
+- Collection Case exists and is open; user holds permission to close cases.
+
+**Triggers**
+- Authorized user selects "Close Collection Case" and records an outcome.
+
+**Main Flow**
+1. User selects a closure outcome for the Collection Case (exact outcome value set confirmed in `04_Business_Rules.md`; see Open Items).
+2. System sets the Collection Case status to Closed with the recorded outcome.
+3. System records a **Status Changed** event in the Audit Trail (Entity = Collection Case).
+4. Closure does not itself change the Debt's financial state (Outstanding Balance, Debt Status) and never implies or creates a payment; those remain governed exclusively by Module 6.
+
+**Alternate Flows**
+- **A1 — Case closed with an outcome reflecting recovery:** This reflects that the Debt separately reached Paid status via Module 6; closure records the outcome but does not cause it.
+
+**Exceptions**
+- **E1 — User lacks permission to close:** Action is not available.
+- **E2 — Attempt to close an already-Closed case:** Rejected (no-op).
+
+**Business Rule References:** Closure policy, abandoned-case handling, and maximum collection duration are explicitly deferred to `04_Business_Rules.md`. This FR enforces that Collection Case closure never triggers or implies payment (Module 6 exclusive ownership).
+**Related APIs (reference only):** `POST /collection-cases/{id}/close` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CollectionCase, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-045.
+
+---
+
+### FR-046 — Collection Case History
+
+**Preconditions**
+- Collection Case exists; user holds view permission.
+
+**Triggers**
+- User requests the chronological history of a Collection Case (activities, assignment changes, status changes).
+
+**Main Flow**
+1. User requests Collection Case history.
+2. System retrieves and displays all recorded activities, assignments, and status changes for the Case in chronological order.
+3. This history is also reflected in the Debt's Follow-up History and Recovery Timeline (Modules 5 and 3) without duplicating the underlying record.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — No activity recorded:** System displays an empty-result state.
+
+**Business Rule References:** BRL-003 (attributable action).
+**Related APIs (reference only):** `GET /collection-cases/{id}/history` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CollectionCase, FollowUpHistory, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-046.
+
+---
+
+## Module 7 — Traceability Summary
+
+| FR | Business Requirement(s) | Related Modules |
+|---|---|---|
+| FR-040 | BR-014, BR-036 | Module 3 (Debt Register); Module 5 (Recovery Workflow — escalation eligibility) |
+| FR-041 | BR-014 | Module 12 (Administration & Settings — Collection Officer role) |
+| FR-042 | BR-014 | Module 8 (Documents — Notes & Attachments) |
+| FR-043 | BR-014, BR-030 | — |
+| FR-044 | BR-014, BR-010 | Module 3 (Recovery Timeline); Module 5 (Follow-up History); Module 6 (payment event consumption); Module 8 (Documents) |
+| FR-045 | BR-014 | Module 6 (Payment Tracking — separate, not implied) |
+| FR-046 | BR-010, BR-014 | Module 3 (Recovery Timeline); Module 5 (Follow-up History); Module 9 (Reporting) |
+
+---
+
+## Open Items Identified During Module 7 Specification
+
+The following behaviors are not addressed in the approved Feature Freeze or Business Requirements. None are assumed or invented here; all are deferred to `04_Business_Rules.md`:
+
+1. **Automatic assignment rules / collector workload balancing (FR-041):** Not specified whether Collection Cases are auto-assigned or always manually assigned.
+2. **Escalation timing / early manual escalation eligibility (FR-040, A2):** Not specified whether a user may escalate a Debt before Module 5 determines Recovery Stage 5 eligibility.
+3. **Reassignment policy (FR-041, A1):** Not specified whether reassignment notifies the prior assignee or has other conditions.
+4. **Closure policy and outcome value set (FR-045):** The Feature Freeze approved "Recovered" as a Recovery Timeline/Stage endpoint but never enumerated a full Collection Case closure-outcome value set (e.g., Recovered, Unresolved, Written Off).
+5. **Abandoned Collection Cases:** No handling for cases with no activity over an extended period is specified.
+6. **Maximum collection duration:** Not specified.
+7. **External collection agencies:** Not addressed anywhere in the Feature Freeze; no hand-off-to-third-party functionality is implied or included here.
+8. **Legal escalation as a distinct process:** The approved scope includes a "Legal Notice" Demand Letter template (Module 8), but no distinct legal-escalation case status or workflow beyond that document is defined.
+9. **Duplicate Collection Case handling (FR-040, A1):** Not specified whether a second escalation attempt against an already-escalated Debt is rejected or redirected to the existing case.
+10. **Reopening a Closed Collection Case (FR-043, E3; FR-044, E2):** Not specified whether this is possible.
+11. **Initial Collection Case status at creation (FR-040):** Not specified.
+
+None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 7 fully unambiguous before `04_Business_Rules.md` is finalized.
+
+---
+
+**End of Module 7. Awaiting review and approval before proceeding to Module 8 — Documents.**
