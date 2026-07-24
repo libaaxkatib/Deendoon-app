@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.3 (In Progress) |
-| **Status** | Draft — Modules 1–10 Approved; Module 11 of 12 Submitted for Review |
+| **Version** | 1.4 (In Progress) |
+| **Status** | Draft — Modules 1–11 Approved; Module 12 of 12 (final) Submitted for Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
@@ -30,6 +30,7 @@
 | 1.1 | 2026-07-24 | Module 8 approved and frozen. Module 9 — Reporting & Analytics drafted for review (FR-053–FR-057). Consolidated five named report categories into one FR (no per-report detail was ever approved beyond Aging Analysis/KPI Cards); excluded Scheduled Reports as unapproved and logged as an Open Item rather than invented. | Claude |
 | 1.2 | 2026-07-24 | Module 9 approved and frozen. Module 10 — Notifications & Calendar drafted for review (FR-058–FR-062). Excluded Email as an unapproved channel; scoped SMS/WhatsApp strictly to Module 5's already-approved ownership, implementing this module as in-app-only per the frozen Notification Center definition in `01_Project_Overview.md`. | Claude |
 | 1.3 | 2026-07-24 | Module 10 approved and frozen. Module 11 — Search & Productivity drafted for review (FR-063–FR-065). Excluded Saved Views, Recent Activity, and Favorites as unapproved Version 1 scope; implemented Quick Actions (approved) in place of "Quick Navigation"; flagged a pre-existing traceability gap (Quick Actions has no dedicated BR in `02_Business_Requirements.md`). | Claude |
+| 1.4 | 2026-07-24 | Module 11 approved and frozen. Module 12 — Administration & Settings drafted for review (FR-066–FR-071), the final module. Added FR-071 (Audit Trail Viewing) beyond the suggested numbering to close a coverage gap: BR-030 was never implemented as a viewable capability in any prior module. Corrected an erroneous "Module 13" reference in the request — Module 12 is the last of 12. | Claude |
 
 ---
 
@@ -53,8 +54,8 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 8 | Documents | Approved |
 | 9 | Reporting & Analytics | Approved |
 | 10 | Notifications & Calendar | Approved |
-| 11 | Search & Productivity | Submitted for Review |
-| 12 | Administration & Settings | Not Started |
+| 11 | Search & Productivity | Approved |
+| 12 | Administration & Settings | Submitted for Review |
 
 ---
 
@@ -2526,4 +2527,246 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ---
 
-**End of Module 11. Awaiting review and approval before proceeding to Module 12 — Administration & Settings.**
+**End of Module 11. Approved.**
+
+---
+
+# Module 12 — Administration & Settings
+
+## 1. Functional Overview
+
+This module owns administrative configuration and system governance: user accounts, role assignment, Company Profile/Branding, System Preferences (the configurable policy values every other module reads rather than hardcodes), Lookup & Reference Data, and viewing the Audit Trail. Per the approved architecture, Administration **configures**; business modules **execute**. This module never runs a recovery workflow, records a payment, generates a document, or authenticates a user — it only sets the values and assignments those modules consume.
+
+## Scope Boundary
+
+- **Authentication & User Session (Module 1):** Owns Login, Logout, Password Authentication, Session Management, and the Password Reset process. This module only administers user accounts and assigns roles; it never authenticates users.
+- **Customer Management (Module 2):** Owns Customer records and lifecycle. This module may configure customer-related lookup values only; it never edits customer business data.
+- **Debt Register (Module 3):** Owns Debt records, lifecycle, and status. This module may configure debt-related lookup values only; it never edits Debt records.
+- **Credit & Risk Management (Module 4):** Owns credit policies' *application* and risk scoring computation. This module stores the configurable policy values (e.g., Default Credit Limit) but never calculates or changes Credit Scores.
+- **Recovery Workflow (Module 5):** Owns Recovery Stages and follow-up workflow execution. This module maintains configurable reference values (e.g., reminder timing) only; it never executes recovery actions.
+- **Payment Tracking (Module 6):** Owns Payments and payment history. This module may configure payment-method reference data only.
+- **Professional Collection (Module 7):** Owns Collection Cases. This module never manages collection operations.
+- **Documents (Module 8):** Owns Receipts, Demand Letters, and Statements. This module never generates documents; it stores the templates and branding those documents are rendered from.
+- **Reporting & Analytics (Module 9):** Owns Reports and Dashboards. This module never creates reports.
+- **Notifications & Calendar (Module 10):** Owns the Notification Center and Calendar View. This module exposes only already-approved configuration references (e.g., Notification Settings); it never sends notifications.
+- **Search & Productivity (Module 11):** Owns Search, Filters, and Quick Actions execution. This module never manages search execution.
+- **Ownership boundary:** This module owns no business entity — it owns only administrative configuration (User accounts, Role assignment, Company Profile, System Preferences, Lookup & Reference Data) and read-only access to the Audit Trail.
+- **Permission enforcement:** Role assignment performed here never bypasses Authentication or Authorization; enforcement remains owned by Module 1 and `08_Security_and_RBAC.md`.
+
+**Scope note — Lookup & Reference Data traceability:** This capability is not named as a distinct feature anywhere in the Feature Freeze. It is included because it is the natural, already-implied home for configuration values this SRS previously deferred as Open Items — the Risk Level value set (Module 4), the Payment Method catalog (Module 6), and the Collection Case closure-outcome value set (Module 7) — consistent with the already-approved Product Principle "Configuration over hardcoding" (`01_Project_Overview.md` §1.9, Principle 5; BC-003). It does not introduce any reference-data category beyond those already flagged. Flagging this rather than silently inventing an open-ended admin capability.
+
+## 2. Functional Requirements
+
+| ID | Requirement | Traces To |
+|---|---|---|
+| FR-066 | The system shall allow an authorized administrator to create, view, update, and deactivate user accounts. | BR-028, BR-029 |
+| FR-067 | The system shall allow an authorized administrator to assign or change a user's Role from the six approved roles. | BR-029 |
+| FR-068 | The system shall allow an authorized administrator to configure the Company Profile and Branding used on generated documents. | BR-035 |
+| FR-069 | The system shall allow an authorized administrator to configure system-wide preferences: Credit Policy, Recovery Policy, Notification Settings, and Document Templates. | BR-034, BR-035, BR-011 |
+| FR-070 | The system shall allow an authorized administrator to manage configurable Lookup & Reference Data value sets. | BC-003 |
+| FR-071 | The system shall allow an authorized administrator to view the Audit Trail. | BR-030 |
+
+---
+
+### FR-066 — User Administration
+
+**Preconditions**
+- Requesting user holds Administration permission (typically Super Admin).
+
+**Triggers**
+- Administrator creates, views, updates, or deactivates a user account.
+
+**Main Flow**
+1. Administrator creates a new user account (name, identifier — per Module 1, FR-001's configurable identifier type).
+2. System creates the User record; exact sequencing of initial credential issuance relative to Role assignment (FR-067) is deferred to `04_Business_Rules.md` (see Open Items).
+3. Administrator may view, update, or deactivate an existing user account.
+4. System records a **Created** or **Edited** event in the Audit Trail (Entity = User).
+5. Deactivation follows the Archive/Restore pattern (BC-002); a user account is never permanently deleted by this action.
+
+**Alternate Flows**
+- **A1 — Administrator deactivates the sole holder of a required role (e.g., the only Super Admin):** Exact handling (block vs. warn) is deferred to `04_Business_Rules.md` (see Open Items).
+
+**Exceptions**
+- **E1 — Requesting user lacks Administration permission:** Action is not available.
+- **E2 — Required fields missing or invalid:** Submission is rejected.
+
+**Business Rule References:** BR-028, BR-029; BC-002 (deactivation follows Archive/Restore); initial credential/invitation mechanism deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `POST /admin/users`, `GET /admin/users/{id}`, `PUT /admin/users/{id}`, `POST /admin/users/{id}/deactivate` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** User, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-066.
+
+---
+
+### FR-067 — Role & Permission Management
+
+**Preconditions**
+- User account exists (FR-066); requesting administrator holds permission to assign roles.
+
+**Triggers**
+- Administrator assigns or changes a user's Role.
+
+**Main Flow**
+1. Administrator selects a user and assigns one of the six approved roles: Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer.
+2. System updates the user's Role assignment.
+3. System records a **Role Changed** event in the Audit Trail.
+4. Per Module 1, FR-006 (Alternate Flow A1, already approved), the affected user's effective permissions are refreshed to reflect the new Role without requiring re-login; exact refresh timing is governed in `08_Security_and_RBAC.md`.
+
+**Alternate Flows**
+- **A1 — User is assigned more than one Role:** Whether multi-role assignment is supported is not specified in the approved Feature Freeze; deferred to `04_Business_Rules.md` (see Open Items).
+
+**Exceptions**
+- **E1 — Requesting administrator lacks permission to assign roles:** Action is not available.
+- **E2 — Invalid or unrecognized Role selected:** Rejected.
+
+**Business Rule References:** BR-029; BRL-002 (role-restricted actions); detailed role/permission matrix in `08_Security_and_RBAC.md`, already referenced by Module 1.
+**Related APIs (reference only):** `PATCH /admin/users/{id}/role` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** User, Role, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-067.
+
+---
+
+### FR-068 — Company Profile & Branding
+
+**Preconditions**
+- Requesting user holds Administration permission.
+
+**Triggers**
+- Administrator updates the Company Profile.
+
+**Main Flow**
+1. Administrator submits Company Profile details: business name, logo, address, and contact details (per BR-035).
+2. System validates and saves the submitted details.
+3. System records an **Edited** event in the Audit Trail (Entity = CompanySettings).
+4. Updated branding is reflected on all subsequently generated documents (Module 8 — Demand Letter, Receipt, Statement).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Requesting user lacks permission:** Action is not available.
+- **E2 — Invalid data (e.g., unsupported logo file format):** Rejected with a validation error; exact supported format/size constraints deferred to `04_Business_Rules.md` (see Open Items).
+
+**Business Rule References:** BR-035.
+**Related APIs (reference only):** `GET /admin/settings/company-profile`, `PUT /admin/settings/company-profile` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** CompanySettings — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-068.
+
+---
+
+### FR-069 — System Preferences
+
+**Preconditions**
+- Requesting user holds Administration permission.
+
+**Triggers**
+- Administrator updates a configurable system-wide preference.
+
+**Main Flow**
+1. Administrator navigates to System Preferences, organized into: Credit Policy (Default Credit Limit, Credit Limit Reminder, Soft Limit Warning threshold — consumed by Modules 2, 3), Recovery Policy (WhatsApp/SMS/Call Reminder Timing — Module 5; Professional Collection Threshold — Module 7), Notification Settings (Module 10), and Document Templates (the four Demand Letter templates — Module 8).
+2. Administrator updates one or more preference values.
+3. System validates and saves the updated values.
+4. System records an **Edited** event in the Audit Trail (Entity = SystemSettings, Field = the specific preference changed).
+5. Consuming modules read the updated values on their next evaluation; this module never itself executes a workflow using these values, per the approved architecture principle that Administration configures and business modules execute.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Requesting user lacks permission:** Action is not available.
+- **E2 — Invalid value submitted (e.g., a negative reminder interval):** Rejected with a validation error.
+
+**Business Rule References:** BR-034, BR-035, BR-011 (configurable reminder timing); BC-003 (configuration over hardcoding). Exact validation ranges for each preference deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `GET /admin/settings/preferences`, `PUT /admin/settings/preferences` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** SystemSettings, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-069.
+
+---
+
+### FR-070 — Lookup & Reference Data
+
+**Preconditions**
+- Requesting user holds Administration permission.
+
+**Triggers**
+- Administrator manages a configurable reference value set.
+
+**Main Flow**
+1. Administrator manages configurable reference value sets used elsewhere in the system — for example, the Risk Level qualitative value set (Module 4, Open Item), the Payment Method catalog (Module 6, Open Item), and the Collection Case closure-outcome value set (Module 7, Open Item), once each is formally defined in `04_Business_Rules.md`.
+2. System validates and saves changes to a reference value set.
+3. System records an **Edited** event in the Audit Trail (Entity = ReferenceData).
+4. Business validation logic for how these values are applied remains owned by the consuming module (e.g., Module 4 for Risk Level); this module only stores the configurable value set itself.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Requesting user lacks permission:** Action is not available.
+- **E2 — Attempt to remove a reference value currently in use by existing records:** Exact handling (block vs. warn) deferred to `04_Business_Rules.md` (see Open Items).
+
+**Business Rule References:** BC-003 (Product Principle 5, configuration over hardcoding). This FR exists specifically to hold the configurable value sets already flagged as Open Items in Modules 4, 6, and 7 — it does not introduce new reference-data categories beyond those already identified.
+**Related APIs (reference only):** `GET /admin/reference-data/{type}`, `PUT /admin/reference-data/{type}` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** ReferenceData, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-070.
+
+---
+
+### FR-071 — Audit Trail Viewing
+
+**Preconditions**
+- Requesting user holds Administration/audit-view permission.
+
+**Triggers**
+- Administrator requests to view the Audit Trail / Activity Log.
+
+**Main Flow**
+1. Administrator opens the Audit Trail / Activity Log in the Super Admin Web Panel.
+2. System displays all recorded events — Created, Edited, Archived, Restored, Status Changed, Reminder Sent, Payment Added, Collection Requested, Login, Logout, Role Changed, Credit Limit Changed, Credit Score Recalculated, Demand Letter Generated, Receipt Generated, Statement Generated, Recovery Stage Override — each showing User, Timestamp, Action, Entity, and Reason where applicable.
+3. Administrator may filter by user, date range, module/entity, or action type, per Module 11's Advanced Filtering architecture (not restated here).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Requesting user lacks permission:** Access is denied.
+
+**Business Rule References:** BR-030; BRL-003 (attributable action). The Audit Trail is immutable — no update or delete capability is provided anywhere in this module or any other, consistent with BR-030's requirement that audit records cannot be altered by normal users.
+**Related APIs (reference only):** `GET /admin/audit-trail` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** AuditLog (written by every other module; read-only from this module's perspective) — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-071.
+
+---
+
+## Module 12 — Traceability Summary
+
+| FR | Business Requirement(s) | Related Modules |
+|---|---|---|
+| FR-066 | BR-028, BR-029 | Module 1 (identifier type, permission resolution) |
+| FR-067 | BR-029 | Module 1 (FR-006, permission refresh); Module 7 (Collection Officer role) |
+| FR-068 | BR-035 | Module 8 (Documents — branding on generated PDFs) |
+| FR-069 | BR-034, BR-035, BR-011 | Module 2, 3 (Credit Policy); Module 5 (Recovery Policy); Module 7 (Collection Threshold); Module 8 (Document Templates); Module 10 (Notification Settings) |
+| FR-070 | BC-003 (no dedicated BR — see Scope Note) | Module 4 (Risk Level values); Module 6 (Payment Method catalog); Module 7 (Collection outcome values) |
+| FR-071 | BR-030 | All modules (as the universal Audit Trail write source) |
+
+---
+
+## Out of Scope (Explicitly Confirmed)
+
+Per your instruction, none of the following appear in this module, consistent with their absence from the approved Feature Freeze: Tenant Management, Subscription Management, Billing Configuration, Feature Flags, API Key Management, self-service Backup & Restore, Email Server Configuration, SMS Gateway Configuration, WhatsApp Provider Configuration, Third-party Integrations, Webhooks, Audit Configuration, Environment Management, Plugin Management, or License Management.
+
+## Open Items Identified During Module 12 Specification
+
+The following behaviors are not addressed in the approved Feature Freeze or Business Requirements. None are assumed or invented here; all are deferred to `04_Business_Rules.md`:
+
+1. **Initial credential/invitation mechanism (FR-066):** Not specified whether an administrator sets an initial password or a self-service invitation link is used.
+2. **Deactivating the sole holder of a required role (FR-066, A1):** Not specified.
+3. **Multi-role assignment per user (FR-067, A1):** Not specified whether a user may hold more than one Role simultaneously.
+4. **Logo/branding file format and size constraints (FR-068):** Not specified.
+5. **Validation ranges for each System Preference (FR-069):** Not specified (e.g., minimum/maximum reminder interval).
+6. **Removing a reference value currently in use (FR-070):** Not specified whether this is blocked or merely warned.
+7. **Lookup & Reference Data traceability (FR-070):** Not a named feature in the Feature Freeze; included as the implementation of the already-approved "configuration over hardcoding" principle (see Scope Note above), not a new capability.
+
+None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 12 fully unambiguous before `04_Business_Rules.md` is finalized.
+
+---
+
+**End of Module 12. Awaiting review and approval.** This is the final module (12 of 12) — once approved, `03_Functional_Requirements.md` is complete and the SRS proceeds to `04_Business_Rules.md`, not a "Module 13."
