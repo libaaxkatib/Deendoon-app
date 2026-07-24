@@ -5,9 +5,9 @@
 | **Document ID** | SRS-DEENDOON-10 |
 | **Document Title** | Acceptance Criteria |
 | **Version** | 1.0 |
-| **Status** | Draft — Pending Review |
+| **Status** | ✅ Approved & Frozen |
 | **Author** | Business Analyst / Solution Architect (Claude) |
-| **Approved By** | Pending |
+| **Approved By** | Product Owner |
 | **Last Updated** | 2026-07-24 |
 | **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (v1.7 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.3) · `05_UI_UX_Specification.md` (Approved & Frozen, v1.1) · `06_Database_Design.md` (Approved & Frozen, v1.3, PostgreSQL) · `07_API_Design.md` (Approved & Frozen, v1.1) · `08_Security_and_RBAC.md` (Approved & Frozen, v1.1) · `09_Non_Functional_Requirements.md` (Approved & Frozen, v1.0) |
 
@@ -18,6 +18,7 @@
 | Version | Date | Description | Author |
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: testable pass/fail acceptance criteria for all 76 approved Functional Requirements (FR-001–FR-076), closing out every "Acceptance Criteria References: To be defined in `10_Acceptance_Criteria.md`" placeholder left across `03_Functional_Requirements.md`. Organized as Cross-Cutting criteria (apply universally) plus per-FR criteria (module-organized, matching `03`'s structure). Criteria referencing a still-unresolved `04_Business_Rules.md` Deferred Decision are written to validate the *invariant* that holds regardless of how the DD resolves, not a specific outcome — flagged individually. | Claude |
+| 1.0 | 2026-07-24 | Approved and frozen without changes. | Product Owner |
 
 ---
 
