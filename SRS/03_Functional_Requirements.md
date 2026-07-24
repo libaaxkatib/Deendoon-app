@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 0.9 (In Progress) |
-| **Status** | Draft — Modules 1–6 Approved; Module 7 of 12 Submitted for Review |
+| **Version** | 1.0 (In Progress) |
+| **Status** | Draft — Modules 1–7 Approved; Module 8 of 12 Submitted for Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
@@ -26,6 +26,7 @@
 | 0.7 | 2026-07-24 | Module 4 polish pass: FR-026 no longer hardcodes Credit Score point values (referenced as not-yet-formally-approved), FR-028 clarified once-per-qualifying-event notification with re-trigger/suppression deferred to `04_Business_Rules.md`. Module 4 approved and frozen. Module 5 — Recovery Workflow drafted for review (FR-029–FR-033). | Claude |
 | 0.8 | 2026-07-24 | Module 5 approved and frozen. Module 6 — Payment Tracking drafted for review (FR-034–FR-039). | Claude |
 | 0.9 | 2026-07-24 | Module 6 approved and frozen. Module 7 — Professional Collection drafted for review (FR-040–FR-046). | Claude |
+| 1.0 | 2026-07-24 | Module 7 approved and frozen. Module 8 — Documents drafted for review (FR-047–FR-052). Included Customer Statement of Account (approved BR-021, not listed in this module's scope message but already forward-referenced by Modules 2/3) and preserved previously approved DL-000001 numbering for Legal Notice (a Demand Letter template, not a separate numbered document type) — both flagged as consistency notes rather than silently decided. | Claude |
 
 ---
 
@@ -45,8 +46,8 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 4 | Credit & Risk Management | Approved |
 | 5 | Recovery Workflow | Approved |
 | 6 | Payment Tracking | Approved |
-| 7 | Professional Collection | Submitted for Review |
-| 8 | Documents | Not Started |
+| 7 | Professional Collection | Approved |
+| 8 | Documents | Submitted for Review |
 | 9 | Reporting & Analytics | Not Started |
 | 10 | Notifications & Calendar | Not Started |
 | 11 | Search & Productivity | Not Started |
@@ -1736,4 +1737,238 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ---
 
-**End of Module 7. Awaiting review and approval before proceeding to Module 8 — Documents.**
+**End of Module 7. Approved.**
+
+---
+
+# Module 8 — Documents
+
+## 1. Functional Overview
+
+This module owns all document generation and document management in Version 1: Digital Receipts, Demand Letters (including the Legal Notice template), Customer Statements of Account, and their viewing, downloading, and history. Other modules *request* document generation or *trigger* it as a side effect of their own events; none of them generate PDFs, assign document numbers, or store document content themselves. Module 8 is the sole owner of documents as an artifact, while remaining strictly a consumer of the data (Debt, Payment, Customer, Collection Case) it renders into those documents.
+
+## Scope Boundary
+
+- **Debt Register (Module 3):** Documents reference Debt records for their content. Documents never modify Debt data.
+- **Recovery Workflow (Module 5):** May request Demand Letter (or Legal Notice) generation. Generation itself remains owned here.
+- **Payment Tracking (Module 6):** Triggers Receipt generation upon successful payment (Module 6, FR-038). Receipt creation remains owned exclusively by this module; this module never records or validates payments.
+- **Professional Collection (Module 7):** May request Demand Letters or Legal Notices as part of a Collection Case. This module generates the documents; Professional Collection never generates them directly.
+- **Reporting (Module 9):** Consumes document metadata (counts, types, generation dates). This module never creates reports.
+- **Notifications (Module 10):** May notify a user that a document is available. Delivery remains owned by Module 10.
+- **Ownership boundary:** This module owns only Documents (Receipt, Demand Letter, Statement) as generated artifacts. It never owns Customer, Debt, Payment, Collection Case, or Credit Score — those remain owned by Modules 2, 3, 6, 7, and 4 respectively. Documents are generated *from* other modules' data; they never become the source of truth for that data.
+
+**Scope note — Customer Statement of Account:** This module also specifies Statement of Account generation (FR-049), even though it was not listed among this module's functional scope in your message. It is included because it is already approved Version 1 scope (BR-021) with its own Auto Numbering identifier under BR-036, and Modules 2 (FR-008) and 3 (FR-019) already forward-reference "Generate Statement" to this module. Omitting it here would leave those two approved forward references unresolved and would contradict the already-approved baseline. Flagging this rather than silently deciding either way.
+
+**Scope note — Legal Notice as a Demand Letter template, not a separate document type:** Your message's examples imply Legal Notice may be a distinct numbered document series (`LNT-000001`) alongside Demand Letter (`DLT-000001`). The already-approved baseline (`01_Project_Overview.md` glossary and BR-036) defines exactly five Auto-Numbered document/record types — Debt, Receipt, Demand Letter, Statement, Collection Case — with Legal Notice explicitly listed as one of the **four templates** of the single Demand Letter Generator feature, not a sixth numbered entity. This module therefore implements Legal Notice as a Demand Letter template sharing the approved `DL-000001` numbering series, consistent with the frozen baseline, rather than introducing a new `LNT-000001` series. Reporting this rather than silently changing the previously approved numbering scope.
+
+**Scope note — numbering format preserved:** For the same reason, this module uses the previously approved formats `RCT-000001` (Receipt), `DL-000001` (Demand Letter, all four templates), and `ST-000001` (Statement) — as already established in `01_Project_Overview.md` and referenced by Modules 2, 3, and 6 — rather than the illustrative `DLT-000001` / `LNT-000001` pattern in your message, to avoid silently modifying frozen documentation.
+
+## 2. Functional Requirements
+
+| ID | Requirement | Traces To |
+|---|---|---|
+| FR-047 | The system shall automatically generate a Digital Receipt PDF when triggered by Payment Tracking (Module 6). | BR-019 |
+| FR-048 | The system shall generate a Demand Letter PDF (First Reminder, Second Reminder, Final Demand, or Legal Notice template) when requested by an authorized user, Recovery Workflow, or Professional Collection. | BR-020 |
+| FR-049 | The system shall generate a Customer Statement of Account PDF when requested from the Customer Profile or Debt Details. | BR-021 |
+| FR-050 | The system shall allow an authorized user to view a generated document. | BR-019, BR-020, BR-021 |
+| FR-051 | The system shall allow an authorized user to download a generated document as a PDF. | BR-019, BR-020, BR-021 |
+| FR-052 | The system shall allow an authorized user to view the chronological history of a document. | BR-019, BR-020, BR-021, BR-030 |
+
+---
+
+### FR-047 — Digital Receipt Generation
+
+**Preconditions**
+- A Payment has been successfully recorded (Module 6, FR-034), and Module 6 has issued a receipt-generation trigger (Module 6, FR-038).
+
+**Triggers**
+- Successful Payment Recording, via the trigger emitted by Module 6.
+
+**Main Flow**
+1. This module receives the receipt-generation request from Module 6 upon successful Payment Recording.
+2. System generates a Digital Receipt PDF using the approved Receipt template, populated with payment amount, date, Debt reference, and Company branding (Module 12 — System Settings; not restated here).
+3. System assigns the Receipt a unique Auto Numbering identifier (`RCT-000001` format, per BR-036).
+4. System records a **Receipt Generated** event in the Audit Trail (User = "System", Timestamp, Action = Receipt Generated, Entity = Payment/Receipt).
+5. The generated Receipt is linked to the Payment and made available for viewing/download (FR-050, FR-051) and to the Customer (Customer Mobile App).
+
+**Alternate Flows**
+- None; per BR-019, generation is automatic and system-initiated only.
+
+**Exceptions**
+- **E1 — Receipt generation fails (e.g., template rendering error):** Payment Recording (Module 6) is not rolled back; exact retry/failure-handling behavior deferred to `04_Business_Rules.md`.
+
+**Business Rule References:** BR-019; BR-036 (Auto Numbering). This module never records or validates the underlying payment — that remains Module 6's exclusive responsibility.
+**Related APIs (reference only):** Internal, invoked by Module 6; exposed via `GET /receipts/{id}` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Receipt, Payment (reference only, owned by Module 6) — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-047.
+
+---
+
+### FR-048 — Demand Letter Generation
+
+**Preconditions**
+- The referenced Debt exists and is not Archived.
+- The request originates from an authorized user, Module 5 (Recovery Workflow), or Module 7 (Professional Collection).
+
+**Triggers**
+- A user, Recovery Workflow, or Professional Collection requests a Demand Letter against a Debt, selecting one of the four approved templates: First Reminder, Second Reminder, Final Demand, or Legal Notice.
+
+**Main Flow**
+1. The requesting user or module selects a Debt and one of the four approved Demand Letter templates.
+2. System generates the Demand Letter PDF using the selected template, populated with Debt, Customer, and Company branding details (Module 12 — System Settings).
+3. System assigns the Demand Letter a unique Auto Numbering identifier (`DL-000001` format, per BR-036) — shared across all four templates, including Legal Notice, which is a template variant rather than a separate numbered document type (see Scope Boundary).
+4. System records a **Demand Letter Generated** event in the Audit Trail (User or "System", Timestamp, Action = Demand Letter Generated, Entity = Debt/Demand Letter).
+5. The generated Demand Letter is made available for viewing/download (FR-050, FR-051) and linked to the Debt and, where applicable, the Collection Case (Module 7).
+
+**Alternate Flows**
+- **A1 — Request originates from Professional Collection (Module 7):** Same flow; Module 7 requests generation but does not generate the document itself.
+- **A2 — Request originates from Recovery Workflow (Module 5):** Same flow.
+
+**Exceptions**
+- **E1 — User lacks permission to request Demand Letters:** Action is not available.
+- **E2 — Referenced Debt is Archived:** Action is not permitted; the Debt must be restored first (Module 3, FR-023).
+- **E3 — Template wording/legal content customization requested:** Deferred to `04_Business_Rules.md` (see Open Items).
+
+**Business Rule References:** BR-020; BR-036 (Auto Numbering, shared across all four templates); template content/wording defined in `04_Business_Rules.md` and managed via Module 12 — System Settings (Document Templates, per BR-035).
+**Related APIs (reference only):** `POST /debts/{id}/demand-letters` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** DemandLetter, Debt — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-048.
+
+---
+
+### FR-049 — Customer Statement of Account Generation
+
+**Preconditions**
+- The referenced Customer exists; user holds permission to generate statements.
+
+**Triggers**
+- User requests a Statement of Account from the Customer Profile (Module 2) or Debt Details (Module 3).
+
+**Main Flow**
+1. User requests a Statement of Account from either the Customer Profile or a specific Debt's Details screen.
+2. System generates the Statement PDF, consolidating the Customer's debt and payment history.
+3. System assigns the Statement a unique Auto Numbering identifier (`ST-000001` format, per BR-036).
+4. System records a **Statement Generated** event in the Audit Trail.
+5. The generated Statement is made available for viewing/download (FR-050, FR-051).
+
+**Alternate Flows**
+- **A1 — Requested from Debt Details rather than Customer Profile:** Whether the Statement scope is limited to that single Debt or covers the full Customer is not specified in the approved Feature Freeze — deferred to `04_Business_Rules.md` (see Open Items).
+
+**Exceptions**
+- **E1 — User lacks permission:** Action is not available.
+
+**Business Rule References:** BR-021; BR-036 (Auto Numbering).
+**Related APIs (reference only):** `POST /customers/{id}/statements`, `POST /debts/{id}/statements` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Statement, Customer, Debt — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-049.
+
+---
+
+### FR-050 — Document Viewing
+
+**Preconditions**
+- A Document (Receipt, Demand Letter, or Statement) exists; user holds view permission.
+
+**Triggers**
+- User selects a generated document from a Customer Profile, Debt Details, or Collection Case.
+
+**Main Flow**
+1. User selects a document.
+2. System renders the document for in-app viewing.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — Document not found:** System displays a not-found state.
+
+**Business Rule References:** Role-based access per `08_Security_and_RBAC.md`.
+**Related APIs (reference only):** `GET /documents/{id}` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Receipt, DemandLetter, Statement — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-050.
+
+---
+
+### FR-051 — Document Downloading
+
+**Preconditions**
+- A Document exists; user holds view/download permission.
+
+**Triggers**
+- User selects "Download" on a viewed document.
+
+**Main Flow**
+1. User selects Download.
+2. System provides the document as a downloadable PDF file.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Action is not available.
+
+**Business Rule References:** Role-based access per `08_Security_and_RBAC.md`; watermarking and digital-signature policy deferred to `04_Business_Rules.md` (see Open Items).
+**Related APIs (reference only):** `GET /documents/{id}/download` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Receipt, DemandLetter, Statement — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-051.
+
+---
+
+### FR-052 — Document History
+
+**Preconditions**
+- A Document exists; user holds view permission.
+
+**Triggers**
+- User requests the history of a document, or of all documents associated with a Debt, Customer, or Collection Case.
+
+**Main Flow**
+1. User requests document history.
+2. System displays a chronological log of document lifecycle events: **Generated**, **Downloaded**, and **Regenerated** (if regeneration is approved — see Open Items). No additional lifecycle events are introduced.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — No documents generated:** System displays an empty-result state.
+
+**Business Rule References:** BRL-003 (attributable action); regeneration policy deferred to `04_Business_Rules.md` (see Open Items).
+**Related APIs (reference only):** `GET /documents/{id}/history`, `GET /debts/{id}/documents`, `GET /customers/{id}/documents` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Receipt, DemandLetter, Statement, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-052.
+
+---
+
+## Module 8 — Traceability Summary
+
+| FR | Business Requirement(s) | Related Modules |
+|---|---|---|
+| FR-047 | BR-019 | Module 6 (Payment Tracking — exclusive trigger source) |
+| FR-048 | BR-020 | Module 5 (Recovery Workflow); Module 7 (Professional Collection); Module 12 (Document Templates) |
+| FR-049 | BR-021 | Module 2 (Customer Profile); Module 3 (Debt Details) |
+| FR-050 | BR-019, BR-020, BR-021 | Module 9 (Reporting — document metadata) |
+| FR-051 | BR-019, BR-020, BR-021 | — |
+| FR-052 | BR-019, BR-020, BR-021, BR-030 | Module 10 (Notifications — document-available events) |
+
+---
+
+## Open Items Identified During Module 8 Specification
+
+The following behaviors are not addressed in the approved Feature Freeze or Business Requirements. None are assumed or invented here; all are deferred to `04_Business_Rules.md`:
+
+1. **Document regeneration policy (FR-052):** Not specified whether a document can be regenerated, and if so, whether regeneration creates a new numbered document or reuses the original number.
+2. **Document retention period:** Not specified how long generated documents are retained.
+3. **Watermark rules (FR-051):** Not specified whether downloaded PDFs carry a watermark (e.g., "Copy," draft status).
+4. **Digital signature policy (FR-051):** Not specified whether generated documents require or support a digital signature.
+5. **Numbering format customization:** BR-036 establishes that Debt, Receipt, Demand Letter, Statement, and Collection Case are Auto Numbered, but whether the format itself (prefix, digit count) is tenant-configurable is not specified.
+6. **Document template customization scope (FR-048):** Module 12 governs template management (BR-035), but the exact set of customizable fields/wording constraints is not specified.
+7. **Legal Notice wording:** Legal content for the Legal Notice template is not specified in the Feature Freeze and would typically require legal review outside SRS scope.
+8. **Statement of Account scope when requested from Debt Details (FR-049, A1):** Not specified whether the resulting Statement covers only that Debt or the Customer's full account.
+
+None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 8 fully unambiguous before `04_Business_Rules.md` is finalized.
+
+---
+
+**End of Module 8. Awaiting review and approval before proceeding to Module 9 — Reporting & Analytics.**
