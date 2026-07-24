@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.0 (In Progress) |
-| **Status** | Draft — Modules 1–7 Approved; Module 8 of 12 Submitted for Review |
+| **Version** | 1.1 (In Progress) |
+| **Status** | Draft — Modules 1–8 Approved; Module 9 of 12 Submitted for Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
@@ -27,6 +27,7 @@
 | 0.8 | 2026-07-24 | Module 5 approved and frozen. Module 6 — Payment Tracking drafted for review (FR-034–FR-039). | Claude |
 | 0.9 | 2026-07-24 | Module 6 approved and frozen. Module 7 — Professional Collection drafted for review (FR-040–FR-046). | Claude |
 | 1.0 | 2026-07-24 | Module 7 approved and frozen. Module 8 — Documents drafted for review (FR-047–FR-052). Included Customer Statement of Account (approved BR-021, not listed in this module's scope message but already forward-referenced by Modules 2/3) and preserved previously approved DL-000001 numbering for Legal Notice (a Demand Letter template, not a separate numbered document type) — both flagged as consistency notes rather than silently decided. | Claude |
+| 1.1 | 2026-07-24 | Module 8 approved and frozen. Module 9 — Reporting & Analytics drafted for review (FR-053–FR-057). Consolidated five named report categories into one FR (no per-report detail was ever approved beyond Aging Analysis/KPI Cards); excluded Scheduled Reports as unapproved and logged as an Open Item rather than invented. | Claude |
 
 ---
 
@@ -47,8 +48,8 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 5 | Recovery Workflow | Approved |
 | 6 | Payment Tracking | Approved |
 | 7 | Professional Collection | Approved |
-| 8 | Documents | Submitted for Review |
-| 9 | Reporting & Analytics | Not Started |
+| 8 | Documents | Approved |
+| 9 | Reporting & Analytics | Submitted for Review |
 | 10 | Notifications & Calendar | Not Started |
 | 11 | Search & Productivity | Not Started |
 | 12 | Administration & Settings | Not Started |
@@ -1971,4 +1972,206 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ---
 
-**End of Module 8. Awaiting review and approval before proceeding to Module 9 — Reporting & Analytics.**
+**End of Module 8. Approved.**
+
+---
+
+# Module 9 — Reporting & Analytics
+
+## 1. Functional Overview
+
+This module specifies read-only reporting and analytics over data owned by other modules: Aging Analysis, Executive KPI Cards, standard operational reports, report-scoped filtering, and report export. Reporting is strictly passive — it consumes and presents existing records; it never computes new business state, never triggers side effects (notifications, reminders, recovery stage changes, payment changes), and never becomes the system of record for anything it displays.
+
+## Scope Boundary
+
+- **Customer Management (Module 2):** Reporting consumes Customer, Customer Status, and Credit Profile data. It never edits Customer data.
+- **Debt Register (Module 3):** Reporting consumes Debt, Debt Status, and Recovery Timeline data. It never edits Debt records.
+- **Credit & Risk Management (Module 4):** Reporting consumes Credit Score and Risk Level values. It never recalculates them.
+- **Recovery Workflow (Module 5):** Reporting consumes reminder history, Promise to Pay, and Follow-up History. It never creates reminders.
+- **Payment Tracking (Module 6):** Reporting consumes Payments, Outstanding Balance, and Payment History. It never records payments.
+- **Professional Collection (Module 7):** Reporting consumes Collection Cases, Collection Status, and Collection Outcomes. It never edits Collection Cases.
+- **Documents (Module 8):** Reporting consumes Receipt, Demand Letter, and Statement metadata. It never generates documents.
+- **Notifications (Module 10):** Not consumed by this module; Reporting never triggers notifications, reminders, recovery stage changes, or payment changes — it is passive.
+- **Ownership boundary:** This module owns no business entity. It never owns Customer, Debt, Payment, Collection Case, Document, or Credit Score — those remain owned by Modules 2, 3, 6, 7, 8, and 4 respectively.
+- **RBAC:** All reports respect Role-Based Access Control; a user can only report on data their role permits (`08_Security_and_RBAC.md`).
+
+**Scope note — five report categories:** Your message's Functional Scope lists Customer, Debt, Collection, Payment, and Credit Risk Reports as distinct items, but the approved Feature Freeze and Business Requirements only formally specify two report artifacts in detail — Aging Analysis (BR-023) and Executive KPI Cards (BR-024) — plus a general Export capability (BR-025) applying to "all major reports." No column-level or layout-level specification exists for five separate named reports beyond that. To avoid inventing unapproved report logic, this module consolidates the five categories into a single Functional Requirement (FR-055) that presents each entity's already-existing data read-only, rather than defining five distinct new report specifications. Flagging this consolidation rather than silently expanding scope.
+
+**Scope note — Scheduled Reports:** Your message lists this "if already approved." It does not appear anywhere in the approved Feature Freeze or Business Requirements. It is therefore excluded from this module's Functional Requirements and recorded as an Open Item rather than assumed or invented.
+
+## 2. Functional Requirements
+
+| ID | Requirement | Traces To |
+|---|---|---|
+| FR-053 | The system shall display Executive KPI Cards on the Customer Mobile App and Super Admin Web Panel dashboards, calculated from existing system data. | BR-024 |
+| FR-054 | The system shall categorize outstanding Debts into Aging Analysis buckets (Current, 1–30, 31–60, 61–90, Over 90 days) and present them as a dashboard widget, full report, pie chart, and bar chart. | BR-023 |
+| FR-055 | The system shall provide read-only standard reports over Customer, Debt, Collection Case, Payment, and Credit Risk data, without recalculating or duplicating the underlying business logic. | BR-006 |
+| FR-056 | The system shall allow an authorized user to filter a report by criteria relevant to that report. | BR-027 |
+| FR-057 | The system shall allow an authorized user to export a report as PDF, Excel, or CSV, reflecting exactly the data and filters shown on screen. | BR-025 |
+
+---
+
+### FR-053 — Dashboard Summary (Executive KPI Cards)
+
+**Preconditions**
+- User is authenticated; role determines whether the dashboard is tenant-scoped (Customer Mobile App) or system-wide (Super Admin Web Panel).
+
+**Triggers**
+- User opens their Dashboard.
+
+**Main Flow**
+1. User opens the Dashboard (Customer Mobile App or Super Admin Web Panel).
+2. System calculates and displays the approved KPI cards — Total Outstanding Amount, Total Collected (Period), Recovery Rate, Total Overdue Debts, Customers Over Credit Limit, Active Collection Cases (SM-001–006) — scoped to the user's tenant or system-wide, per role.
+3. Where applicable, KPI values support historical period selection (day/week/month/year) per BR-024.
+4. All values are calculated from existing data owned by Modules 2, 3, 4, 6, and 7; this module introduces no new source data or business logic.
+
+**Alternate Flows**
+- **A1 — User selects a different historical period:** Dashboard recalculates and redisplays the same KPIs for the selected period.
+
+**Exceptions**
+- **E1 — User's role restricts visibility of certain KPIs:** Restricted cards are not shown, per `08_Security_and_RBAC.md`.
+
+**Business Rule References:** BR-024; KPI calculation timing (real-time vs. periodic) and refresh frequency deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `GET /dashboard/kpis?period=` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Read-only aggregation over Customer, Debt, Payment, CollectionCase — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-053.
+
+---
+
+### FR-054 — Aging Analysis Report
+
+**Preconditions**
+- User holds view permission for reporting.
+
+**Triggers**
+- User opens the Aging Analysis dashboard widget or full report.
+
+**Main Flow**
+1. User opens Aging Analysis (widget or full report).
+2. System categorizes all open Debts into the approved buckets — Current, 1–30 Days, 31–60 Days, 61–90 Days, Over 90 Days — based on each Debt's due date (Module 3).
+3. System displays bucket totals as a dashboard widget, a full filterable report, a pie chart (bucket share), and a bar chart (bucket totals), per BR-023.
+
+**Alternate Flows**
+- **A1 — User applies filters (customer, date range):** Handled per FR-056, Report Filtering.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — No open Debts:** System displays an empty/zero-state.
+
+**Business Rule References:** BR-023; exact bucket-boundary rules (e.g., how a partial payment affects bucket placement) deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `GET /reports/aging-analysis` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Read-only aggregation over Debt (Module 3) — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-054.
+
+---
+
+### FR-055 — Standard Operational Reports
+
+**Preconditions**
+- User holds view permission for the relevant entity category.
+
+**Triggers**
+- User selects a Customer, Debt, Collection, Payment, or Credit Risk report.
+
+**Main Flow**
+1. User selects a report category: Customer, Debt, Collection, Payment, or Credit Risk.
+2. System retrieves and displays existing records for the selected category — Customers (Module 2, including Customer Status and Credit Profile), Debts (Module 3, including Debt Status), Collection Cases (Module 7, including status and outcome), Payments (Module 6, including payment history), and Credit Risk data (Module 4, Credit Score and Risk Level) — without recalculating or duplicating any underlying business logic.
+3. Results respect RBAC: a user sees only the records and fields their role permits.
+4. Results exclude Archived records by default, consistent with the Soft Delete/Archive policy (BRL-004), unless the user explicitly includes them.
+
+**Alternate Flows**
+- **A1 — User applies report-scoped filters:** Handled per FR-056.
+- **A2 — User exports the report:** Handled per FR-057.
+
+**Exceptions**
+- **E1 — User lacks permission for the requested category:** Access is denied, or the category is not shown.
+- **E2 — No matching records:** System displays an empty-result state.
+
+**Business Rule References:** BRL-004 (archived-record visibility). This FR strictly consumes data already owned by Modules 2, 3, 4, 6, and 7 and introduces no new computed fields (see Scope Boundary consolidation note).
+**Related APIs (reference only):** `GET /reports/customers`, `GET /reports/debts`, `GET /reports/collection-cases`, `GET /reports/payments`, `GET /reports/credit-risk` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Read-only aggregation over Customer, Debt, CollectionCase, Payment — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-055.
+
+---
+
+### FR-056 — Report Filtering
+
+**Preconditions**
+- User is viewing a report (FR-053–FR-055).
+
+**Triggers**
+- User applies one or more filters to a report.
+
+**Main Flow**
+1. User applies filter criteria relevant to the report being viewed (e.g., Customer Status, Debt Status, Recovery Stage, Risk Level, Credit Score, Date Range, Outstanding Amount, Payment Status, Collection Status).
+2. System returns the filtered result set, respecting RBAC.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — No matches:** System displays an empty-result state.
+
+**Business Rule References:** This FR specifies only the report-scoped application of filtering; the full cross-module Advanced Search & Filters architecture is specified in Module 11 — Search & Productivity and is not restated here.
+**Related APIs (reference only):** Query parameters on the report endpoints in FR-053–FR-055 — see `07_API_Design.md`.
+**Related Database Entities (reference only):** None new.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-056.
+
+---
+
+### FR-057 — Report Export
+
+**Preconditions**
+- User is viewing a report; user holds export permission.
+
+**Triggers**
+- User selects "Export" and a target format (PDF, Excel, or CSV).
+
+**Main Flow**
+1. User selects Export and a target format.
+2. System generates the export file reflecting exactly the report data and filters currently applied on screen; no export-only calculations are introduced.
+3. System provides the file for download.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks export permission:** Action is not available.
+- **E2 — Export size exceeds a configured limit:** Exact limit and handling deferred to `04_Business_Rules.md` (see Open Items).
+
+**Business Rule References:** BR-025; export size limits deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `GET /reports/{reportType}/export?format=` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** None new.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-057.
+
+---
+
+## Module 9 — Traceability Summary
+
+| FR | Business Requirement(s) | Related Modules |
+|---|---|---|
+| FR-053 | BR-024 | Module 2 (Customer); Module 3 (Debt); Module 4 (Credit Risk); Module 6 (Payment); Module 7 (Collection) |
+| FR-054 | BR-023 | Module 3 (Debt Register) |
+| FR-055 | BR-006 (explicit report-filter mention); supports BG-005 broadly across Modules 2–7 data | Modules 2, 3, 4, 6, 7 |
+| FR-056 | BR-027 | Module 11 (Search & Productivity) |
+| FR-057 | BR-025 | Module 8 (Documents — export as a document-adjacent artifact) |
+
+---
+
+## Open Items Identified During Module 9 Specification
+
+The following behaviors are not addressed in the approved Feature Freeze or Business Requirements. None are assumed or invented here; all are deferred to `04_Business_Rules.md`:
+
+1. **Scheduled Reports:** Not found anywhere in the approved Feature Freeze or Business Requirements. Excluded from this module's Functional Requirements; flagged here rather than silently omitted, per your conditional instruction ("if already approved").
+2. **Dashboard refresh frequency / caching (FR-053):** Not specified whether KPI values are real-time or periodically recalculated.
+3. **Export size limits (FR-057):** Not specified.
+4. **Historical data retention for reporting:** Not specified how far back historical KPI periods (BR-024) extend.
+5. **KPI calculation timing (FR-053):** Not specified precisely when Recovery Rate, Total Collected, etc., are computed relative to underlying events.
+6. **Archived-record visibility nuance in reports (FR-055):** BRL-004 establishes the default (excluded unless explicitly included); whether each specific report category needs a different default is not specified.
+7. **Timezone handling:** Not specified for date-based groupings (Aging Analysis buckets, KPI historical periods).
+
+None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 9 fully unambiguous before `04_Business_Rules.md` is finalized.
+
+---
+
+**End of Module 9. Awaiting review and approval before proceeding to Module 10 — Notifications & Calendar.**
