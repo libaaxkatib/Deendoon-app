@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-02 |
 | **Document Title** | Business Requirements |
-| **Version** | 1.1 |
-| **Status** | Approved |
+| **Version** | 1.3 |
+| **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
-| **Approved By** | Product Owner |
+| **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Approved) |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.3) |
 
 ---
 
@@ -19,6 +19,8 @@
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: Business Actors, Goals, Processes, Requirements, Constraints, Success Metrics, high-level Business Rules, and Traceability Matrix | Claude |
 | 1.1 | 2026-07-24 | Documentation polish pass: clarified BR-011 (configurable reminder timing), BR-018 (full/partial payments), BR-024 (historical KPI periods), BR-030 (immutable audit records), BR-035 (branding elements); added SM-007 and SM-008. No scope or functionality changes. Approved by Product Owner — frozen as the official Business Requirements baseline. | Claude |
+| 1.2 | 2026-07-24 | **Reopened — intentional scope change.** Added Professional Collection Requests (hand-off to Deendoon's own recovery team): new Business Actor (BA-009), new Business Process (BP-011), new Business Requirements (BR-039–BR-042), new Business Constraint (BC-009), new Success Metric (SM-009), new high-level Business Rule (BRL-077), and corresponding Traceability Matrix entries. No previously approved requirement was altered. | Claude |
+| 1.3 | 2026-07-24 | **Correction to 1.2.** Removed BA-009 (the invented "Deendoon Recovery Specialist" actor). Version 1 has exactly two application interfaces and no additional internal roles. BA-008 (Deendoon Platform Administrator / Super Admin) is now the sole actor for Professional Collection Requests, clarified as operating at the true platform level. Updated BP-011 and BR-042 wording accordingly (removed "assign," since there is no team to assign among — the Super Admin actions Requests directly). Traceability Matrix references to BA-009 removed. | Claude |
 
 ---
 
@@ -43,7 +45,7 @@ Each requirement carries a unique identifier for traceability through the remain
 | BA-005 | Support Staff | Limited operational access; assists but does not make financial decisions. | 01 §1.5 |
 | BA-006 | Viewer | Read-only access, typically for oversight or audit. | 01 §1.5 |
 | BA-007 | Customer (Debtor) | External actor; owes money to the business; receives reminders and documents. Does not use the Customer Mobile App. | 01 §1.5 |
-| BA-008 | Deendoon Platform Administrator | Operates the Super Admin Web Panel at the platform/tenant-configuration level. | 01 §1.5 |
+| BA-008 | Deendoon Platform Administrator (Super Admin) | Operates the Super Admin Web Panel at the true platform level, across the whole Deendoon platform. As of this reopening, also reviews and actions Professional Collection Requests submitted by any tenant. The only Deendoon-side actor in Version 1 — no additional roles, staff groups, or interfaces exist. | 01 §1.5 |
 
 ---
 
@@ -78,6 +80,7 @@ High-level business processes that Version 1 must support. These describe *what 
 | BP-008 | Accountability & Audit | Attributing every significant system action to a specific user and point in time. |
 | BP-009 | Business Configuration | Tuning credit and recovery policy without engineering involvement. |
 | BP-010 | Customer Data Onboarding & Maintenance | Bringing existing customer records into the system and keeping them free of duplication. |
+| BP-011 | External Recovery Hand-off | Submitting a case beyond internal recovery capability to the Deendoon Super Admin for direct handling, while retaining visibility into its progress. |
 
 ---
 
@@ -163,6 +166,15 @@ Each requirement is Mandatory for Version 1 unless stated otherwise, per the Fea
 | BR-037 | The business must be able to bring in existing customer records in bulk. | Reduces onboarding friction for businesses migrating to Deendoon. | BG-008 · BP-010 · Customer Import |
 | BR-038 | The business must be warned when it may be creating a duplicate customer record, while retaining the ability to proceed if the records are genuinely distinct. | Preserves data quality without blocking legitimate business activity. | BG-007, BG-008 · BP-010 · Duplicate Customer Detection |
 
+### 2.5.9 Professional Collection Requests *(added — reopened scope)*
+
+| ID | Requirement | Rationale | Traces To |
+|---|---|---|---|
+| BR-039 | The business must be able to submit an open Collection Case to Deendoon's own recovery team when internal recovery efforts are insufficient. | Gives businesses a path forward on cases beyond their own operational capacity, without abandoning the debt. | BG-001, BG-004 · BP-011 · Professional Collection Requests |
+| BR-040 | The business must be able to track the status of a submitted Request from submission through to a final outcome. | Preserves visibility and trust once a case leaves the business's direct control. | BG-005 · BP-011 · Professional Collection Requests |
+| BR-041 | The business must be able to communicate directly with Deendoon's recovery team about a submitted Request. | Supports clarification and information exchange without the business losing context on its own case. | BG-004, BG-005 · BP-011 · Professional Collection Requests |
+| BR-042 | The Deendoon Super Admin must be able to review, accept or request more information on, and progress submitted Requests to a final outcome. | Enables Deendoon to act on hand-off cases in a structured, accountable way, using the same Super Admin Web Panel already approved for platform administration. | BG-001, BG-004 · BP-011 · Professional Collection Requests |
+
 ---
 
 ## 2.6 Business Constraints
@@ -177,6 +189,7 @@ Each requirement is Mandatory for Version 1 unless stated otherwise, per the Fea
 | BC-006 | Version 1 assumes generally available network connectivity; full offline operation is out of scope. | 01 §1.7 |
 | BC-007 | Credit Score in Version 1 must be derived from deterministic business rules only; AI/ML-based scoring is out of scope. | 01 §1.7 |
 | BC-008 | Backup recovery in Version 1 is an operational/infrastructure responsibility, not a self-service user capability. | 01 §1.7 |
+| BC-009 | Submitting a Collection Case as a Professional Collection Request never removes the business's own visibility into that case; the business retains its Collection Case record and history regardless of Request status. | 01 §1.8, Professional Collection Request Channel |
 
 ---
 
@@ -194,6 +207,7 @@ Business-level indicators used to judge whether Version 1 is achieving its goals
 | SM-006 | Active Collection Cases | Measures formal escalation workload. | BG-004 · Executive KPI Cards |
 | SM-007 | Average Days to Recover Debt | Measures how quickly debts move from overdue to recovered, directly evidencing progress on time-to-recovery. | BG-002 · Debt Status; Recovery Stage |
 | SM-008 | Promise Fulfillment Rate | Measures the proportion of Promise to Pay commitments that are honored, evidencing the reliability of that recovery channel. | BG-001, BG-002 · Promise to Pay |
+| SM-009 | Professional Collection Requests Resolved | Measures how many hand-off cases reach a final outcome (Recovered/Closed), evidencing the value of the escalation channel itself. | BG-001, BG-004 · Professional Collection Requests |
 
 ---
 
@@ -209,6 +223,7 @@ Stated here at business-policy level only. Detailed logic, thresholds, formulas,
 | BRL-004 | Archived records are excluded from default operational views but are never permanently removed, and remain subject to role-based visibility in search and reporting. | 04, 08 |
 | BRL-005 | Duplicate customer detection is advisory; it must never prevent a new customer record from being created once the user confirms it is not a duplicate. | 04 |
 | BRL-006 | Risk Level, Credit Score, Customer Status, and Debt Status are independently maintained; a change to one must not automatically overwrite another. | 04 |
+| BRL-077 | A Professional Collection Request follows a fixed status sequence from Submitted through a terminal outcome (Recovered or Closed); the submitting business retains full visibility and a conversation thread throughout, regardless of status. | 04 |
 
 ---
 
@@ -249,6 +264,8 @@ Stated here at business-policy level only. Detailed logic, thresholds, formulas,
 | BR-036 | BG-007, BG-008 | BP-002 | Auto Numbering |
 | BR-037 | BG-008 | BP-010 | Customer Import |
 | BR-038 | BG-007, BG-008 | BP-010 | Duplicate Customer Detection |
+| BR-039 – BR-041 | BG-001, BG-004, BG-005 | BP-011 | Professional Collection Requests |
+| BR-042 | BG-001, BG-004 | BP-011 | Professional Collection Requests |
 
 ---
 

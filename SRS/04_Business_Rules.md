@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-04 |
 | **Document Title** | Business Rules |
-| **Version** | 1.0 |
-| **Status** | Draft — Pending Review |
+| **Version** | 1.3 |
+| **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Approved) · `02_Business_Requirements.md` (Approved) · `03_Functional_Requirements.md` (Approved) |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (Module 7 reopened, v1.7) |
 
 ---
 
@@ -19,6 +19,9 @@
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: 70 Business Rules (BRL-007–BRL-076) across 11 sections, 4 state transition matrices, consolidated calculation/validation rules, configuration policy, consistency validation, and Deferred Decisions register. | Claude |
 | 1.0 | 2026-07-24 | Correction pass: removed 8 out-of-scope Deferred Decisions (former DD-020 Refund, DD-029 External Collection Agencies, DD-030 Legal Escalation, DD-034 Watermarking, DD-035 Digital Signature, DD-037 Legal Notice Wording, DD-041 Export Size Limits, DD-047 Logo File Constraints) without replacement; renumbered remaining Deferred Decisions sequentially to DD-001–DD-041 and updated every internal cross-reference; trimmed BRL-044, BRL-052, BRL-058, BRL-062, BRL-073 to remove now-out-of-scope content and redirect jurisdiction (NFR/UI) where applicable; corrected BRL-031 so Recovery Stage transitions are driven only by approved business events, never by document generation; clarified BRL-012's Default Credit Limit reference to Module 12 System Preferences. No Functional Requirement, Business Requirement, or approved scope was changed; Business Rule numbering (BRL-xxx) is unchanged. | Claude |
+| 1.1 | 2026-07-24 | **Reopened — intentional scope change.** Added Business Rules for Professional Collection Requests (hand-off to Deendoon's own recovery team): BRL-078–BRL-082, a new "Professional Collection Request Status" state transition matrix, and Deferred Decisions DD-042–DD-046. Amended BRL-052 to remove the "external collection agencies are outside Version 1 scope" clause (superseded — this is precisely what was just approved) while explicitly preserving its "legal escalation remains outside Version 1 scope" clause, which this reopening does not touch. No other Business Rule was altered. | Claude |
+| 1.2 | 2026-07-24 | **Correction to 1.1.** Removed the invented "Deendoon Recovery Specialist" actor from BRL-079 and the Professional Collection Request Status transition matrix — all transitions are now attributed to the **Deendoon Super Admin**, the already-approved Deendoon Platform Administrator actor, via the already-approved Super Admin Web Panel. Removed the now-resolved former DD-044 ("Deendoon-side actor/permission model") entirely, without replacement, and renumbered DD-045–DD-047 to DD-044–DD-046, updating every cross-reference in BRL-080/081/082 and the Deferred Decisions table. No other Business Rule was altered. | Claude |
+| 1.3 | 2026-07-24 | Clarified, in BRL-079's Rule Statement and the Professional Collection Request Status transition matrix note, that "Assigned" means the Deendoon Super Admin has accepted ownership of the Request and started handling it — not assignment to another system user, role, or team. Any coordination with other Deendoon staff is manual and outside the system. | Claude |
 
 ---
 
@@ -464,7 +467,7 @@ These six rules are frozen and restated here for reference only; they are not mo
 
 ---
 
-## 7. Collection Rules
+## 7. Collection Rules (including Professional Collection Requests)
 
 ### BRL-045 — Collection Case Creation Trigger
 - **Purpose:** Confirm the entry condition for Collection Case creation.
@@ -537,12 +540,62 @@ These six rules are frozen and restated here for reference only; they are not mo
 ### BRL-052 — Abandoned Cases and Maximum Collection Duration
 - **Purpose:** Consolidate two related, entirely unspecified collection-governance questions.
 - **Applies To:** Professional Collection (Module 7).
-- **Rule Statement:** **Not resolved in this document**, for both: (a) handling of Collection Cases with no activity over an extended period; (b) any maximum allowable collection duration. Hand-off to third-party/external collection agencies and a distinct legal-escalation process are outside approved Version 1 scope — Version 1 defines Legal Notice only as a Demand Letter template (Module 8), with no Legal Workflow, Legal Case, or external-agency hand-off — and neither is tracked as a Deferred Decision.
+- **Rule Statement:** **Not resolved in this document**, for both: (a) handling of Collection Cases with no activity over an extended period; (b) any maximum allowable collection duration. A distinct legal-escalation process remains outside approved Version 1 scope — Version 1 defines Legal Notice only as a Demand Letter template (Module 8), with no Legal Workflow or Legal Case — and is not tracked as a Deferred Decision. **Superseded:** hand-off to an external party was previously noted here as out of scope; it is now an approved Version 1 capability — see Professional Collection Requests, BRL-078 through BRL-082.
 - **Trigger:** N/A — see Deferred Decisions.
 - **Result:** N/A.
 - **Exceptions:** N/A.
 - **Related Functional Requirements:** FR-040 through FR-046 (general).
 - **Notes:** See DD-026 and DD-027.
+
+### BRL-078 — Professional Collection Request Submission Eligibility
+- **Purpose:** Define when a Collection Case may be submitted to Deendoon's recovery team.
+- **Applies To:** Professional Collection Request Submission (FR-072).
+- **Rule Statement:** A Collection Case may be submitted as a Professional Collection Request only while it is Open and has no other active Request already pending against it (mirrors BRL-048's duplicate-prevention pattern). Submission does not change the Collection Case's own status (Open/Closed, BRL-050) — the Case and the Request are tracked independently.
+- **Trigger:** User selects "Submit Case to Deendoon" on an open Collection Case.
+- **Result:** Request created with status Submitted.
+- **Exceptions:** Case Closed → submission rejected (FR-072, E2). Case already has an active Request → **not resolved**, see DD-042.
+- **Related Functional Requirements:** FR-072.
+- **Notes:** See DD-042.
+
+### BRL-079 — Professional Collection Request Status Transition Matrix
+- **Purpose:** Govern how a Request moves between statuses.
+- **Applies To:** Professional Collection Request Status Tracking (FR-073).
+- **Rule Statement:** The approved status set is: Submitted, Under Review, Need More Information, Accepted, Assigned, In Progress, Recovered, Closed. Submitted → Under Review is the only entry transition. Need More Information ⇄ Under Review may cycle. Recovered and Closed are terminal. All transitions are performed by the Deendoon Super Admin — the already-approved Deendoon Platform Administrator actor, via the already-approved Deendoon Super Admin Web Panel. No new actor, role, or permission model is introduced; Version 1 has exactly two application interfaces and this capability lives entirely within the second one. **"Assigned" definition:** this status does not mean assignment to another system user, role, or team. It means the Deendoon Super Admin has accepted ownership of the Request and started handling it. Any coordination with other Deendoon staff happens manually, outside the system, and is not represented by additional users, roles, or dashboards. **Not resolved:** the complete permitted/forbidden transition matrix beyond this named sequence (e.g., whether Under Review can go directly to Closed without Accepted).
+- **Trigger:** The Deendoon Super Admin actions a Request.
+- **Result:** Status updated per the transition; tenant view (FR-074) reflects it without tenant action.
+- **Exceptions:** Transition outside the approved sequence → rejected (FR-073, E1).
+- **Related Functional Requirements:** FR-073, FR-076.
+- **Notes:** See DD-043 (full matrix).
+
+### BRL-080 — Professional Collection Request Conversation Rules
+- **Purpose:** Govern messaging between the submitting business and the Deendoon Super Admin.
+- **Applies To:** Professional Collection Request Conversation (FR-075).
+- **Rule Statement:** Either party may post a message at any time while the Request is active (Submitted through In Progress). Every message is attributable (BRL-003: sender, timestamp, content) and immutable once posted — no edit or delete capability exists, consistent with the Audit Trail's own immutability principle (BRL-076). **Not resolved:** whether messaging remains available after a terminal outcome (Recovered/Closed).
+- **Trigger:** Either party posts a message.
+- **Result:** Message recorded; other party notified (Module 10, consumption-only).
+- **Exceptions:** N/A for the resolved part.
+- **Related Functional Requirements:** FR-075.
+- **Notes:** See DD-044.
+
+### BRL-081 — Professional Collection Request Numbering
+- **Purpose:** Confirm the Auto Numbering format for Professional Collection Requests.
+- **Applies To:** Professional Collection Request Submission (FR-072).
+- **Rule Statement:** Extends BR-036 (previously five Auto-Numbered entities: Debt, Receipt, Demand Letter, Statement, Collection Case) to a sixth: Professional Collection Request. A `PCR-000001` format is proposed, consistent with the existing prefix-plus-sequential-digits convention (BRL-053), but is **not yet formally confirmed**.
+- **Trigger:** Request created (FR-072).
+- **Result:** Request assigned a unique identifier once the format is confirmed.
+- **Exceptions:** N/A.
+- **Related Functional Requirements:** FR-072.
+- **Notes:** See DD-045.
+
+### BRL-082 — Relationship Between Request Closure and Collection Case Closure
+- **Purpose:** Determine whether closing a Professional Collection Request affects the underlying Collection Case.
+- **Applies To:** Professional Collection Request Outcome & Closure (FR-076); Collection Case Closure (FR-045).
+- **Rule Statement:** **Not resolved in this document.** Following the same reasoning already established for Collection Case closure never implying a payment (BRL-050), this document does not assume that closing a Request automatically closes its linked Collection Case, or vice versa — that coupling (or its absence) must be an explicit decision, not a silent inference.
+- **Trigger:** N/A — see Deferred Decisions.
+- **Result:** N/A.
+- **Exceptions:** N/A.
+- **Related Functional Requirements:** FR-045, FR-076.
+- **Notes:** See DD-046.
 
 ---
 
@@ -842,6 +895,20 @@ Per BRL-031, this mapping is a reasoned derivation from the approved Recovery Ti
 
 Only two states are confirmed to exist (Open, Closed); the initial status value (DD-020) and the full closure-outcome value set (DD-024) remain pending, so this matrix is intentionally minimal rather than asserting undecided detail.
 
+### Professional Collection Request Status *(added — reopened scope)*
+| From ↓ / To → | Under Review | Need More Information | Accepted | Assigned | In Progress | Recovered | Closed |
+|---|---|---|---|---|---|---|---|
+| Submitted | ✅ | — | — | — | — | — | — |
+| Under Review | — | ✅ | ✅ | ❓ DD-043 | ❓ DD-043 | — | ❓ DD-043 |
+| Need More Information | — | — | ✅ (back to Under Review shown as re-entry) | — | — | — | — |
+| Accepted | — | — | — | ✅ | — | — | — |
+| Assigned | — | — | — | — | ✅ | — | — |
+| In Progress | — | — | — | — | — | ✅ | ✅ |
+| Recovered | — | — | — | — | — | — | — |
+| Closed | — | — | — | — | — | — | — |
+
+Recovered and Closed are terminal. Cells marked ❓ are not confirmed either way (BRL-079, DD-043) — this matrix asserts only the named sequence from BR-039–042/FR-073, not a fully resolved graph. Every transition is performed by the Deendoon Super Admin — the already-approved Deendoon Platform Administrator actor; no new actor or permission model is introduced. **"Assigned" does not mean assignment to another system user** — it means the Super Admin has accepted ownership of the Request and started handling it (BRL-079). Any coordination with other Deendoon staff is manual and outside the system.
+
 ---
 
 ## Calculation Rules
@@ -871,6 +938,7 @@ Only two states are confirmed to exist (Open, Closed); the initial status value 
 | Debt | Amount (> 0), Due Date | Notes | Debt Status: 7 approved values (BRL-021) | Negative/zero amount, invalid date → reject (FR-017, E1) |
 | Payment | Amount (> 0), Date, Debt reference | Payment Method (pending catalog, DD-019), reference notes | N/A | Non-positive/non-numeric amount → reject (FR-034 validation) |
 | Collection Case | Debt reference (exactly one) | Assigned Officer, Notes & Attachments | Status: Open/Closed (initial value pending, DD-020; outcome set pending, DD-024) | Attempt to reference more than one Debt → not supported (BRL-038) |
+| Professional Collection Request *(added)* | Collection Case reference (exactly one) | Conversation messages | Status: Submitted…Recovered/Closed (full matrix pending, DD-043) | Submission against a Closed Case → rejected (FR-072, E2); duplicate active Request → not resolved (DD-042) |
 | User Account | Identifier (email or username, per tenant config), name | Contact details | Role: 6 approved values (Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer) | Missing required field → reject (FR-066, E2); invalid Role → reject (FR-067, E2) |
 
 ---
@@ -983,6 +1051,11 @@ Every rule above either formalizes mechanics already implied by an approved FR/B
 | DD-039 | Whether a user may hold more than one Role simultaneously | Not specified | FR-067 |
 | DD-040 | Validation ranges (min/max) for each System Preference | Not specified | FR-069 |
 | DD-041 | Handling of removing an in-use Lookup & Reference Data value | Not specified | FR-070 |
+| DD-042 | Handling of a duplicate active Professional Collection Request against the same Collection Case (reject vs. surface existing) | Not specified | FR-072 |
+| DD-043 | Full Professional Collection Request status transition matrix beyond the named sequence | Not specified | FR-073 |
+| DD-044 | Whether Request Conversation remains available after a terminal outcome (Recovered/Closed) | Not specified | FR-075 |
+| DD-045 | Professional Collection Request Auto Numbering format confirmation (`PCR-000001` proposed) | Not yet formally confirmed | FR-072 |
+| DD-046 | Relationship between Professional Collection Request closure and the linked Collection Case's own closure (coupled vs. independent) | Not specified | FR-045, FR-076 |
 
 ---
 

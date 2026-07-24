@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-01 |
 | **Document Title** | Project Overview |
-| **Version** | 1.1 |
-| **Status** | Approved |
+| **Version** | 1.3 |
+| **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
 | **Last Updated** | 2026-07-24 |
@@ -19,6 +19,8 @@
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: Purpose through Definitions and Glossary | Claude |
 | 1.1 | 2026-07-24 | Documentation polish pass: naming clarification for Customer Mobile App, Reminder Engine/Promise-to-Pay clarification, Notification Center consumption-only clarification, Global Search RBAC-awareness, Archive/search-visibility clarification, added glossary entries (Collection Case, Tenant, Company/Business), added document metadata and Revision History/References sections. No business logic or scope changes. Approved by Product Owner. | Claude |
+| 1.2 | 2026-07-24 | **Reopened — intentional scope change.** Added Professional Collection Requests (hand-off of a Collection Case to Deendoon's own recovery team) as an approved Version 1 capability: new Target User (Deendoon Recovery Specialist), Scope of Version 1 addition, High-Level System Overview addition, and glossary entry. This is the first Version 1 capability that crosses tenant boundaries (Deendoon acting as a service provider to its own customers), distinct from every other approved capability, which is single-tenant-scoped. No other approved content changed. | Claude |
+| 1.3 | 2026-07-24 | **Correction to 1.2.** Removed the invented "Deendoon Recovery Specialist" actor — Version 1 has exactly two application interfaces (Customer Mobile App, Deendoon Super Admin Web Panel) and no additional internal roles, portals, or dashboards. Professional Collection Requests are instead handled entirely by the already-approved Deendoon Platform Administrator (Super Admin), via the already-approved Super Admin Web Panel. Also reverted an earlier mischaracterization of that actor as "tenant-scoped" — it operates at the true platform level, which is what makes reviewing requests from any tenant possible without inventing a new actor. Any further coordination among Deendoon's own staff happens manually, outside the system, and is not modeled. | Claude |
 
 ---
 
@@ -97,7 +99,7 @@ Deendoon addresses each of these directly through its Version 1 feature set (Sec
 | **Support Staff** | Limited operational access to assist customers/business owners; not a financial decision-maker. |
 | **Viewer** | Read-only access, typically for oversight or audit purposes. |
 | **Customer (Debtor)** | Receives reminders and communications (WhatsApp/SMS/Call) and may interact with receipts/statements shared with them. Not a system login role in Version 1 beyond what is explicitly defined in later documents. |
-| **Deendoon Platform Administrator** | Operates the Deendoon Super Admin Web Panel at the platform level: system configuration, template management, user/role administration. |
+| **Deendoon Platform Administrator (Super Admin)** | Operates the Deendoon Super Admin Web Panel at the true platform level — across the whole Deendoon platform, not scoped to one tenant. Distinct from the six tenant-scoped RBAC roles (`08_Security_and_RBAC.md`). Handles system configuration, template management, user/role administration, and — as of this reopening — reviews and actions Professional Collection Requests submitted by any tenant business. This is the only actor involved on Deendoon's side; no separate role or staff group is modeled in Version 1. If the Super Admin needs another Deendoon colleague's input, that coordination happens manually, outside the system. |
 
 > **Naming clarification:** "Customer Mobile App" is the application used by Deendoon's own paying customers — i.e., the business owners and their staff listed above. It is **not** used by the business owner's own customers (debtors), who are referred to elsewhere in this document simply as "Customers" within the Debt Register context. This naming collision is inherited from the approved Feature Freeze terminology and is not being renamed here; this note exists solely to prevent misreading in subsequent SRS documents.
 
@@ -110,7 +112,7 @@ Exact permissions per role are defined in **08_Security_and_RBAC.md**.
 The following feature set is **frozen** per the Version 1 Feature Freeze and forms the mandatory scope of this SRS. Detailed behavior for each is specified in **03_Functional_Requirements.md** and **04_Business_Rules.md**.
 
 **Core Recovery Workflow**
-Debt Register · Smart Daily Reminder · Business Rule Recovery Automation · Manual WhatsApp · Manual SMS · Call Reminder · Promise to Pay · Payment Tracking · Follow-up History · Professional Collection · Recovery Timeline · Recovery Stage (with audited Override)
+Debt Register · Smart Daily Reminder · Business Rule Recovery Automation · Manual WhatsApp · Manual SMS · Call Reminder · Promise to Pay · Payment Tracking · Follow-up History · Professional Collection · Professional Collection Requests (hand-off to the Deendoon Super Admin) *(new)* · Recovery Timeline · Recovery Stage (with audited Override)
 
 **Risk & Financial Intelligence**
 Risk Levels (qualitative) · Credit Score (quantitative, rule-based) · Credit Limit Management · Customer Status · Debt Status
@@ -157,6 +159,7 @@ Deendoon is a multi-client SaaS system consisting of:
 - **Document Generation Service** — produces Demand Letters, Digital Receipts, and Statements of Account as PDFs from configurable templates.
 - **Reporting & Analytics Layer** — powers Aging Analysis, Executive KPI Cards, and report exports.
 - **Platform Services** — Auto Numbering, Audit Trail, Role-Based Access Control, Soft Delete/Archive, and Automated Backups, consumed across all modules.
+- **Professional Collection Request Channel** *(new)* — the one cross-tenant workflow in Version 1. A tenant submits a Collection Case (Module 7) to the Deendoon Super Admin, via the already-approved Deendoon Super Admin Web Panel, for direct handling; the tenant retains full visibility and a conversation thread throughout. No new actor, role, portal, or dashboard is introduced — Version 1 has exactly two application interfaces (Customer Mobile App and Deendoon Super Admin Web Panel), and this capability is handled entirely within the second one by the Deendoon Platform Administrator already described above. If the Super Admin chooses to involve other Deendoon staff, that coordination happens manually, outside the system, and is not tracked here.
 
 Detailed architecture, data flow, and entity relationships are specified in **06_Database_Design.md** and **07_API_Design.md**.
 
@@ -194,6 +197,7 @@ These principles govern how every subsequent SRS document should resolve ambigui
 | **Customer Status** | The lifecycle/relationship status of a customer: Active, Good Standing, Late Payer, High Risk, In Collection, Recovered, Blocked. |
 | **Promise to Pay** | A logged commitment by a customer to pay by a specific date. |
 | **Professional Collection** | The formal escalation workflow and case management for debts requiring structured recovery action, including Demand Letter generation. |
+| **Professional Collection Request** *(new)* | A tenant's submission of an open Collection Case to the Deendoon Super Admin, via the Deendoon Super Admin Web Panel, for direct, hands-on handling. Distinct from Professional Collection itself (which is the business's internal case management) — this is a hand-off *out* of the tenant's own operation and into Deendoon's. Handled entirely by the existing Deendoon Platform Administrator actor; no new role, staff group, or interface is introduced. The tenant retains visibility and a conversation thread throughout; submitting a Request does not remove the underlying Collection Case from the tenant's own view. |
 | **Follow-up History** | The chronological log of all recovery-related actions taken on a debt or customer. |
 | **Business Rule Recovery Automation** | The rule engine that drives Smart Daily Reminder scheduling, Credit Score calculation, and Recovery Stage progression. |
 | **Smart Daily Reminder** | The automated reminder engine that schedules and triggers WhatsApp/SMS/Call reminders — including Promise to Pay due-date reminders — based on configured recovery policy. |

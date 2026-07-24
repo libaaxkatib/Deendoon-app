@@ -4,8 +4,8 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.4 (In Progress) |
-| **Status** | Draft — Modules 1–11 Approved; Module 12 of 12 (final) Submitted for Review |
+| **Version** | 1.7 (In Progress) |
+| **Status** | Reopened — Module 7 amended for Professional Collection Requests; Module 12 still awaiting its original approval (see Revision History 1.5) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
 | **Last Updated** | 2026-07-24 |
@@ -31,6 +31,9 @@
 | 1.2 | 2026-07-24 | Module 9 approved and frozen. Module 10 — Notifications & Calendar drafted for review (FR-058–FR-062). Excluded Email as an unapproved channel; scoped SMS/WhatsApp strictly to Module 5's already-approved ownership, implementing this module as in-app-only per the frozen Notification Center definition in `01_Project_Overview.md`. | Claude |
 | 1.3 | 2026-07-24 | Module 10 approved and frozen. Module 11 — Search & Productivity drafted for review (FR-063–FR-065). Excluded Saved Views, Recent Activity, and Favorites as unapproved Version 1 scope; implemented Quick Actions (approved) in place of "Quick Navigation"; flagged a pre-existing traceability gap (Quick Actions has no dedicated BR in `02_Business_Requirements.md`). | Claude |
 | 1.4 | 2026-07-24 | Module 11 approved and frozen. Module 12 — Administration & Settings drafted for review (FR-066–FR-071), the final module. Added FR-071 (Audit Trail Viewing) beyond the suggested numbering to close a coverage gap: BR-030 was never implemented as a viewable capability in any prior module. Corrected an erroneous "Module 13" reference in the request — Module 12 is the last of 12. | Claude |
+| 1.5 | 2026-07-24 | **Reopened — intentional scope change.** Module 7 amended to add Professional Collection Requests (hand-off to Deendoon's own recovery team): FR-072–FR-076, updated Scope Boundary, updated Traceability Summary, and updated Open Items (former Open Item #7 "External collection agencies" is now resolved/removed rather than left contradictory; remaining items renumbered 1–10). No other module was modified. **Self-correction:** an earlier status summary of this document (given verbally during the Guardian status check) stated Module 12 was "Approved & Frozen" — this was inaccurate. Module 12 was only ever "Submitted for Review"; no explicit approval was recorded for it. That approval remains outstanding, independent of this reopening, and should be resolved before this document is considered fully frozen. | Claude |
+| 1.6 | 2026-07-24 | **Correction to 1.5.** Removed the invented "Deendoon Recovery Specialist" actor throughout Module 7 (FR-072–FR-076, Scope Boundary). All Professional Collection Request review, status transitions, conversation, and closure are now attributed to the **Deendoon Super Admin** — the same, already-approved Deendoon Platform Administrator actor operating the existing Deendoon Super Admin Web Panel. No new role, queue, portal, or dashboard is introduced. Removed the now-resolved Open Item on "Deendoon-side actor/permission model" and renumbered the remaining Open Items (1–15). | Claude |
+| 1.7 | 2026-07-24 | Clarified, wherever the "Assigned" Professional Collection Request status is described (FR-073 Main Flow, Open Item 13), that it means the Deendoon Super Admin has accepted ownership of the Request and started handling it — not assignment to another system user, role, or team. Any coordination with other Deendoon staff is manual and outside the system. | Claude |
 
 ---
 
@@ -50,7 +53,7 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 4 | Credit & Risk Management | Approved |
 | 5 | Recovery Workflow | Approved |
 | 6 | Payment Tracking | Approved |
-| 7 | Professional Collection | Approved |
+| 7 | Professional Collection | Reopened — amended for Professional Collection Requests, pending re-approval |
 | 8 | Documents | Approved |
 | 9 | Reporting & Analytics | Approved |
 | 10 | Notifications & Calendar | Approved |
@@ -1482,9 +1485,11 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ## 1. Functional Overview
 
-This module specifies the formal escalation path a Debt follows once the standard Recovery Workflow (Module 5) determines it is eligible for structured collection action. It governs the **Collection Case** — its creation, assignment to a Collection Officer, progress tracking, activity recording, and closure.
+This module specifies the formal escalation path a Debt follows once the standard Recovery Workflow (Module 5) determines it is eligible for structured collection action. It governs the **Collection Case** — its creation, assignment to a Collection Officer, progress tracking, activity recording, and closure — and, as of this reopening, the **Professional Collection Request**: the tenant's hand-off of an open Collection Case to the Deendoon Super Admin (FR-072–FR-076).
 
 Professional Collection is a case-management layer over an existing Debt; it does not own the Debt, the Customer, payments, receipts, or Credit Score. It reacts to state owned elsewhere (Recovery Stage, Debt Status, payment events) and contributes its own activity back into the shared Follow-up History and Recovery Timeline without duplicating ownership of either.
+
+**Cross-tenant note:** Everything in this module prior to FR-072 is single-tenant-scoped, consistent with every other approved Version 1 capability. Professional Collection Requests (FR-072–FR-076) are the first exception — they cross the tenant boundary into Deendoon's own operation. This module specifies the **tenant-facing** side of that hand-off (submit, track, converse) in full, plus the review/action side, both performed by the **Deendoon Super Admin** — the same Deendoon Platform Administrator actor already approved for the Super Admin Web Panel (Module 12). No new actor, role, portal, or dashboard is introduced: Version 1 has exactly two application interfaces (Customer Mobile App, Deendoon Super Admin Web Panel), and this capability is handled entirely within the second one. If the Super Admin chooses to involve other Deendoon staff, that coordination happens manually, outside the system, and is not modeled here.
 
 ## Scope Boundary
 
@@ -1509,6 +1514,11 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 | FR-044 | The system shall allow an authorized user to record a collection activity against a Collection Case. | BR-014, BR-010 |
 | FR-045 | The system shall allow an authorized user to close a Collection Case with a recorded outcome. | BR-014 |
 | FR-046 | The system shall allow an authorized user to view the chronological history of a Collection Case. | BR-010, BR-014 |
+| FR-072 | The system shall allow an authorized user to submit an open Collection Case as a Professional Collection Request to Deendoon's own recovery team. | BR-039 |
+| FR-073 | The system shall track a Professional Collection Request through its status sequence from Submitted to a terminal outcome. | BR-040, BR-042 |
+| FR-074 | The system shall allow an authorized user to view their submitted Professional Collection Requests and their status. | BR-040 |
+| FR-075 | The system shall allow the submitting business and Deendoon's recovery team to exchange messages on a Professional Collection Request. | BR-041 |
+| FR-076 | The system shall allow Deendoon's recovery team to record a final outcome and close a Professional Collection Request. | BR-042 |
 
 ---
 
@@ -1707,6 +1717,142 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 
 ---
 
+### FR-072 — Submit Professional Collection Request
+
+**Preconditions**
+- The Collection Case exists and is Open; it does not already have an active Professional Collection Request.
+- User is authenticated and holds permission to submit hand-off requests.
+
+**Triggers**
+- User selects "Submit Case to Deendoon" on an open Collection Case.
+
+**Main Flow**
+1. User selects an open Collection Case and initiates "Submit Case to Deendoon."
+2. System creates a Professional Collection Request referencing exactly one Collection Case (and, transitively, exactly one Debt) — mirroring the one-Debt-per-Case cardinality already established for Collection Cases (Scope Boundary).
+3. System sets the Request's status to **Submitted**.
+4. System assigns the Request a unique identifier (exact Auto Numbering format confirmed in `04_Business_Rules.md`; see Open Items).
+5. System records a **Professional Collection Request Submitted** event in the Audit Trail (a new event type — distinct from the existing **Collection Requested** event, which denotes internal escalation to Professional Collection, Module 7 FR-040, not a hand-off to Deendoon).
+6. The Request becomes visible in the tenant's Professional Collection Requests view (FR-074) and to the Deendoon Super Admin within the Deendoon Super Admin Web Panel (Module 12), for review.
+
+**Alternate Flows**
+- **A1 — Collection Case already has an active Request:** A duplicate Request is not created; exact handling (reject vs. surface the existing Request) confirmed in `04_Business_Rules.md`.
+
+**Exceptions**
+- **E1 — User lacks permission to submit:** Action is not available.
+- **E2 — Collection Case is Closed:** Submission is not permitted; the Case must be Open.
+
+**Business Rule References:** BR-039; BC-009 (submission never removes the business's own visibility into the Case). Auto Numbering format and duplicate-submission handling deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `POST /collection-cases/{id}/professional-requests` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** ProfessionalCollectionRequest, CollectionCase, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-072.
+
+---
+
+### FR-073 — Professional Collection Request Status Tracking
+
+**Preconditions**
+- A Professional Collection Request exists.
+
+**Triggers**
+- The Deendoon Super Admin transitions the Request's status via the Deendoon Super Admin Web Panel.
+
+**Main Flow**
+1. The Deendoon Super Admin reviews a submitted Request within the Deendoon Super Admin Web Panel (Module 12) — the same interface and actor already approved for platform administration; no separate queue or tooling is introduced.
+2. The Super Admin transitions the Request through the approved status sequence: Submitted → Under Review → (optionally, one or more cycles of) Need More Information ⇄ Under Review → Accepted → Assigned → In Progress → a terminal outcome of Recovered or Closed. **"Assigned" does not mean assignment to another system user.** It means the Deendoon Super Admin has accepted ownership of the Request and started handling it. Any coordination with other Deendoon staff happens manually, outside the system, and is not represented by additional users, roles, or dashboards.
+3. Each status change is reflected in the tenant's Professional Collection Requests view (FR-074) without requiring the tenant to take any action.
+4. System records a **Professional Collection Request Status Changed** event in the Audit Trail.
+
+**Alternate Flows**
+- **A1 — Need More Information:** The Request cycles back to the submitting business for clarification via the Request Conversation (FR-075) before returning to Under Review. Whether this may cycle more than once is not limited by this FR.
+
+**Exceptions**
+- **E1 — Attempted transition outside the approved sequence:** Rejected; exact full transition matrix confirmed in `04_Business_Rules.md`.
+
+**Business Rule References:** BR-040, BR-042; BRL-077 (02, high-level). All transitions are performed by the Deendoon Platform Administrator (Super Admin) — an actor already approved and distinct from the six tenant RBAC roles; no new actor or permission model is introduced. Full transition matrix confirmed in `04_Business_Rules.md` (see Open Items).
+**Related APIs (reference only):** `PATCH /professional-requests/{id}/status` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** ProfessionalCollectionRequest, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-073.
+
+---
+
+### FR-074 — Professional Collection Request List & History (Tenant-Facing)
+
+**Preconditions**
+- User holds view permission.
+
+**Triggers**
+- User views the Professional Collection Requests widget/list.
+
+**Main Flow**
+1. User views their business's submitted Requests: linked Case, current Status, Submitted Date.
+2. User selects a Request to view its full status history and conversation (FR-075).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — No Requests submitted:** System displays an empty-result state.
+
+**Business Rule References:** BR-040; BC-009 (the underlying Collection Case and its own history, per FR-046, remain independently visible regardless of Request status).
+**Related APIs (reference only):** `GET /professional-requests` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** ProfessionalCollectionRequest, CollectionCase — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-074.
+
+---
+
+### FR-075 — Professional Collection Request Conversation
+
+**Preconditions**
+- A Professional Collection Request exists.
+
+**Triggers**
+- The submitting business or the Deendoon Super Admin posts a message on a Request.
+
+**Main Flow**
+1. Either party — the submitting business's authorized user, or the Deendoon Super Admin — posts a message within the Request's dedicated conversation thread.
+2. System records the message with sender, timestamp, and content.
+3. System notifies the other party of the new message via the Notification Center (Module 10; consumption-only, not restated here).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Request is Closed or Recovered (terminal):** Whether the conversation becomes read-only or remains open is not specified — deferred to `04_Business_Rules.md` (see Open Items).
+
+**Business Rule References:** BR-041; BRL-003 (attributable action) applies to each message.
+**Related APIs (reference only):** `GET /professional-requests/{id}/messages`, `POST /professional-requests/{id}/messages` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** ProfessionalCollectionRequest, RequestMessage — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-075.
+
+---
+
+### FR-076 — Professional Collection Request Outcome & Closure
+
+**Preconditions**
+- A Professional Collection Request is In Progress (or otherwise active, per FR-073).
+
+**Triggers**
+- The Deendoon Super Admin records a final outcome (Recovered or Closed).
+
+**Main Flow**
+1. The Deendoon Super Admin sets the Request's final outcome.
+2. System records the Request as Recovered or Closed.
+3. System records a **Professional Collection Request Status Changed** event in the Audit Trail (terminal transition).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Relationship to the underlying Collection Case's own closure (Module 7, FR-045):** Not specified — whether closing a Request automatically closes the linked Collection Case, or whether the two are closed independently, is deferred to `04_Business_Rules.md` (see Open Items). This FR does not assume automatic coupling, consistent with the existing architecture principle that "Closing a Collection Case must never imply automatic payment" and, by the same reasoning, should not silently imply another module's closure without an explicit rule.
+
+**Business Rule References:** BR-042; relationship to Collection Case closure deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `POST /professional-requests/{id}/close` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** ProfessionalCollectionRequest, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-076.
+
+---
+
 ## Module 7 — Traceability Summary
 
 | FR | Business Requirement(s) | Related Modules |
@@ -1718,6 +1864,11 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 | FR-044 | BR-014, BR-010 | Module 3 (Recovery Timeline); Module 5 (Follow-up History); Module 6 (payment event consumption); Module 8 (Documents) |
 | FR-045 | BR-014 | Module 6 (Payment Tracking — separate, not implied) |
 | FR-046 | BR-010, BR-014 | Module 3 (Recovery Timeline); Module 5 (Follow-up History); Module 9 (Reporting) |
+| FR-072 | BR-039 | Module 12 (Auto Numbering pattern) |
+| FR-073 | BR-040, BR-042 | Module 10 (Notifications — status-change visibility) |
+| FR-074 | BR-040 | — |
+| FR-075 | BR-041 | Module 10 (Notifications — new-message visibility) |
+| FR-076 | BR-042 | Module 6 (Payment Tracking — no implied coupling, per FR-045's existing principle) |
 
 ---
 
@@ -1731,17 +1882,21 @@ The following behaviors are not addressed in the approved Feature Freeze or Busi
 4. **Closure policy and outcome value set (FR-045):** The Feature Freeze approved "Recovered" as a Recovery Timeline/Stage endpoint but never enumerated a full Collection Case closure-outcome value set (e.g., Recovered, Unresolved, Written Off).
 5. **Abandoned Collection Cases:** No handling for cases with no activity over an extended period is specified.
 6. **Maximum collection duration:** Not specified.
-7. **External collection agencies:** Not addressed anywhere in the Feature Freeze; no hand-off-to-third-party functionality is implied or included here.
-8. **Legal escalation as a distinct process:** The approved scope includes a "Legal Notice" Demand Letter template (Module 8), but no distinct legal-escalation case status or workflow beyond that document is defined.
-9. **Duplicate Collection Case handling (FR-040, A1):** Not specified whether a second escalation attempt against an already-escalated Debt is rejected or redirected to the existing case.
-10. **Reopening a Closed Collection Case (FR-043, E3; FR-044, E2):** Not specified whether this is possible.
-11. **Initial Collection Case status at creation (FR-040):** Not specified.
+7. **Legal escalation as a distinct process:** The approved scope includes a "Legal Notice" Demand Letter template (Module 8), but no distinct legal-escalation case status or workflow beyond that document is defined. (External collection agency hand-off, previously listed here as out of scope, is now resolved by FR-072–FR-076 and removed from this list rather than left as a contradictory entry.)
+8. **Duplicate Collection Case handling (FR-040, A1):** Not specified whether a second escalation attempt against an already-escalated Debt is rejected or redirected to the existing case.
+9. **Reopening a Closed Collection Case (FR-043, E3; FR-044, E2):** Not specified whether this is possible.
+10. **Initial Collection Case status at creation (FR-040):** Not specified.
+11. **Duplicate Request submission handling (FR-072, A1):** Not specified whether a second submission attempt is rejected or redirected to the existing Request.
+12. **Professional Collection Request Auto Numbering format (FR-072):** Not yet formally confirmed (a `PCR-000001`-style format is proposed, extending BR-036, pending confirmation in `04_Business_Rules.md`).
+13. **Full Request status transition matrix (FR-073):** The sequence is named (Submitted → Under Review → Need More Information ⇄ Under Review → Accepted → Assigned → In Progress → Recovered/Closed), but the exact matrix of permitted/forbidden transitions is not yet formalized. (The actor performing these transitions is resolved, not an open item: the Deendoon Super Admin, an already-approved actor — no new role or permission model is introduced. "Assigned" means the Super Admin has accepted ownership and started handling the Request, not assignment to another system user; see FR-073.)
+14. **Request Conversation availability after a terminal outcome (FR-075, E1):** Not specified whether messaging remains open after Recovered/Closed.
+15. **Relationship between Request closure and Collection Case closure (FR-076, E1):** Not specified whether they are coupled or independent.
 
 None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 7 fully unambiguous before `04_Business_Rules.md` is finalized.
 
 ---
 
-**End of Module 7. Approved.**
+**End of Module 7. Reopened and amended (FR-072–FR-076 added) — awaiting re-approval.**
 
 ---
 
