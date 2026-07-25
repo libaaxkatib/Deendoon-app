@@ -5,6 +5,9 @@ use App\Http\Controllers\CreditRiskController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
 use App\Http\Controllers\DebtController;
+use App\Http\Controllers\FollowUpHistoryController;
+use App\Http\Controllers\PromiseToPayController;
+use App\Http\Controllers\ReminderController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -38,5 +41,10 @@ Route::prefix('v1')->group(function () {
         Route::post('debts/{debt}/restore', [DebtController::class, 'restore'])->withTrashed();
         Route::get('debts/{debt}/timeline', [DebtController::class, 'timeline']);
         Route::patch('debts/{debt}/recovery-stage', [DebtController::class, 'updateRecoveryStage']);
+        Route::get('debts/{debt}/followup-history', [FollowUpHistoryController::class, 'index']);
+        Route::post('debts/{debt}/reminders/whatsapp', [ReminderController::class, 'whatsapp']);
+        Route::post('debts/{debt}/reminders/sms', [ReminderController::class, 'sms']);
+        Route::post('debts/{debt}/reminders/call', [ReminderController::class, 'call']);
+        Route::post('debts/{debt}/promise-to-pay', [PromiseToPayController::class, 'store']);
     });
 });

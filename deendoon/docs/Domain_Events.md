@@ -10,7 +10,7 @@
 An event not traceable to one of these three enums (or to an explicit FR/BRL statement) is **not documented here as approved** — it is listed under [Future Review](#future-review) instead, with the specific reason it doesn't yet qualify.
 
 **Two different things share the word "event" in this codebase, and this document is careful to distinguish them:**
-- A **dispatched Domain Event** — an actual `App\Events\*` class raised via Laravel's `Event::dispatch()`, which other code can listen for. Today, exactly one exists: `CreditLimitReached`.
+- A **dispatched Domain Event** — an actual `App\Events\*` class raised via Laravel's `Event::dispatch()`, which other code can listen for. Today, two exist: `CreditLimitReached` and `PromiseBroken`.
 - A **recorded occurrence** — an already-approved business action that gets written to `audit_log` (via `AuditLogService`) or `follow_up_history`, but has no dedicated dispatchable class. Most "events" below are currently only this. They are real and implemented, but another module cannot yet *subscribe* to them the way it could a dispatched Event — promoting one to a real Event class (as was done for `CreditLimitReached`) is a small, well-precedented step whenever a future module first needs to react to it.
 
 The **Current Implementation Status** field on every event states which of these it is today.
@@ -24,7 +24,7 @@ The **Current Implementation Status** field on every event states which of these
 - [Debt Lifecycle (recorded, Module 3)](#debt-lifecycle-recorded-module-3)
 - [Credit & Risk (Module 4)](#credit--risk-module-4)
 - [Authentication (approved, not yet wired)](#authentication-approved-not-yet-wired)
-- [Planned Events — Recovery Workflow (Module 5)](#planned-events--recovery-workflow-module-5)
+- [Recovery Workflow (Module 5)](#recovery-workflow-module-5)
 - [Planned Events — Payment Tracking (Module 6)](#planned-events--payment-tracking-module-6)
 - [Planned Events — Professional Collection (Module 7)](#planned-events--professional-collection-module-7)
 - [Planned Events — Documents (Module 8)](#planned-events--documents-module-8)
@@ -52,6 +52,24 @@ The **Current Implementation Status** field on every event states which of these
 | **Current Implementation Status** | **Implemented** — a real `App\Events\CreditLimitReached` class, dispatched via `Event::dispatch()`, covered by 3 feature tests (fires at threshold, doesn't fire under it, fires again on repeat with no suppression). |
 
 **Open item carried from the Credit & Risk Module report:** DD-011 (`04_Business_Rules.md`) leaves re-trigger/suppression behavior unresolved. This event currently fires on *every* qualifying recalculation while the condition holds — no de-duplication is implemented, since inventing one would mean deciding DD-011 rather than documenting it.
+
+---
+
+### PromiseBroken
+
+| Field | Detail |
+|---|---|
+| **Purpose** | Signals that an open Promise to Pay's promised date has passed with no qualifying payment, so Recovery Stage automation can react. |
+| **Publisher** | `App\Services\PromiseToPayService::refreshBrokenPromises()` |
+| **Trigger Condition** | Lazy, on-access check (fires when a Debt is viewed via `show`/`index`, same pattern as the Overdue transition): an open `PromiseToPay` whose `promised_date` is in the past is marked `broken`. |
+| **Payload** | `PromiseToPay` (the full model instance) |
+| **Current Consumers** | `App\Listeners\AdvanceRecoveryStageOnBrokenPromise` — advances the Debt's Recovery Stage to 4 (Final Notice) via `RecoveryStageService`, wired through Laravel's automatic event/listener discovery (verified by feature test, no manual registration needed). |
+| **Future Consumers** | Credit Score recalculation (Module 4) once DD-008/DD-009 are resolved — BRL-034 names a Credit Score deduction on a broken promise, but this is **not** implemented today since no approved point-value formula exists yet (see [Deferred Events](#deferred-events)). |
+| **Related Functional Requirements** | FR-031 (Promise to Pay — Broken outcome), FR-032 (Recovery Stage Automation) |
+| **Related Business Rules** | BRL-031 (Stage 4 mapping), BRL-034 (broken-promise trigger condition) |
+| **Current Implementation Status** | **Implemented** — a real `App\Events\PromiseBroken` class, dispatched via `Event::dispatch()`, covered by feature tests (transitions to broken, dispatches the event, advances Recovery Stage, does not fire for promises not yet due). |
+
+**Note on why the promise-broken condition can be evaluated at all without Module 6 (Payments):** BRL-034's trigger is "promised date passes with no qualifying payment." Since zero payments can exist anywhere in the system today (Module 6 doesn't exist), that condition is unconditionally true once the date passes — a logically sound shortcut, not an invented rule.
 
 ---
 
@@ -86,7 +104,7 @@ All six of the following are real, tested, working code paths in `CustomerContro
 
 **Note on the automatic Overdue transition:** implemented as a lazy, on-access check (fires when a Debt is viewed via `show`/`index`), not a scheduled job — no queue/scheduler infrastructure decision has been made yet. A Debt nobody views won't show as Overdue in an aggregate context (e.g., a future dashboard) until accessed. See [Future Review](#future-review) for the distinctly-named "DebtOverdue" question.
 
-**Current Consumers (all seven):** None. **Future Consumers:** Reporting (Module 9), Recovery Workflow (Module 5) once its automation engine exists and needs to react to Debt status/stage changes.
+**Current Consumers (all seven):** None. **Future Consumers:** Reporting (Module 9); Recovery Workflow (Module 5) already reacts to Debt Overdue status via its lazy reminder-stage logic (see [Recovery Workflow](#recovery-workflow-module-5)).
 
 ---
 
@@ -113,23 +131,28 @@ This is a genuine, pre-existing implementation gap (not introduced by this docum
 
 ---
 
-## Planned Events — Recovery Workflow (Module 5)
+## Recovery Workflow (Module 5)
 
-None of these are implemented — Module 5 does not exist. Each is approved via `follow_up_history.action_type` and/or `notifications.type`.
+Follow-up History actions below are real, tested, working code paths (`ReminderController`, `PromiseToPayController`) — each writes one `follow_up_history` row via `FollowUpHistoryService`, plus a companion `audit_log` row. `PromiseBroken` is additionally a dispatched Event (see [Implemented Events](#implemented-events)). None has been given a dedicated `App\Events\*` class except `PromiseBroken`.
 
-| Event Name | Source Enum | Trigger (per approved FR/BRL) | Related FR / BR |
-|---|---|---|---|
-| **ReminderSent** | `follow_up_history.action_type`, `audit_log.action`, `notifications.type` (all three approve it) | Automated or manual reminder (WhatsApp/SMS/Call) is sent | FR-029, FR-030 |
-| **ManualWhatsAppSent** | `follow_up_history.action_type = manual_whatsapp` | User manually sends a WhatsApp reminder | FR-030 |
-| **ManualSmsSent** | `follow_up_history.action_type = manual_sms` | User manually sends an SMS reminder | FR-030 |
-| **CallLogged** | `follow_up_history.action_type = call_logged` | User logs a phone call | FR-030 |
-| **PromiseRecorded** | `follow_up_history.action_type = promise_recorded` | A Promise to Pay is recorded against a Debt | FR-031 |
-| **PromiseFulfilled** | `follow_up_history.action_type = promise_fulfilled` | Payment received on/before the promised date | FR-031 |
-| **PromiseBroken** | `follow_up_history.action_type = promise_broken` | Promised date passes with no qualifying payment | FR-031, BRL-034 (also triggers a Credit Score event and Recovery Stage advancement to Stage 4) |
-| **PromiseToPayDue** | `notifications.type = promise_to_pay_due` | A Promise's due date arrives (Calendar-facing) | FR-031, FR-062 |
-| **RecoveryStageChanged (automatic)** | *(no distinct action — see Future Review)* | Module 5's automation engine advances a Debt's Recovery Stage per BRL-031's event-to-stage mapping | FR-032, BRL-031 |
+| Event Name | Source Enum | Publisher | Trigger (per approved FR/BRL) | Related FR / BR | Status |
+|---|---|---|---|---|---|
+| **ManualWhatsAppSent** | `follow_up_history.action_type = manual_whatsapp` | `ReminderController::whatsapp()` | User manually sends a WhatsApp reminder | FR-030 | **Implemented** (recorded) |
+| **ManualSmsSent** | `follow_up_history.action_type = manual_sms` | `ReminderController::sms()` | User manually sends an SMS reminder | FR-030 | **Implemented** (recorded) |
+| **CallLogged** | `follow_up_history.action_type = call_logged` | `ReminderController::call()` | User logs a phone call | FR-030 | **Implemented** (recorded) |
+| **PromiseRecorded** | `follow_up_history.action_type = promise_recorded` | `PromiseToPayController::store()` | A Promise to Pay is recorded against a Debt | FR-031 | **Implemented** (recorded) |
+| **PromiseBroken** | `follow_up_history.action_type = promise_broken` | `PromiseToPayService::refreshBrokenPromises()` | Promised date passes with no qualifying payment | FR-031, BRL-034 | **Implemented** (dispatched — see above) |
+| **RecoveryStageChanged (automatic)** | *(no distinct `audit_log.action` — reuses `status_changed` with a descriptive `reason`, see below)* | `RecoveryStageService::advanceTo()` | Debt's Recovery Stage advances per BRL-031's event-to-stage mapping (Stage 2: reminder while Overdue; Stage 3: call logged; Stage 4: promise broken) | FR-032, BRL-031 | **Implemented** (recorded, reused action — see note) |
 
-**Future Consumers of all of the above:** Debt Timeline display (FR-024, already scaffolded — see the Debt Module's `timeline` endpoint, which currently shows every one of these stages as `pending` since none can be populated yet), Notifications (Module 10), Reporting (Module 9).
+**Not implemented in this module (explicitly out of scope or blocked):**
+- **ReminderSent** as an actual *delivery* — this module only records that a manual reminder action was taken (FR-030 scoping); the `notifications.type = reminder_sent` delivery path belongs to Module 10.
+- **PromiseFulfilled** — requires a real Payment (Module 6) to determine "fulfilled." No payments can exist yet, so this branch is unreachable and is not implemented (not simulated).
+- **PromiseToPayDue** (`notifications.type`) — a Calendar-facing notification; out of scope per the task's explicit exclusion of Notifications Delivery.
+- **Escalation Rules → Professional Collection** — the actual escalation action (creating a Collection Case) is Module 7, which doesn't exist. Recovery Stage automation stops at Stage 4 (Final Notice); Stage 5+ requires Module 7/6.
+
+**Note on `RecoveryStageChanged (automatic)`'s reused action:** no distinct `audit_log.action` value exists for an *automatic* stage change (only `recovery_stage_override`, which FR-025 describes as specifically manual — see [Future Review](#future-review)). Following the same precedent already used for Risk Level changes (reusing `edited`), automatic stage advancement reuses `AuditAction::StatusChanged` with a descriptive `reason` string (e.g. "Recovery Stage advanced to 3 (Phone Follow-up): call logged") rather than inventing a new enum value. Flagged as a NON-BLOCKING SRS inconsistency, not resolved here.
+
+**Current Consumers:** `AdvanceRecoveryStageOnBrokenPromise` (for `PromiseBroken`, as above). **Future Consumers of all of the above:** Debt Timeline display (FR-024 — the `timeline` endpoint now sources whatsapp/sms/call/promise stages from `follow_up_history` and shows them as `completed` once populated), Notifications (Module 10), Reporting (Module 9).
 
 ---
 
@@ -189,8 +212,7 @@ Events that are approved in principle but cannot be correctly specified today be
 
 | Event Name | Blocked By | Why It's Deferred, Not Planned |
 |---|---|---|
-| **CreditScoreRecalculated** | DD-008 (baseline score), DD-009 (point-value catalog, band thresholds) | Even once Modules 5/6 exist to supply trigger events, there is no approved formula to calculate a score with. Building any version now would mean inventing DD-008/DD-009's answers, which the Credit & Risk Module report explicitly declined to do. |
-| **RecoveryStageChanged (automatic)** | No unresolved DD directly, but no distinct `audit_log.action` exists for it (only `recovery_stage_override`, explicitly manual per FR-025) | See [Future Review](#future-review) — this is really an SRS schema gap, not a business-rule gap, but is listed here too since it blocks correct audit logging of the automatic case regardless of which module builds it. |
+| **CreditScoreRecalculated** | DD-008 (baseline score), DD-009 (point-value catalog, band thresholds) | Even once Modules 5/6 exist to supply trigger events, there is no approved formula to calculate a score with. Building any version now would mean inventing DD-008/DD-009's answers, which the Credit & Risk Module report explicitly declined to do. A broken Promise to Pay (`PromiseBroken`, Module 5) is one of BRL-034's named triggers for this, but the deduction itself remains deferred. |
 
 ---
 
@@ -204,7 +226,7 @@ Events considered during this review that are **not** documented above as approv
 | **PromiseCreated** | Close to approved, but not the SRS's own term — `follow_up_history.action_type` uses `promise_recorded`. Documented above under that name; flagging the naming mismatch so it isn't reintroduced under a different spelling later. |
 | **DebtOverdue** | No enum has a distinct value for this — it is expressed as the generic `status_changed` action (already implemented that way in `DebtController::refreshOverdueStatus()`). A dedicated name could be introduced later if a future module needs to filter specifically for this transition, but doing so now would mean inventing a database value `06` doesn't define. |
 | **DebtRecovered** | Same issue as DebtOverdue — "Recovered" is Recovery Stage 6's *name* (BRL-031) and/or Debt Status `paid`, but neither has its own distinct audit action. Expressed generically today. |
-| **RecoveryStageChanged** | The **manual** case is approved and implemented (`recovery_stage_override`). The **automatic** case (Module 5's engine) has no corresponding distinct `audit_log.action` — only the override action exists, and FR-025 describes it as specifically manual. This looks like a genuine gap between `03`'s Module 5 automation description (FR-032) and `06`'s audit action catalog, not something to paper over by reusing `recovery_stage_override` for a non-override change. Recommend a Product Owner / SRS decision on the correct action name before Module 5 is built. |
+| **RecoveryStageChanged** | The **manual** case is approved and implemented (`recovery_stage_override`). The **automatic** case (Module 5's engine, now implemented in `RecoveryStageService`) still has no corresponding distinct `audit_log.action` — only the override action exists, and FR-025 describes it as specifically manual. Implemented today by reusing `status_changed` with a descriptive `reason` (see [Recovery Workflow](#recovery-workflow-module-5)), consistent with the Risk Level precedent, rather than left unimplemented. This remains a genuine gap between `03`'s Module 5 automation description (FR-032) and `06`'s audit action catalog — recommend a Product Owner / SRS decision on a distinct action name (e.g. `recovery_stage_advanced`). |
 | **ReminderDue** | Not approved under this name — only `reminder_sent` (past-tense, after delivery) exists in any of the three enums. A "due" (pre-send) concept isn't named anywhere in `03`/`06`. |
 
 ---

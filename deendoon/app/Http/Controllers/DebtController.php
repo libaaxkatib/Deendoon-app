@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditAction;
+use App\Enums\FollowUpActionType;
 use App\Http\Requests\StoreDebtRequest;
 use App\Http\Requests\UpdateDebtRecoveryStageRequest;
 use App\Http\Requests\UpdateDebtRequest;
@@ -13,6 +14,7 @@ use App\Models\Customer;
 use App\Models\Debt;
 use App\Services\AuditLogService;
 use App\Services\CustomerBalanceService;
+use App\Services\PromiseToPayService;
 use App\Services\ReferenceNumberService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +40,7 @@ class DebtController extends Controller
         private readonly ReferenceNumberService $referenceNumbers,
         private readonly CustomerBalanceService $balances,
         private readonly AuditLogService $auditLog,
+        private readonly PromiseToPayService $promiseToPay,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -70,7 +73,10 @@ class DebtController extends Controller
             perPage: $request->integer('perPage', 15),
         );
 
-        $debts->getCollection()->each(fn (Debt $debt) => $this->refreshOverdueStatus($debt));
+        $debts->getCollection()->each(function (Debt $debt) {
+            $this->refreshOverdueStatus($debt);
+            $this->promiseToPay->refreshBrokenPromises($debt);
+        });
 
         return $this->successResponse([
             'debts' => DebtResource::collection($debts->items()),
@@ -129,6 +135,7 @@ class DebtController extends Controller
         $this->authorize('view', $debt);
 
         $this->refreshOverdueStatus($debt);
+        $this->promiseToPay->refreshBrokenPromises($debt);
 
         return $this->successResponse(new DebtResource($debt->fresh()));
     }
@@ -194,6 +201,13 @@ class DebtController extends Controller
         return $this->successResponse(new DebtResource($debt->fresh()), 'Debt restored successfully');
     }
 
+    /**
+     * FR-024: now sourced from follow_up_history for the stages Module 5
+     * actually populates (whatsapp/sms/call/promise). "payment" and
+     * "professional_collection" remain genuinely pending — Modules 6/7
+     * don't exist, so nothing can ever write those action_type values yet.
+     * "recovered" has no source at all until Module 6 exists.
+     */
     public function timeline(Debt $debt): JsonResponse
     {
         $this->authorize('view', $debt);
@@ -203,13 +217,40 @@ class DebtController extends Controller
             ->where('action', AuditAction::Created->value)
             ->first();
 
-        $stages = array_map(function (string $event) use ($createdEvent) {
-            $isCreatedStage = $event === 'debt_created';
+        $followUpEventsByType = $debt->followUpHistory()
+            ->orderBy('occurred_at')
+            ->get()
+            ->groupBy('action_type');
+
+        $stageActionMap = [
+            'whatsapp_reminder' => FollowUpActionType::ManualWhatsapp->value,
+            'sms_reminder' => FollowUpActionType::ManualSms->value,
+            'phone_call' => FollowUpActionType::CallLogged->value,
+            'promise_to_pay' => FollowUpActionType::PromiseRecorded->value,
+            'payment' => FollowUpActionType::PaymentRecorded->value,
+            'professional_collection' => FollowUpActionType::Escalated->value,
+        ];
+
+        $stages = array_map(function (string $event) use ($createdEvent, $followUpEventsByType, $stageActionMap) {
+            if ($event === 'debt_created') {
+                return [
+                    'event' => $event,
+                    'status' => $createdEvent ? 'completed' : 'pending',
+                    'occurred_at' => $createdEvent?->occurred_at,
+                ];
+            }
+
+            if ($event === 'recovered') {
+                return ['event' => $event, 'status' => 'pending', 'occurred_at' => null];
+            }
+
+            $actionType = $stageActionMap[$event] ?? null;
+            $firstMatch = $actionType ? $followUpEventsByType->get($actionType)?->first() : null;
 
             return [
                 'event' => $event,
-                'status' => $isCreatedStage && $createdEvent ? 'completed' : 'pending',
-                'occurred_at' => $isCreatedStage ? $createdEvent?->occurred_at : null,
+                'status' => $firstMatch ? 'completed' : 'pending',
+                'occurred_at' => $firstMatch?->occurred_at,
             ];
         }, self::TIMELINE_STAGES);
 
