@@ -3,18 +3,21 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
-use Database\Factories\PaymentFactory;
+use Database\Factories\DemandLetterFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use LogicException;
 
-#[Fillable(['debt_id', 'amount', 'payment_date', 'payment_method', 'reference_notes'])]
-class Payment extends Model
+/**
+ * Immutable after generation (BRL-057) — see Receipt's docblock.
+ */
+#[Fillable(['debt_id', 'template_type', 'reference_number', 'generated_at', 'file_path'])]
+class DemandLetter extends Model
 {
-    /** @use HasFactory<PaymentFactory> */
+    /** @use HasFactory<DemandLetterFactory> */
     use BelongsToTenant, HasFactory, HasUlids;
 
     public $timestamps = false;
@@ -22,10 +25,18 @@ class Payment extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
-            'payment_date' => 'date',
-            'created_at' => 'datetime',
+            'generated_at' => 'datetime',
         ];
+    }
+
+    public function update(array $attributes = [], array $options = []): bool
+    {
+        throw new LogicException('Demand Letters are immutable and cannot be updated.');
+    }
+
+    public function delete(): ?bool
+    {
+        throw new LogicException('Demand Letters are immutable and cannot be deleted.');
     }
 
     public function tenant(): BelongsTo
@@ -36,10 +47,5 @@ class Payment extends Model
     public function debt(): BelongsTo
     {
         return $this->belongsTo(Debt::class);
-    }
-
-    public function receipt(): HasOne
-    {
-        return $this->hasOne(Receipt::class);
     }
 }

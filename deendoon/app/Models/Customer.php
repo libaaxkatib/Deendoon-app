@@ -50,6 +50,11 @@ class Customer extends Model
         return $this->hasManyThrough(Payment::class, Debt::class);
     }
 
+    public function statements(): HasMany
+    {
+        return $this->hasMany(Statement::class);
+    }
+
     /**
      * BRL-017: Credit Limit minus Outstanding Balance. May be negative;
      * never clamped to zero. bcmath is used to keep this exact, matching

@@ -27,7 +27,7 @@ The **Current Implementation Status** field on every event states which of these
 - [Recovery Workflow (Module 5)](#recovery-workflow-module-5)
 - [Payment Tracking (Module 6)](#payment-tracking-module-6)
 - [Professional Collection (Module 7)](#professional-collection-module-7)
-- [Planned Events — Documents (Module 8)](#planned-events--documents-module-8)
+- [Documents (Module 8)](#documents-module-8)
 - [Planned Events — Administration (Module 12)](#planned-events--administration-module-12)
 - [Deferred Events](#deferred-events)
 - [Future Review](#future-review)
@@ -167,9 +167,9 @@ Recorded, tested, working code paths in `PaymentService::record()` — each Paym
 | **DebtStatusChanged — Partial Paid / Paid** | `audit_log.action = status_changed` (generic, `user_id = NULL` — "System", per FR-037 step 4's literal text), `debt_status` | `PaymentService::recalculateDebt()` | Cumulative payments partially or fully satisfy a Debt (BRL-039) | FR-037, BRL-021 | **Implemented** (recorded) |
 | **RecoveryStageChanged — Stage 6 (Recovered)** | *(reuses `status_changed`, see Recovery Workflow above)* | `PaymentService::recalculateDebt()` → `RecoveryStageService::advanceTo()` | Debt Status transitions into Paid | FR-032, FR-037, BRL-031 | **Implemented** (recorded, reused action) |
 | **PromiseFulfilled** | *(see Recovery Workflow above)* | `PaymentService::record()` → `PromiseToPayService::evaluateFulfillment()` | A qualifying (any positive) payment is recorded on or before an open Promise's promised date | FR-031, FR-039, BRL-032 | **Implemented** (recorded) |
-| **ReceiptGenerated (metadata only)** | `audit_log.action = receipt_generated`, `entity_type = payment` | `PaymentService::record()` | A payment is successfully recorded | FR-038 | **Implemented** (audit-trail metadata only — see note) |
+| **ReceiptGenerated** | `audit_log.action = receipt_generated`, `entity_type = payment` | `PaymentService::record()` → `DocumentService::generateReceipt()` | A payment is successfully recorded | FR-038, FR-047 | **Implemented** (recorded; real Receipt entity + PDF, Module 8) |
 
-**Note on `ReceiptGenerated`:** FR-038 splits into a triggering/audit step (this module's job) and actual document generation (Module 8 — Documents, owned mechanics: PDF, `RCT-` Auto Numbering, the `receipts` table). Module 8 does not exist, and its `receipts.file_path` column is `NOT NULL` — there is no way to populate a real `receipts` row without fabricating a file path. Following the same "trigger vs. delivery" split already applied to FR-028 (Credit Limit Reached) in the Credit & Risk Module, only the audit-trail event is implemented; no `receipts` row is created.
+**Note on `ReceiptGenerated`:** FR-038 splits into a triggering/audit step (this module's job) and actual document generation (Module 8 — Documents, owned mechanics: PDF, `RCT-` Auto Numbering, the `receipts` table). Module 8 is now implemented — `PaymentService::record()` calls `DocumentService::generateReceipt()` directly (synchronous, same transaction), which creates the real `receipts` row, renders the PDF, and records both the audit entry and a `document_events` `generated` row. Per FR-047 E1 ("Receipt generation fails... Payment Recording is not rolled back"), `DocumentService::generateReceipt()` catches its own failures internally and returns `null` rather than throwing — Payment Recording always commits regardless of PDF/storage outcome. See [Documents (Module 8)](#documents-module-8) for full detail.
 
 **Not implemented in this module (explicitly deferred, not invented):**
 - **CreditScoreRecalculated (payment-driven)** — FR-039 step 1 asks this module to classify a payment as on-time/late/partial and emit that to Module 4 for scoring. Module 4's scoring computation itself remains deferred (DD-008 baseline, DD-009 point-value catalog — both still unresolved), so there is no consumer to classify for, and the approved `follow_up_history.action_type` enum has no distinct slot for the classification (only the generic `payment_recorded`). Implementing a classification with nothing to consume it, or inventing a new enum value, would both be invented behavior. See [Deferred Events](#deferred-events).
@@ -208,13 +208,26 @@ Recorded, tested, working code paths in `CollectionCaseService` and `Professiona
 
 ---
 
-## Planned Events — Documents (Module 8)
+## Documents (Module 8)
 
-| Event Name | Source Enum | Trigger | Related FR / BR |
-|---|---|---|---|
-| **DemandLetterGenerated** | `audit_log.action = demand_letter_generated` | A Demand Letter template is generated against a Debt | FR-048 |
-| **StatementGenerated** | `audit_log.action = statement_generated` | A Statement of Account is generated | FR-049 |
-| **DocumentAvailable** | `notifications.type = document_available` | Any of the three document types finishes generating (generic notification, covers all of Receipt/Demand Letter/Statement) | FR-052 |
+Recorded, tested, working code paths in `DocumentService` — every generation writes one `audit_log` row and one `document_events` `generated` row; downloading writes a further `document_events` `downloaded` row only (no `audit_log` entry — FR-050/051's text never says "records an event in the Audit Trail," unlike FR-047/048/049). None has been given a dedicated `App\Events\*` class: generation is always a direct, synchronous call from the requesting Controller or (for Receipts) `PaymentService` — no case here has a decoupled consumer that would justify one, the same criterion already applied in Modules 5–7.
+
+| Event Name | Source Enum | Publisher | Trigger (per approved FR/BRL) | Related FR / BR | Status |
+|---|---|---|---|---|---|
+| **ReceiptGenerated** | `audit_log.action = receipt_generated`, `document_events (type=receipt, event=generated)` | `DocumentService::generateReceipt()`, called by `PaymentService::record()` | A payment is successfully recorded (automatic, system-initiated only — BR-019) | FR-038, FR-047 | **Implemented** (recorded) |
+| **DemandLetterGenerated** | `audit_log.action = demand_letter_generated`, `document_events (type=demand_letter, event=generated)` | `DocumentService::generateDemandLetter()`, called by `DemandLetterController::store()` | An authorized user requests a Demand Letter against a Debt, selecting one of the four approved templates (BRL-055: always explicit, never auto-selected) | FR-048 | **Implemented** (recorded) |
+| **StatementGenerated** | `audit_log.action = statement_generated`, `document_events (type=statement, event=generated)` | `DocumentService::generateStatement()`, called by `StatementController` | An authorized user requests a Statement of Account, from either Customer Profile or Debt Details | FR-049 | **Implemented** (recorded) |
+| **DocumentDownloaded** | `document_events (event=downloaded)` only — no `audit_log` action exists for this, matching FR-051's own text | `DocumentController::download()` | An authorized user downloads a generated document | FR-051 | **Implemented** (recorded) |
+
+**Note on branding (BRL-054):** every generated document reads `tenants.business_name`/`logo_path`/`address`/`contact_email`/`contact_phone` directly at generation time. These ARE the approved FR-068 Company Profile fields — `06_Database_Design.md` §3 folds them into the `tenants` table rather than a separate 1:1 table — so no Module 12 lookup is needed for the data to be real; only Module 12's dedicated *management UI* for editing these fields doesn't exist yet. This satisfies the Development Roadmap's Phase 9 note ("documents are functionally complete... using placeholder/default branding, with final branding wired in during Phase 12") using the tenant's actual current values, not a fabricated placeholder string.
+
+**Not implemented in this module (explicitly deferred, not invented):**
+- **DocumentAvailable notification** (`notifications.type = document_available`) — Notification Delivery (Module 10) is explicitly out of scope; the underlying fact is already captured by the `document_events` `generated` row above.
+- **Document regeneration** (BRL-056/DD-029) — unresolved whether permitted, and if so, new row vs. reused reference number; `document_events.event_type = 'regenerated'` exists in the schema/enum but nothing writes it.
+- **Watermarking, digital signatures, retention policy, tenant-configurable numbering format** (BRL-058, DD-028/030/031) — all explicitly unresolved or out of Version 1 scope; none invented.
+- **Signed/pre-signed URL access** (08 §11: "Access is via short-lived, pre-signed URLs") — no real S3-compatible provider is configured in this environment (local disk only), so `GET /documents/{id}` and `.../download` stream bytes through a normal Sanctum-authenticated, policy-checked endpoint instead of a literal pre-signed URL. Every request is still individually authorized (never a static public link), satisfying the underlying security property, but not the letter of "pre-signed URL." Flagged NON-BLOCKING in the module report; revisit once real S3-compatible storage is provisioned (`Storage::disk('s3')` already exists in `config/filesystems.php` — swapping the disk is a config change, not a code change).
+
+**Current Consumers:** none of the above are consumed by another module today. **Future Consumers:** Reporting (Module 9, document metadata/counts), Notifications (Module 10, once built, for `document_available`), Module 12 (once built, supplies a management UI over the same `tenants` branding fields already read here).
 
 ---
 

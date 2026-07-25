@@ -59,4 +59,14 @@ class Debt extends Model
     {
         return $this->hasMany(CollectionCase::class);
     }
+
+    public function demandLetters(): HasMany
+    {
+        return $this->hasMany(DemandLetter::class);
+    }
+
+    public function statements(): HasMany
+    {
+        return $this->hasMany(Statement::class);
+    }
 }

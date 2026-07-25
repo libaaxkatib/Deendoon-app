@@ -22,10 +22,11 @@ use Illuminate\Support\Facades\DB;
  *   PromiseToPayService.
  * - Recovery Stage 6 — Recovered (BRL-031), via the existing
  *   RecoveryStageService, entered only when the Debt reaches Paid.
- * - Receipt Generation *metadata* only (FR-038): an audit-trail event
- *   recording that generation was triggered. The actual Receipt entity
- *   (PDF, `RCT-` numbering, `receipts` table) is owned by Module 8 —
- *   Documents, which does not exist yet; nothing here fabricates it.
+ * - Receipt Generation (FR-038/FR-047), via DocumentService (Module 8) —
+ *   generates the real Receipt entity, PDF, and `RCT-` numbering.
+ *   DocumentService itself never rolls back on generation failure (FR-047
+ *   E1), so this call is fire-and-forget from Payment Recording's
+ *   perspective.
  *
  * Deliberately NOT implemented (see the module report):
  * - Crediting Module 4 (Credit & Risk) with an on-time/late/partial
@@ -47,6 +48,7 @@ class PaymentService
         private readonly CustomerBalanceService $balances,
         private readonly PromiseToPayService $promiseToPay,
         private readonly RecoveryStageService $recoveryStage,
+        private readonly DocumentService $documents,
     ) {}
 
     /**
@@ -72,7 +74,7 @@ class PaymentService
             $this->balances->recalculate($debt->customer);
             $this->promiseToPay->evaluateFulfillment($debt, $payment->payment_date->toDateString());
 
-            $this->auditLog->record(AuditAction::ReceiptGenerated, 'payment', $payment->id);
+            $this->documents->generateReceipt($payment);
 
             return $payment->refresh();
         });

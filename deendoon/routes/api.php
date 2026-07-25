@@ -6,11 +6,15 @@ use App\Http\Controllers\CreditRiskController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
 use App\Http\Controllers\DebtController;
+use App\Http\Controllers\DemandLetterController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FollowUpHistoryController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessionalCollectionRequestController;
 use App\Http\Controllers\PromiseToPayController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\StatementController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -36,6 +40,8 @@ Route::prefix('v1')->group(function () {
         Route::patch('customers/{customer}/risk-level', [CreditRiskController::class, 'updateRiskLevel']);
         Route::post('customers/{customer}/debts', [DebtController::class, 'store']);
         Route::get('customers/{customer}/payments', [PaymentController::class, 'forCustomer']);
+        Route::get('customers/{customer}/documents', [DocumentController::class, 'forCustomer']);
+        Route::post('customers/{customer}/statements', [StatementController::class, 'storeForCustomer']);
 
         Route::get('debts', [DebtController::class, 'index']);
         Route::get('debts/{debt}', [DebtController::class, 'show']);
@@ -53,6 +59,9 @@ Route::prefix('v1')->group(function () {
         Route::post('debts/{debt}/payments', [PaymentController::class, 'store']);
         Route::get('debts/{debt}/payments', [PaymentController::class, 'index']);
         Route::post('debts/{debt}/collection-cases', [CollectionCaseController::class, 'store']);
+        Route::post('debts/{debt}/demand-letters', [DemandLetterController::class, 'store']);
+        Route::post('debts/{debt}/statements', [StatementController::class, 'storeForDebt']);
+        Route::get('debts/{debt}/documents', [DocumentController::class, 'forDebt']);
 
         Route::get('collection-cases', [CollectionCaseController::class, 'index']);
         Route::get('collection-cases/{case}', [CollectionCaseController::class, 'show']);
@@ -69,5 +78,10 @@ Route::prefix('v1')->group(function () {
         Route::post('professional-requests/{id}/close', [ProfessionalCollectionRequestController::class, 'close']);
         Route::get('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesIndex']);
         Route::post('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesStore']);
+
+        Route::get('receipts/{receipt}', [ReceiptController::class, 'show']);
+        Route::get('documents/{id}/download', [DocumentController::class, 'download']);
+        Route::get('documents/{id}/history', [DocumentController::class, 'history']);
+        Route::get('documents/{id}', [DocumentController::class, 'show']);
     });
 });
