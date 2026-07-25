@@ -5,6 +5,7 @@ use App\Http\Controllers\CollectionCaseController;
 use App\Http\Controllers\CreditRiskController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DebtController;
 use App\Http\Controllers\DemandLetterController;
 use App\Http\Controllers\DocumentController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\ProfessionalCollectionRequestController;
 use App\Http\Controllers\PromiseToPayController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StatementController;
 use Illuminate\Support\Facades\Route;
 
@@ -83,5 +85,14 @@ Route::prefix('v1')->group(function () {
         Route::get('documents/{id}/download', [DocumentController::class, 'download']);
         Route::get('documents/{id}/history', [DocumentController::class, 'history']);
         Route::get('documents/{id}', [DocumentController::class, 'show']);
+
+        Route::get('dashboard/kpis', [DashboardController::class, 'kpis']);
+        Route::get('reports/aging-analysis', [ReportController::class, 'agingAnalysis']);
+        Route::get('reports/customers', [ReportController::class, 'customers']);
+        Route::get('reports/debts', [ReportController::class, 'debts']);
+        Route::get('reports/collection-cases', [ReportController::class, 'collectionCases']);
+        Route::get('reports/payments', [ReportController::class, 'payments']);
+        Route::get('reports/credit-risk', [ReportController::class, 'creditRisk']);
+        Route::get('reports/{reportType}/export', [ReportController::class, 'export']);
     });
 });

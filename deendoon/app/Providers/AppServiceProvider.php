@@ -43,6 +43,20 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('sales-finance-only', fn (User $user): bool => $user->hasRole('sales_finance'));
         Gate::define('customer-only', fn (User $user): bool => $user->hasRole('customer'));
 
+        // Module 9 — Reporting. No FR names a specific role for report
+        // access (unlike FR-041's Collection Officer), so this follows the
+        // same interim admin/sales_finance mapping used for every other
+        // generic "authorized user" requirement in this project.
+        Gate::define('view-reports', fn (User $user): bool => $user->hasAnyRole(['admin', 'sales_finance']));
+
+        // FR-053 explicitly names "system-wide" as a role-dependent
+        // Dashboard variant — the only report in this module with that
+        // property — so the Deendoon Platform Administrator (Module 7's
+        // existing, bounded cross-tenant actor) is additionally granted
+        // Dashboard access only, not the other report endpoints.
+        Gate::define('view-dashboard', fn (User $user): bool => $user->hasAnyRole(['admin', 'sales_finance'])
+            || ($user->tenant_id === null && $user->hasRole('deendoon_platform_administrator')));
+
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(Debt::class, DebtPolicy::class);
         Gate::policy(CollectionCase::class, CollectionCasePolicy::class);

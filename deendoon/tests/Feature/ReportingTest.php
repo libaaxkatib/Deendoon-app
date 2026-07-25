@@ -1,0 +1,463 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\CollectionCase;
+use App\Models\Customer;
+use App\Models\Debt;
+use App\Models\Payment;
+use App\Models\Tenant;
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class ReportingTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(RoleSeeder::class);
+    }
+
+    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    {
+        $user = User::factory()->create();
+        $user->tenant()->associate($tenant);
+        $user->save();
+        $user->assignRole($role);
+
+        $token = $user->createToken('test')->plainTextToken;
+        $this->withHeader('Authorization', 'Bearer '.$token);
+
+        return $user;
+    }
+
+    private function actingAsPlatformAdmin(): User
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('deendoon_platform_administrator');
+
+        Sanctum::actingAs($admin, ['*']);
+
+        return $admin;
+    }
+
+    private function makeDebt(Tenant $tenant, array $attributes = []): Debt
+    {
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 5000]);
+
+        return Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create($attributes);
+    }
+
+    // --- Dashboard KPIs (FR-053) ---
+
+    public function test_admin_can_view_dashboard_kpis(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['data' => [
+                'scope', 'period', 'total_outstanding_amount', 'total_collected_period',
+                'recovery_rate', 'total_overdue_debts' => ['count', 'value'],
+                'customers_over_credit_limit', 'active_collection_cases',
+            ]]);
+    }
+
+    public function test_total_outstanding_amount_sums_remaining_balance_of_open_debts(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['remaining_balance' => 500, 'debt_status' => 'pending']);
+        $this->makeDebt($tenant, ['remaining_balance' => 300, 'debt_status' => 'overdue']);
+        $this->makeDebt($tenant, ['remaining_balance' => 0, 'debt_status' => 'paid']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.total_outstanding_amount', '800.00');
+    }
+
+    public function test_total_collected_period_sums_payments_within_the_selected_period(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create(['amount' => 100, 'payment_date' => now()->toDateString()]);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create(['amount' => 200, 'payment_date' => now()->subYears(2)->toDateString()]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis?period=day');
+
+        $response->assertJsonPath('data.total_collected_period', '100.00');
+    }
+
+    public function test_total_overdue_debts_counts_and_values_overdue_debts(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['debt_status' => 'overdue', 'remaining_balance' => 250]);
+        $this->makeDebt($tenant, ['debt_status' => 'overdue', 'remaining_balance' => 150]);
+        $this->makeDebt($tenant, ['debt_status' => 'pending', 'remaining_balance' => 999]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.total_overdue_debts.count', 2)
+            ->assertJsonPath('data.total_overdue_debts.value', '400.00');
+    }
+
+    public function test_customers_over_credit_limit_counts_correctly(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 1000, 'outstanding_balance' => 1500]);
+        Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 1000, 'outstanding_balance' => 500]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.customers_over_credit_limit', 1);
+    }
+
+    public function test_active_collection_cases_excludes_closed_cases(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debtA = $this->makeDebt($tenant);
+        $debtB = $this->makeDebt($tenant);
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debtA, 'debt')->create(['case_status' => 'open']);
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debtB, 'debt')->closed()->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.active_collection_cases', 1);
+    }
+
+    public function test_recovery_rate_is_returned_as_null(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/dashboard/kpis')->assertJsonPath('data.recovery_rate', null);
+    }
+
+    public function test_platform_admin_sees_system_wide_kpis(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $this->makeDebt($tenantA, ['debt_status' => 'overdue', 'remaining_balance' => 100]);
+        $this->makeDebt($tenantB, ['debt_status' => 'overdue', 'remaining_balance' => 200]);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.scope', 'system')
+            ->assertJsonPath('data.total_overdue_debts.count', 2);
+    }
+
+    public function test_tenant_user_sees_only_their_own_tenant_kpis(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $this->makeDebt($tenantA, ['debt_status' => 'overdue', 'remaining_balance' => 100]);
+        $this->makeDebt($tenantB, ['debt_status' => 'overdue', 'remaining_balance' => 200]);
+
+        $this->actingAsTenantUser($tenantA);
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.scope', 'tenant')
+            ->assertJsonPath('data.total_overdue_debts.count', 1)
+            ->assertJsonPath('data.total_overdue_debts.value', '100.00');
+    }
+
+    public function test_invalid_period_is_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/dashboard/kpis?period=fortnight')->assertStatus(422);
+    }
+
+    // --- Aging Analysis (FR-054) ---
+
+    public function test_admin_can_view_aging_analysis(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/aging-analysis');
+
+        $response->assertStatus(200)->assertJsonStructure(['data' => ['buckets', 'debts', 'pagination']]);
+    }
+
+    public function test_debt_not_yet_due_is_in_the_current_bucket(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['due_date' => now()->addDays(10)->toDateString(), 'remaining_balance' => 100]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/aging-analysis');
+
+        $response->assertJsonPath('data.buckets.current.count', 1);
+    }
+
+    public function test_debt_overdue_by_15_days_is_in_the_1_30_bucket(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['due_date' => now()->subDays(15)->toDateString(), 'debt_status' => 'overdue', 'remaining_balance' => 100]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/aging-analysis')->assertJsonPath('data.buckets.1_30.count', 1);
+    }
+
+    public function test_debt_overdue_by_45_days_is_in_the_31_60_bucket(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['due_date' => now()->subDays(45)->toDateString(), 'debt_status' => 'overdue', 'remaining_balance' => 100]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/aging-analysis')->assertJsonPath('data.buckets.31_60.count', 1);
+    }
+
+    public function test_debt_overdue_by_75_days_is_in_the_61_90_bucket(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['due_date' => now()->subDays(75)->toDateString(), 'debt_status' => 'overdue', 'remaining_balance' => 100]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/aging-analysis')->assertJsonPath('data.buckets.61_90.count', 1);
+    }
+
+    public function test_debt_overdue_by_100_days_is_in_the_over_90_bucket(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['due_date' => now()->subDays(100)->toDateString(), 'debt_status' => 'overdue', 'remaining_balance' => 100]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/aging-analysis')->assertJsonPath('data.buckets.over_90.count', 1);
+    }
+
+    public function test_bucket_value_uses_remaining_balance_not_original_amount(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['due_date' => now()->subDays(10)->toDateString(), 'debt_status' => 'overdue', 'amount' => 1000, 'remaining_balance' => 400]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/aging-analysis')->assertJsonPath('data.buckets.1_30.total_remaining_balance', '400.00');
+    }
+
+    public function test_paid_debts_are_excluded_from_aging_analysis(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['due_date' => now()->subDays(10)->toDateString(), 'debt_status' => 'paid', 'remaining_balance' => 0]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/aging-analysis');
+
+        $total = collect($response->json('data.buckets'))->sum('count');
+        $this->assertSame(0, $total);
+    }
+
+    public function test_aging_analysis_can_be_filtered_by_customer(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debtA = $this->makeDebt($tenant);
+        $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson("/api/v1/reports/aging-analysis?customer_id={$debtA->customer_id}");
+
+        $this->assertCount(1, $response->json('data.debts'));
+    }
+
+    // --- Standard Reports (FR-055) ---
+
+    public function test_admin_can_view_customers_report(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/customers')->assertStatus(200)->assertJsonStructure(['data' => ['customers', 'pagination']]);
+    }
+
+    public function test_admin_can_view_debts_report(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/debts')->assertStatus(200)->assertJsonStructure(['data' => ['debts', 'pagination']]);
+    }
+
+    public function test_admin_can_view_collection_cases_report(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/collection-cases')->assertStatus(200)->assertJsonStructure(['data' => ['collection_cases', 'pagination']]);
+    }
+
+    public function test_admin_can_view_payments_report(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/payments')->assertStatus(200)->assertJsonStructure(['data' => ['payments', 'pagination']]);
+    }
+
+    public function test_admin_can_view_credit_risk_report(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'low', 'credit_score' => 700]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/credit-risk')->assertStatus(200)->assertJsonStructure(['data' => ['customers', 'pagination']]);
+    }
+
+    public function test_archived_customers_are_excluded_by_default_from_the_customers_report(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->archived()->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/customers');
+
+        $this->assertCount(0, $response->json('data.customers'));
+    }
+
+    // --- Filters (FR-056) ---
+
+    public function test_customers_report_can_be_filtered_by_status(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create(['customer_status' => 'active']);
+        Customer::factory()->for($tenant, 'tenant')->create(['customer_status' => 'inactive']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/customers?customer_status=inactive');
+
+        $this->assertCount(1, $response->json('data.customers'));
+    }
+
+    public function test_debts_report_can_be_filtered_by_status_and_recovery_stage(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['debt_status' => 'overdue', 'recovery_stage' => 2]);
+        $this->makeDebt($tenant, ['debt_status' => 'pending', 'recovery_stage' => 1]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/debts?status=overdue&recoveryStage=2');
+
+        $this->assertCount(1, $response->json('data.debts'));
+    }
+
+    public function test_collection_cases_report_can_be_filtered_by_status(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debtA = $this->makeDebt($tenant);
+        $debtB = $this->makeDebt($tenant);
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debtA, 'debt')->create(['case_status' => 'open']);
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debtB, 'debt')->closed()->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/collection-cases?status=closed');
+
+        $this->assertCount(1, $response->json('data.collection_cases'));
+    }
+
+    // --- Export (FR-057) ---
+
+    public function test_admin_can_export_customers_report_as_csv(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->get('/api/v1/reports/customers/export?format=csv');
+
+        $response->assertStatus(200);
+    }
+
+    public function test_admin_can_export_debts_report_as_excel(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->get('/api/v1/reports/debts/export?format=excel');
+
+        $response->assertStatus(200);
+    }
+
+    public function test_admin_can_export_aging_analysis_as_pdf(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->get('/api/v1/reports/aging-analysis/export?format=pdf');
+
+        $response->assertStatus(200);
+        $this->assertSame('application/pdf', $response->headers->get('content-type'));
+    }
+
+    public function test_export_requires_a_valid_format(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/customers/export?format=word')->assertStatus(422);
+    }
+
+    public function test_export_of_an_unknown_report_type_returns_404(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/not-a-real-report/export?format=csv')->assertStatus(404);
+    }
+
+    // --- Authentication / Authorization / Tenant isolation ---
+
+    public function test_unauthenticated_requests_are_rejected(): void
+    {
+        $this->getJson('/api/v1/dashboard/kpis')->assertStatus(401);
+        $this->getJson('/api/v1/reports/aging-analysis')->assertStatus(401);
+        $this->getJson('/api/v1/reports/customers')->assertStatus(401);
+    }
+
+    public function test_customer_role_cannot_view_reports(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant, 'customer');
+
+        $this->getJson('/api/v1/dashboard/kpis')->assertStatus(403);
+        $this->getJson('/api/v1/reports/customers')->assertStatus(403);
+    }
+
+    public function test_reports_respect_tenant_isolation(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        Customer::factory()->for($tenantA, 'tenant')->create(['name' => 'Customer A']);
+        Customer::factory()->for($tenantB, 'tenant')->create(['name' => 'Customer B']);
+
+        $this->actingAsTenantUser($tenantA);
+        $response = $this->getJson('/api/v1/reports/customers');
+
+        $names = collect($response->json('data.customers'))->pluck('name');
+        $this->assertTrue($names->contains('Customer A'));
+        $this->assertFalse($names->contains('Customer B'));
+    }
+}
