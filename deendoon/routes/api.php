@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CreditRiskController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
 use App\Http\Controllers\DebtController;
@@ -25,6 +26,8 @@ Route::prefix('v1')->group(function () {
         Route::patch('customers/{customer}/status', [CustomerController::class, 'updateStatus']);
         Route::get('customers/{customer}/credit-profile', [CustomerController::class, 'creditProfile']);
         Route::patch('customers/{customer}/credit-limit', [CustomerController::class, 'updateCreditLimit']);
+        Route::get('customers/{customer}/credit-score', [CreditRiskController::class, 'creditScore']);
+        Route::patch('customers/{customer}/risk-level', [CreditRiskController::class, 'updateRiskLevel']);
         Route::post('customers/{customer}/debts', [DebtController::class, 'store']);
 
         Route::get('debts', [DebtController::class, 'index']);

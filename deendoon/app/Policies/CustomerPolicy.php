@@ -51,6 +51,16 @@ class CustomerPolicy
         return $this->isAuthorized($user);
     }
 
+    public function viewCreditScore(User $user, Customer $customer): bool
+    {
+        return $this->isAuthorized($user);
+    }
+
+    public function updateRiskLevel(User $user, Customer $customer): bool
+    {
+        return $this->isAuthorized($user);
+    }
+
     private function isAuthorized(User $user): bool
     {
         return $user->hasAnyRole(['admin', 'sales_finance']);

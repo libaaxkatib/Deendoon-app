@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\CreditLimitReached;
 use App\Models\Customer;
 
 /**
@@ -24,5 +25,10 @@ class CustomerBalanceService
 
         $customer->outstanding_balance = $outstanding;
         $customer->save();
+
+        // FR-028: Outstanding Balance reaches or exceeds Credit Limit.
+        if (bccomp((string) $outstanding, (string) $customer->credit_limit, 2) >= 0) {
+            CreditLimitReached::dispatch($customer);
+        }
     }
 }
