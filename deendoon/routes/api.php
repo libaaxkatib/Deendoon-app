@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerImportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -9,5 +11,18 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
+
+        Route::get('customers', [CustomerController::class, 'index']);
+        Route::post('customers', [CustomerController::class, 'store']);
+        Route::post('customers/check-duplicate', [CustomerController::class, 'checkDuplicate']);
+        Route::post('customers/import', [CustomerImportController::class, 'store']);
+        Route::post('customers/import/{batch}/commit', [CustomerImportController::class, 'commit']);
+        Route::post('customers/{customer}/restore', [CustomerController::class, 'restore'])->withTrashed();
+        Route::get('customers/{customer}', [CustomerController::class, 'show']);
+        Route::put('customers/{customer}', [CustomerController::class, 'update']);
+        Route::post('customers/{customer}/archive', [CustomerController::class, 'archive']);
+        Route::patch('customers/{customer}/status', [CustomerController::class, 'updateStatus']);
+        Route::get('customers/{customer}/credit-profile', [CustomerController::class, 'creditProfile']);
+        Route::patch('customers/{customer}/credit-limit', [CustomerController::class, 'updateCreditLimit']);
     });
 });

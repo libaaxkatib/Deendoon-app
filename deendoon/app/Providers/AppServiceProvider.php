@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Customer;
 use App\Models\User;
+use App\Policies\CustomerPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -28,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin-only', fn (User $user): bool => $user->hasRole('admin'));
         Gate::define('sales-finance-only', fn (User $user): bool => $user->hasRole('sales_finance'));
         Gate::define('customer-only', fn (User $user): bool => $user->hasRole('customer'));
+
+        Gate::policy(Customer::class, CustomerPolicy::class);
 
         RateLimiter::for('login', function (Request $request) {
             $key = Str::lower(trim((string) $request->input('email'))).'|'.$request->ip();
