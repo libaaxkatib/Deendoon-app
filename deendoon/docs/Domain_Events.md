@@ -25,7 +25,7 @@ The **Current Implementation Status** field on every event states which of these
 - [Credit & Risk (Module 4)](#credit--risk-module-4)
 - [Authentication (approved, not yet wired)](#authentication-approved-not-yet-wired)
 - [Recovery Workflow (Module 5)](#recovery-workflow-module-5)
-- [Planned Events — Payment Tracking (Module 6)](#planned-events--payment-tracking-module-6)
+- [Payment Tracking (Module 6)](#payment-tracking-module-6)
 - [Planned Events — Professional Collection (Module 7)](#planned-events--professional-collection-module-7)
 - [Planned Events — Documents (Module 8)](#planned-events--documents-module-8)
 - [Planned Events — Administration (Module 12)](#planned-events--administration-module-12)
@@ -69,7 +69,7 @@ The **Current Implementation Status** field on every event states which of these
 | **Related Business Rules** | BRL-031 (Stage 4 mapping), BRL-034 (broken-promise trigger condition) |
 | **Current Implementation Status** | **Implemented** — a real `App\Events\PromiseBroken` class, dispatched via `Event::dispatch()`, covered by feature tests (transitions to broken, dispatches the event, advances Recovery Stage, does not fire for promises not yet due). |
 
-**Note on why the promise-broken condition can be evaluated at all without Module 6 (Payments):** BRL-034's trigger is "promised date passes with no qualifying payment." Since zero payments can exist anywhere in the system today (Module 6 doesn't exist), that condition is unconditionally true once the date passes — a logically sound shortcut, not an invented rule.
+**Note on `refreshBrokenPromises()` vs. Module 6 (Payments):** BRL-034's trigger is "promised date passes with no qualifying payment." Module 6 now exists and evaluates the other side of BRL-032's outcome (`PromiseToPayService::evaluateFulfillment()`, called synchronously when a payment is recorded) — a promise is only ever marked broken while it is still `open`, so any promise a qualifying payment has already fulfilled is no longer eligible for this check. One ordering edge case is not handled: if a promise is *already marked broken* (its date passed and a Debt view triggered this method before any payment arrived) and a backdated payment is then recorded that would have qualified as fulfillment, the promise stays `broken` — there is no path back from `broken` to `fulfilled`, since Promise to Pay revision/correction (DD-013) is itself unresolved. Flagged as NON-BLOCKING in the Module 6 report, not silently resolved.
 
 ---
 
@@ -142,31 +142,43 @@ Follow-up History actions below are real, tested, working code paths (`ReminderC
 | **CallLogged** | `follow_up_history.action_type = call_logged` | `ReminderController::call()` | User logs a phone call | FR-030 | **Implemented** (recorded) |
 | **PromiseRecorded** | `follow_up_history.action_type = promise_recorded` | `PromiseToPayController::store()` | A Promise to Pay is recorded against a Debt | FR-031 | **Implemented** (recorded) |
 | **PromiseBroken** | `follow_up_history.action_type = promise_broken` | `PromiseToPayService::refreshBrokenPromises()` | Promised date passes with no qualifying payment | FR-031, BRL-034 | **Implemented** (dispatched — see above) |
-| **RecoveryStageChanged (automatic)** | *(no distinct `audit_log.action` — reuses `status_changed` with a descriptive `reason`, see below)* | `RecoveryStageService::advanceTo()` | Debt's Recovery Stage advances per BRL-031's event-to-stage mapping (Stage 2: reminder while Overdue; Stage 3: call logged; Stage 4: promise broken) | FR-032, BRL-031 | **Implemented** (recorded, reused action — see note) |
+| **PromiseFulfilled** | `follow_up_history.action_type = promise_fulfilled` | `PromiseToPayService::evaluateFulfillment()` | A qualifying payment (Module 6) is recorded on or before the promised date | FR-031, BRL-032 | **Implemented** (recorded) — see Module 6 below |
+| **RecoveryStageChanged (automatic)** | *(no distinct `audit_log.action` — reuses `status_changed` with a descriptive `reason`, see below)* | `RecoveryStageService::advanceTo()` | Debt's Recovery Stage advances per BRL-031's event-to-stage mapping (Stage 2: reminder while Overdue; Stage 3: call logged; Stage 4: promise broken; Stage 6: Debt reaches Paid, Module 6) | FR-032, BRL-031 | **Implemented** (recorded, reused action — see note) |
 
 **Not implemented in this module (explicitly out of scope or blocked):**
 - **ReminderSent** as an actual *delivery* — this module only records that a manual reminder action was taken (FR-030 scoping); the `notifications.type = reminder_sent` delivery path belongs to Module 10.
-- **PromiseFulfilled** — requires a real Payment (Module 6) to determine "fulfilled." No payments can exist yet, so this branch is unreachable and is not implemented (not simulated).
 - **PromiseToPayDue** (`notifications.type`) — a Calendar-facing notification; out of scope per the task's explicit exclusion of Notifications Delivery.
-- **Escalation Rules → Professional Collection** — the actual escalation action (creating a Collection Case) is Module 7, which doesn't exist. Recovery Stage automation stops at Stage 4 (Final Notice); Stage 5+ requires Module 7/6.
+- **Escalation Rules → Professional Collection** — the actual escalation action (creating a Collection Case) is Module 7, which doesn't exist. Recovery Stage automation stops at Stage 4 (Final Notice) and now also reaches Stage 6 (Recovered, via Module 6); Stage 5 requires Module 7.
 
 **Note on `RecoveryStageChanged (automatic)`'s reused action:** no distinct `audit_log.action` value exists for an *automatic* stage change (only `recovery_stage_override`, which FR-025 describes as specifically manual — see [Future Review](#future-review)). Following the same precedent already used for Risk Level changes (reusing `edited`), automatic stage advancement reuses `AuditAction::StatusChanged` with a descriptive `reason` string (e.g. "Recovery Stage advanced to 3 (Phone Follow-up): call logged") rather than inventing a new enum value. Flagged as a NON-BLOCKING SRS inconsistency, not resolved here.
 
-**Current Consumers:** `AdvanceRecoveryStageOnBrokenPromise` (for `PromiseBroken`, as above). **Future Consumers of all of the above:** Debt Timeline display (FR-024 — the `timeline` endpoint now sources whatsapp/sms/call/promise stages from `follow_up_history` and shows them as `completed` once populated), Notifications (Module 10), Reporting (Module 9).
+**Current Consumers:** `AdvanceRecoveryStageOnBrokenPromise` (for `PromiseBroken`, as above). **Future Consumers of all of the above:** Debt Timeline display (FR-024 — the `timeline` endpoint sources whatsapp/sms/call/promise/payment stages from `follow_up_history` and shows them as `completed` once populated), Notifications (Module 10), Reporting (Module 9).
 
 ---
 
-## Planned Events — Payment Tracking (Module 6)
+## Payment Tracking (Module 6)
 
-| Event Name | Source Enum | Trigger | Related FR / BR |
-|---|---|---|---|
-| **PaymentRecorded** | `audit_log.action = payment_added`, `follow_up_history.action_type = payment_recorded` | A payment is recorded against a Debt | FR-034, BRL-037 |
-| **PaymentReceived** | `notifications.type = payment_received` | Same underlying occurrence as PaymentRecorded, surfaced as a notification | FR-039 |
-| **DebtStatusChanged — Partial Paid / Paid** | `audit_log.action = status_changed` (generic) | Cumulative payments partially or fully satisfy a Debt | FR-037, BRL-021 |
-| **ReceiptGenerated** | `audit_log.action = receipt_generated` | A payment automatically triggers Receipt generation | FR-038, FR-047 |
-| **CreditScoreRecalculated (payment-driven)** | `audit_log.action = credit_score_recalculated` | A payment is classified on-time/late/partial | FR-039, FR-026 — see [Deferred Events](#deferred-events) |
+Recorded, tested, working code paths in `PaymentService::record()` — each Payment triggers one `audit_log` row (`payment_added`) and one `follow_up_history` row (`payment_recorded`), plus the downstream consequences below. None has been given a dedicated `App\Events\*` class — unlike `PromiseBroken`, no approved Business Rule ties Payment Recording to a consequence that needs *decoupled* handling; every consequence below is synchronous, same-request, same-transaction, and already reuses an existing Service directly (`CustomerBalanceService`, `PromiseToPayService`, `RecoveryStageService`).
 
-**Future Consumers:** Customer Balance recalculation (`CustomerBalanceService`, already built and ready to consume a real Payment once Module 6 exists), Credit & Risk (Module 4), Documents (Module 8), Notifications (Module 10).
+**Verified directly against the approved SRS (Product Owner review, Module 6):** the terms "Domain Event," "event-driven," "event bus," "dispatch," and "listener" do not appear anywhere in `01`–`09`. FR-039's "System emits a qualifying payment-behavior event..." language is plain narrative describing required behavior, not a mandate for the dispatched-class architecture — that architecture (and the promotion criterion: only when a consequence needs decoupled handling) is this codebase's own implementation choice, not an SRS requirement. FR-039's three sub-steps were checked individually against that self-imposed criterion: Credit Score classification (deferred, no consumer), Promise fulfillment (implemented, direct synchronous call, no decoupling need), Payment Received → Notifications (Module 10 out of scope, no consumer). None qualifies for promotion; the synchronous implementation is correct as-is.
+
+| Event Name | Source Enum | Publisher | Trigger (per approved FR/BRL) | Related FR / BR | Status |
+|---|---|---|---|---|---|
+| **PaymentRecorded** | `audit_log.action = payment_added`, `follow_up_history.action_type = payment_recorded` | `PaymentService::record()` | A payment (full or partial) is recorded against a Debt | FR-034, BRL-037 | **Implemented** (recorded) |
+| **DebtStatusChanged — Partial Paid / Paid** | `audit_log.action = status_changed` (generic, `user_id = NULL` — "System", per FR-037 step 4's literal text), `debt_status` | `PaymentService::recalculateDebt()` | Cumulative payments partially or fully satisfy a Debt (BRL-039) | FR-037, BRL-021 | **Implemented** (recorded) |
+| **RecoveryStageChanged — Stage 6 (Recovered)** | *(reuses `status_changed`, see Recovery Workflow above)* | `PaymentService::recalculateDebt()` → `RecoveryStageService::advanceTo()` | Debt Status transitions into Paid | FR-032, FR-037, BRL-031 | **Implemented** (recorded, reused action) |
+| **PromiseFulfilled** | *(see Recovery Workflow above)* | `PaymentService::record()` → `PromiseToPayService::evaluateFulfillment()` | A qualifying (any positive) payment is recorded on or before an open Promise's promised date | FR-031, FR-039, BRL-032 | **Implemented** (recorded) |
+| **ReceiptGenerated (metadata only)** | `audit_log.action = receipt_generated`, `entity_type = payment` | `PaymentService::record()` | A payment is successfully recorded | FR-038 | **Implemented** (audit-trail metadata only — see note) |
+
+**Note on `ReceiptGenerated`:** FR-038 splits into a triggering/audit step (this module's job) and actual document generation (Module 8 — Documents, owned mechanics: PDF, `RCT-` Auto Numbering, the `receipts` table). Module 8 does not exist, and its `receipts.file_path` column is `NOT NULL` — there is no way to populate a real `receipts` row without fabricating a file path. Following the same "trigger vs. delivery" split already applied to FR-028 (Credit Limit Reached) in the Credit & Risk Module, only the audit-trail event is implemented; no `receipts` row is created.
+
+**Not implemented in this module (explicitly deferred, not invented):**
+- **CreditScoreRecalculated (payment-driven)** — FR-039 step 1 asks this module to classify a payment as on-time/late/partial and emit that to Module 4 for scoring. Module 4's scoring computation itself remains deferred (DD-008 baseline, DD-009 point-value catalog — both still unresolved), so there is no consumer to classify for, and the approved `follow_up_history.action_type` enum has no distinct slot for the classification (only the generic `payment_recorded`). Implementing a classification with nothing to consume it, or inventing a new enum value, would both be invented behavior. See [Deferred Events](#deferred-events).
+- **PaymentReceived** (`notifications.type = payment_received`) — Notification Delivery (Module 10) is explicitly out of scope; per this document's own note, it is "the same underlying occurrence as PaymentRecorded," already captured by the recorded events above.
+- **Overpayment capping/crediting** (DD-016) and **blocking payments against Paid/Cancelled/Written-Off Debts** (DD-017) — both explicitly unresolved; `06_Database_Design.md` §6.4 and `07_API_Design.md` §7/§15 both state the `amount` check is "positive only, no ceiling" and that the endpoint "succeeds unconditionally" pending DD-016. Implementing either would mean deciding an open Product Owner question, not implementing an approved rule.
+- **Payment editing, archival, or reversal** (DD-018) — `payments` has no `updated_at`, `archived_at`, or delete path; the table is insert-only, exactly as `06` specifies pending that decision.
+
+**Future Consumers:** Reporting (Module 9, read-only over `payments`/`audit_log`), Notifications (Module 10, once built, for `payment_received`), Credit & Risk (Module 4, once DD-008/DD-009 are resolved).
 
 ---
 
@@ -212,7 +224,7 @@ Events that are approved in principle but cannot be correctly specified today be
 
 | Event Name | Blocked By | Why It's Deferred, Not Planned |
 |---|---|---|
-| **CreditScoreRecalculated** | DD-008 (baseline score), DD-009 (point-value catalog, band thresholds) | Even once Modules 5/6 exist to supply trigger events, there is no approved formula to calculate a score with. Building any version now would mean inventing DD-008/DD-009's answers, which the Credit & Risk Module report explicitly declined to do. A broken Promise to Pay (`PromiseBroken`, Module 5) is one of BRL-034's named triggers for this, but the deduction itself remains deferred. |
+| **CreditScoreRecalculated** | DD-008 (baseline score), DD-009 (point-value catalog, band thresholds) | Both Modules 5 and 6 now exist and supply trigger events (a broken Promise to Pay, `PromiseBroken`; an on-time/late/partial payment, Module 6), but there is still no approved formula to calculate a score with. Building any version now would mean inventing DD-008/DD-009's answers, which the Credit & Risk Module report explicitly declined to do. |
 
 ---
 

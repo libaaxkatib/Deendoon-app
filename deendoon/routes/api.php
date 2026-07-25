@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
 use App\Http\Controllers\DebtController;
 use App\Http\Controllers\FollowUpHistoryController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PromiseToPayController;
 use App\Http\Controllers\ReminderController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,7 @@ Route::prefix('v1')->group(function () {
         Route::get('customers/{customer}/credit-score', [CreditRiskController::class, 'creditScore']);
         Route::patch('customers/{customer}/risk-level', [CreditRiskController::class, 'updateRiskLevel']);
         Route::post('customers/{customer}/debts', [DebtController::class, 'store']);
+        Route::get('customers/{customer}/payments', [PaymentController::class, 'forCustomer']);
 
         Route::get('debts', [DebtController::class, 'index']);
         Route::get('debts/{debt}', [DebtController::class, 'show']);
@@ -46,5 +48,7 @@ Route::prefix('v1')->group(function () {
         Route::post('debts/{debt}/reminders/sms', [ReminderController::class, 'sms']);
         Route::post('debts/{debt}/reminders/call', [ReminderController::class, 'call']);
         Route::post('debts/{debt}/promise-to-pay', [PromiseToPayController::class, 'store']);
+        Route::post('debts/{debt}/payments', [PaymentController::class, 'store']);
+        Route::get('debts/{debt}/payments', [PaymentController::class, 'index']);
     });
 });

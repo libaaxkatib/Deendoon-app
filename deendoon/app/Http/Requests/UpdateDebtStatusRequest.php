@@ -8,8 +8,8 @@ use Illuminate\Validation\Rule;
 /**
  * FR-021 / 07_API_Design.md §5.3: manual transition is restricted to
  * Cancelled and Written Off only. Paid/Partial Paid are Payment-driven
- * (Module 6, not built) and Overdue is automatic (due date passage) — none
- * of the three are reachable through this endpoint.
+ * (Module 6, PaymentService) and Overdue is automatic (due date passage) —
+ * none of the three are reachable through this endpoint.
  */
 class UpdateDebtStatusRequest extends FormRequest
 {

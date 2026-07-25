@@ -49,4 +49,9 @@ class Debt extends Model
     {
         return $this->hasMany(PromiseToPay::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
 }

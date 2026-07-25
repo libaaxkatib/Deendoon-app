@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'phone', 'credit_limit', 'customer_status', 'risk_level'])]
@@ -38,6 +39,15 @@ class Customer extends Model
     public function debts(): HasMany
     {
         return $this->hasMany(Debt::class);
+    }
+
+    /**
+     * FR-035 A1: Customer-level Payment History aggregates payments across
+     * all of the Customer's Debts.
+     */
+    public function payments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Payment::class, Debt::class);
     }
 
     /**
