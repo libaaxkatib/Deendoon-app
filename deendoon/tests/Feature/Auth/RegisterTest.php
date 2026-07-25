@@ -37,6 +37,39 @@ class RegisterTest extends TestCase
         $this->assertStringStartsWith('$argon2id$', $user->password);
     }
 
+    public function test_registration_normalizes_email_to_lowercase_and_trimmed(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'name' => 'Asad Mohamed',
+            'email' => '  Asad@Example.COM  ',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('users', ['email' => 'asad@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => '  Asad@Example.COM  ']);
+    }
+
+    public function test_registration_is_rate_limited(): void
+    {
+        $payload = fn (int $i): array => [
+            'name' => "User {$i}",
+            'email' => "user{$i}@example.com",
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ];
+
+        for ($i = 1; $i <= 5; $i++) {
+            $this->postJson('/api/v1/register', $payload($i))->assertStatus(201);
+        }
+
+        $response = $this->postJson('/api/v1/register', $payload(6));
+
+        $response->assertStatus(429)->assertJson(['success' => false]);
+    }
+
     public function test_registration_fails_with_missing_fields(): void
     {
         $response = $this->postJson('/api/v1/register', []);
