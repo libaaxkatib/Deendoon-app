@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CollectionCaseController;
 use App\Http\Controllers\CreditRiskController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
 use App\Http\Controllers\DebtController;
 use App\Http\Controllers\FollowUpHistoryController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfessionalCollectionRequestController;
 use App\Http\Controllers\PromiseToPayController;
 use App\Http\Controllers\ReminderController;
 use Illuminate\Support\Facades\Route;
@@ -50,5 +52,22 @@ Route::prefix('v1')->group(function () {
         Route::post('debts/{debt}/promise-to-pay', [PromiseToPayController::class, 'store']);
         Route::post('debts/{debt}/payments', [PaymentController::class, 'store']);
         Route::get('debts/{debt}/payments', [PaymentController::class, 'index']);
+        Route::post('debts/{debt}/collection-cases', [CollectionCaseController::class, 'store']);
+
+        Route::get('collection-cases', [CollectionCaseController::class, 'index']);
+        Route::get('collection-cases/{case}', [CollectionCaseController::class, 'show']);
+        Route::patch('collection-cases/{case}/assign', [CollectionCaseController::class, 'assign']);
+        Route::put('collection-cases/{case}', [CollectionCaseController::class, 'update']);
+        Route::post('collection-cases/{case}/activities', [CollectionCaseController::class, 'recordActivity']);
+        Route::post('collection-cases/{case}/close', [CollectionCaseController::class, 'close']);
+        Route::get('collection-cases/{case}/history', [CollectionCaseController::class, 'history']);
+        Route::post('collection-cases/{case}/professional-requests', [ProfessionalCollectionRequestController::class, 'store']);
+
+        Route::get('professional-requests', [ProfessionalCollectionRequestController::class, 'index']);
+        Route::get('professional-requests/{id}', [ProfessionalCollectionRequestController::class, 'show']);
+        Route::patch('professional-requests/{id}/status', [ProfessionalCollectionRequestController::class, 'updateStatus']);
+        Route::post('professional-requests/{id}/close', [ProfessionalCollectionRequestController::class, 'close']);
+        Route::get('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesIndex']);
+        Route::post('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesStore']);
     });
 });

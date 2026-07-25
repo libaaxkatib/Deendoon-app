@@ -26,7 +26,7 @@ The **Current Implementation Status** field on every event states which of these
 - [Authentication (approved, not yet wired)](#authentication-approved-not-yet-wired)
 - [Recovery Workflow (Module 5)](#recovery-workflow-module-5)
 - [Payment Tracking (Module 6)](#payment-tracking-module-6)
-- [Planned Events — Professional Collection (Module 7)](#planned-events--professional-collection-module-7)
+- [Professional Collection (Module 7)](#professional-collection-module-7)
 - [Planned Events — Documents (Module 8)](#planned-events--documents-module-8)
 - [Planned Events — Administration (Module 12)](#planned-events--administration-module-12)
 - [Deferred Events](#deferred-events)
@@ -143,12 +143,11 @@ Follow-up History actions below are real, tested, working code paths (`ReminderC
 | **PromiseRecorded** | `follow_up_history.action_type = promise_recorded` | `PromiseToPayController::store()` | A Promise to Pay is recorded against a Debt | FR-031 | **Implemented** (recorded) |
 | **PromiseBroken** | `follow_up_history.action_type = promise_broken` | `PromiseToPayService::refreshBrokenPromises()` | Promised date passes with no qualifying payment | FR-031, BRL-034 | **Implemented** (dispatched — see above) |
 | **PromiseFulfilled** | `follow_up_history.action_type = promise_fulfilled` | `PromiseToPayService::evaluateFulfillment()` | A qualifying payment (Module 6) is recorded on or before the promised date | FR-031, BRL-032 | **Implemented** (recorded) — see Module 6 below |
-| **RecoveryStageChanged (automatic)** | *(no distinct `audit_log.action` — reuses `status_changed` with a descriptive `reason`, see below)* | `RecoveryStageService::advanceTo()` | Debt's Recovery Stage advances per BRL-031's event-to-stage mapping (Stage 2: reminder while Overdue; Stage 3: call logged; Stage 4: promise broken; Stage 6: Debt reaches Paid, Module 6) | FR-032, BRL-031 | **Implemented** (recorded, reused action — see note) |
+| **RecoveryStageChanged (automatic)** | *(no distinct `audit_log.action` — reuses `status_changed` with a descriptive `reason`, see below)* | `RecoveryStageService::advanceTo()` | Debt's Recovery Stage advances per BRL-031's event-to-stage mapping (Stage 2: reminder while Overdue; Stage 3: call logged; Stage 4: promise broken; Stage 5: escalated to a Collection Case, Module 7; Stage 6: Debt reaches Paid, Module 6) | FR-032, BRL-031 | **Implemented** (recorded, reused action — see note) |
 
 **Not implemented in this module (explicitly out of scope or blocked):**
 - **ReminderSent** as an actual *delivery* — this module only records that a manual reminder action was taken (FR-030 scoping); the `notifications.type = reminder_sent` delivery path belongs to Module 10.
 - **PromiseToPayDue** (`notifications.type`) — a Calendar-facing notification; out of scope per the task's explicit exclusion of Notifications Delivery.
-- **Escalation Rules → Professional Collection** — the actual escalation action (creating a Collection Case) is Module 7, which doesn't exist. Recovery Stage automation stops at Stage 4 (Final Notice) and now also reaches Stage 6 (Recovered, via Module 6); Stage 5 requires Module 7.
 
 **Note on `RecoveryStageChanged (automatic)`'s reused action:** no distinct `audit_log.action` value exists for an *automatic* stage change (only `recovery_stage_override`, which FR-025 describes as specifically manual — see [Future Review](#future-review)). Following the same precedent already used for Risk Level changes (reusing `edited`), automatic stage advancement reuses `AuditAction::StatusChanged` with a descriptive `reason` string (e.g. "Recovery Stage advanced to 3 (Phone Follow-up): call logged") rather than inventing a new enum value. Flagged as a NON-BLOCKING SRS inconsistency, not resolved here.
 
@@ -182,19 +181,30 @@ Recorded, tested, working code paths in `PaymentService::record()` — each Paym
 
 ---
 
-## Planned Events — Professional Collection (Module 7)
+## Professional Collection (Module 7)
 
-| Event Name | Source Enum | Trigger | Related FR / BR |
-|---|---|---|---|
-| **Escalated** | `follow_up_history.action_type = escalated` | A Debt is escalated to a Collection Case | FR-040, BRL-035 |
-| **CollectionRequested** | `audit_log.action = collection_requested` | A Collection Case is created | FR-040 |
-| **CollectionActivityLogged** | `follow_up_history.action_type = collection_activity` | Activity logged against an open Collection Case | FR-044 |
-| **CollectionAssignment** | `notifications.type = collection_assignment` | A Collection Case is assigned to a Collection Officer | FR-041 |
-| **ProfessionalCollectionRequestSubmitted** | `audit_log.action` | A tenant submits a Professional Collection Request | FR-072 |
-| **ProfessionalCollectionRequestStatusChanged** | `audit_log.action` | The Deendoon Platform Administrator transitions a Request's status | FR-073, FR-076 |
-| **ProfessionalCollectionRequestUpdate** | `notifications.type = professional_collection_request_update` | Either party posts to the Request's conversation, or status changes | FR-075 |
+Recorded, tested, working code paths in `CollectionCaseService` and `ProfessionalCollectionRequestService` — each writes an `audit_log` row and, for Collection Case activity, a companion `follow_up_history` row (via the existing `FollowUpHistoryService`, extended with an optional `collection_case_id` parameter — additive, backward-compatible, every other call site unaffected). None has been given a dedicated `App\Events\*` class: every consequence below is synchronous, same-request, same-transaction, reusing an existing Service directly (`RecoveryStageService` for Stage 5, exactly like Stage 6 in Module 6) — no case here has a decoupled consumer that would justify one, the same criterion already applied in Modules 5 and 6.
 
-**Note:** this entire module is additionally blocked on the RBAC divergence (Product Owner Decision 4) — it requires the `deendoon_platform_administrator` actor, which doesn't exist in the current interim 3-role model. Flagged previously in the Architecture Audit; restated here since it affects every event in this section.
+| Event Name | Source Enum | Publisher | Trigger (per approved FR/BRL) | Related FR / BR | Status |
+|---|---|---|---|---|---|
+| **CollectionRequested** | `audit_log.action = collection_requested` | `CollectionCaseService::escalate()` | A Collection Case is created against a Debt | FR-040, BRL-045 | **Implemented** (recorded) |
+| **Escalated** | `follow_up_history.action_type = escalated` | `CollectionCaseService::escalate()` | Same occurrence as CollectionRequested, recorded into the Debt's own Follow-up History/Timeline | FR-040 | **Implemented** (recorded) |
+| **RecoveryStageChanged — Stage 5 (Professional Collection)** | *(reuses `status_changed`, see Recovery Workflow above)* | `CollectionCaseService::escalate()` → `RecoveryStageService::advanceTo()` | A Collection Case is created (BRL-031 Stage 5's own "Entered When" — case creation is the cause, not the effect; see the module report for the BRL-031-vs-BRL-035 circularity this resolves) | FR-032, FR-040, BRL-031, BRL-045 | **Implemented** (recorded, reused action) |
+| **CollectionCaseEdited (assignment)** | `audit_log.action = edited` | `CollectionCaseService::assign()` | A Collection Officer is assigned/reassigned | FR-041 | **Implemented** (recorded) |
+| **CollectionActivityLogged** | `follow_up_history.action_type = collection_activity`, `audit_log.action = edited` | `CollectionCaseService::recordActivity()` | Activity logged against an open Collection Case | FR-044, BRL-049 | **Implemented** (recorded) |
+| **CollectionCaseClosed** | `audit_log.action = status_changed` | `CollectionCaseService::close()` | Collection Case closed with a recorded outcome | FR-045, BRL-050 | **Implemented** (recorded) |
+| **ProfessionalCollectionRequestSubmitted** | `audit_log.action = professional_collection_request_submitted` | `ProfessionalCollectionRequestService::submit()` | A tenant submits an open Collection Case to Deendoon | FR-072, BRL-078 | **Implemented** (recorded) |
+| **ProfessionalCollectionRequestStatusChanged** | `audit_log.action = professional_collection_request_status_changed` | `ProfessionalCollectionRequestService::transitionStatus()` / `close()` | The Deendoon Platform Administrator transitions a Request's status, including the terminal outcome | FR-073, FR-076, BRL-079 | **Implemented** (recorded) |
+
+**Note on `RecoveryStageChanged — Stage 5`'s trigger direction:** BRL-035/FR-040 read as if "Debt reaches Stage 5" precedes and causes Collection Case creation, but BRL-031's own stage table defines Stage 5 as "Entered When: Debt is escalated to a Collection Case" — case creation is the cause, Stage 5 the effect, exactly the same direction already used for Stage 6 (Payment reaching Paid, Module 6). There is no other approved mechanism that independently advances a Debt to Stage 5 first. This is a genuine SRS circularity (not silently resolved) — every call to `escalate()` is treated as DD-014's "manual escalation," which is left unresolved but not forbidden.
+
+**Not implemented in this module (explicitly deferred, not invented):**
+- **CollectionAssignment notification** (`notifications.type = collection_assignment`) — Notification Delivery (Module 10) is explicitly out of scope; the underlying fact is already captured by the `edited` audit entry above.
+- **ProfessionalCollectionRequestUpdate notification** (`notifications.type = professional_collection_request_update`) — same reasoning; FR-075's messages themselves are fully implemented (`request_messages`, immutable, BRL-080), only the Module 10 notification fan-out is deferred.
+- **Payment Added consumption into Collection Case activity** (FR-044 A1) — would require `PaymentService` (Module 6, previously approved and frozen) to look up an open Collection Case for the Debt and tag its `follow_up_history` row's `collection_case_id` — modifying an already-approved module without an explicit Product Owner instruction to do so. Flagged as a NON-BLOCKING gap, not silently wired around the boundary.
+- **Credit Score deduction on broken/closed collection outcomes** — Module 4's scoring computation remains deferred (DD-008/DD-009), unchanged by this module.
+
+**Current Consumers:** none of the above are consumed by another module today (matching the "no dispatched class" reasoning). **Future Consumers:** Reporting (Module 9, Active Collection Cases / SM-006), Notifications (Module 10, once built).
 
 ---
 

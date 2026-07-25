@@ -21,11 +21,17 @@ class RoleAuthorizationTest extends TestCase
 
     // --- Role assignment ---
 
-    public function test_role_seeder_creates_exactly_the_three_approved_roles(): void
+    /**
+     * Module 7 (Professional Collection) added 'collection_officer' (FR-041
+     * E2 names it explicitly by role) and 'deendoon_platform_administrator'
+     * (FR-072–076's distinct, non-tenant-scoped actor) to the original
+     * three-role interim set — see RoleSeeder.
+     */
+    public function test_role_seeder_creates_exactly_the_five_approved_roles(): void
     {
-        $this->assertDatabaseCount('roles', 3);
+        $this->assertDatabaseCount('roles', 5);
 
-        foreach (['admin', 'sales_finance', 'customer'] as $role) {
+        foreach (['admin', 'sales_finance', 'customer', 'collection_officer', 'deendoon_platform_administrator'] as $role) {
             $this->assertDatabaseHas('roles', ['name' => $role]);
         }
     }
@@ -35,7 +41,7 @@ class RoleAuthorizationTest extends TestCase
         $this->seed(RoleSeeder::class);
         $this->seed(RoleSeeder::class);
 
-        $this->assertDatabaseCount('roles', 3);
+        $this->assertDatabaseCount('roles', 5);
     }
 
     public function test_user_can_be_assigned_a_role(): void

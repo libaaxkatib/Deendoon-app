@@ -2,11 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\CollectionCase;
 use App\Models\Customer;
 use App\Models\Debt;
+use App\Models\ProfessionalCollectionRequest;
 use App\Models\User;
+use App\Policies\CollectionCasePolicy;
 use App\Policies\CustomerPolicy;
 use App\Policies\DebtPolicy;
+use App\Policies\ProfessionalCollectionRequestPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -35,6 +39,8 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(Debt::class, DebtPolicy::class);
+        Gate::policy(CollectionCase::class, CollectionCasePolicy::class);
+        Gate::policy(ProfessionalCollectionRequest::class, ProfessionalCollectionRequestPolicy::class);
 
         RateLimiter::for('login', function (Request $request) {
             $key = Str::lower(trim((string) $request->input('email'))).'|'.$request->ip();

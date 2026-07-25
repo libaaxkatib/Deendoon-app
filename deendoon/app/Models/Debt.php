@@ -54,4 +54,9 @@ class Debt extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function collectionCases(): HasMany
+    {
+        return $this->hasMany(CollectionCase::class);
+    }
 }

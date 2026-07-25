@@ -14,10 +14,16 @@ use App\Models\User;
  */
 class FollowUpHistoryService
 {
-    public function record(Debt $debt, FollowUpActionType $actionType, ?User $actor = null, ?string $details = null): FollowUpHistory
-    {
+    public function record(
+        Debt $debt,
+        FollowUpActionType $actionType,
+        ?User $actor = null,
+        ?string $details = null,
+        ?string $collectionCaseId = null,
+    ): FollowUpHistory {
         return $debt->followUpHistory()->create([
             'action_type' => $actionType->value,
+            'collection_case_id' => $collectionCaseId,
             'details' => $details,
             'actor_user_id' => $actor?->id,
             'occurred_at' => now(),

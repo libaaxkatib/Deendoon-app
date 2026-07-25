@@ -53,6 +53,11 @@ class DebtPolicy
         return $this->isAuthorized($user);
     }
 
+    public function escalate(User $user, Debt $debt): bool
+    {
+        return $this->isAuthorized($user);
+    }
+
     private function isAuthorized(User $user): bool
     {
         return $user->hasAnyRole(['admin', 'sales_finance']);
