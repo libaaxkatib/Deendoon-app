@@ -117,7 +117,7 @@ class CustomerTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.warning.code', 'POSSIBLE_DUPLICATE_CUSTOMER');
+            ->assertJsonPath('data.warning.type', 'POSSIBLE_DUPLICATE_CUSTOMER');
 
         $this->assertSame(2, Customer::count());
     }
@@ -306,7 +306,7 @@ class CustomerTest extends TestCase
             'credit_limit' => $customer->credit_limit,
         ]);
 
-        $response->assertStatus(200)->assertJsonPath('data.warning.code', 'POSSIBLE_DUPLICATE_CUSTOMER');
+        $response->assertStatus(200)->assertJsonPath('data.warning.type', 'POSSIBLE_DUPLICATE_CUSTOMER');
     }
 
     public function test_outstanding_balance_cannot_be_set_via_update(): void

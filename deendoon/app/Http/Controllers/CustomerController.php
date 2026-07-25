@@ -263,7 +263,7 @@ class CustomerController extends Controller
     private function duplicateWarning(Customer $duplicate): array
     {
         return [
-            'code' => 'POSSIBLE_DUPLICATE_CUSTOMER',
+            'type' => 'POSSIBLE_DUPLICATE_CUSTOMER',
             'message' => 'This customer may already exist.',
             'matched_customer_id' => $duplicate->id,
         ];

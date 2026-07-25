@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
+use App\Http\Controllers\DebtController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -24,5 +25,15 @@ Route::prefix('v1')->group(function () {
         Route::patch('customers/{customer}/status', [CustomerController::class, 'updateStatus']);
         Route::get('customers/{customer}/credit-profile', [CustomerController::class, 'creditProfile']);
         Route::patch('customers/{customer}/credit-limit', [CustomerController::class, 'updateCreditLimit']);
+        Route::post('customers/{customer}/debts', [DebtController::class, 'store']);
+
+        Route::get('debts', [DebtController::class, 'index']);
+        Route::get('debts/{debt}', [DebtController::class, 'show']);
+        Route::put('debts/{debt}', [DebtController::class, 'update']);
+        Route::patch('debts/{debt}/status', [DebtController::class, 'updateStatus']);
+        Route::post('debts/{debt}/archive', [DebtController::class, 'archive']);
+        Route::post('debts/{debt}/restore', [DebtController::class, 'restore'])->withTrashed();
+        Route::get('debts/{debt}/timeline', [DebtController::class, 'timeline']);
+        Route::patch('debts/{debt}/recovery-stage', [DebtController::class, 'updateRecoveryStage']);
     });
 });
