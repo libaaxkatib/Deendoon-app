@@ -55,7 +55,7 @@ class ReportController extends Controller
 
         $buckets = $this->reporting->agingBuckets((clone $query)->get());
 
-        $debts = $query->orderBy('due_date')->paginate(perPage: $request->integer('perPage', 15));
+        $debts = $query->orderBy('due_date')->paginate(perPage: $this->perPage($request));
 
         $debtsWithBucket = collect($debts->items())->map(function (Debt $debt) {
             $resource = (new DebtResource($debt))->resolve();
@@ -75,7 +75,7 @@ class ReportController extends Controller
     {
         Gate::authorize('view-reports');
 
-        $customers = $this->customersQuery($request)->orderBy('name')->paginate(perPage: $request->integer('perPage', 15));
+        $customers = $this->customersQuery($request)->orderBy('name')->paginate(perPage: $this->perPage($request));
 
         return $this->successResponse([
             'customers' => CustomerResource::collection($customers->items()),
@@ -87,7 +87,7 @@ class ReportController extends Controller
     {
         Gate::authorize('view-reports');
 
-        $debts = $this->debtsQuery($request)->orderBy('due_date')->paginate(perPage: $request->integer('perPage', 15));
+        $debts = $this->debtsQuery($request)->orderBy('due_date')->paginate(perPage: $this->perPage($request));
 
         return $this->successResponse([
             'debts' => DebtResource::collection($debts->items()),
@@ -99,7 +99,7 @@ class ReportController extends Controller
     {
         Gate::authorize('view-reports');
 
-        $cases = $this->collectionCasesQuery($request)->orderBy('created_at', 'desc')->paginate(perPage: $request->integer('perPage', 15));
+        $cases = $this->collectionCasesQuery($request)->orderBy('created_at', 'desc')->paginate(perPage: $this->perPage($request));
 
         return $this->successResponse([
             'collection_cases' => CollectionCaseResource::collection($cases->items()),
@@ -111,7 +111,7 @@ class ReportController extends Controller
     {
         Gate::authorize('view-reports');
 
-        $payments = $this->paymentsQuery($request)->orderBy('payment_date', 'desc')->paginate(perPage: $request->integer('perPage', 15));
+        $payments = $this->paymentsQuery($request)->orderBy('payment_date', 'desc')->paginate(perPage: $this->perPage($request));
 
         return $this->successResponse([
             'payments' => PaymentResource::collection($payments->items()),
@@ -128,7 +128,7 @@ class ReportController extends Controller
     {
         Gate::authorize('view-reports');
 
-        $customers = $this->customersQuery($request)->orderByDesc('credit_score')->paginate(perPage: $request->integer('perPage', 15));
+        $customers = $this->customersQuery($request)->orderByDesc('credit_score')->paginate(perPage: $this->perPage($request));
 
         return $this->successResponse([
             'customers' => CustomerResource::collection($customers->items()),

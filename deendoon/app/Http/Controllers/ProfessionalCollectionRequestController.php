@@ -58,7 +58,7 @@ class ProfessionalCollectionRequestController extends Controller
         }
 
         $requests = $query->orderBy('created_at', 'desc')->paginate(
-            perPage: $request->integer('perPage', 15),
+            perPage: $this->perPage($request),
         );
 
         return $this->successResponse([

@@ -61,7 +61,7 @@ class CustomerController extends Controller
         }
 
         $customers = $query->orderBy('name')->paginate(
-            perPage: $request->integer('perPage', 15),
+            perPage: $this->perPage($request),
         );
 
         return $this->successResponse([

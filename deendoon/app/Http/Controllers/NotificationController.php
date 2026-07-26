@@ -28,7 +28,7 @@ class NotificationController extends Controller
             $query->where('type', $type);
         }
 
-        $notifications = $query->orderBy('created_at', 'desc')->paginate(perPage: $request->integer('perPage', 15));
+        $notifications = $query->orderBy('created_at', 'desc')->paginate(perPage: $this->perPage($request));
 
         return $this->successResponse([
             'notifications' => NotificationResource::collection($notifications->items()),
@@ -40,7 +40,7 @@ class NotificationController extends Controller
     {
         $notifications = Notification::where('recipient_user_id', (string) $request->user()->id)
             ->orderBy('created_at', 'desc')
-            ->paginate(perPage: $request->integer('perPage', 15));
+            ->paginate(perPage: $this->perPage($request));
 
         return $this->successResponse([
             'notifications' => NotificationResource::collection($notifications->items()),

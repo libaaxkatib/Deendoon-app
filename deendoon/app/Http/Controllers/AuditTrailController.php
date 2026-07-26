@@ -47,7 +47,7 @@ class AuditTrailController extends Controller
         }
 
         $logs = $query->orderBy('occurred_at', 'desc')->paginate(
-            perPage: $request->integer('perPage', 15),
+            perPage: $this->perPage($request),
         );
 
         return $this->successResponse([

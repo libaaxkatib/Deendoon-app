@@ -70,14 +70,13 @@ class DebtController extends Controller
         }
 
         $debts = $query->orderBy('due_date')->paginate(
-            perPage: $request->integer('perPage', 15),
+            perPage: $this->perPage($request),
         );
 
-        $debts->getCollection()->each(function (Debt $debt) {
-            $this->refreshOverdueStatus($debt);
-            $this->promiseToPay->refreshBrokenPromises($debt);
-            $this->promiseToPay->refreshDuePromises($debt);
-        });
+        $pageDebts = $debts->getCollection();
+        $pageDebts->each(fn (Debt $debt) => $this->refreshOverdueStatus($debt));
+        $this->promiseToPay->refreshBrokenPromisesForMany($pageDebts);
+        $this->promiseToPay->refreshDuePromisesForMany($pageDebts);
 
         return $this->successResponse([
             'debts' => DebtResource::collection($debts->items()),

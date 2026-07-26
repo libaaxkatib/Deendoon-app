@@ -8,6 +8,7 @@ use App\Enums\NotificationType;
 use App\Events\PromiseBroken;
 use App\Models\Debt;
 use App\Models\PromiseToPay;
+use Illuminate\Support\Collection;
 
 /**
  * FR-031 step 4 / BRL-032: a Promise to Pay is evaluated against whichever
@@ -26,6 +27,16 @@ use App\Models\PromiseToPay;
  * to naturally stop re-evaluating true across repeated page views within
  * the same day — `NotificationService::notifyOnce` guards against
  * re-creating the same notification on every request.
+ *
+ * `refreshBrokenPromisesForMany`/`refreshDuePromisesForMany` (Phase 13
+ * performance pass) exist solely to let `DebtController::index()` apply
+ * the exact same per-promise logic across a whole page of Debts with one
+ * query per check instead of one per Debt — the single-Debt methods below
+ * remain unchanged for `DebtController::show()` and every other call site.
+ * A promise can never match both the "broken" (`promised_date <` today)
+ * and "due" (`promised_date =` today) queries at once, so batching across
+ * Debts changes nothing about which promises transition or what side
+ * effects fire for each — only the number of SELECT queries issued.
  */
 class PromiseToPayService
 {
@@ -41,26 +52,47 @@ class PromiseToPayService
             ->where('status', 'open')
             ->where('promised_date', '<', now()->toDateString())
             ->get()
-            ->each(function (PromiseToPay $promise) use ($debt) {
-                $promise->update(['status' => 'broken', 'resolved_at' => now()]);
+            ->each(fn (PromiseToPay $promise) => $this->markBroken($promise, $debt));
+    }
 
-                $this->followUpHistory->record(
-                    $debt,
-                    FollowUpActionType::PromiseBroken,
-                    null,
-                    'Automatic: promised date passed with no qualifying payment',
-                );
+    /**
+     * @param  Collection<int, Debt>  $debts
+     */
+    public function refreshBrokenPromisesForMany(Collection $debts): void
+    {
+        if ($debts->isEmpty()) {
+            return;
+        }
 
-                $this->auditLog->record(
-                    AuditAction::StatusChanged,
-                    'promise_to_pay',
-                    $promise->id,
-                    null,
-                    'Automatic: promise broken',
-                );
+        $debtsById = $debts->keyBy('id');
 
-                PromiseBroken::dispatch($promise);
-            });
+        PromiseToPay::whereIn('debt_id', $debtsById->keys())
+            ->where('status', 'open')
+            ->where('promised_date', '<', now()->toDateString())
+            ->get()
+            ->each(fn (PromiseToPay $promise) => $this->markBroken($promise, $debtsById->get($promise->debt_id)));
+    }
+
+    private function markBroken(PromiseToPay $promise, Debt $debt): void
+    {
+        $promise->update(['status' => 'broken', 'resolved_at' => now()]);
+
+        $this->followUpHistory->record(
+            $debt,
+            FollowUpActionType::PromiseBroken,
+            null,
+            'Automatic: promised date passed with no qualifying payment',
+        );
+
+        $this->auditLog->record(
+            AuditAction::StatusChanged,
+            'promise_to_pay',
+            $promise->id,
+            null,
+            'Automatic: promise broken',
+        );
+
+        PromiseBroken::dispatch($promise);
     }
 
     /**
@@ -112,14 +144,35 @@ class PromiseToPayService
             ->where('status', 'open')
             ->whereDate('promised_date', '=', now()->toDateString())
             ->get()
-            ->each(function (PromiseToPay $promise) use ($debt) {
-                $this->notifications->notifyOnce(
-                    $debt->tenant_id,
-                    $promise->created_by_user_id,
-                    NotificationType::PromiseToPayDue,
-                    'promise_to_pay',
-                    $promise->id,
-                );
-            });
+            ->each(fn (PromiseToPay $promise) => $this->notifyDue($promise, $debt));
+    }
+
+    /**
+     * @param  Collection<int, Debt>  $debts
+     */
+    public function refreshDuePromisesForMany(Collection $debts): void
+    {
+        if ($debts->isEmpty()) {
+            return;
+        }
+
+        $debtsById = $debts->keyBy('id');
+
+        PromiseToPay::whereIn('debt_id', $debtsById->keys())
+            ->where('status', 'open')
+            ->whereDate('promised_date', '=', now()->toDateString())
+            ->get()
+            ->each(fn (PromiseToPay $promise) => $this->notifyDue($promise, $debtsById->get($promise->debt_id)));
+    }
+
+    private function notifyDue(PromiseToPay $promise, Debt $debt): void
+    {
+        $this->notifications->notifyOnce(
+            $debt->tenant_id,
+            $promise->created_by_user_id,
+            NotificationType::PromiseToPayDue,
+            'promise_to_pay',
+            $promise->id,
+        );
     }
 }

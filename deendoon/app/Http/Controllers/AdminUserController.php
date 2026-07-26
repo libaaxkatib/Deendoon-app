@@ -28,14 +28,14 @@ class AdminUserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        $query = User::where('tenant_id', $request->user()->tenant_id);
+        $query = User::where('tenant_id', $request->user()->tenant_id)->with('roles');
 
         if ($request->boolean('includeArchived')) {
             $query->withTrashed();
         }
 
         $users = $query->orderBy('name')->paginate(
-            perPage: $request->integer('perPage', 15),
+            perPage: $this->perPage($request),
         );
 
         return $this->successResponse([
