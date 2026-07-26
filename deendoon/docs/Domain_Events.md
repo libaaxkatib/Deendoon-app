@@ -23,7 +23,7 @@ The **Current Implementation Status** field on every event states which of these
 - [Customer Lifecycle (recorded, Module 2)](#customer-lifecycle-recorded-module-2)
 - [Debt Lifecycle (recorded, Module 3)](#debt-lifecycle-recorded-module-3)
 - [Credit & Risk (Module 4)](#credit--risk-module-4)
-- [Authentication (approved, not yet wired)](#authentication-approved-not-yet-wired)
+- [Authentication](#authentication)
 - [Recovery Workflow (Module 5)](#recovery-workflow-module-5)
 - [Payment Tracking (Module 6)](#payment-tracking-module-6)
 - [Professional Collection (Module 7)](#professional-collection-module-7)
@@ -120,15 +120,16 @@ All six of the following are real, tested, working code paths in `CustomerContro
 
 ---
 
-## Authentication (approved, not yet wired)
+## Authentication
 
 | Event Name | `audit_log.action` | Approved Trigger | Related FR | Status |
 |---|---|---|---|---|
-| **Login** | `login` | Successful authentication | FR-001 | **Planned** — `login` is an approved `audit_log.action` value, but `AuthController::login()` does not currently call `AuditLogService`. No audit row is written on login today. |
-| **Logout** | `logout` | Session/token invalidated | FR-002 | **Planned** — same gap; `AuthController::logout()` does not call `AuditLogService`. |
+| **Login** | `login` | Successful authentication | FR-001 | **Implemented** — `AuthController::login()` (Phase 14 — Production Readiness). |
+| **Logout** | `logout` | Session/token invalidated | FR-002 | **Implemented** — `AuthController::logout()` (Phase 14 — Production Readiness). |
 | **RoleChanged** | `role_changed` | A user's role assignment changes | FR-067 (Module 12) | **Implemented** — `AdminUserService::assignRole()`, see [Administration & Search](#administration--search-modules-1112). |
+| **PasswordReset** | `edited`, `entity_type = user` | A user completes FR-004's forgot-password flow with a valid token | FR-004 | **Implemented** — `PasswordResetService::reset()` (Sprint 1.1 — Password Recovery). Reuses the existing `edited` action (no dedicated `password_reset` value exists in `06` §6.9's CHECK constraint) — the same "reuse an existing generic action with a descriptive reason" pattern already used for automatic Recovery Stage advancement and Risk Level changes. See [docs/Password_Reset.md](./Password_Reset.md) for the full feature writeup. |
 
-`Login`/`Logout` remain a genuine, pre-existing implementation gap (not introduced by Module 12) — `06` approves them as audit actions, but no code path writes them. Flagged here since it directly affects Reporting/Security-audit completeness once discovered; out of Module 12's approved scope (FR-066–071 names User/Role/Settings/Reference-Data/Audit administration, not Authentication).
+This section previously listed Login/Logout as "Planned" — both are confirmed implemented as of Phase 14; this table was stale relative to the code until this update.
 
 ---
 

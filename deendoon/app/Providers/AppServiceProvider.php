@@ -81,6 +81,26 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        // Sprint 1.1 — Password Recovery. 08_Security_and_RBAC.md §8:
+        // rate limiting "applied at minimum to... POST /auth/forgot-password
+        // (reset-token exhaustion)". Same shape as 'login' (keyed by
+        // email+IP, so one abusive requester can't lock out a shared IP's
+        // other legitimate users' attempts against the same email).
+        RateLimiter::for('forgot-password', function (Request $request) {
+            $key = Str::lower(trim((string) $request->input('email'))).'|'.$request->ip();
+
+            return Limit::perMinute(5)->by($key);
+        });
+
+        // Defense-in-depth against token-guessing, not a load-bearing
+        // control — the token itself is a 64-character CSPRNG string, so
+        // brute force is computationally infeasible regardless.
+        RateLimiter::for('reset-password', function (Request $request) {
+            $key = Str::lower(trim((string) $request->input('email'))).'|'.$request->ip();
+
+            return Limit::perMinute(5)->by($key);
+        });
+
         // Phase 14 — Production Readiness. Every RegisterRequest/CreateUserRequest/
         // UpdateUserRequest already validates against Password::defaults();
         // without this, that resolves to Laravel's stock min:8, not 08's

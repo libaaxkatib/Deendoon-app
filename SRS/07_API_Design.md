@@ -4,11 +4,11 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-07 |
 | **Document Title** | API Design |
-| **Version** | 1.1 |
+| **Version** | 1.2 |
 | **Status** | Draft — Pending Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-24 |
+| **Last Updated** | 2026-07-26 |
 | **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (v1.7 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.3) · `05_UI_UX_Specification.md` (Approved & Frozen, v1.1) · `06_Database_Design.md` (Approved & Frozen, v1.1) |
 
 ---
@@ -19,6 +19,7 @@
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: full API specification derived from Documents 01–06 — every endpoint already committed in `03_Functional_Requirements.md`'s "Related APIs" annotations, consolidated, organized, and given complete request/response models, validation rules, and error semantics. No controller code, routes, or OpenAPI/Swagger generated — specification only, per instruction. | Claude |
 | 1.1 | 2026-07-24 | Consolidated architecture review: (1) Section 2 now states Laravel Sanctum (Bearer Token mode) explicitly as the authentication mechanism, with no reference to Passport or a custom implementation as alternatives; (2) removed any implication that Sanctum replaces or restructures `06_Database_Design.md`'s approved `sessions` table — the Sanctum/database mapping is now stated as an implementation-time concern only, with `06` reaffirmed as the sole source of truth for database architecture; (3) verified every endpoint against `03`, `05`, and `06` — no untraceable endpoint found, none removed; (4) consistency pass: added `/professional-requests` to the Pagination section's applicable-endpoints list (was missing), extended the `data`+`warning` response envelope note to explicitly cover Duplicate Customer Detection (FR-014) alongside Credit Limit (FR-018) rather than showing only one example, and added an explicit "no dedicated endpoint" note for FR-056 (Report Filtering) matching the existing FR-064 treatment. No new actor, workflow, permission, module, or business behavior introduced. | Claude |
+| 1.2 | 2026-07-26 | Product Owner decision (Deendoon Backend Excellence Phase, Sprint 1.1): Section 5.1's Authentication endpoints corrected from the drafted `/auth/*` path prefix to the flat path convention actually implemented and approved for production (`/register`, `/login`, `/logout`, `/forgot-password`, `/reset-password`) — the `/auth/` prefix was never built and is not adopted. `/register` (FR-001) added to the table; it was implemented from Module 1 but never listed here. `/change-password` (FR-005) and `/me` (FR-006) corrected to the same flat convention; both remain approved-but-unimplemented, unchanged from v1.1 in that respect. Section 5's endpoint-count note, Section 12's audit-logging note, and Section 13's traceability matrix updated to match. No endpoint, method, request/response shape, FR, or business rule changed — path prefix only. | Claude |
 
 ---
 
@@ -107,18 +108,21 @@ Every error response uses one envelope:
 
 ## 5. REST Endpoint Specifications
 
-Organized by resource group, mirroring `06_Database_Design.md` Section 5's grouping. `🔒` = requires authentication (all endpoints below except `/auth/login`, `/auth/forgot-password`, `/auth/reset-password`).
+Organized by resource group, mirroring `06_Database_Design.md` Section 5's grouping. `🔒` = requires authentication (all endpoints below except `/register`, `/login`, `/forgot-password`, `/reset-password`).
 
 ### 5.1 Authentication (Module 1)
 
+**Path convention:** flat, not grouped under an `/auth/` prefix — Product Owner decision (Deendoon Backend Excellence Phase, Sprint 1.1), matching the convention already implemented and approved for production since Module 1. `/change-password` and `/me` remain approved (FR-005/FR-006) but unimplemented, same as prior versions of this document.
+
 | Method | Path | Purpose | FR |
 |---|---|---|---|
-| `POST` | `/auth/login` | Authenticate, establish session | FR-001 |
-| `POST` | `/auth/logout` 🔒 | Invalidate current session | FR-002 |
-| `POST` | `/auth/forgot-password` | Request password reset token | FR-004 |
-| `POST` | `/auth/reset-password` | Complete reset with token | FR-004 |
-| `POST` | `/auth/change-password` 🔒 | Change own password (authenticated) | FR-005 |
-| `GET` | `/auth/me` 🔒 | Resolve current session's user, role(s), permissions | FR-006 |
+| `POST` | `/register` | Create an account | FR-001 |
+| `POST` | `/login` | Authenticate, establish session | FR-001 |
+| `POST` | `/logout` 🔒 | Invalidate current session | FR-002 |
+| `POST` | `/forgot-password` | Request password reset token | FR-004 |
+| `POST` | `/reset-password` | Complete reset with token | FR-004 |
+| `POST` | `/change-password` 🔒 | Change own password (authenticated) | FR-005 |
+| `GET` | `/me` 🔒 | Resolve current session's user, role(s), permissions | FR-006 |
 
 ### 5.2 Customers (Module 2)
 
@@ -507,7 +511,7 @@ Rejected with `409 CONFLICT` if the target status isn't a valid transition from 
 - **Every mutating endpoint** (`POST`/`PUT`/`PATCH` other than pure reads) writes at least one `audit_log` row (`06` §6.9) as part of the same transaction as the primary write — never as a best-effort side effect that could silently fail while the primary write succeeds.
 - **No endpoint exposes writing to `audit_log` directly.** `GET /admin/audit-trail` (FR-071) is the only endpoint touching this table, and it is read-only — matching `06`'s "one operation available: `INSERT`, and only from application code, never from a client request."
 - **The `reason` field** is required at the API layer (not just the UI layer) for Recovery Stage Override (`PATCH /debts/{id}/recovery-stage`) — a `422` is returned if omitted, so the mandatory-reason rule (BR-015) can't be bypassed by calling the API directly instead of going through `05`'s Confirmation Dialog.
-- **Login/Logout are logged from the `/auth` endpoints themselves** (FR-001, FR-002), not inferred from session table changes — ensuring the audit event exists even if session cleanup happens asynchronously.
+- **Login/Logout are logged from the authentication endpoints themselves** (FR-001, FR-002), not inferred from session table changes — ensuring the audit event exists even if session cleanup happens asynchronously.
 - **Rate limiting, request logging, and APM/observability** are Non-Functional Requirements (`09_Non_Functional_Requirements.md`, not yet written) — this document notes where they'll attach (Section 4's `429`/`RATE_LIMITED` reservation) without specifying thresholds it has no basis to assert.
 
 ---
@@ -516,7 +520,7 @@ Rejected with `409 CONFLICT` if the target status isn't a valid transition from 
 
 | Endpoint Group | Functional Requirements | Database Tables |
 |---|---|---|
-| `/auth/*` | FR-001–FR-006 | `users`, `sessions` |
+| Authentication (`/register`, `/login`, `/logout`, `/forgot-password`, `/reset-password`, `/change-password`, `/me`) | FR-001–FR-006 | `users`, `sessions`, `password_reset_tokens` |
 | `/customers/*` | FR-007–FR-016, FR-026–FR-028 | `customers`, `import_batches`, `import_rows` |
 | `/debts/*` | FR-017–FR-025, FR-029–FR-033, FR-040, FR-048–FR-049 | `debts`, `follow_up_history`, `promises_to_pay` |
 | `/debts/{id}/payments` | FR-034–FR-039 | `payments` |

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditAction;
+use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\PasswordResetService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,12 +25,21 @@ use Illuminate\Support\Facades\Hash;
  * them (flagged as a known gap in docs/Domain_Events.md since Module 10).
  * No new action type, column, or business rule — only closing an
  * already-approved, already-flagged gap.
+ *
+ * Sprint 1.1 — Password Recovery (FR-004): forgotPassword()/resetPassword()
+ * delegate entirely to PasswordResetService; see that class's docblock
+ * for the security properties (hashing, expiry, single-use, enumeration
+ * safety). Both responses are deliberately generic/identical regardless
+ * of whether the submitted email exists.
  */
 class AuthController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly AuditLogService $auditLog) {}
+    public function __construct(
+        private readonly AuditLogService $auditLog,
+        private readonly PasswordResetService $passwordReset,
+    ) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -71,5 +83,42 @@ class AuthController extends Controller
         $this->auditLog->record(AuditAction::Logout, 'user', (string) $user->id, $user);
 
         return $this->successResponse(null, 'Logout successful');
+    }
+
+    /**
+     * FR-004. Always returns the same response whether or not the email
+     * belongs to an account — PasswordResetService silently no-ops for an
+     * unknown (or deactivated/archived) email rather than signaling that
+     * back to the caller.
+     */
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $this->passwordReset->requestReset($request->validated('email'));
+
+        return $this->successResponse(
+            null,
+            'If an account with that email exists, a password reset link has been sent.',
+        );
+    }
+
+    /**
+     * FR-004. A single generic failure message covers every rejection
+     * reason (no token on file, expired, wrong token, unknown email) —
+     * distinguishing them in the response would itself leak information
+     * an attacker could use to enumerate accounts or probe tokens.
+     */
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $success = $this->passwordReset->reset(
+            $request->validated('email'),
+            $request->validated('token'),
+            $request->validated('password'),
+        );
+
+        if (! $success) {
+            return $this->errorResponse('This password reset token is invalid or has expired.', null, 422);
+        }
+
+        return $this->successResponse(null, 'Password reset successfully');
     }
 }
