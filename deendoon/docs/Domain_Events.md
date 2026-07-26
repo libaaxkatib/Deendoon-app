@@ -28,6 +28,7 @@ The **Current Implementation Status** field on every event states which of these
 - [Payment Tracking (Module 6)](#payment-tracking-module-6)
 - [Professional Collection (Module 7)](#professional-collection-module-7)
 - [Documents (Module 8)](#documents-module-8)
+- [Notifications & Calendar (Module 10)](#notifications--calendar-module-10)
 - [Planned Events — Administration (Module 12)](#planned-events--administration-module-12)
 - [Deferred Events](#deferred-events)
 - [Future Review](#future-review)
@@ -45,9 +46,9 @@ The **Current Implementation Status** field on every event states which of these
 | **Publisher** | `App\Services\CustomerBalanceService::recalculate()` |
 | **Trigger Condition** | After recomputing `outstanding_balance` (BRL-022), if `outstanding_balance >= credit_limit`. Fires from both Debt creation and Debt status transitions to a terminal state, since either can move the balance across the threshold. |
 | **Payload** | `Customer` (the full model instance) |
-| **Current Consumers** | None — no listener is registered. |
-| **Future Consumers** | Reminder Engine / Notification Center (Module 10), per FR-028 step 3. |
-| **Related Functional Requirements** | FR-028 (Credit Limit Reached Notification **Trigger** — the event-generation step only; delivery is explicitly Module 10's responsibility, not this event's) |
+| **Current Consumers** | `App\Listeners\CreateCreditLimitReachedNotification` (Module 10) — creates a `credit_limit_reached` Notification for every admin/sales_finance user in the affected Customer's tenant (no single-owner field exists on Customer, unlike Collection Case's assigned officer, so this fans out rather than picking one arbitrarily). Wired via Laravel's automatic event/listener discovery, verified by feature test — no manual registration needed, same as `PromiseBroken`. |
+| **Future Consumers** | None further identified. |
+| **Related Functional Requirements** | FR-028 (Credit Limit Reached Notification **Trigger** — the event-generation step only); FR-058 (Module 10, now implemented — the delivery/display side this event was always meant to feed) |
 | **Related Business Rules** | BC-001 (advisory only, never a block); BRL-023 (the exact threshold formula) |
 | **Current Implementation Status** | **Implemented** — a real `App\Events\CreditLimitReached` class, dispatched via `Event::dispatch()`, covered by 3 feature tests (fires at threshold, doesn't fire under it, fires again on repeat with no suppression). |
 
@@ -145,13 +146,9 @@ Follow-up History actions below are real, tested, working code paths (`ReminderC
 | **PromiseFulfilled** | `follow_up_history.action_type = promise_fulfilled` | `PromiseToPayService::evaluateFulfillment()` | A qualifying payment (Module 6) is recorded on or before the promised date | FR-031, BRL-032 | **Implemented** (recorded) — see Module 6 below |
 | **RecoveryStageChanged (automatic)** | *(no distinct `audit_log.action` — reuses `status_changed` with a descriptive `reason`, see below)* | `RecoveryStageService::advanceTo()` | Debt's Recovery Stage advances per BRL-031's event-to-stage mapping (Stage 2: reminder while Overdue; Stage 3: call logged; Stage 4: promise broken; Stage 5: escalated to a Collection Case, Module 7; Stage 6: Debt reaches Paid, Module 6) | FR-032, BRL-031 | **Implemented** (recorded, reused action — see note) |
 
-**Not implemented in this module (explicitly out of scope or blocked):**
-- **ReminderSent** as an actual *delivery* — this module only records that a manual reminder action was taken (FR-030 scoping); the `notifications.type = reminder_sent` delivery path belongs to Module 10.
-- **PromiseToPayDue** (`notifications.type`) — a Calendar-facing notification; out of scope per the task's explicit exclusion of Notifications Delivery.
-
 **Note on `RecoveryStageChanged (automatic)`'s reused action:** no distinct `audit_log.action` value exists for an *automatic* stage change (only `recovery_stage_override`, which FR-025 describes as specifically manual — see [Future Review](#future-review)). Following the same precedent already used for Risk Level changes (reusing `edited`), automatic stage advancement reuses `AuditAction::StatusChanged` with a descriptive `reason` string (e.g. "Recovery Stage advanced to 3 (Phone Follow-up): call logged") rather than inventing a new enum value. Flagged as a NON-BLOCKING SRS inconsistency, not resolved here.
 
-**Current Consumers:** `AdvanceRecoveryStageOnBrokenPromise` (for `PromiseBroken`, as above). **Future Consumers of all of the above:** Debt Timeline display (FR-024 — the `timeline` endpoint sources whatsapp/sms/call/promise/payment stages from `follow_up_history` and shows them as `completed` once populated), Notifications (Module 10), Reporting (Module 9).
+**Current Consumers:** `AdvanceRecoveryStageOnBrokenPromise` (for `PromiseBroken`, as above); Notifications (Module 10) now consumes `ManualWhatsAppSent`/`ManualSmsSent`/`CallLogged` for the `reminder_sent` notification type (via `ReminderController`, a direct synchronous call, not a subscription to this table) and consumes an open Promise's `promised_date` directly for `promise_to_pay_due` (via `PromiseToPayService::refreshDuePromises()`) — see [Notifications & Calendar](#notifications--calendar-module-10). **Future Consumers of all of the above:** Debt Timeline display (FR-024 — the `timeline` endpoint sources whatsapp/sms/call/promise/payment stages from `follow_up_history` and shows them as `completed` once populated), Reporting (Module 9).
 
 ---
 
@@ -159,7 +156,7 @@ Follow-up History actions below are real, tested, working code paths (`ReminderC
 
 Recorded, tested, working code paths in `PaymentService::record()` — each Payment triggers one `audit_log` row (`payment_added`) and one `follow_up_history` row (`payment_recorded`), plus the downstream consequences below. None has been given a dedicated `App\Events\*` class — unlike `PromiseBroken`, no approved Business Rule ties Payment Recording to a consequence that needs *decoupled* handling; every consequence below is synchronous, same-request, same-transaction, and already reuses an existing Service directly (`CustomerBalanceService`, `PromiseToPayService`, `RecoveryStageService`).
 
-**Verified directly against the approved SRS (Product Owner review, Module 6):** the terms "Domain Event," "event-driven," "event bus," "dispatch," and "listener" do not appear anywhere in `01`–`09`. FR-039's "System emits a qualifying payment-behavior event..." language is plain narrative describing required behavior, not a mandate for the dispatched-class architecture — that architecture (and the promotion criterion: only when a consequence needs decoupled handling) is this codebase's own implementation choice, not an SRS requirement. FR-039's three sub-steps were checked individually against that self-imposed criterion: Credit Score classification (deferred, no consumer), Promise fulfillment (implemented, direct synchronous call, no decoupling need), Payment Received → Notifications (Module 10 out of scope, no consumer). None qualifies for promotion; the synchronous implementation is correct as-is.
+**Verified directly against the approved SRS (Product Owner review, Module 6):** the terms "Domain Event," "event-driven," "event bus," "dispatch," and "listener" do not appear anywhere in `01`–`09`. FR-039's "System emits a qualifying payment-behavior event..." language is plain narrative describing required behavior, not a mandate for the dispatched-class architecture — that architecture (and the promotion criterion: only when a consequence needs decoupled handling) is this codebase's own implementation choice, not an SRS requirement. FR-039's three sub-steps were checked individually against that self-imposed criterion: Credit Score classification (deferred, no consumer), Promise fulfillment (implemented, direct synchronous call, no decoupling need), Payment Received → Notifications (now implemented, Module 10 — but still a direct synchronous call from `PaymentService::record()`, not a subscription, so this doesn't change the conclusion). None qualifies for promotion to a dispatched class; the synchronous implementation is correct as-is.
 
 | Event Name | Source Enum | Publisher | Trigger (per approved FR/BRL) | Related FR / BR | Status |
 |---|---|---|---|---|---|
@@ -173,11 +170,10 @@ Recorded, tested, working code paths in `PaymentService::record()` — each Paym
 
 **Not implemented in this module (explicitly deferred, not invented):**
 - **CreditScoreRecalculated (payment-driven)** — FR-039 step 1 asks this module to classify a payment as on-time/late/partial and emit that to Module 4 for scoring. Module 4's scoring computation itself remains deferred (DD-008 baseline, DD-009 point-value catalog — both still unresolved), so there is no consumer to classify for, and the approved `follow_up_history.action_type` enum has no distinct slot for the classification (only the generic `payment_recorded`). Implementing a classification with nothing to consume it, or inventing a new enum value, would both be invented behavior. See [Deferred Events](#deferred-events).
-- **PaymentReceived** (`notifications.type = payment_received`) — Notification Delivery (Module 10) is explicitly out of scope; per this document's own note, it is "the same underlying occurrence as PaymentRecorded," already captured by the recorded events above.
 - **Overpayment capping/crediting** (DD-016) and **blocking payments against Paid/Cancelled/Written-Off Debts** (DD-017) — both explicitly unresolved; `06_Database_Design.md` §6.4 and `07_API_Design.md` §7/§15 both state the `amount` check is "positive only, no ceiling" and that the endpoint "succeeds unconditionally" pending DD-016. Implementing either would mean deciding an open Product Owner question, not implementing an approved rule.
 - **Payment editing, archival, or reversal** (DD-018) — `payments` has no `updated_at`, `archived_at`, or delete path; the table is insert-only, exactly as `06` specifies pending that decision.
 
-**Future Consumers:** Reporting (Module 9, read-only over `payments`/`audit_log`), Notifications (Module 10, once built, for `payment_received`), Credit & Risk (Module 4, once DD-008/DD-009 are resolved).
+**Current Consumers:** Notifications (Module 10) now creates a `payment_received` Notification directly from `PaymentService::record()` (a direct synchronous call, not a subscription — see [Notifications & Calendar](#notifications--calendar-module-10)). **Future Consumers:** Reporting (Module 9, read-only over `payments`/`audit_log`), Credit & Risk (Module 4, once DD-008/DD-009 are resolved).
 
 ---
 
@@ -199,12 +195,10 @@ Recorded, tested, working code paths in `CollectionCaseService` and `Professiona
 **Note on `RecoveryStageChanged — Stage 5`'s trigger direction:** BRL-035/FR-040 read as if "Debt reaches Stage 5" precedes and causes Collection Case creation, but BRL-031's own stage table defines Stage 5 as "Entered When: Debt is escalated to a Collection Case" — case creation is the cause, Stage 5 the effect, exactly the same direction already used for Stage 6 (Payment reaching Paid, Module 6). There is no other approved mechanism that independently advances a Debt to Stage 5 first. This is a genuine SRS circularity (not silently resolved) — every call to `escalate()` is treated as DD-014's "manual escalation," which is left unresolved but not forbidden.
 
 **Not implemented in this module (explicitly deferred, not invented):**
-- **CollectionAssignment notification** (`notifications.type = collection_assignment`) — Notification Delivery (Module 10) is explicitly out of scope; the underlying fact is already captured by the `edited` audit entry above.
-- **ProfessionalCollectionRequestUpdate notification** (`notifications.type = professional_collection_request_update`) — same reasoning; FR-075's messages themselves are fully implemented (`request_messages`, immutable, BRL-080), only the Module 10 notification fan-out is deferred.
 - **Payment Added consumption into Collection Case activity** (FR-044 A1) — would require `PaymentService` (Module 6, previously approved and frozen) to look up an open Collection Case for the Debt and tag its `follow_up_history` row's `collection_case_id` — modifying an already-approved module without an explicit Product Owner instruction to do so. Flagged as a NON-BLOCKING gap, not silently wired around the boundary.
 - **Credit Score deduction on broken/closed collection outcomes** — Module 4's scoring computation remains deferred (DD-008/DD-009), unchanged by this module.
 
-**Current Consumers:** none of the above are consumed by another module today (matching the "no dispatched class" reasoning). **Future Consumers:** Reporting (Module 9, Active Collection Cases / SM-006), Notifications (Module 10, once built).
+**Current Consumers:** Notifications (Module 10) now creates `collection_assignment` (from `CollectionCaseService::assign()`) and `professional_collection_request_update` (from `ProfessionalCollectionRequestService::transitionStatus()/close()/postMessage()`) Notifications directly — both direct synchronous calls, not subscriptions (see [Notifications & Calendar](#notifications--calendar-module-10), including the one-way limitation on the latter). **Future Consumers:** Reporting (Module 9, Active Collection Cases / SM-006).
 
 ---
 
@@ -222,12 +216,48 @@ Recorded, tested, working code paths in `DocumentService` — every generation w
 **Note on branding (BRL-054):** every generated document reads `tenants.business_name`/`logo_path`/`address`/`contact_email`/`contact_phone` directly at generation time. These ARE the approved FR-068 Company Profile fields — `06_Database_Design.md` §3 folds them into the `tenants` table rather than a separate 1:1 table — so no Module 12 lookup is needed for the data to be real; only Module 12's dedicated *management UI* for editing these fields doesn't exist yet. This satisfies the Development Roadmap's Phase 9 note ("documents are functionally complete... using placeholder/default branding, with final branding wired in during Phase 12") using the tenant's actual current values, not a fabricated placeholder string.
 
 **Not implemented in this module (explicitly deferred, not invented):**
-- **DocumentAvailable notification** (`notifications.type = document_available`) — Notification Delivery (Module 10) is explicitly out of scope; the underlying fact is already captured by the `document_events` `generated` row above.
 - **Document regeneration** (BRL-056/DD-029) — unresolved whether permitted, and if so, new row vs. reused reference number; `document_events.event_type = 'regenerated'` exists in the schema/enum but nothing writes it.
 - **Watermarking, digital signatures, retention policy, tenant-configurable numbering format** (BRL-058, DD-028/030/031) — all explicitly unresolved or out of Version 1 scope; none invented.
 - **Signed/pre-signed URL access** (08 §11: "Access is via short-lived, pre-signed URLs") — no real S3-compatible provider is configured in this environment (local disk only), so `GET /documents/{id}` and `.../download` stream bytes through a normal Sanctum-authenticated, policy-checked endpoint instead of a literal pre-signed URL. Every request is still individually authorized (never a static public link), satisfying the underlying security property, but not the letter of "pre-signed URL." Flagged NON-BLOCKING in the module report; revisit once real S3-compatible storage is provisioned (`Storage::disk('s3')` already exists in `config/filesystems.php` — swapping the disk is a config change, not a code change).
 
-**Current Consumers:** none of the above are consumed by another module today. **Future Consumers:** Reporting (Module 9, document metadata/counts), Notifications (Module 10, once built, for `document_available`), Module 12 (once built, supplies a management UI over the same `tenants` branding fields already read here).
+**Current Consumers:** `document_available` notifications are now created directly by `DocumentService` (Module 10, see below) on every generation. **Future Consumers:** Reporting (Module 9, document metadata/counts), Module 12 (once built, supplies a management UI over the same `tenants` branding fields already read here).
+
+---
+
+## Notifications & Calendar (Module 10)
+
+FR-058/BRL-064: every Notification is created only as a direct, passive, *synchronous* consequence of a qualifying event already generated by an owning module — this module never originates one of its own. Six of the seven approved types (`06` §6.7's `notifications.type` CHECK, matching FR-058's precondition list plus the reopened Request-update type — see the Payment Tracking/Professional Collection sections above for that confirmation trail) are wired directly into the owning module's existing service via `NotificationService`, added as a small, additive constructor dependency each — no dispatched `App\Events\*` class was created for any of them, since none has a *decoupled* consumer distinct from the synchronous call itself (the one type that already had a dispatched event, `CreditLimitReached`, is consumed via a real Listener instead — see Credit & Risk above).
+
+| Type | Publisher | Recipient | Related FR / BR | Status |
+|---|---|---|---|---|
+| **credit_limit_reached** | `CreateCreditLimitReachedNotification` listener on the existing `CreditLimitReached` event | Every admin/sales_finance user in the Customer's tenant (fan-out — no single-owner field exists on Customer) | FR-058, BR-007 | **Implemented** |
+| **payment_received** | `PaymentService::record()` | The user who recorded the payment | FR-058, FR-039 | **Implemented** |
+| **document_available** | `DocumentService::generateReceipt()/generateDemandLetter()/generateStatement()` | The requesting user; for the automatic Receipt case (no acting user — FR-047 is "System"-initiated), `Payment.recorded_by_user_id` | FR-058 | **Implemented** |
+| **collection_assignment** | `CollectionCaseService::assign()` | The newly assigned Collection Officer (not the assigning user) | FR-058, FR-041 | **Implemented** |
+| **reminder_sent** | `ReminderController` (whatsapp/sms/call) | The user who sent the manual reminder | FR-058 | **Implemented** — see note below |
+| **promise_to_pay_due** | `PromiseToPayService::refreshDuePromises()`, lazily on Debt access (same pattern as `refreshOverdueStatus`/`refreshBrokenPromises`) | `PromiseToPay.created_by_user_id` | FR-058, FR-031 | **Implemented** |
+| **professional_collection_request_update** | `ProfessionalCollectionRequestService::transitionStatus()/close()/postMessage()` | `ProfessionalCollectionRequest.submitted_by_user_id` (tenant side only — see note below) | FR-058, FR-073, FR-075, FR-076 | **Implemented** (one direction only) |
+
+**Note on `reminder_sent`'s trigger:** FR-058's own Precondition list cites FR-029 (automated reminder scheduling) as the source — FR-029 remains entirely deferred (no scheduler infrastructure exists), so a strictly literal reading would leave this type permanently unreachable. This hooks into FR-030's manual reminder flow instead — the only currently-real "reminder sent" occurrence in the system — as a deliberate, flagged judgment call, not a strict implementation of that citation.
+
+**Note on `professional_collection_request_update`'s one-way limitation:** `notifications.tenant_id` is `NOT NULL`, and the Deendoon Platform Administrator (`tenant_id IS NULL`) has no tenant to attribute a notification to. So only the tenant-facing direction is schema-valid: when the Platform Administrator changes status or posts a message, the submitting tenant user is notified. When the tenant posts a message, the reverse (notifying the Platform Administrator) cannot be represented in this schema at all — flagged as a NON-BLOCKING gap in the module report, not silently worked around or dropped.
+
+**`notifyOnce` — a narrow mechanical safeguard, not a BRL-065 resolution:** BRL-065 (duplicate/re-trigger suppression) is explicitly unresolved (DD-011) and no general de-duplication is implemented — every type above fires every time its trigger condition occurs, matching the precedent already set for `CreditLimitReached`. The one exception is `promise_to_pay_due`: unlike the open→broken/fulfilled transitions, "due today" has no state change of its own to naturally stop a *lazy, repeatedly-polled* check from re-firing on every page view within the same day, so `NotificationService::notifyOnce` guards specifically against that — a mechanical fix for a lazy-check artifact, not a business-rule decision about repeat notifications in general.
+
+### Calendar (FR-062/BRL-068)
+
+Read-only aggregation, reusing existing date fields directly — no new scheduling concept, no stored copy:
+
+| Source | Field | Included When |
+|---|---|---|
+| Debt Due Dates (Module 3) | `debts.due_date` | Debt is not Paid/Cancelled/Written Off |
+| Promise to Pay dates (Module 5) | `promises_to_pay.promised_date` | Promise is `open` |
+| Follow-up / "Call Reminders" (Module 5) | `follow_up_history.occurred_at` where `action_type IN (manual_whatsapp, manual_sms, call_logged)` | Within the requested range |
+
+**Not aggregated (explicitly undefined, not invented):**
+- **Collection Appointments** (Module 7) — BRL-068 itself flags this as unresolved (DD-036): "Collection Appointments are not a distinct schedulable entity in Module 7... exactly how a future-dated Collection Activity becomes a Calendar entry is undefined." `collection_cases` has no date field to aggregate at all.
+
+**Current/Future Consumers:** the Notification Center and Calendar View themselves are the terminal consumers — nothing downstream of Module 10 exists yet.
 
 ---
 

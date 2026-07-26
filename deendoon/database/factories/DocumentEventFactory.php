@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\DocumentEvent;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<DocumentEvent>
@@ -19,7 +20,7 @@ class DocumentEventFactory extends Factory
     {
         return [
             'document_type' => 'receipt',
-            'document_id' => (string) $this->faker->ulid(),
+            'document_id' => (string) Str::ulid(),
             'event_type' => 'generated',
             'occurred_at' => now(),
         ];

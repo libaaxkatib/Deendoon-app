@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AuditAction;
+use App\Enums\NotificationType;
 use App\Models\CollectionCase;
 use App\Models\ProfessionalCollectionRequest;
 use App\Models\RequestMessage;
@@ -40,6 +41,7 @@ class ProfessionalCollectionRequestService
     public function __construct(
         private readonly ReferenceNumberService $referenceNumbers,
         private readonly AuditLogService $auditLog,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -104,6 +106,8 @@ class ProfessionalCollectionRequestService
             null,
             $request->tenant_id,
         );
+
+        $this->notifications->notify($request->tenant_id, $request->submitted_by_user_id, NotificationType::ProfessionalCollectionRequestUpdate, 'professional_collection_request', $request->id);
     }
 
     /**
@@ -133,6 +137,8 @@ class ProfessionalCollectionRequestService
             'Terminal transition',
             $request->tenant_id,
         );
+
+        $this->notifications->notify($request->tenant_id, $request->submitted_by_user_id, NotificationType::ProfessionalCollectionRequestUpdate, 'professional_collection_request', $request->id);
     }
 
     /**
@@ -141,6 +147,15 @@ class ProfessionalCollectionRequestService
      * available after a terminal outcome is explicitly unresolved
      * (DD-044) — the more literal, restrictive reading (rejected once
      * terminal) is applied rather than assuming continued access.
+     *
+     * FR-075/FR-058: "notifies the other party of the new message."
+     * `notifications.tenant_id` is NOT NULL, and the Deendoon Platform
+     * Administrator has no tenant to attribute a notification to, so only
+     * the tenant-facing direction is schema-valid: when the Platform
+     * Administrator posts, the submitting tenant user is notified. When
+     * the tenant posts, the reverse (notifying the Platform
+     * Administrator) cannot be represented in this schema — flagged as a
+     * NON-BLOCKING gap in the module report, not silently worked around.
      */
     public function postMessage(ProfessionalCollectionRequest $request, string $content, User $actor): RequestMessage
     {
@@ -148,10 +163,16 @@ class ProfessionalCollectionRequestService
             $this->conflict('This Professional Collection Request is closed; new messages are not accepted.');
         }
 
-        return $request->messages()->create([
+        $message = $request->messages()->create([
             'sender_user_id' => $actor->id,
             'content' => $content,
         ])->refresh();
+
+        if ((string) $actor->id !== (string) $request->submitted_by_user_id) {
+            $this->notifications->notify($request->tenant_id, $request->submitted_by_user_id, NotificationType::ProfessionalCollectionRequestUpdate, 'professional_collection_request', $request->id);
+        }
+
+        return $message;
     }
 
     private function conflict(string $message): never

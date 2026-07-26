@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AuditAction;
 use App\Enums\FollowUpActionType;
+use App\Enums\NotificationType;
 use App\Events\PromiseBroken;
 use App\Models\Debt;
 use App\Models\PromiseToPay;
@@ -18,12 +19,20 @@ use App\Models\PromiseToPay;
  * decision has been made yet — `refreshBrokenPromises` lazily on Debt
  * access (same pattern as Debt's `refreshOverdueStatus`), and
  * `evaluateFulfillment` synchronously when Module 6 records a payment.
+ *
+ * `refreshDuePromises` (Module 10, FR-058/FR-062) adds a third, similarly
+ * lazy check: an open Promise whose date is exactly today. Unlike the
+ * open→broken/fulfilled transitions, "due today" has no state of its own
+ * to naturally stop re-evaluating true across repeated page views within
+ * the same day — `NotificationService::notifyOnce` guards against
+ * re-creating the same notification on every request.
  */
 class PromiseToPayService
 {
     public function __construct(
         private readonly AuditLogService $auditLog,
         private readonly FollowUpHistoryService $followUpHistory,
+        private readonly NotificationService $notifications,
     ) {}
 
     public function refreshBrokenPromises(Debt $debt): void
@@ -85,6 +94,31 @@ class PromiseToPayService
                     $promise->id,
                     null,
                     'Automatic: promise fulfilled',
+                );
+            });
+    }
+
+    /**
+     * FR-062 (Calendar) surfaces every open Promise regardless of date;
+     * this is specifically FR-058's "Promise to Pay Due" Notification —
+     * fired once per Promise, on the day it's due, for whoever created it
+     * (PromiseToPay.created_by_user_id — the only real, already-known
+     * "interested party," since a Promise has no assigned-officer-style
+     * owner field of its own).
+     */
+    public function refreshDuePromises(Debt $debt): void
+    {
+        $debt->promisesToPay()
+            ->where('status', 'open')
+            ->whereDate('promised_date', '=', now()->toDateString())
+            ->get()
+            ->each(function (PromiseToPay $promise) use ($debt) {
+                $this->notifications->notifyOnce(
+                    $debt->tenant_id,
+                    $promise->created_by_user_id,
+                    NotificationType::PromiseToPayDue,
+                    'promise_to_pay',
+                    $promise->id,
                 );
             });
     }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AuditAction;
 use App\Enums\FollowUpActionType;
+use App\Enums\NotificationType;
 use App\Models\Debt;
 use App\Models\Payment;
 use App\Models\User;
@@ -27,6 +28,8 @@ use Illuminate\Support\Facades\DB;
  *   DocumentService itself never rolls back on generation failure (FR-047
  *   E1), so this call is fire-and-forget from Payment Recording's
  *   perspective.
+ * - Payment Received Notification (FR-058), via NotificationService
+ *   (Module 10) — recorded synchronously in the same transaction.
  *
  * Deliberately NOT implemented (see the module report):
  * - Crediting Module 4 (Credit & Risk) with an on-time/late/partial
@@ -49,6 +52,7 @@ class PaymentService
         private readonly PromiseToPayService $promiseToPay,
         private readonly RecoveryStageService $recoveryStage,
         private readonly DocumentService $documents,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -75,6 +79,10 @@ class PaymentService
             $this->promiseToPay->evaluateFulfillment($debt, $payment->payment_date->toDateString());
 
             $this->documents->generateReceipt($payment);
+
+            // FR-058/BR-007: "Payment Received" — recipient is the user who
+            // recorded the payment (the only real actor available here).
+            $this->notifications->notify($debt->tenant_id, (string) $actor->id, NotificationType::PaymentReceived, 'payment', $payment->id);
 
             return $payment->refresh();
         });

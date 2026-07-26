@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CollectionCaseController;
 use App\Http\Controllers\CreditRiskController;
 use App\Http\Controllers\CustomerController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\DebtController;
 use App\Http\Controllers\DemandLetterController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FollowUpHistoryController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessionalCollectionRequestController;
 use App\Http\Controllers\PromiseToPayController;
@@ -94,5 +96,12 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/payments', [ReportController::class, 'payments']);
         Route::get('reports/credit-risk', [ReportController::class, 'creditRisk']);
         Route::get('reports/{reportType}/export', [ReportController::class, 'export']);
+
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/history', [NotificationController::class, 'history']);
+        Route::patch('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+        Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead']);
+
+        Route::get('calendar', [CalendarController::class, 'index']);
     });
 });

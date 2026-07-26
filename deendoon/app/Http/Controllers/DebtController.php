@@ -76,6 +76,7 @@ class DebtController extends Controller
         $debts->getCollection()->each(function (Debt $debt) {
             $this->refreshOverdueStatus($debt);
             $this->promiseToPay->refreshBrokenPromises($debt);
+            $this->promiseToPay->refreshDuePromises($debt);
         });
 
         return $this->successResponse([
@@ -136,6 +137,7 @@ class DebtController extends Controller
 
         $this->refreshOverdueStatus($debt);
         $this->promiseToPay->refreshBrokenPromises($debt);
+        $this->promiseToPay->refreshDuePromises($debt);
 
         return $this->successResponse(new DebtResource($debt->fresh()));
     }

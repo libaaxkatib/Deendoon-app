@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AuditAction;
 use App\Enums\FollowUpActionType;
+use App\Enums\NotificationType;
 use App\Models\CollectionCase;
 use App\Models\Debt;
 use App\Models\User;
@@ -33,6 +34,7 @@ class CollectionCaseService
         private readonly AuditLogService $auditLog,
         private readonly FollowUpHistoryService $followUpHistory,
         private readonly RecoveryStageService $recoveryStage,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -90,6 +92,10 @@ class CollectionCaseService
         $case->update(['assigned_officer_user_id' => $officer->id]);
 
         $this->auditLog->record(AuditAction::Edited, 'collection_case', $case->id, $actor, 'Assigned Officer changed');
+
+        // FR-058: recipient is the newly assigned officer, not the acting
+        // user who performed the assignment.
+        $this->notifications->notify($case->tenant_id, (string) $officer->id, NotificationType::CollectionAssignment, 'collection_case', $case->id);
     }
 
     public function recordActivity(CollectionCase $case, ?string $details, User $actor): void

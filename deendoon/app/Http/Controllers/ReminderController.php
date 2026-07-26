@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\AuditAction;
 use App\Enums\FollowUpActionType;
+use App\Enums\NotificationType;
 use App\Http\Requests\LogCallRequest;
 use App\Http\Requests\SendManualReminderRequest;
 use App\Http\Resources\DebtResource;
 use App\Models\Debt;
 use App\Services\AuditLogService;
 use App\Services\FollowUpHistoryService;
+use App\Services\NotificationService;
 use App\Services\RecoveryStageService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +21,14 @@ use Illuminate\Support\Facades\DB;
  * FR-030: Manual Reminder (WhatsApp / SMS / Call). Records that the action
  * was taken — actual WhatsApp/SMS provider delivery is out of scope
  * (Notifications Delivery, explicitly excluded from this module).
+ *
+ * FR-058's own Precondition list cites FR-029 (automated reminder
+ * scheduling, still deferred — no scheduler infrastructure exists) as the
+ * source of "Reminder Sent" notifications, not FR-030. Since FR-029 has no
+ * implementation and 'reminder_sent' is otherwise unreachable, this hooks
+ * the notification into the manual flow instead — the only currently-real
+ * "reminder sent" occurrence in the system — as a deliberate, flagged
+ * judgment call, not a strict reading of that citation.
  */
 class ReminderController extends Controller
 {
@@ -28,6 +38,7 @@ class ReminderController extends Controller
         private readonly FollowUpHistoryService $followUpHistory,
         private readonly AuditLogService $auditLog,
         private readonly RecoveryStageService $recoveryStage,
+        private readonly NotificationService $notifications,
     ) {}
 
     public function whatsapp(SendManualReminderRequest $request, Debt $debt): JsonResponse
@@ -55,6 +66,8 @@ class ReminderController extends Controller
 
             // BRL-031 Stage 3 — Phone Follow-up: entered when a Call reminder is logged.
             $this->recoveryStage->advanceTo($debt, 3, 'Recovery Stage advanced to 3 (Phone Follow-up): call logged', $request->user());
+
+            $this->notifications->notify($debt->tenant_id, (string) $request->user()->id, NotificationType::ReminderSent, 'debt', $debt->id);
         });
 
         return $this->successResponse(new DebtResource($debt->fresh()), 'Call logged successfully');
@@ -73,6 +86,8 @@ class ReminderController extends Controller
             if ($debt->debt_status === 'overdue') {
                 $this->recoveryStage->advanceTo($debt, 2, 'Recovery Stage advanced to 2 (Late Reminder): reminder sent while Overdue', $request->user());
             }
+
+            $this->notifications->notify($debt->tenant_id, (string) $request->user()->id, NotificationType::ReminderSent, 'debt', $debt->id);
         });
 
         return $this->successResponse(new DebtResource($debt->fresh()), $message);

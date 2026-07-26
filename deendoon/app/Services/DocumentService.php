@@ -6,6 +6,7 @@ use App\Enums\AuditAction;
 use App\Enums\DemandLetterTemplate;
 use App\Enums\DocumentEventType;
 use App\Enums\DocumentType;
+use App\Enums\NotificationType;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\DemandLetter;
@@ -30,6 +31,10 @@ use Throwable;
  * branding relative to Module 12's not-yet-built management UI, per the
  * Development Roadmap's Phase 9 note; final branding wiring is Phase 12.
  *
+ * Also creates a "Document Available" Notification (FR-058, Module 10) on
+ * every generation — synchronously, in the same call, via
+ * NotificationService.
+ *
  * Storage: S3-compatible object storage is the approved architecture
  * (09_Non_Functional_Requirements.md), with tenant-scoped key prefixing
  * (08 §11). No real S3-compatible provider is configured in this
@@ -45,6 +50,7 @@ class DocumentService
     public function __construct(
         private readonly ReferenceNumberService $referenceNumbers,
         private readonly AuditLogService $auditLog,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -81,6 +87,13 @@ class DocumentService
 
             $this->auditLog->record(AuditAction::ReceiptGenerated, 'payment', $payment->id, null, null, $tenantId);
             $this->recordEvent(DocumentType::Receipt, $receipt->id, DocumentEventType::Generated, null, $tenantId);
+
+            // FR-058: no acting user exists for this automatic generation
+            // (FR-047: "System"-initiated only). recorded_by_user_id — the
+            // real, already-known user who recorded the underlying Payment
+            // — is the most relevant recipient available, not an invented
+            // one.
+            $this->notifications->notify($tenantId, $payment->recorded_by_user_id, NotificationType::DocumentAvailable, 'receipt', $receipt->id);
 
             return $receipt->refresh();
         } catch (Throwable $e) {
@@ -120,6 +133,8 @@ class DocumentService
         $this->auditLog->record(AuditAction::DemandLetterGenerated, 'debt', $debt->id, $actor, null, $tenantId);
         $this->recordEvent(DocumentType::DemandLetter, $demandLetter->id, DocumentEventType::Generated, $actor, $tenantId);
 
+        $this->notifications->notify($tenantId, (string) $actor->id, NotificationType::DocumentAvailable, 'demand_letter', $demandLetter->id);
+
         return $demandLetter->refresh();
     }
 
@@ -153,6 +168,8 @@ class DocumentService
 
         $this->auditLog->record(AuditAction::StatementGenerated, 'customer', $customer->id, $actor, null, $tenantId);
         $this->recordEvent(DocumentType::Statement, $statement->id, DocumentEventType::Generated, $actor, $tenantId);
+
+        $this->notifications->notify($tenantId, (string) $actor->id, NotificationType::DocumentAvailable, 'statement', $statement->id);
 
         return $statement->refresh();
     }
