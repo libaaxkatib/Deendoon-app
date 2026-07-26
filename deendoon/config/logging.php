@@ -65,6 +65,33 @@ return [
             'replace_placeholders' => true,
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Sprint 1.2 — Security Hardening
+        |----------------------------------------------------------------------
+        |
+        | Security-relevant events with no approved `audit_log.action` slot
+        | (06_Database_Design.md §6.9's CHECK constraint) — failed login
+        | attempts, permission-denied responses, tokens revoked for idle
+        | timeout, password-reset requests — are written here instead.
+        | Deliberately separate from `audit_log` (09_Non_Functional_
+        | Requirements.md §8: "Explicitly distinct from the Audit Trail —
+        | application/error logs capture operational events for debugging;
+        | audit_log captures approved business events for accountability")
+        | and from the default 'stack'/'single' channel, so a security
+        | review doesn't have to filter routine application logs to find
+        | these. No new database table or column — this is Laravel's
+        | ordinary file-based logging, not an audit-trail write path.
+        |
+        */
+
+        'security' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/security.log'),
+            'level' => env('SECURITY_LOG_LEVEL', 'info'),
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

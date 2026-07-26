@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\SecurityEventLogger;
 use Closure;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -39,6 +40,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureTokenIsNotIdle
 {
+    public function __construct(private readonly SecurityEventLogger $securityLog) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $bearerToken = $request->bearerToken();
@@ -50,6 +53,8 @@ class EnsureTokenIsNotIdle
                 $idleMinutes = (int) env('SANCTUM_IDLE_TIMEOUT', 60);
 
                 if ($accessToken->last_used_at->lt(now()->subMinutes($idleMinutes))) {
+                    $this->securityLog->tokenRevokedForIdle((string) $accessToken->id, $accessToken->tokenable_id);
+
                     $accessToken->delete();
 
                     return response()->json([

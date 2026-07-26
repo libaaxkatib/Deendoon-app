@@ -100,6 +100,42 @@ class AdministrationTest extends TestCase
         $this->assertSame('archived', $fresh->status);
     }
 
+    // --- Sprint 1.2: deactivation/role-change revoke all active tokens (08 §9) ---
+
+    public function test_deactivating_a_user_revokes_their_active_tokens(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $staff = User::factory()->create();
+        $staff->tenant()->associate($tenant);
+        $staff->save();
+        $staff->assignRole('sales_finance');
+        $staff->createToken('test');
+
+        $this->assertSame(1, $staff->tokens()->count());
+
+        $this->postJson("/api/v1/admin/users/{$staff->id}/deactivate")->assertStatus(200);
+
+        $this->assertSame(0, $staff->tokens()->count());
+    }
+
+    public function test_changing_a_users_role_revokes_their_active_tokens(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $staff = User::factory()->create();
+        $staff->tenant()->associate($tenant);
+        $staff->save();
+        $staff->assignRole('sales_finance');
+        $staff->createToken('test');
+
+        $this->assertSame(1, $staff->tokens()->count());
+
+        $this->patchJson("/api/v1/admin/users/{$staff->id}/role", ['role' => 'collection_officer'])->assertStatus(200);
+
+        $this->assertSame(0, $staff->tokens()->count());
+    }
+
     public function test_restoring_a_user_returns_status_to_active(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);

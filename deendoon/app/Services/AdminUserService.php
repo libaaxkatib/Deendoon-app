@@ -17,6 +17,15 @@ use Illuminate\Http\Exceptions\HttpResponseException;
  * Laravel's automatic 'hashed' cast on assignment (see
  * AuthController::register(), which passes the plain value the same
  * way); hashing it again here would double-hash and break login.
+ *
+ * Sprint 1.2 — Security Hardening: `deactivate()`/`assignRole()` now
+ * revoke every active Sanctum token for the affected user —
+ * 08_Security_and_RBAC.md §9's "Revoke all tokens: triggered
+ * automatically by... role change (FR-067)... and account deactivation
+ * (FR-066)" — the same rule already applied to password changes
+ * (PasswordResetService::reset()) since Sprint 1.1, closing the one gap
+ * the independent audit flagged: this was the *only* place 08 §9's
+ * revocation rule was left unenforced.
  */
 class AdminUserService
 {
@@ -82,6 +91,7 @@ class AdminUserService
         }
 
         $user->delete();
+        $user->tokens()->delete();
 
         $this->auditLog->record(AuditAction::Archived, 'user', (string) $user->id, $actor);
     }
@@ -89,6 +99,7 @@ class AdminUserService
     public function assignRole(User $user, string $role, User $actor): User
     {
         $user->syncRoles([$role]);
+        $user->tokens()->delete();
 
         $this->auditLog->record(AuditAction::RoleChanged, 'user', (string) $user->id, $actor);
 

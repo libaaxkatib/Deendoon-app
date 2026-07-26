@@ -11,6 +11,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\PasswordResetService;
+use App\Services\SecurityEventLogger;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,7 @@ class AuthController extends Controller
     public function __construct(
         private readonly AuditLogService $auditLog,
         private readonly PasswordResetService $passwordReset,
+        private readonly SecurityEventLogger $securityLog,
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse
@@ -62,6 +64,8 @@ class AuthController extends Controller
         $user = User::where('email', $request->validated('email'))->first();
 
         if (! $user || ! Hash::check($request->validated('password'), $user->password)) {
+            $this->securityLog->loginFailed($request->validated('email'), $request->ip());
+
             return $this->errorResponse('Invalid credentials', null, 401);
         }
 

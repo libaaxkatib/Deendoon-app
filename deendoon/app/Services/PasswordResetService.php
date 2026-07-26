@@ -39,11 +39,19 @@ class PasswordResetService
 {
     private const DEFAULT_EXPIRY_MINUTES = 60;
 
-    public function __construct(private readonly AuditLogService $auditLog) {}
+    public function __construct(
+        private readonly AuditLogService $auditLog,
+        private readonly SecurityEventLogger $securityLog,
+    ) {}
 
     public function requestReset(string $email): void
     {
         $user = User::where('email', $email)->first();
+
+        // Logged regardless of outcome — this is a server-side-only signal
+        // for detecting reset-token-exhaustion/enumeration probing (08 §13);
+        // it never reaches the API response, which stays identical either way.
+        $this->securityLog->passwordResetRequested($email, accountExists: (bool) $user);
 
         if (! $user) {
             return;
