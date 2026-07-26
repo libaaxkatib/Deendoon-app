@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureTokenIsNotIdle;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,7 +17,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Product Owner Decision (Phase 14): Sanctum sliding idle timeout.
+        // Prepended to the GLOBAL middleware stack — must run before
+        // anything that can resolve $request->user() (not just
+        // auth:sanctum), including the 'api' rate limiter registered just
+        // below, which itself calls $request->user(). See
+        // EnsureTokenIsNotIdle's docblock for why. No-ops for requests
+        // without a Bearer token (register/login).
+        $middleware->prepend(EnsureTokenIsNotIdle::class);
+
+        // Phase 14 — Production Readiness. Registers the 'api' rate limiter
+        // (defined in AppServiceProvider) against the `api` middleware group.
+        // Previously empty, meaning no rate limit applied to any endpoint
+        // except the explicit login/register throttles in routes/api.php.
+        $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

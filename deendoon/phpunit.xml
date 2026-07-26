@@ -20,6 +20,11 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <!-- High enough that the general `api` rate limiter (Phase 14) never
+             triggers mid-suite; the array cache store isn't reset between
+             test methods, so a production-realistic threshold would
+             eventually 429 unrelated tests sharing an IP/user key. -->
+        <env name="API_RATE_LIMIT_PER_MINUTE" value="100000"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>

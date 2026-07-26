@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -78,6 +79,29 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('register', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        // Phase 14 — Production Readiness. Every RegisterRequest/CreateUserRequest/
+        // UpdateUserRequest already validates against Password::defaults();
+        // without this, that resolves to Laravel's stock min:8, not 08's
+        // approved policy (§10: "minimum 12 characters, no mandatory
+        // composition rules... current OWASP/NIST guidance favors length
+        // over arbitrary complexity"). No new validation rule is added to
+        // any Request — this only corrects what the existing rule resolves to.
+        Password::defaults(fn () => Password::min(12));
+
+        // Phase 14 — Production Readiness. `bootstrap/app.php`'s empty
+        // withMiddleware() callback left the `api` middleware group with no
+        // rate limiter at all (Laravel only applies one if throttleApi() is
+        // explicitly called) — every endpoint except login/register had zero
+        // abuse protection. 08 §8 recommends a general rate-limiting
+        // mechanism without fixing a threshold ("exact thresholds remain
+        // undefined... that is 09's concern"); the limit is env-configurable
+        // rather than hardcoded, consistent with 08 Principle 6 and 09 §7's
+        // "environment-based configuration, never hardcoded."
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute((int) env('API_RATE_LIMIT_PER_MINUTE', 60))
+                ->by($request->user()?->id ?? $request->ip());
         });
     }
 }
