@@ -19,6 +19,7 @@ use App\Policies\NotificationPolicy;
 use App\Policies\ProfessionalCollectionRequestPolicy;
 use App\Policies\ReceiptPolicy;
 use App\Policies\StatementPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -67,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DemandLetter::class, DemandLetterPolicy::class);
         Gate::policy(Statement::class, StatementPolicy::class);
         Gate::policy(Notification::class, NotificationPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
 
         RateLimiter::for('login', function (Request $request) {
             $key = Str::lower(trim((string) $request->input('email'))).'|'.$request->ip();

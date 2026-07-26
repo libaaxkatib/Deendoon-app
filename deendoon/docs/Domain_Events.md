@@ -29,7 +29,7 @@ The **Current Implementation Status** field on every event states which of these
 - [Professional Collection (Module 7)](#professional-collection-module-7)
 - [Documents (Module 8)](#documents-module-8)
 - [Notifications & Calendar (Module 10)](#notifications--calendar-module-10)
-- [Planned Events — Administration (Module 12)](#planned-events--administration-module-12)
+- [Administration & Search (Modules 11/12)](#administration--search-modules-1112)
 - [Deferred Events](#deferred-events)
 - [Future Review](#future-review)
 - [Appendix: Authoritative Enums](#appendix-authoritative-enums)
@@ -126,9 +126,9 @@ All six of the following are real, tested, working code paths in `CustomerContro
 |---|---|---|---|---|
 | **Login** | `login` | Successful authentication | FR-001 | **Planned** — `login` is an approved `audit_log.action` value, but `AuthController::login()` does not currently call `AuditLogService`. No audit row is written on login today. |
 | **Logout** | `logout` | Session/token invalidated | FR-002 | **Planned** — same gap; `AuthController::logout()` does not call `AuditLogService`. |
-| **RoleChanged** | `role_changed` | A user's role assignment changes | FR-067 (Module 12) | **Planned** — approved action exists; Module 12's Role Management isn't built, and the current RBAC is still the interim 3-role model (Product Owner Decision 4). |
+| **RoleChanged** | `role_changed` | A user's role assignment changes | FR-067 (Module 12) | **Implemented** — `AdminUserService::assignRole()`, see [Administration & Search](#administration--search-modules-1112). |
 
-This is a genuine, pre-existing implementation gap (not introduced by this documentation task) — `06` approves `login`/`logout` as audit actions, but no code path writes them. Flagged here since it directly affects Reporting/Security-audit completeness once discovered.
+`Login`/`Logout` remain a genuine, pre-existing implementation gap (not introduced by Module 12) — `06` approves them as audit actions, but no code path writes them. Flagged here since it directly affects Reporting/Security-audit completeness once discovered; out of Module 12's approved scope (FR-066–071 names User/Role/Settings/Reference-Data/Audit administration, not Authentication).
 
 ---
 
@@ -220,7 +220,7 @@ Recorded, tested, working code paths in `DocumentService` — every generation w
 - **Watermarking, digital signatures, retention policy, tenant-configurable numbering format** (BRL-058, DD-028/030/031) — all explicitly unresolved or out of Version 1 scope; none invented.
 - **Signed/pre-signed URL access** (08 §11: "Access is via short-lived, pre-signed URLs") — no real S3-compatible provider is configured in this environment (local disk only), so `GET /documents/{id}` and `.../download` stream bytes through a normal Sanctum-authenticated, policy-checked endpoint instead of a literal pre-signed URL. Every request is still individually authorized (never a static public link), satisfying the underlying security property, but not the letter of "pre-signed URL." Flagged NON-BLOCKING in the module report; revisit once real S3-compatible storage is provisioned (`Storage::disk('s3')` already exists in `config/filesystems.php` — swapping the disk is a config change, not a code change).
 
-**Current Consumers:** `document_available` notifications are now created directly by `DocumentService` (Module 10, see below) on every generation. **Future Consumers:** Reporting (Module 9, document metadata/counts), Module 12 (once built, supplies a management UI over the same `tenants` branding fields already read here).
+**Current Consumers:** `document_available` notifications are now created directly by `DocumentService` (Module 10, see below) on every generation. Module 12 (`AdminSettingsController`) now supplies the management UI over the same `tenants` branding fields read here, plus a `document_templates` table whose content `DocumentService::generateDemandLetter()` reads at generation time (falling back to the original placeholder wording for any tenant that hasn't customized a template) — see [Administration & Search](#administration--search-modules-1112). **Future Consumers:** Reporting (Module 9, document metadata/counts).
 
 ---
 
@@ -261,13 +261,25 @@ Read-only aggregation, reusing existing date fields directly — no new scheduli
 
 ---
 
-## Planned Events — Administration (Module 12)
+## Administration & Search (Modules 11/12)
 
-| Event Name | Source Enum | Trigger | Related FR / BR |
-|---|---|---|---|
-| **RoleChanged** | `audit_log.action = role_changed` | A user's role assignment changes | FR-067 — see also [Authentication](#authentication-approved-not-yet-wired) |
+Module 12 (FR-066–071) received its standalone approval this phase, with six Product Owner rulings closing its Open Items (initial credentials, sole-admin deactivation, single-role assignment, logo constraints, preference validation ranges, in-use reference-data removal) — see the module's Final Report. Module 11 (FR-063–065, approved earlier) is consolidated here per the Development Roadmap's Phase 12 note. Neither module introduces a new dispatched `App\Events\*` class or a new `notifications.type`/`follow_up_history.action_type` value — Administration writes only pre-existing `audit_log.action` values, and Search is a pure read-only query (FR-063's own text: no new entity, no new event).
 
-Module 12 itself has never received the explicit standalone approval every other module got (a standing gap carried since `03_Functional_Requirements.md`) — flagged again here since it affects this event's ultimate implementation.
+| Event Name | Source Enum | Publisher | Trigger (per approved FR/BRL) | Related FR / BR | Status |
+|---|---|---|---|---|---|
+| **UserCreated** | `audit_log.action = created`, `entity_type = user` | `AdminUserService::create()` | An administrator creates a tenant user account | FR-066 | **Implemented** |
+| **UserEdited** | `audit_log.action = edited`, `entity_type = user` | `AdminUserService::update()` | An administrator updates a user's name/email/password | FR-066 | **Implemented** |
+| **UserDeactivated** | `audit_log.action = archived`, `entity_type = user` | `AdminUserService::deactivate()` | An administrator deactivates a user (Archive/Restore pattern, BC-002); blocked if the user is the tenant's sole active `admin` | FR-066 | **Implemented** |
+| **RoleChanged** | `audit_log.action = role_changed`, `entity_type = user` | `AdminUserService::assignRole()` | An administrator assigns/changes a user's Role — restricted to the four tenant-scoped roles this project's interim RBAC model (Product Owner Decision 4) implements (`admin`, `sales_finance`, `customer`, `collection_officer`); `deendoon_platform_administrator` is never assignable here (08 §5: not one of the tenant roles) | FR-067 | **Implemented** |
+| **CompanyProfileEdited** | `audit_log.action = edited`, `entity_type = company_settings` | `AdminSettingsService::updateCompanyProfile()` | An administrator updates Company Profile/Branding (`tenants.business_name/logo_path/address/contact_*`, already-approved FR-068 fields per `06` §3) | FR-068 | **Implemented** |
+| **SystemSettingsEdited** | `audit_log.action = edited`, `entity_type = system_settings` | `AdminSettingsService::updatePreferences()` | An administrator updates Credit/Recovery Policy, Notification Settings, or Document Templates | FR-069 | **Implemented** |
+| **ReferenceDataEdited** | `audit_log.action = edited`, `entity_type = reference_data` | `ReferenceDataService::updateCategory()` | An administrator adds/edits a Lookup & Reference Data value; deactivating a value currently referenced by an existing Customer/Payment/CollectionCase row is blocked (Product Owner ruling on FR-070 E2) | FR-070 | **Implemented** |
+
+**Audit Trail Viewing (FR-071):** `AuditTrailController` is a pure read consumer of `audit_log` — it originates no event of its own, consistent with FR-071's own text ("no update or delete capability is provided anywhere").
+
+**Global Search (FR-063, Module 11):** `SearchService` is a pure read-only aggregation over Customer/Debt/Payment/Receipt/DemandLetter/Statement/CollectionCase, gated per entity type by each entity's existing `viewAny` Policy (a type the requesting user cannot view is omitted entirely, per FR-063 E2) — no new authorization rule, no new event. Result cap (10 per entity type) is a documented judgment call; FR-063 defers pagination/ranking/default-sorting to `04_Business_Rules.md` as unresolved Open Items. **Advanced Filtering (FR-064)** was already fully implemented by Modules 2/3/9's existing list endpoints before this phase — nothing new was added. **Quick Actions (FR-065)** has no server-side surface at all, per its own text ("no new APIs... navigates to existing endpoints") — satisfied entirely by endpoints already built in Modules 3/5/6/8.
+
+**Not wired in this module (explicitly deferred, not invented):** FR-070's stored Risk Level/Payment Method/Collection Outcome value sets are not cross-validated against `UpdateRiskLevelRequest`/`RecordPaymentRequest`/`CloseCollectionCaseRequest` in Modules 4/6/7 — FR-070's own text states business validation for how these values are applied "remains owned by the consuming module," and wiring it would mean modifying already-approved, frozen modules without an explicit instruction to do so. Similarly, `system_settings`' Recovery Policy fields (`whatsapp_reminder_days`/`sms_reminder_days`/`call_reminder_days`/`professional_collection_threshold_days`) are stored but have no consumer — the automation that would read them (FR-029's scheduler, an escalation-threshold check) was never built in its owning module. Both flagged in the Final Report's Future Review Notes.
 
 ---
 

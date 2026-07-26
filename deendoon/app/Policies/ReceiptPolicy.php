@@ -12,6 +12,11 @@ use App\Models\User;
  */
 class ReceiptPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return $this->isAuthorized($user);
+    }
+
     public function view(User $user, Receipt $receipt): bool
     {
         return $this->isAuthorized($user);

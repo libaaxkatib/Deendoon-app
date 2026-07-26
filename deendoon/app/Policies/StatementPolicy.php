@@ -7,6 +7,11 @@ use App\Models\User;
 
 class StatementPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return $this->isAuthorized($user);
+    }
+
     public function view(User $user, Statement $statement): bool
     {
         return $this->isAuthorized($user);

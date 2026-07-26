@@ -27,9 +27,11 @@ use Throwable;
  * (BRL-054) uses tenants.business_name/logo_path/address/contact_* —
  * these ARE the approved FR-068 Company Profile fields, folded into the
  * tenants table per 06_Database_Design.md §3 — so this reads whatever is
- * currently on the tenant row directly. That is placeholder/default
- * branding relative to Module 12's not-yet-built management UI, per the
- * Development Roadmap's Phase 9 note; final branding wiring is Phase 12.
+ * currently on the tenant row directly, now administratively editable via
+ * Module 12 (AdminSettingsController). Demand Letter body text (FR-069's
+ * "Document Templates") is likewise read from AdminSettingsService at
+ * generation time, falling back to the original placeholder wording for
+ * any tenant that has not customized a given template.
  *
  * Also creates a "Document Available" Notification (FR-058, Module 10) on
  * every generation — synchronously, in the same call, via
@@ -51,6 +53,7 @@ class DocumentService
         private readonly ReferenceNumberService $referenceNumbers,
         private readonly AuditLogService $auditLog,
         private readonly NotificationService $notifications,
+        private readonly AdminSettingsService $settings,
     ) {}
 
     /**
@@ -124,7 +127,7 @@ class DocumentService
             'tenant' => $debt->tenant,
             'demandLetter' => $demandLetter,
             'templateLabel' => $template->label(),
-            'bodyText' => $this->placeholderBodyText($template),
+            'bodyText' => $this->settings->templateContent($tenantId, $template),
             'debt' => $debt,
             'customer' => $customer,
         ], $tenantId, 'demand_letters', $referenceNumber);
@@ -203,22 +206,5 @@ class DocumentService
         Storage::disk(self::DISK)->put($path, $pdf->output());
 
         return $path;
-    }
-
-    /**
-     * Functional placeholder text only, not final content — Legal Notice
-     * wording is explicitly out of SRS scope (Module 8 Open Item 7:
-     * "would typically require legal review outside SRS scope"), and by
-     * the same reasoning nothing invents real legal/collections copy for
-     * the other three templates either.
-     */
-    private function placeholderBodyText(DemandLetterTemplate $template): string
-    {
-        return match ($template) {
-            DemandLetterTemplate::FirstReminder => 'This is a friendly reminder that the debt referenced below remains outstanding. Please arrange payment at your earliest convenience.',
-            DemandLetterTemplate::SecondReminder => 'Our records show the debt referenced below remains unpaid despite a previous reminder. Please settle this balance promptly to avoid further action.',
-            DemandLetterTemplate::FinalDemand => 'This is a final demand for payment of the debt referenced below. Failure to settle this balance may result in further collection action.',
-            DemandLetterTemplate::LegalNotice => 'This notice is to inform you that the debt referenced below remains unpaid. Further action may be taken to recover this amount.',
-        };
     }
 }

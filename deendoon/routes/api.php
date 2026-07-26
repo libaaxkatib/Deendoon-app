@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\AdminReferenceDataController;
+use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CollectionCaseController;
@@ -18,6 +22,7 @@ use App\Http\Controllers\PromiseToPayController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatementController;
 use Illuminate\Support\Facades\Route;
 
@@ -103,5 +108,24 @@ Route::prefix('v1')->group(function () {
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead']);
 
         Route::get('calendar', [CalendarController::class, 'index']);
+
+        Route::get('search', [SearchController::class, 'index']);
+
+        Route::get('admin/users', [AdminUserController::class, 'index']);
+        Route::post('admin/users', [AdminUserController::class, 'store']);
+        Route::get('admin/users/{user}', [AdminUserController::class, 'show']);
+        Route::put('admin/users/{user}', [AdminUserController::class, 'update']);
+        Route::post('admin/users/{user}/deactivate', [AdminUserController::class, 'deactivate']);
+        Route::patch('admin/users/{user}/role', [AdminUserController::class, 'updateRole']);
+
+        Route::get('admin/settings/company-profile', [AdminSettingsController::class, 'companyProfile']);
+        Route::put('admin/settings/company-profile', [AdminSettingsController::class, 'updateCompanyProfile']);
+        Route::get('admin/settings/preferences', [AdminSettingsController::class, 'preferences']);
+        Route::put('admin/settings/preferences', [AdminSettingsController::class, 'updatePreferences']);
+
+        Route::get('admin/reference-data/{category}', [AdminReferenceDataController::class, 'show']);
+        Route::put('admin/reference-data/{category}', [AdminReferenceDataController::class, 'update']);
+
+        Route::get('admin/audit-trail', [AuditTrailController::class, 'index']);
     });
 });
