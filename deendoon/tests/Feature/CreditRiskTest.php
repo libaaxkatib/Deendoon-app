@@ -112,6 +112,36 @@ class CreditRiskTest extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors(['risk_level']);
     }
 
+    /**
+     * Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §2.9, §5.6, §6.2) resolves
+     * DD-010: Risk Level is fixed to High/Medium/Low. Any other value —
+     * including a previously-accepted arbitrary string — is now rejected.
+     */
+    public function test_risk_level_rejects_a_value_outside_the_approved_set(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", [
+            'risk_level' => 'extreme',
+        ])->assertStatus(422)->assertJsonValidationErrors(['risk_level']);
+    }
+
+    public function test_admin_can_set_risk_level_to_medium(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", [
+            'risk_level' => 'medium',
+        ]);
+
+        $response->assertStatus(200)->assertJsonPath('data.risk_level', 'medium');
+        $this->assertSame('medium', $customer->fresh()->risk_level);
+    }
+
     public function test_risk_level_update_records_an_edited_audit_event(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);

@@ -90,6 +90,32 @@ class AuthController extends Controller
     }
 
     /**
+     * Sprint 1 — Backend Foundation (Backend v2.1). Rotates the caller's
+     * current Sanctum token for a new one, letting a client stay signed in
+     * past the sliding idle window (EnsureTokenIsNotIdle) without asking
+     * the user to re-enter credentials. Deliberately reuses the exact
+     * token-issuance mechanism and response shape already used by
+     * login()/register() (a plain-text token plus the UserResource) rather
+     * than introducing a distinct refresh-token type or renaming those
+     * endpoints' existing `token` field — Sanctum has no separate
+     * refresh-token concept, and this project's approved authentication
+     * model is a single bearer token, not an access/refresh pair.
+     */
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $request->user()->currentAccessToken()->delete();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return $this->successResponse([
+            'user' => new UserResource($user),
+            'token' => $token,
+        ], 'Token refreshed successfully');
+    }
+
+    /**
      * FR-004. Always returns the same response whether or not the email
      * belongs to an account — PasswordResetService silently no-ops for an
      * unknown (or deactivated/archived) email rather than signaling that

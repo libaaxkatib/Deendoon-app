@@ -3,15 +3,23 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * FR-027: "System validates the value against the approved set" —
- * DD-010 (04_Business_Rules.md) leaves that set undefined, and
- * 06_Database_Design.md §3 is explicit that a value-set-pending-a-DD
- * column is validated against reference_data once a tenant configures
- * it, never a fixed constraint invented here. reference_data (Module 12)
- * doesn't exist yet, so only the column's own type/length constraint is
- * enforced. Tighten this once DD-010 resolves — see the report.
+ * DD-010 (04_Business_Rules.md) previously left that set undefined, so
+ * this request validated only the column's own type/length constraint.
+ * Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §2.9, §5.6, §6.2) now resolves
+ * DD-010: Risk Level is a fixed three-value classification (High/Medium/
+ * Low), used identically for status coloring, Risk Distribution, and Case
+ * filtering throughout the approved UI. This does not read from
+ * `reference_data` — that table's `risk_level` category remains a
+ * display/configuration list only (see ReferenceDataService's own
+ * docblock: "this module does not wire consuming-module validation
+ * against it"), and Backend v2.1 does not ask for that wiring; it asks
+ * for exactly this fixed set, matching every other categorical field in
+ * this project (customer_status, debt_status, etc.), which validate
+ * against an inline `Rule::in()` rather than a tenant-configurable table.
  */
 class UpdateRiskLevelRequest extends FormRequest
 {
@@ -33,7 +41,7 @@ class UpdateRiskLevelRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'risk_level' => ['required', 'string', 'max:50'],
+            'risk_level' => ['required', 'string', Rule::in(['high', 'medium', 'low'])],
         ];
     }
 }
