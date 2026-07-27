@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FollowUpActionType;
 use App\Http\Requests\AssignCollectionCaseRequest;
 use App\Http\Requests\CloseCollectionCaseRequest;
 use App\Http\Requests\EscalateDebtRequest;
@@ -14,6 +15,7 @@ use App\Models\Debt;
 use App\Models\User;
 use App\Services\CollectionCaseService;
 use App\Traits\ApiResponse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,15 +34,30 @@ class CollectionCaseController extends Controller
         return $this->successResponse(new CollectionCaseResource($case), 'Debt escalated to Professional Collection successfully', 201);
     }
 
+    /**
+     * Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §6.1, §6.2): the Case List's
+     * four tabs. `status` continues to accept a raw case_status value
+     * unchanged, for any existing caller relying on it; `tab` is additive.
+     */
+    private const TAB_ALL = 'all';
+
+    private const TAB_HIGH_RISK = 'high_risk';
+
+    private const TAB_FOLLOW_UP = 'follow_up';
+
+    private const TAB_PROMISE_DUE = 'promise_due';
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', CollectionCase::class);
 
-        $query = CollectionCase::query();
+        $query = CollectionCase::with(['debt.customer']);
 
         if ($status = $request->string('status')->trim()->value()) {
             $query->where('case_status', $status);
         }
+
+        $this->applyTabFilter($query, $request->string('tab')->trim()->value());
 
         $cases = $query->orderBy('created_at', 'desc')->paginate(
             perPage: $this->perPage($request),
@@ -60,6 +77,8 @@ class CollectionCaseController extends Controller
     public function show(CollectionCase $case): JsonResponse
     {
         $this->authorize('view', $case);
+
+        $case->loadMissing(['debt.customer']);
 
         return $this->successResponse(new CollectionCaseResource($case));
     }
@@ -140,5 +159,43 @@ class CollectionCaseController extends Controller
         $history = $activities->concat($auditEvents)->sortBy('occurred_at')->values();
 
         return $this->successResponse(['collection_case_id' => $case->id, 'history' => $history]);
+    }
+
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §6.2 Business Rules, applied exactly:
+     * High Risk = customer classified High Risk; Promise Due = an open,
+     * unfulfilled Promise to Pay; Follow Up = an active, ongoing follow-up
+     * requirement — at least one recorded follow-up activity that has not
+     * yet resulted in payment, closure, or an open Promise to Pay. "Not
+     * yet resulted in payment" is read as the debt not yet being fully
+     * Paid (BRL "Open Debt" definition already used everywhere else in
+     * this project), not as zero partial payments — a partially-paid debt
+     * still has an active follow-up requirement.
+     */
+    private function applyTabFilter(Builder $query, ?string $tab): void
+    {
+        match ($tab) {
+            self::TAB_HIGH_RISK => $query->whereHas(
+                'debt.customer',
+                fn ($q) => $q->where('risk_level', 'high'),
+            ),
+            self::TAB_PROMISE_DUE => $query->whereHas(
+                'debt.promisesToPay',
+                fn ($q) => $q->where('status', 'open'),
+            ),
+            self::TAB_FOLLOW_UP => $query
+                ->where('case_status', 'open')
+                ->whereHas(
+                    'debt.followUpHistory',
+                    fn ($q) => $q->where('action_type', FollowUpActionType::CollectionActivity->value),
+                )
+                ->whereHas('debt', fn ($q) => $q->where('debt_status', '!=', 'paid'))
+                ->whereDoesntHave(
+                    'debt.promisesToPay',
+                    fn ($q) => $q->where('status', 'open'),
+                ),
+            self::TAB_ALL, null, '' => null,
+            default => null,
+        };
     }
 }

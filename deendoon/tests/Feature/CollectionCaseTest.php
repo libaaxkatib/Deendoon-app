@@ -189,6 +189,95 @@ class CollectionCaseTest extends TestCase
         $this->getJson("/api/v1/collection-cases/{$caseB->id}")->assertStatus(404);
     }
 
+    // --- Case List enrichment (docs/Mobile_UI_V1_Frozen.md §6.1, §6.3) ---
+
+    public function test_case_resource_includes_customer_name_outstanding_amount_and_risk_level(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create([
+            'name' => 'Ahmed Trading Co.', 'risk_level' => 'high',
+        ]);
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')
+            ->create(['remaining_balance' => 12988]);
+        $this->actingAsTenantUser($tenant);
+        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+
+        $this->getJson("/api/v1/collection-cases/{$caseId}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.customer_name', 'Ahmed Trading Co.')
+            ->assertJsonPath('data.risk_level', 'high')
+            ->assertJsonPath('data.outstanding_amount', '12988.00');
+    }
+
+    public function test_index_can_filter_by_high_risk_tab(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $highRiskCustomer = Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'high']);
+        $lowRiskCustomer = Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'low']);
+        $highRiskDebt = Debt::factory()->for($tenant, 'tenant')->for($highRiskCustomer, 'customer')->create();
+        $lowRiskDebt = Debt::factory()->for($tenant, 'tenant')->for($lowRiskCustomer, 'customer')->create();
+        $highRiskCase = CollectionCase::factory()->for($tenant, 'tenant')->for($highRiskDebt, 'debt')->create();
+        CollectionCase::factory()->for($tenant, 'tenant')->for($lowRiskDebt, 'debt')->create();
+
+        $this->actingAsTenantUser($tenant);
+        $response = $this->getJson('/api/v1/collection-cases?tab=high_risk');
+
+        $ids = collect($response->json('data.collection_cases'))->pluck('id');
+        $this->assertEquals([$highRiskCase->id], $ids->all());
+    }
+
+    public function test_index_can_filter_by_promise_due_tab(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debtWithPromise = $this->makeDebt($tenant);
+        $debtWithoutPromise = $this->makeDebt($tenant);
+        $caseWithPromise = CollectionCase::factory()->for($tenant, 'tenant')->for($debtWithPromise, 'debt')->create();
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debtWithoutPromise, 'debt')->create();
+        $user = $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/debts/{$debtWithPromise->id}/promise-to-pay", [
+            'promised_date' => now()->addDays(3)->toDateString(),
+        ]);
+
+        $response = $this->getJson('/api/v1/collection-cases?tab=promise_due');
+
+        $ids = collect($response->json('data.collection_cases'))->pluck('id');
+        $this->assertEquals([$caseWithPromise->id], $ids->all());
+    }
+
+    public function test_index_can_filter_by_follow_up_tab(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debtWithActivity = $this->makeDebt($tenant);
+        $debtWithoutActivity = $this->makeDebt($tenant);
+        $caseWithActivity = CollectionCase::factory()->for($tenant, 'tenant')->for($debtWithActivity, 'debt')->create();
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debtWithoutActivity, 'debt')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/collection-cases/{$caseWithActivity->id}/activities", [
+            'details' => 'Called the customer',
+        ]);
+
+        $response = $this->getJson('/api/v1/collection-cases?tab=follow_up');
+
+        $ids = collect($response->json('data.collection_cases'))->pluck('id');
+        $this->assertEquals([$caseWithActivity->id], $ids->all());
+    }
+
+    public function test_recording_activity_updates_last_activity_at(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+        $before = CollectionCase::find($caseId)->updated_at;
+
+        $this->travel(1)->minutes();
+        $this->postJson("/api/v1/collection-cases/{$caseId}/activities", ['details' => 'Follow-up call']);
+
+        $this->assertTrue(CollectionCase::find($caseId)->updated_at->gt($before));
+    }
+
     // --- Assignment (FR-041) ---
 
     public function test_admin_can_assign_a_collection_officer(): void

@@ -104,6 +104,13 @@ class CollectionCaseService
 
         $this->followUpHistory->record($case->debt, FollowUpActionType::CollectionActivity, $actor, $details, $case->id);
         $this->auditLog->record(AuditAction::Edited, 'collection_case', $case->id, $actor, 'Collection activity recorded');
+
+        // Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §6.1): "Last activity"
+        // must reflect this action. Every other case-mutating method here
+        // already bumps updated_at via ->update(); this is the one that
+        // previously didn't, since it writes only to follow_up_history/
+        // audit_log without touching the case row itself.
+        $case->touch();
     }
 
     public function close(CollectionCase $case, string $closureOutcome, User $actor): void
