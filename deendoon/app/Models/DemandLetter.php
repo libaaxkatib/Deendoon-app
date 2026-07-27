@@ -14,7 +14,7 @@ use LogicException;
 /**
  * Immutable after generation (BRL-057) — see Receipt's docblock.
  */
-#[Fillable(['debt_id', 'template_type', 'reference_number', 'generated_at', 'file_path'])]
+#[Fillable(['debt_id', 'template_type', 'reference_number', 'generated_at', 'file_path', 'file_size'])]
 class DemandLetter extends Model
 {
     /** @use HasFactory<DemandLetterFactory> */
@@ -26,6 +26,7 @@ class DemandLetter extends Model
     {
         return [
             'generated_at' => 'datetime',
+            'file_size' => 'integer',
         ];
     }
 

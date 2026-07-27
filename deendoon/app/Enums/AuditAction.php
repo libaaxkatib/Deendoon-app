@@ -26,6 +26,7 @@ enum AuditAction: string
     case DemandLetterGenerated = 'demand_letter_generated';
     case ReceiptGenerated = 'receipt_generated';
     case StatementGenerated = 'statement_generated';
+    case InvoiceGenerated = 'invoice_generated';
     case RecoveryStageOverride = 'recovery_stage_override';
     case ProfessionalCollectionRequestSubmitted = 'professional_collection_request_submitted';
     case ProfessionalCollectionRequestStatusChanged = 'professional_collection_request_status_changed';

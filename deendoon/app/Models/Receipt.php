@@ -16,7 +16,7 @@ use LogicException;
  * (DD-029 regeneration policy unresolved), so update()/delete() are
  * blocked structurally, same pattern as AuditLog.
  */
-#[Fillable(['payment_id', 'reference_number', 'generated_at', 'file_path'])]
+#[Fillable(['payment_id', 'reference_number', 'generated_at', 'file_path', 'file_size'])]
 class Receipt extends Model
 {
     /** @use HasFactory<ReceiptFactory> */
@@ -28,6 +28,7 @@ class Receipt extends Model
     {
         return [
             'generated_at' => 'datetime',
+            'file_size' => 'integer',
         ];
     }
 

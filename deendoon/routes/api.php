@@ -15,6 +15,7 @@ use App\Http\Controllers\DebtController;
 use App\Http\Controllers\DemandLetterController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FollowUpHistoryController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
@@ -74,6 +75,7 @@ Route::prefix('v1')->group(function () {
         Route::get('debts/{debt}/payments', [PaymentController::class, 'index']);
         Route::post('debts/{debt}/collection-cases', [CollectionCaseController::class, 'store']);
         Route::post('debts/{debt}/demand-letters', [DemandLetterController::class, 'store']);
+        Route::post('debts/{debt}/invoices', [InvoiceController::class, 'store']);
         Route::post('debts/{debt}/statements', [StatementController::class, 'storeForDebt']);
         Route::get('debts/{debt}/documents', [DocumentController::class, 'forDebt']);
 
@@ -94,8 +96,10 @@ Route::prefix('v1')->group(function () {
         Route::post('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesStore']);
 
         Route::get('receipts/{receipt}', [ReceiptController::class, 'show']);
+        Route::get('documents/storage-usage', [DocumentController::class, 'storageUsage']);
         Route::get('documents/{id}/download', [DocumentController::class, 'download']);
         Route::get('documents/{id}/history', [DocumentController::class, 'history']);
+        Route::post('documents/{id}/share', [DocumentController::class, 'share']);
         Route::get('documents/{id}', [DocumentController::class, 'show']);
 
         Route::get('dashboard/kpis', [DashboardController::class, 'kpis']);

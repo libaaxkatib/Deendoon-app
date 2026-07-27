@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\DemandLetter;
 use App\Models\DocumentEvent;
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Receipt;
 use App\Models\Statement;
@@ -79,13 +80,15 @@ class DocumentService
                 'reference_number' => $referenceNumber,
                 'generated_at' => now(),
             ]);
-            $receipt->file_path = $this->render('documents.receipt', [
+            $rendered = $this->render('documents.receipt', [
                 'tenant' => $debt->tenant,
                 'receipt' => $receipt,
                 'payment' => $payment,
                 'debt' => $debt,
                 'customer' => $customer,
             ], $tenantId, 'receipts', $referenceNumber);
+            $receipt->file_path = $rendered['path'];
+            $receipt->file_size = $rendered['size'];
             $receipt->save();
 
             $this->auditLog->record(AuditAction::ReceiptGenerated, 'payment', $payment->id, null, null, $tenantId);
@@ -123,7 +126,7 @@ class DocumentService
             'reference_number' => $referenceNumber,
             'generated_at' => now(),
         ]);
-        $demandLetter->file_path = $this->render('documents.demand-letter', [
+        $rendered = $this->render('documents.demand-letter', [
             'tenant' => $debt->tenant,
             'demandLetter' => $demandLetter,
             'templateLabel' => $template->label(),
@@ -131,6 +134,8 @@ class DocumentService
             'debt' => $debt,
             'customer' => $customer,
         ], $tenantId, 'demand_letters', $referenceNumber);
+        $demandLetter->file_path = $rendered['path'];
+        $demandLetter->file_size = $rendered['size'];
         $demandLetter->save();
 
         $this->auditLog->record(AuditAction::DemandLetterGenerated, 'debt', $debt->id, $actor, null, $tenantId);
@@ -139,6 +144,41 @@ class DocumentService
         $this->notifications->notify($tenantId, (string) $actor->id, NotificationType::DocumentAvailable, 'demand_letter', $demandLetter->id);
 
         return $demandLetter->refresh();
+    }
+
+    /**
+     * Sprint 4.1. Manual generation only — Business Rule: "Invoice
+     * generation is a manual business action. Do NOT generate invoices
+     * automatically." Mirrors generateDemandLetter() exactly; no template
+     * choice, since no approved document describes multiple Invoice
+     * templates.
+     */
+    public function generateInvoice(Debt $debt, User $actor): Invoice
+    {
+        $tenantId = $debt->tenant_id;
+        $referenceNumber = $this->referenceNumbers->next('invoices', $tenantId, 'INV');
+
+        $invoice = new Invoice([
+            'debt_id' => $debt->id,
+            'reference_number' => $referenceNumber,
+            'generated_at' => now(),
+        ]);
+        $rendered = $this->render('documents.invoice', [
+            'tenant' => $debt->tenant,
+            'invoice' => $invoice,
+            'debt' => $debt,
+            'customer' => $debt->customer,
+        ], $tenantId, 'invoices', $referenceNumber);
+        $invoice->file_path = $rendered['path'];
+        $invoice->file_size = $rendered['size'];
+        $invoice->save();
+
+        $this->auditLog->record(AuditAction::InvoiceGenerated, 'debt', $debt->id, $actor, null, $tenantId);
+        $this->recordEvent(DocumentType::Invoice, $invoice->id, DocumentEventType::Generated, $actor, $tenantId);
+
+        $this->notifications->notify($tenantId, (string) $actor->id, NotificationType::DocumentAvailable, 'invoice', $invoice->id);
+
+        return $invoice->refresh();
     }
 
     /**
@@ -160,13 +200,15 @@ class DocumentService
             'reference_number' => $referenceNumber,
             'generated_at' => now(),
         ]);
-        $statement->file_path = $this->render('documents.statement', [
+        $rendered = $this->render('documents.statement', [
             'tenant' => $customer->tenant,
             'statement' => $statement,
             'customer' => $customer,
             'debts' => $customer->debts()->withTrashed()->get(),
             'payments' => $customer->payments()->with('debt')->get(),
         ], $tenantId, 'statements', $referenceNumber);
+        $statement->file_path = $rendered['path'];
+        $statement->file_size = $rendered['size'];
         $statement->save();
 
         $this->auditLog->record(AuditAction::StatementGenerated, 'customer', $customer->id, $actor, null, $tenantId);
@@ -199,12 +241,42 @@ class DocumentService
         ]);
     }
 
-    private function render(string $view, array $data, string $tenantId, string $folder, string $referenceNumber): string
+    /**
+     * @return array{path: string, size: int}
+     */
+    private function render(string $view, array $data, string $tenantId, string $folder, string $referenceNumber): array
     {
         $pdf = Pdf::loadView($view, $data);
+        $output = $pdf->output();
         $path = "documents/{$tenantId}/{$folder}/{$referenceNumber}.pdf";
-        Storage::disk(self::DISK)->put($path, $pdf->output());
+        Storage::disk(self::DISK)->put($path, $output);
 
-        return $path;
+        return ['path' => $path, 'size' => strlen($output)];
+    }
+
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §8.1 Storage Usage. Computed live from
+     * each document table's file_size, per docs/Backend_v2.1_Database_Alignment.md
+     * §11's own conclusion that this may be "computed live or maintained
+     * incrementally — an implementation choice, not a UI requirement."
+     * The quota itself is not defined by any approved document; a
+     * conservative, operator-configurable default is used rather than an
+     * invented fixed business rule.
+     *
+     * @return array{used_bytes: int, total_bytes: int, used_percentage: float}
+     */
+    public function storageUsage(string $tenantId): array
+    {
+        $usedBytes = (int) Receipt::where('tenant_id', $tenantId)->sum('file_size')
+            + (int) DemandLetter::where('tenant_id', $tenantId)->sum('file_size')
+            + (int) Statement::where('tenant_id', $tenantId)->sum('file_size');
+
+        $totalBytes = (int) env('DOCUMENT_STORAGE_QUOTA_BYTES', 10 * 1024 * 1024 * 1024);
+
+        return [
+            'used_bytes' => $usedBytes,
+            'total_bytes' => $totalBytes,
+            'used_percentage' => $totalBytes > 0 ? round(($usedBytes / $totalBytes) * 100, 2) : 0.0,
+        ];
     }
 }

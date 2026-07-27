@@ -3,20 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DocumentType;
+use App\Enums\MessageChannel;
+use App\Http\Requests\DocumentShareRequest;
 use App\Http\Resources\DemandLetterResource;
 use App\Http\Resources\DocumentEventResource;
+use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\ReceiptResource;
+use App\Http\Resources\SentMessageResource;
 use App\Http\Resources\StatementResource;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\DemandLetter;
 use App\Models\DocumentEvent;
+use App\Models\Invoice;
+use App\Models\MessageTemplate;
 use App\Models\Receipt;
 use App\Models\Statement;
 use App\Services\DocumentService;
+use App\Services\MessageDeliveryService;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -31,7 +39,10 @@ class DocumentController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly DocumentService $documents) {}
+    public function __construct(
+        private readonly DocumentService $documents,
+        private readonly MessageDeliveryService $delivery,
+    ) {}
 
     public function show(string $id): JsonResponse
     {
@@ -62,6 +73,35 @@ class DocumentController extends Controller
         return Storage::disk('local')->download($model->file_path, "{$model->reference_number}.pdf");
     }
 
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §8.1 Storage Usage.
+     */
+    public function storageUsage(): JsonResponse
+    {
+        Gate::authorize('view-reports');
+
+        return $this->successResponse($this->documents->storageUsage(request()->user()->tenant_id));
+    }
+
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §8.8 — reuses the Sprint 3
+     * MessageDeliveryService built for Reminder sending; no new provider
+     * or PDF work involved, since the document is already generated.
+     */
+    public function share(DocumentShareRequest $request, string $id): JsonResponse
+    {
+        [$model, , $type] = $this->resolve($id);
+
+        $this->authorize('view', $model);
+
+        $channel = MessageChannel::from($request->validated('channel'));
+        $template = MessageTemplate::findOrFail($request->validated('template_id'));
+
+        $sentMessage = $this->delivery->sendDocument($model, $type, $template, $channel, $request->user());
+
+        return $this->successResponse(new SentMessageResource($sentMessage), 'Document shared successfully');
+    }
+
     public function history(string $id): JsonResponse
     {
         [$model, , $type] = $this->resolve($id);
@@ -83,8 +123,9 @@ class DocumentController extends Controller
         $receipts = Receipt::whereHas('payment.debt', fn ($q) => $q->where('customer_id', $customer->id))->get();
         $demandLetters = DemandLetter::whereHas('debt', fn ($q) => $q->where('customer_id', $customer->id))->get();
         $statements = $customer->statements()->get();
+        $invoices = Invoice::whereHas('debt', fn ($q) => $q->where('customer_id', $customer->id))->get();
 
-        return $this->successResponse($this->combine($receipts, $demandLetters, $statements));
+        return $this->successResponse($this->combine($receipts, $demandLetters, $statements, $invoices));
     }
 
     public function forDebt(Debt $debt): JsonResponse
@@ -94,12 +135,13 @@ class DocumentController extends Controller
         $receipts = Receipt::whereHas('payment', fn ($q) => $q->where('debt_id', $debt->id))->get();
         $demandLetters = $debt->demandLetters()->get();
         $statements = $debt->statements()->get();
+        $invoices = $debt->invoices()->get();
 
-        return $this->successResponse($this->combine($receipts, $demandLetters, $statements));
+        return $this->successResponse($this->combine($receipts, $demandLetters, $statements, $invoices));
     }
 
     /**
-     * @return array{0: Receipt|DemandLetter|Statement, 1: class-string, 2: DocumentType}
+     * @return array{0: Receipt|DemandLetter|Statement|Invoice, 1: class-string, 2: DocumentType}
      */
     private function resolve(string $id): array
     {
@@ -115,6 +157,10 @@ class DocumentController extends Controller
             return [$statement, StatementResource::class, DocumentType::Statement];
         }
 
+        if ($invoice = Invoice::find($id)) {
+            return [$invoice, InvoiceResource::class, DocumentType::Invoice];
+        }
+
         abort(404);
     }
 
@@ -122,12 +168,14 @@ class DocumentController extends Controller
      * @param  Collection<int, Receipt>  $receipts
      * @param  Collection<int, DemandLetter>  $demandLetters
      * @param  Collection<int, Statement>  $statements
+     * @param  Collection<int, Invoice>  $invoices
      */
-    private function combine(Collection $receipts, Collection $demandLetters, Collection $statements): array
+    private function combine(Collection $receipts, Collection $demandLetters, Collection $statements, Collection $invoices): array
     {
         return $receipts->map(fn (Receipt $r) => (new ReceiptResource($r))->resolve())
             ->concat($demandLetters->map(fn (DemandLetter $d) => (new DemandLetterResource($d))->resolve()))
             ->concat($statements->map(fn (Statement $s) => (new StatementResource($s))->resolve()))
+            ->concat($invoices->map(fn (Invoice $i) => (new InvoiceResource($i))->resolve()))
             ->sortByDesc('generated_at')
             ->values()
             ->all();

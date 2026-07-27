@@ -19,6 +19,7 @@ class DemandLetterResource extends JsonResource
             'template_type' => $this->template_type,
             'reference_number' => $this->reference_number,
             'generated_at' => $this->generated_at,
+            'file_size' => $this->file_size,
         ];
     }
 }

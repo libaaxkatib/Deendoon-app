@@ -18,6 +18,7 @@ class ReceiptResource extends JsonResource
             'payment_id' => $this->payment_id,
             'reference_number' => $this->reference_number,
             'generated_at' => $this->generated_at,
+            'file_size' => $this->file_size,
         ];
     }
 }
