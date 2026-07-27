@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Enums\ReminderType;
 use App\Models\Reminder;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -71,5 +73,42 @@ class ReminderService
     public function delete(Reminder $reminder): void
     {
         $reminder->delete();
+    }
+
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §7.1: total due-today count, per-type
+     * sub-counts, Overdue count. Extracted from
+     * ReminderCenterController::summary() in Sprint 6 so Home Dashboard's
+     * Today's Overview (§4.3, "reuses the Reminder Summary Service") can
+     * call the identical computation instead of duplicating it — no
+     * behavior change from what that controller already returned.
+     *
+     * @return array{total_due_today: int, per_type: array<string, int>, overdue_count: int}
+     */
+    public function summary(): array
+    {
+        $dueTodayQuery = Reminder::whereNull('completed_at')
+            ->whereDate('due_date', Carbon::today())
+            ->where('due_date', '>=', Carbon::now());
+
+        $perType = [];
+        foreach (ReminderType::cases() as $type) {
+            $perType[$type->value] = (clone $dueTodayQuery)->where('type', $type->value)->count();
+        }
+
+        $overdueCount = Reminder::whereNull('completed_at')
+            ->where(function (Builder $query) {
+                $query->where('due_date', '<', Carbon::today()->startOfDay())
+                    ->orWhere(function (Builder $inner) {
+                        $inner->whereDate('due_date', Carbon::today())->where('due_date', '<', Carbon::now());
+                    });
+            })
+            ->count();
+
+        return [
+            'total_due_today' => $dueTodayQuery->count(),
+            'per_type' => $perType,
+            'overdue_count' => $overdueCount,
+        ];
     }
 }

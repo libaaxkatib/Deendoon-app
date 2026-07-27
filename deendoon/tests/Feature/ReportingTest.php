@@ -6,6 +6,7 @@ use App\Models\CollectionCase;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\Payment;
+use App\Models\Reminder;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -121,6 +122,95 @@ class ReportingTest extends TestCase
         $response = $this->getJson('/api/v1/dashboard/kpis');
 
         $response->assertJsonPath('data.customers_over_credit_limit', 1);
+    }
+
+    public function test_high_risk_customers_counts_correctly(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'high']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'high']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'low']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.high_risk_customers', 2);
+    }
+
+    public function test_high_risk_customers_respects_tenant_isolation(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        Customer::factory()->for($tenantA, 'tenant')->create(['risk_level' => 'high']);
+        Customer::factory()->for($tenantB, 'tenant')->create(['risk_level' => 'high']);
+        Customer::factory()->for($tenantB, 'tenant')->create(['risk_level' => 'high']);
+        $this->actingAsTenantUser($tenantA);
+
+        $this->getJson('/api/v1/dashboard/kpis')->assertJsonPath('data.high_risk_customers', 1);
+    }
+
+    // --- Today's Overview (§4.3 — reuses Reminder Center's summary) ---
+
+    public function test_todays_overview_matches_reminder_center_summary(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        Reminder::factory()->for($tenant, 'tenant')->dueToday()->create([
+            'related_entity_type' => 'debt', 'related_entity_id' => $debt->id, 'type' => 'payment_due',
+        ]);
+
+        $dashboardResponse = $this->getJson('/api/v1/dashboard/todays-overview');
+        $reminderCenterResponse = $this->getJson('/api/v1/reminders/summary');
+
+        $dashboardResponse->assertStatus(200);
+        $this->assertSame($reminderCenterResponse->json('data'), $dashboardResponse->json('data'));
+    }
+
+    // --- Recent Cases (§4.5) ---
+
+    public function test_recent_cases_returns_most_recently_active_cases_first(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debtA = $this->makeDebt($tenant);
+        $debtB = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $caseA = CollectionCase::factory()->for($tenant, 'tenant')->for($debtA, 'debt')->create();
+        $this->travel(1)->minutes();
+        $caseB = CollectionCase::factory()->for($tenant, 'tenant')->for($debtB, 'debt')->create();
+
+        $response = $this->getJson('/api/v1/dashboard/recent-cases');
+
+        $ids = collect($response->json('data'))->pluck('id');
+        $this->assertSame([$caseB->id, $caseA->id], $ids->all());
+    }
+
+    public function test_recent_cases_respects_the_limit_parameter(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        foreach (range(1, 3) as $i) {
+            $debt = $this->makeDebt($tenant);
+            CollectionCase::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create();
+        }
+
+        $response = $this->getJson('/api/v1/dashboard/recent-cases?limit=2');
+
+        $this->assertCount(2, $response->json('data'));
+    }
+
+    public function test_recent_cases_includes_customer_name_and_risk_level(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Somali Builders', 'risk_level' => 'high']);
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create();
+        $this->actingAsTenantUser($tenant);
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create();
+
+        $response = $this->getJson('/api/v1/dashboard/recent-cases');
+
+        $response->assertJsonPath('data.0.customer_name', 'Somali Builders')
+            ->assertJsonPath('data.0.risk_level', 'high');
     }
 
     public function test_active_collection_cases_excludes_closed_cases(): void

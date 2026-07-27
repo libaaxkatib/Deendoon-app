@@ -103,6 +103,8 @@ Route::prefix('v1')->group(function () {
         Route::get('documents/{id}', [DocumentController::class, 'show']);
 
         Route::get('dashboard/kpis', [DashboardController::class, 'kpis']);
+        Route::get('dashboard/todays-overview', [DashboardController::class, 'todaysOverview']);
+        Route::get('dashboard/recent-cases', [DashboardController::class, 'recentCases']);
         Route::get('reports/aging-analysis', [ReportController::class, 'agingAnalysis']);
         Route::get('reports/customers', [ReportController::class, 'customers']);
         Route::get('reports/debts', [ReportController::class, 'debts']);

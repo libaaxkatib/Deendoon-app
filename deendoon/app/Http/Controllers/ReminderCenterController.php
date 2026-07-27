@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\MessageChannel;
-use App\Enums\ReminderType;
 use App\Http\Requests\SendReminderRequest;
 use App\Http\Requests\StoreReminderRequest;
 use App\Http\Requests\UpdateReminderRequest;
@@ -45,29 +44,7 @@ class ReminderCenterController extends Controller
     {
         $this->authorize('viewAny', Reminder::class);
 
-        $dueTodayQuery = Reminder::whereNull('completed_at')
-            ->whereDate('due_date', Carbon::today())
-            ->where('due_date', '>=', Carbon::now());
-
-        $perType = [];
-        foreach (ReminderType::cases() as $type) {
-            $perType[$type->value] = (clone $dueTodayQuery)->where('type', $type->value)->count();
-        }
-
-        $overdueCount = Reminder::whereNull('completed_at')
-            ->where(function (Builder $query) {
-                $query->where('due_date', '<', Carbon::today()->startOfDay())
-                    ->orWhere(function (Builder $inner) {
-                        $inner->whereDate('due_date', Carbon::today())->where('due_date', '<', Carbon::now());
-                    });
-            })
-            ->count();
-
-        return $this->successResponse([
-            'total_due_today' => $dueTodayQuery->count(),
-            'per_type' => $perType,
-            'overdue_count' => $overdueCount,
-        ]);
+        return $this->successResponse($this->reminders->summary());
     }
 
     /**

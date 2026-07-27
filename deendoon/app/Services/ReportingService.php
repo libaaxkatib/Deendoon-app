@@ -55,12 +55,22 @@ class ReportingService
         $customersOverLimit = (clone $customers)->whereColumn('outstanding_balance', '>', 'credit_limit')->count();
         $activeCases = (clone $cases)->where('case_status', '!=', 'closed')->count();
 
+        // docs/Mobile_UI_V1_Frozen.md §4.2 High Risk Customers. Uses the
+        // same `where('risk_level', 'high')->count()` predicate as
+        // riskDistribution()'s 'high' segment — not a call to that method
+        // directly, since riskDistribution() always builds a fresh,
+        // auth-scoped Customer query and would silently return 0 for the
+        // Platform Administrator's system-wide view instead of respecting
+        // the withoutGlobalScope() already resolved above for $customers.
+        $highRiskCustomers = (clone $customers)->where('risk_level', 'high')->count();
+
         return [
             'scope' => $isPlatformAdmin ? 'system' : 'tenant',
             'period' => $period,
             'total_outstanding_amount' => $this->money($totalOutstanding),
             'total_collected_period' => $this->money($totalCollected),
             'recovery_rate' => null,
+            'high_risk_customers' => $highRiskCustomers,
             'total_overdue_debts' => [
                 'count' => $overdueCount,
                 'value' => $this->money($overdueValue),
