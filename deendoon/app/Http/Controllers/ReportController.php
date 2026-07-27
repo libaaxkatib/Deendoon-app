@@ -137,6 +137,61 @@ class ReportController extends Controller
     }
 
     /**
+     * docs/Mobile_UI_V1_Frozen.md §5.4. Defaults to the current calendar
+     * month, consistent with dashboardKpis()'s own period defaulting.
+     */
+    public function collectionAnalytics(Request $request): JsonResponse
+    {
+        Gate::authorize('view-reports');
+
+        [$dateFrom, $dateTo] = $this->dateRangeOrDefault($request);
+
+        return $this->successResponse($this->reporting->collectionAnalytics($dateFrom, $dateTo));
+    }
+
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §5.6.
+     */
+    public function riskDistribution(): JsonResponse
+    {
+        Gate::authorize('view-reports');
+
+        return $this->successResponse($this->reporting->riskDistribution());
+    }
+
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §5.3 — `collected_amount` only; see
+     * ReportingService::collectionsTrend()'s docblock for why
+     * `outstanding_amount`/`risk_concentration` are not implemented here.
+     */
+    public function collectionsTrend(Request $request): JsonResponse
+    {
+        Gate::authorize('view-reports');
+
+        $request->validate([
+            'dateFrom' => ['required', 'date'],
+            'dateTo' => ['required', 'date', 'after_or_equal:dateFrom'],
+            'metric' => ['required', 'string', 'in:collected_amount'],
+        ]);
+
+        return $this->successResponse(
+            $this->reporting->collectionsTrend($request->date('dateFrom')->toDateString(), $request->date('dateTo')->toDateString()),
+        );
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function dateRangeOrDefault(Request $request): array
+    {
+        if ($request->filled('dateFrom') && $request->filled('dateTo')) {
+            return [$request->date('dateFrom')->toDateString(), $request->date('dateTo')->toDateString()];
+        }
+
+        return [now()->startOfMonth()->toDateString(), now()->toDateString()];
+    }
+
+    /**
      * FR-057/BRL-062: exports exactly the same filtered dataset the
      * corresponding GET endpoint would return — unpaginated (a full
      * export, not just the current page) but under the same filters.

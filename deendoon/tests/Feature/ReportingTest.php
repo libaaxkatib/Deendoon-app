@@ -376,6 +376,109 @@ class ReportingTest extends TestCase
         $this->assertCount(1, $response->json('data.collection_cases'));
     }
 
+    // --- Collection Analytics (docs/Mobile_UI_V1_Frozen.md §5.4) ---
+
+    public function test_collection_rate_divides_collected_by_amount_due_in_period(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000, 'due_date' => now()->toDateString()]);
+        $this->actingAsTenantUser($tenant);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create(['amount' => 400, 'payment_date' => now()->toDateString()]);
+
+        $response = $this->getJson('/api/v1/reports/collection-analytics?dateFrom='.now()->startOfMonth()->toDateString().'&dateTo='.now()->toDateString());
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.collection_rate', 40)
+            ->assertJsonPath('data.total_collected', '400.00');
+    }
+
+    public function test_average_days_computed_from_debts_paid_within_the_period(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, [
+            'amount' => 500, 'remaining_balance' => 0, 'debt_status' => 'paid',
+            'due_date' => now()->subDays(10)->toDateString(),
+        ]);
+        $this->actingAsTenantUser($tenant);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create([
+            'amount' => 500, 'payment_date' => now()->toDateString(),
+        ]);
+
+        $response = $this->getJson('/api/v1/reports/collection-analytics?dateFrom='.now()->subDays(30)->toDateString().'&dateTo='.now()->toDateString());
+
+        $response->assertStatus(200)->assertJsonPath('data.average_days', 10);
+    }
+
+    public function test_collection_analytics_defaults_to_the_current_month(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/collection-analytics')
+            ->assertStatus(200)
+            ->assertJsonStructure(['data' => ['collection_rate', 'total_collected', 'average_days']]);
+    }
+
+    // --- Risk Distribution (docs/Mobile_UI_V1_Frozen.md §5.6) ---
+
+    public function test_risk_distribution_returns_counts_and_percentages(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'high']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'low']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'low']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/risk-distribution');
+
+        $response->assertStatus(200);
+        $segments = collect($response->json('data.segments'))->keyBy('risk_level');
+        $this->assertSame(1, $segments['high']['customer_count']);
+        $this->assertSame(2, $segments['low']['customer_count']);
+        $this->assertEqualsWithDelta(33.33, $segments['high']['percentage'], 0.01);
+    }
+
+    public function test_risk_distribution_excludes_unclassified_customers_from_the_percentage_base(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => 'high']);
+        Customer::factory()->for($tenant, 'tenant')->create(['risk_level' => null]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/risk-distribution');
+
+        $segments = collect($response->json('data.segments'))->keyBy('risk_level');
+        $this->assertEquals(100, $segments['high']['percentage']);
+    }
+
+    // --- Collections Trend (docs/Mobile_UI_V1_Frozen.md §5.3) ---
+
+    public function test_collections_trend_returns_one_point_per_day(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create([
+            'amount' => 250, 'payment_date' => now()->subDay()->toDateString(),
+        ]);
+
+        $response = $this->getJson('/api/v1/reports/collections-trend?dateFrom='.now()->subDays(2)->toDateString().'&dateTo='.now()->toDateString().'&metric=collected_amount');
+
+        $response->assertStatus(200)->assertJsonPath('data.metric', 'collected_amount');
+        $series = collect($response->json('data.series'))->keyBy('date');
+        $this->assertSame('250.00', $series[now()->subDay()->toDateString()]['value']);
+        $this->assertSame('0.00', $series[now()->subDays(2)->toDateString()]['value']);
+    }
+
+    public function test_collections_trend_rejects_an_unsupported_metric(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/reports/collections-trend?dateFrom='.now()->subDays(2)->toDateString().'&dateTo='.now()->toDateString().'&metric=outstanding_amount')
+            ->assertStatus(422);
+    }
+
     // --- Export (FR-057) ---
 
     public function test_admin_can_export_customers_report_as_csv(): void

@@ -109,6 +109,9 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/collection-cases', [ReportController::class, 'collectionCases']);
         Route::get('reports/payments', [ReportController::class, 'payments']);
         Route::get('reports/credit-risk', [ReportController::class, 'creditRisk']);
+        Route::get('reports/collection-analytics', [ReportController::class, 'collectionAnalytics']);
+        Route::get('reports/risk-distribution', [ReportController::class, 'riskDistribution']);
+        Route::get('reports/collections-trend', [ReportController::class, 'collectionsTrend']);
         Route::get('reports/{reportType}/export', [ReportController::class, 'export']);
 
         Route::get('notifications', [NotificationController::class, 'index']);
