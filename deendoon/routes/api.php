@@ -96,6 +96,7 @@ Route::prefix('v1')->group(function () {
         Route::post('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesStore']);
 
         Route::get('receipts/{receipt}', [ReceiptController::class, 'show']);
+        Route::get('documents', [DocumentController::class, 'index']);
         Route::get('documents/storage-usage', [DocumentController::class, 'storageUsage']);
         Route::get('documents/{id}/download', [DocumentController::class, 'download']);
         Route::get('documents/{id}/history', [DocumentController::class, 'history']);

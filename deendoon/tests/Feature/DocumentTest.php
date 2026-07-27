@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\DemandLetter;
+use App\Models\Invoice;
 use App\Models\MessageTemplate;
 use App\Models\Payment;
 use App\Models\Receipt;
@@ -428,6 +429,94 @@ class DocumentTest extends TestCase
         $this->actingAsTenantUser($tenant, 'customer');
 
         $this->postJson("/api/v1/debts/{$debt->id}/invoices")->assertStatus(403);
+    }
+
+    // --- List Documents (Sprint 7 — docs/Mobile_UI_V1_Frozen.md §8.1) ---
+
+    public function test_admin_can_list_all_documents_across_types(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        $this->actingAsTenantUser($tenant);
+        $this->postJson("/api/v1/debts/{$debt->id}/invoices");
+        $this->postJson("/api/v1/debts/{$debt->id}/demand-letters", ['template_type' => 'first_reminder']);
+        $this->postJson("/api/v1/debts/{$debt->id}/payments", ['amount' => 400, 'payment_date' => now()->toDateString()]);
+
+        $response = $this->getJson('/api/v1/documents');
+
+        $response->assertStatus(200);
+        $types = collect($response->json('data.documents'))->pluck('document_type');
+        $this->assertTrue($types->contains('invoice'));
+        $this->assertTrue($types->contains('demand_letter'));
+        $this->assertTrue($types->contains('receipt'));
+        $this->assertSame(3, $response->json('data.pagination.total'));
+    }
+
+    public function test_documents_list_can_be_filtered_by_type(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $this->postJson("/api/v1/debts/{$debt->id}/invoices");
+        $this->postJson("/api/v1/debts/{$debt->id}/demand-letters", ['template_type' => 'first_reminder']);
+
+        $response = $this->getJson('/api/v1/documents?type=invoices');
+
+        $types = collect($response->json('data.documents'))->pluck('document_type');
+        $this->assertSame(['invoice'], $types->unique()->all());
+    }
+
+    public function test_documents_list_other_tab_returns_statements(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+        $this->postJson("/api/v1/customers/{$customer->id}/statements");
+
+        $response = $this->getJson('/api/v1/documents?type=other');
+
+        $types = collect($response->json('data.documents'))->pluck('document_type');
+        $this->assertSame(['statement'], $types->unique()->all());
+    }
+
+    public function test_documents_list_can_be_searched_by_reference_number(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debtA = $this->makeDebt($tenant);
+        $debtB = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $letterId = $this->postJson("/api/v1/debts/{$debtA->id}/demand-letters", ['template_type' => 'first_reminder'])->json('data.id');
+        $this->postJson("/api/v1/debts/{$debtB->id}/demand-letters", ['template_type' => 'first_reminder']);
+
+        $response = $this->getJson('/api/v1/documents?search=DL-000001');
+
+        $ids = collect($response->json('data.documents'))->pluck('id');
+        $this->assertSame([$letterId], $ids->all());
+    }
+
+    public function test_documents_list_respects_tenant_isolation(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $debtB = $this->makeDebt($tenantB);
+        // Created directly (not via an authenticated API call as tenant B)
+        // to avoid this suite's known Sanctum guard-caching behavior,
+        // where a second bearer-token request within one test method
+        // isn't re-resolved from scratch.
+        Invoice::factory()->for($tenantB, 'tenant')->for($debtB, 'debt')->create();
+
+        $this->actingAsTenantUser($tenantA);
+        $response = $this->getJson('/api/v1/documents');
+
+        $this->assertSame(0, $response->json('data.pagination.total'));
+    }
+
+    public function test_customer_role_cannot_list_documents(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant, 'customer');
+
+        $this->getJson('/api/v1/documents')->assertStatus(403);
     }
 
     // --- Document Viewing (FR-050) ---

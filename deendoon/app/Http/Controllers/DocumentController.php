@@ -22,8 +22,10 @@ use App\Models\Statement;
 use App\Services\DocumentService;
 use App\Services\MessageDeliveryService;
 use App\Traits\ApiResponse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -43,6 +45,53 @@ class DocumentController extends Controller
         private readonly DocumentService $documents,
         private readonly MessageDeliveryService $delivery,
     ) {}
+
+    /**
+     * docs/Mobile_UI_V1_Frozen.md §8.1 (All Documents) —
+     * docs/Backend_v2.1_REST_API_Specification.md §7's "List Documents".
+     * Sprint 7 finding: no tenant-wide document list existed anywhere —
+     * only the per-customer/per-debt variants (forCustomer/forDebt)
+     * built in Sprint 4/4.1. "type" mirrors §8.1's four tabs exactly
+     * (Invoices/Receipts/Letters map to their own type; "Other" is
+     * Statement, the one type not named by the first three tabs).
+     * Paginates the same combine() output the other list methods already
+     * produce, rather than introducing a raw cross-table SQL UNION.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        Gate::authorize('view-reports');
+
+        $type = $request->string('type')->trim()->lower()->value() ?: 'all';
+        $search = $request->string('search')->trim()->value();
+
+        // combine() requires an Eloquent Collection (it calls ->map() with
+        // model-typed closures elsewhere); the base Support Collection
+        // collect() returns is a different class and fails that type hint.
+        $receipts = in_array($type, ['all', 'receipts'], true)
+            ? $this->searchByReferenceNumber(Receipt::query(), $search)->get() : new Collection;
+        $demandLetters = in_array($type, ['all', 'letters'], true)
+            ? $this->searchByReferenceNumber(DemandLetter::query(), $search)->get() : new Collection;
+        $statements = in_array($type, ['all', 'other'], true)
+            ? $this->searchByReferenceNumber(Statement::query(), $search)->get() : new Collection;
+        $invoices = in_array($type, ['all', 'invoices'], true)
+            ? $this->searchByReferenceNumber(Invoice::query(), $search)->get() : new Collection;
+
+        $all = collect($this->combine($receipts, $demandLetters, $statements, $invoices));
+
+        $perPage = $this->perPage($request);
+        $page = max(1, $request->integer('page', 1));
+        $items = $all->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return $this->successResponse([
+            'documents' => $items,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $all->count(),
+                'last_page' => max(1, (int) ceil($all->count() / $perPage)),
+            ],
+        ]);
+    }
 
     public function show(string $id): JsonResponse
     {
@@ -138,6 +187,15 @@ class DocumentController extends Controller
         $invoices = $debt->invoices()->get();
 
         return $this->successResponse($this->combine($receipts, $demandLetters, $statements, $invoices));
+    }
+
+    private function searchByReferenceNumber(Builder $query, string $search): Builder
+    {
+        if ($search !== '') {
+            $query->whereRaw('LOWER(reference_number) LIKE ?', ['%'.mb_strtolower($search).'%']);
+        }
+
+        return $query;
     }
 
     /**

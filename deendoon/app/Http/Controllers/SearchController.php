@@ -17,6 +17,15 @@ use Illuminate\Http\JsonResponse;
 /**
  * FR-063 — Global Search. Reuses each entity's existing Resource class,
  * consistent with how every other module already shapes its responses.
+ *
+ * Sprint 7 audit note: this endpoint has no controller-level Gate check
+ * by design — SearchService applies per-entity-type RBAC internally
+ * (`$user->can('viewAny', ...)` per entity, see that class's docblock),
+ * so a role without access to a given entity type gets that field
+ * omitted from the response rather than a blanket 403. Confirmed via an
+ * existing, still-passing test
+ * (`test_customer_role_gets_no_results_for_any_entity_type`) before
+ * concluding this was intentional, not a gap.
  */
 class SearchController extends Controller
 {
