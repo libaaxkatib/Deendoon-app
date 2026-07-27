@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\PromiseToPay;
+use App\Models\Reminder;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -62,6 +63,49 @@ class CalendarTest extends TestCase
 
         $entries = collect($response->json('data.entries'));
         $this->assertTrue($entries->contains(fn ($e) => $e['type'] === 'due_date' && $e['related_entity_id'] === $debt->id));
+    }
+
+    /**
+     * Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §7.6): Reminders did not
+     * exist when this controller was first built; this confirms Sprint
+     * 3's aggregation addition works.
+     */
+    public function test_calendar_includes_reminders_within_range(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $reminder = Reminder::factory()->for($tenant, 'tenant')->create([
+            'related_entity_type' => 'debt',
+            'related_entity_id' => $debt->id,
+            'due_date' => now()->addDays(3),
+        ]);
+        $this->actingAsTenantUser($tenant);
+
+        $from = now()->toDateString();
+        $to = now()->addDays(10)->toDateString();
+        $response = $this->getJson("/api/v1/calendar?from={$from}&to={$to}");
+
+        $entries = collect($response->json('data.entries'));
+        $this->assertTrue($entries->contains(fn ($e) => $e['type'] === 'reminder' && $e['related_entity_id'] === $reminder->id));
+    }
+
+    public function test_calendar_excludes_completed_reminders(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $reminder = Reminder::factory()->for($tenant, 'tenant')->completed()->create([
+            'related_entity_type' => 'debt',
+            'related_entity_id' => $debt->id,
+            'due_date' => now()->addDays(3),
+        ]);
+        $this->actingAsTenantUser($tenant);
+
+        $from = now()->toDateString();
+        $to = now()->addDays(10)->toDateString();
+        $response = $this->getJson("/api/v1/calendar?from={$from}&to={$to}");
+
+        $entries = collect($response->json('data.entries'));
+        $this->assertFalse($entries->contains(fn ($e) => $e['related_entity_id'] === $reminder->id));
     }
 
     public function test_calendar_excludes_closed_debts(): void

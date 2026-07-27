@@ -15,11 +15,13 @@ use App\Http\Controllers\DebtController;
 use App\Http\Controllers\DemandLetterController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FollowUpHistoryController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessionalCollectionRequestController;
 use App\Http\Controllers\PromiseToPayController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\ReminderCenterController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
@@ -111,6 +113,23 @@ Route::prefix('v1')->group(function () {
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead']);
 
         Route::get('calendar', [CalendarController::class, 'index']);
+
+        // Backend v2.1 — Reminder Center (docs/Mobile_UI_V1_Frozen.md §7).
+        // Distinct from the debts/{debt}/reminders/* routes above, which
+        // remain the pre-existing, unchanged FR-030 manual log actions.
+        Route::get('reminders/summary', [ReminderCenterController::class, 'summary']);
+        Route::get('reminders', [ReminderCenterController::class, 'index']);
+        Route::post('reminders', [ReminderCenterController::class, 'store']);
+        Route::get('reminders/{reminder}', [ReminderCenterController::class, 'show']);
+        Route::put('reminders/{reminder}', [ReminderCenterController::class, 'update']);
+        Route::delete('reminders/{reminder}', [ReminderCenterController::class, 'destroy']);
+        Route::patch('reminders/{reminder}/complete', [ReminderCenterController::class, 'complete']);
+        Route::post('reminders/{reminder}/send', [ReminderCenterController::class, 'send']);
+
+        Route::get('message-templates', [MessageController::class, 'templates']);
+        Route::post('messages/render', [MessageController::class, 'render']);
+        Route::post('messages/send/whatsapp', [MessageController::class, 'sendWhatsApp']);
+        Route::post('messages/send/sms', [MessageController::class, 'sendSms']);
 
         Route::get('search', [SearchController::class, 'index']);
 

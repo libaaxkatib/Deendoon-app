@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Debt;
 use App\Models\FollowUpHistory;
 use App\Models\PromiseToPay;
+use App\Models\Reminder;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,11 @@ use Illuminate\Support\Facades\Gate;
  * FR-062/BRL-068 — read-only aggregation over data already owned by
  * Modules 3/5: Debt Due Dates, Promise to Pay dates, and manual-reminder
  * ("Call Reminder") activity. Never owns, writes, or schedules anything.
+ *
+ * Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §7.6): also aggregates the
+ * Reminder Center's Reminders (all five types), which did not exist when
+ * this controller was first built — the one addition this sprint makes
+ * here, since §7.6 explicitly requires it.
  *
  * Not aggregated (see the module report):
  * - Collection Appointments (Module 7) — BRL-068 itself flags this as
@@ -76,7 +82,20 @@ class CalendarController extends Controller
                 'label' => $entry->action_type,
             ]);
 
-        $entries = $dueDates->concat($promises)->concat($followUps)->sortBy('date')->values();
+        $reminders = Reminder::query()
+            ->whereNull('completed_at')
+            ->whereDate('due_date', '>=', $from)
+            ->whereDate('due_date', '<=', $to)
+            ->get()
+            ->map(fn (Reminder $reminder) => [
+                'type' => 'reminder',
+                'date' => $reminder->due_date->toDateString(),
+                'related_entity_type' => 'reminder',
+                'related_entity_id' => $reminder->id,
+                'label' => $reminder->type->label(),
+            ]);
+
+        $entries = $dueDates->concat($promises)->concat($followUps)->concat($reminders)->sortBy('date')->values();
 
         return $this->successResponse([
             'from' => $from,

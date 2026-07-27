@@ -9,6 +9,7 @@ use App\Models\DemandLetter;
 use App\Models\Notification;
 use App\Models\ProfessionalCollectionRequest;
 use App\Models\Receipt;
+use App\Models\Reminder;
 use App\Models\Statement;
 use App\Models\User;
 use App\Policies\CollectionCasePolicy;
@@ -18,6 +19,7 @@ use App\Policies\DemandLetterPolicy;
 use App\Policies\NotificationPolicy;
 use App\Policies\ProfessionalCollectionRequestPolicy;
 use App\Policies\ReceiptPolicy;
+use App\Policies\ReminderPolicy;
 use App\Policies\StatementPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -70,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Statement::class, StatementPolicy::class);
         Gate::policy(Notification::class, NotificationPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Reminder::class, ReminderPolicy::class);
 
         RateLimiter::for('login', function (Request $request) {
             $key = Str::lower(trim((string) $request->input('email'))).'|'.$request->ip();
