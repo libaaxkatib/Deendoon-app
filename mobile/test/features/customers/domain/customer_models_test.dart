@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/customers/domain/customer_page.dart';
-import 'package:mobile/features/customers/domain/customer_payment.dart';
+import 'package:mobile/core/models/payment.dart';
 
 void main() {
   group('Customer', () {
@@ -78,9 +78,9 @@ void main() {
     });
   });
 
-  group('CustomerPayment', () {
+  group('Payment', () {
     test('parses the exact PaymentResource shape', () {
-      final payment = CustomerPayment.fromJson({
+      final payment = Payment.fromJson({
         'id': '01PAY',
         'debt_id': '01DEBT',
         'amount': '250.00',
@@ -96,6 +96,21 @@ void main() {
       expect(payment.amount, '250.00');
       expect(payment.paymentDate, '2026-07-20');
       expect(payment.paymentMethod, 'cash');
+    });
+
+    test('parses a null payment_method without throwing (it is genuinely optional)', () {
+      final payment = Payment.fromJson({
+        'id': '01PAY',
+        'debt_id': '01DEBT',
+        'amount': '250.00',
+        'payment_date': '2026-07-20',
+        'payment_method': null,
+        'reference_notes': null,
+        'recorded_by_user_id': 1,
+        'created_at': '2026-07-20T10:00:00.000000Z',
+      });
+
+      expect(payment.paymentMethod, isNull);
     });
   });
 }

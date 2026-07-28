@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
 import '../domain/customer.dart';
 import '../domain/customer_page.dart';
-import '../domain/customer_payment.dart';
+import '../../../core/models/payment.dart';
 import 'customer_api.dart';
 
 final customerRepositoryProvider =
@@ -28,7 +28,7 @@ class CustomerRepository {
 
   Future<Customer> fetchCustomer(String id) => _guard(() => _api.show(id));
 
-  Future<List<CustomerPayment>> fetchCustomerPayments(String customerId) =>
+  Future<List<Payment>> fetchPayments(String customerId) =>
       _guard(() => _api.payments(customerId));
 
   Future<T> _guard<T>(Future<T> Function() call) async {

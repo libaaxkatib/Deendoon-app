@@ -69,10 +69,10 @@ void main() {
     expect(result, _customer);
   });
 
-  test('fetchCustomerPayments delegates to the api', () async {
+  test('fetchPayments delegates to the api', () async {
     when(() => mockApi.payments('1')).thenAnswer((_) async => []);
 
-    final result = await repository.fetchCustomerPayments('1');
+    final result = await repository.fetchPayments('1');
 
     expect(result, isEmpty);
     verify(() => mockApi.payments('1')).called(1);

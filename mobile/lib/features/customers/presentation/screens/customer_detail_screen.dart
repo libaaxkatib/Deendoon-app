@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/coming_soon.dart';
@@ -59,6 +60,11 @@ class CustomerDetailScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               CustomerRecentPayments(customerId: customerId),
               const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => context.push('/customers/$customerId/debts'),
+                child: const Text('View Debts'),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(

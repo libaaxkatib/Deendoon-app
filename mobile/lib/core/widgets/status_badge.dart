@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// Generic status pill — used by Customer List/Details for
-/// `customer_status`, whose 7 real values are enumerated exactly as
-/// `UpdateCustomerStatusRequest` validates them: active, good_standing,
-/// late_payer, high_risk, in_collection, recovered, blocked.
+/// Generic status pill, shared across every module. Two real, distinct
+/// status vocabularies feed it today:
+/// - `customer_status` (`UpdateCustomerStatusRequest`): active,
+///   good_standing, late_payer, high_risk, in_collection, recovered,
+///   blocked.
+/// - `debt_status` (the real Postgres CHECK constraint on
+///   `debts.debt_status`): draft, pending, overdue, partial_paid, paid,
+///   cancelled, written_off.
+/// No value collides between the two, so one widget/mapping serves both
+/// rather than duplicating an near-identical pill per module.
 class StatusBadge extends StatelessWidget {
   final String status;
 
@@ -14,6 +20,7 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
+      // customer_status
       'active' => (AppColors.success, 'Active'),
       'good_standing' => (AppColors.success, 'Good Standing'),
       'late_payer' => (AppColors.warning, 'Late Payer'),
@@ -21,6 +28,14 @@ class StatusBadge extends StatelessWidget {
       'in_collection' => (AppColors.danger, 'In Collection'),
       'recovered' => (AppColors.success, 'Recovered'),
       'blocked' => (AppColors.textSecondary, 'Blocked'),
+      // debt_status
+      'draft' => (AppColors.textSecondary, 'Draft'),
+      'pending' => (AppColors.info, 'Pending'),
+      'overdue' => (AppColors.danger, 'Overdue'),
+      'partial_paid' => (AppColors.warning, 'Partially Paid'),
+      'paid' => (AppColors.success, 'Paid'),
+      'cancelled' => (AppColors.textSecondary, 'Cancelled'),
+      'written_off' => (AppColors.textSecondary, 'Written Off'),
       _ => (AppColors.textSecondary, status),
     };
 

@@ -5,22 +5,18 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
-import '../providers/customer_detail_providers.dart';
+import '../providers/debt_detail_providers.dart';
 
-/// Recent Payments — `GET /customers/{id}/payments`, already ordered
-/// most-recent-first by the backend; shown truncated to a small preview
-/// count here (display-only truncation of real, correctly-ordered data,
-/// not a fabricated "recent" calculation).
-class CustomerRecentPayments extends ConsumerWidget {
-  final String customerId;
+/// Payment History — `GET /debts/{id}/payments`
+/// (`PaymentController::index`), already ordered most-recent-first.
+class DebtPaymentHistory extends ConsumerWidget {
+  final String debtId;
 
-  static const _previewCount = 5;
-
-  const CustomerRecentPayments({super.key, required this.customerId});
+  const DebtPaymentHistory({super.key, required this.debtId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final paymentsAsync = ref.watch(customerPaymentsProvider(customerId));
+    final paymentsAsync = ref.watch(debtPaymentsProvider(debtId));
 
     return paymentsAsync.when(
       loading: () => const Padding(
@@ -28,21 +24,20 @@ class CustomerRecentPayments extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load recent payments.',
-        onRetry: () => ref.invalidate(customerPaymentsProvider(customerId)),
+        message: 'Could not load payment history.',
+        onRetry: () => ref.invalidate(debtPaymentsProvider(debtId)),
       ),
       data: (payments) {
         if (payments.isEmpty) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('No recent payments', style: AppTypography.body),
+            child: Text('No payments recorded yet', style: AppTypography.body),
           );
         }
 
-        final preview = payments.take(_previewCount).toList();
         return Column(
           children: [
-            for (final payment in preview) ...[
+            for (final payment in payments) ...[
               AppCard(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

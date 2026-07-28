@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/customer.dart';
 import '../domain/customer_page.dart';
-import '../domain/customer_payment.dart';
+import '../../../core/models/payment.dart';
 
 final customerApiProvider = Provider<CustomerApi>((ref) => CustomerApi(ref.read(dioProvider)));
 
@@ -41,9 +41,9 @@ class CustomerApi {
     return Customer.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
-  Future<List<CustomerPayment>> payments(String customerId) async {
+  Future<List<Payment>> payments(String customerId) async {
     final response = await _dio.get('customers/$customerId/payments');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => CustomerPayment.fromJson(e as Map<String, dynamic>)).toList();
+    return data.map((e) => Payment.fromJson(e as Map<String, dynamic>)).toList();
   }
 }

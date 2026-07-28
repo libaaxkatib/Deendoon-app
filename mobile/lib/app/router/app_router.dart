@@ -11,6 +11,8 @@ import '../../features/customers/presentation/screens/cases_tab_screen.dart';
 import '../../features/customers/presentation/screens/customer_detail_screen.dart';
 import '../../features/customers/presentation/screens/customer_list_screen.dart';
 import '../../features/dashboard/presentation/screens/home_dashboard_screen.dart';
+import '../../features/debts/presentation/screens/debt_detail_screen.dart';
+import '../../features/debts/presentation/screens/debt_list_screen.dart';
 import '../../features/shell/presentation/app_shell_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import 'route_paths.dart';
@@ -30,6 +32,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/customers/:id',
         builder: (_, state) => CustomerDetailScreen(customerId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/customers/:id/debts',
+        builder: (_, state) => DebtListScreen(customerId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/debts/:id',
+        builder: (_, state) => DebtDetailScreen(debtId: state.pathParameters['id']!),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
-import 'package:mobile/features/customers/domain/customer_payment.dart';
+import 'package:mobile/core/models/payment.dart';
 import 'package:mobile/features/customers/presentation/screens/customer_detail_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -22,7 +22,7 @@ const _customer = Customer(
   creditScoreBand: 'good',
 );
 
-final _payment = CustomerPayment(
+final _payment = Payment(
   id: '01PAY',
   debtId: '01DEBT',
   amount: '250.00',
@@ -53,7 +53,7 @@ void main() {
 
   testWidgets('renders customer info and recent payments from the real backend fields', (tester) async {
     when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _customer);
-    when(() => mockRepository.fetchCustomerPayments('1')).thenAnswer((_) async => [_payment]);
+    when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => [_payment]);
 
     await _pumpScreen(tester, mockRepository: mockRepository);
     await tester.pumpAndSettle();
@@ -75,7 +75,7 @@ void main() {
 
   testWidgets('shows the explicit empty state when there are no payments', (tester) async {
     when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _customer);
-    when(() => mockRepository.fetchCustomerPayments('1')).thenAnswer((_) async => []);
+    when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
 
     await _pumpScreen(tester, mockRepository: mockRepository);
     await tester.pumpAndSettle();
@@ -85,7 +85,7 @@ void main() {
 
   testWidgets('shows a retry affordance when the customer fails to load', (tester) async {
     when(() => mockRepository.fetchCustomer('1')).thenThrow(Exception('network down'));
-    when(() => mockRepository.fetchCustomerPayments('1')).thenAnswer((_) async => []);
+    when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
 
     await _pumpScreen(tester, mockRepository: mockRepository);
     await tester.pumpAndSettle();
