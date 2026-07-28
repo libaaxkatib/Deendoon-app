@@ -1,0 +1,84 @@
+import 'package:flutter/material.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/avatar_initial.dart';
+import '../../../../core/widgets/risk_badge.dart';
+import '../../../../core/widgets/status_badge.dart';
+import '../../domain/customer.dart';
+
+/// Customer Information + Contact Details + Outstanding Balance + Credit
+/// Limit + Risk Level — everything `GET /customers/{id}` (`CustomerResource`)
+/// actually returns, in one card.
+class CustomerInfoCard extends StatelessWidget {
+  final Customer customer;
+
+  const CustomerInfoCard({super.key, required this.customer});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AvatarInitial(name: customer.name),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(customer.name, style: AppTypography.subheading),
+                    const SizedBox(height: 4),
+                    Text(customer.phone, style: AppTypography.caption),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  StatusBadge(status: customer.customerStatus),
+                  const SizedBox(height: 6),
+                  RiskBadge(riskLevel: customer.riskLevel),
+                ],
+              ),
+            ],
+          ),
+          const Divider(height: 32, color: AppColors.background),
+          _InfoRow(label: 'Outstanding Balance', value: customer.outstandingBalance),
+          const SizedBox(height: 12),
+          _InfoRow(label: 'Credit Limit', value: customer.creditLimit),
+          const SizedBox(height: 12),
+          _InfoRow(label: 'Remaining Credit', value: customer.remainingCredit),
+          if (customer.creditScore != null) ...[
+            const SizedBox(height: 12),
+            _InfoRow(
+              label: 'Credit Score',
+              value: '${customer.creditScore}${customer.creditScoreBand != null ? ' (${customer.creditScoreBand})' : ''}',
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: AppTypography.caption),
+        Text(value, style: AppTypography.body.copyWith(color: AppColors.primary)),
+      ],
+    );
+  }
+}

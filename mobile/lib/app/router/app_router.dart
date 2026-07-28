@@ -7,6 +7,9 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
+import '../../features/customers/presentation/screens/cases_tab_screen.dart';
+import '../../features/customers/presentation/screens/customer_detail_screen.dart';
+import '../../features/customers/presentation/screens/customer_list_screen.dart';
 import '../../features/dashboard/presentation/screens/home_dashboard_screen.dart';
 import '../../features/shell/presentation/app_shell_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
@@ -23,6 +26,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RoutePaths.login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: RoutePaths.forgotPassword, builder: (_, _) => const ForgotPasswordScreen()),
       GoRoute(path: RoutePaths.resetPassword, builder: (_, _) => const ResetPasswordScreen()),
+      GoRoute(path: '/customers', builder: (_, _) => const CustomerListScreen()),
+      GoRoute(
+        path: '/customers/:id',
+        builder: (_, state) => CustomerDetailScreen(customerId: state.pathParameters['id']!),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [
@@ -33,7 +41,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: RoutePaths.analytics, builder: (_, _) => const PlaceholderScaffold(title: 'Analytics')),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.cases, builder: (_, _) => const PlaceholderScaffold(title: 'Cases')),
+            GoRoute(path: RoutePaths.cases, builder: (_, _) => const CasesTabScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: RoutePaths.reminders, builder: (_, _) => const PlaceholderScaffold(title: 'Reminders')),

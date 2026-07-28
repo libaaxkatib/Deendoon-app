@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/coming_soon.dart';
+import '../../../../core/widgets/app_card.dart';
 
 /// §4.4 Quick Actions — a static 2x2 grid, no data/loading/error/empty
 /// states apply at the grid level per the frozen spec. Each tile's real
@@ -18,7 +20,7 @@ class QuickActionsGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.8,
+      childAspectRatio: 2.2,
       children: [
         _QuickActionTile(icon: Icons.add_box_outlined, label: 'Add Case', destination: 'Case creation'),
         _QuickActionTile(icon: Icons.attach_money, label: 'Add Payment', destination: 'Payment recording'),
@@ -38,20 +40,23 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: () => showComingSoon(context, destination),
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.primary),
-            const SizedBox(height: 8),
-            Text(label),
-          ],
-        ),
+    return AppCard(
+      onTap: () => showComingSoon(context, destination),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: AppColors.primary, size: 20),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              label,
+              style: AppTypography.body,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

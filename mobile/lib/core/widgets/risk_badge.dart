@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
 /// §2.9 status color vocabulary: High Risk = danger/red, Medium = warning/
 /// amber, Low = success/green. A null/unrecognized level renders neutrally
-/// rather than guessing a color.
+/// rather than guessing a color. Shared across Dashboard (Recent Cases)
+/// and Customers (List/Details) — both render the same `risk_level` field.
 class RiskBadge extends StatelessWidget {
   final String? riskLevel;
 

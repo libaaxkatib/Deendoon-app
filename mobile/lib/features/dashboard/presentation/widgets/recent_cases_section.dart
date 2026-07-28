@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/coming_soon.dart';
 import '../../../../core/widgets/retry_section.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/risk_badge.dart';
 import '../providers/dashboard_providers.dart';
-import 'risk_badge.dart';
+import '../../../../core/widgets/app_card.dart';
 
 /// §4.5 Recent Cases — header with "View All", a short list of case
 /// entries (customer name, outstanding amount, risk badge), most-recent-
@@ -29,6 +31,7 @@ class RecentCasesSection extends ConsumerWidget {
             child: const Text('View All'),
           ),
         ),
+        const SizedBox(height: 8),
         cases.when(
           loading: () => const SectionLoading(),
           error: (error, _) => RetrySection(
@@ -44,13 +47,36 @@ class RecentCasesSection extends ConsumerWidget {
             }
             return Column(
               children: [
-                for (final recentCase in data)
-                  ListTile(
+                for (final recentCase in data) ...[
+                  AppCard(
                     onTap: () => showComingSoon(context, 'Case Details'),
-                    title: Text(recentCase.customerName),
-                    subtitle: Text(recentCase.outstandingAmount),
-                    trailing: RiskBadge(riskLevel: recentCase.riskLevel),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                recentCase.customerName,
+                                style: AppTypography.body,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                recentCase.outstandingAmount,
+                                style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        RiskBadge(riskLevel: recentCase.riskLevel),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 10),
+                ],
               ],
             );
           },
