@@ -8,7 +8,12 @@ import 'auth_interceptor.dart';
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: Env.apiBaseUrl,
+      // Dio joins baseUrl + path by plain concatenation, not URI
+      // resolution — without a trailing slash here, "…/api/v1" + "login"
+      // (endpoint paths are deliberately bare, no leading slash) becomes
+      // "…/api/v1login". Normalized here so it's correct regardless of
+      // whether API_BASE_URL is passed with or without one.
+      baseUrl: Env.apiBaseUrl.endsWith('/') ? Env.apiBaseUrl : '${Env.apiBaseUrl}/',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       contentType: 'application/json',

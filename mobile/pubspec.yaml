@@ -51,6 +51,17 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4
 
+# jni 1.0.1 (pulled transitively via flutter_secure_storage_windows ->
+# path_provider -> path_provider_android) ships an Android Gradle script
+# that unconditionally references a `kotlin {}` DSL block assuming AGP 9+
+# auto-applies Kotlin support; with this project's actual AGP 9.0.1 +
+# Kotlin 2.3.20 setup that extension isn't registered, so the build fails
+# with "Could not find method kotlin()". jni 1.0.0 predates that Kotlin
+# block entirely and builds cleanly — pinned here as a local project
+# workaround for the upstream package bug, not an application change.
+dependency_overrides:
+  jni: 1.0.0
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
