@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../auth/presentation/providers/auth_provider.dart';
-
 /// Wraps the 5 frozen tabs (`Mobile_UI_V1_Frozen.md` §3's fixed order) in a
 /// `StatefulShellRoute.indexedStack` branch container so each tab preserves
 /// its own state/scroll position when switching away and back.
@@ -30,23 +28,6 @@ class AppShellScreen extends ConsumerWidget {
           NavigationDestination(icon: Icon(Icons.description_outlined), selectedIcon: Icon(Icons.description), label: 'Documents'),
         ],
       ),
-    );
-  }
-}
-
-/// Temporary manual-QA affordance (per plan): the only in-app way to
-/// exercise the logout/re-login loop without hand-corrupting storage or
-/// waiting out the 60-minute idle timeout. Remove once a real settings/
-/// profile screen exists in a future sprint.
-class LogoutAction extends ConsumerWidget {
-  const LogoutAction({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return IconButton(
-      icon: const Icon(Icons.logout),
-      tooltip: 'Log out',
-      onPressed: () => ref.read(authProvider.notifier).forceLogout(),
     );
   }
 }

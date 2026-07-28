@@ -7,6 +7,7 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
+import '../../features/dashboard/presentation/screens/home_dashboard_screen.dart';
 import '../../features/shell/presentation/app_shell_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import 'route_paths.dart';
@@ -26,13 +27,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [
           StatefulShellBranch(routes: [
-            GoRoute(
-              path: RoutePaths.home,
-              builder: (_, _) => const PlaceholderScaffold(
-                title: 'Home',
-                actions: [LogoutAction()],
-              ),
-            ),
+            GoRoute(path: RoutePaths.home, builder: (_, _) => const HomeDashboardScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: RoutePaths.analytics, builder: (_, _) => const PlaceholderScaffold(title: 'Analytics')),

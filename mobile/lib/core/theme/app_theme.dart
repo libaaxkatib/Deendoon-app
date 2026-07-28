@@ -10,6 +10,7 @@ ThemeData buildAppDarkTheme() {
     seedColor: AppColors.primary,
     brightness: Brightness.dark,
     primary: AppColors.primary,
+    secondary: AppColors.accent,
     surface: AppColors.surface,
     error: AppColors.danger,
   );
