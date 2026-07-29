@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
@@ -104,9 +105,23 @@ class DebtDetailScreen extends ConsumerWidget {
                 OutlinedButton(
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
+                    final router = GoRouter.of(context);
                     try {
                       await ref.read(debtActionsProvider).openCase(debtId);
                       messenger.showSnackBar(const SnackBar(content: Text('Case opened successfully')));
+                      // `GET /collection-cases` has no `debt_id` filter, so
+                      // there is no way to deep-link straight to the new
+                      // case — send the user to the real Case List instead,
+                      // where it now appears first (ordered by created_at
+                      // desc), matching this sprint's Debt Details → Case
+                      // List → Case Detail navigation flow. `go()`, not
+                      // `push()`: the Cases tab is a StatefulShellRoute
+                      // branch with its own reserved navigator key — pushing
+                      // it as a second, separate route from outside the
+                      // shell collides with that key ('!keyReservation.
+                      // contains(key)' assertion). `go()` correctly hands
+                      // off to the shell's existing branch navigator.
+                      router.go('/cases');
                     } catch (_) {
                       messenger.showSnackBar(const SnackBar(content: Text('Could not open a case for this debt')));
                     }

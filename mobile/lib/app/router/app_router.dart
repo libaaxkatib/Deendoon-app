@@ -7,7 +7,8 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
-import '../../features/customers/presentation/screens/cases_tab_screen.dart';
+import '../../features/cases/presentation/screens/case_detail_screen.dart';
+import '../../features/cases/presentation/screens/case_list_screen.dart';
 import '../../features/customers/presentation/screens/customer_detail_screen.dart';
 import '../../features/customers/presentation/screens/customer_list_screen.dart';
 import '../../features/dashboard/presentation/screens/home_dashboard_screen.dart';
@@ -41,6 +42,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/debts/:id',
         builder: (_, state) => DebtDetailScreen(debtId: state.pathParameters['id']!),
       ),
+      GoRoute(
+        path: '/cases/:id',
+        builder: (_, state) => CaseDetailScreen(caseId: state.pathParameters['id']!),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [
@@ -51,7 +56,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: RoutePaths.analytics, builder: (_, _) => const PlaceholderScaffold(title: 'Analytics')),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.cases, builder: (_, _) => const CasesTabScreen()),
+            GoRoute(path: RoutePaths.cases, builder: (_, _) => const CaseListScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: RoutePaths.reminders, builder: (_, _) => const PlaceholderScaffold(title: 'Reminders')),

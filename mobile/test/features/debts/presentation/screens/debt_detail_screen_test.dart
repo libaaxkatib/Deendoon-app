@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/models/payment.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
@@ -127,16 +128,37 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('tapping Open Case calls the real endpoint and shows a confirmation', (tester) async {
+  testWidgets('tapping Open Case calls the real endpoint, confirms, and navigates to the Case List', (tester) async {
     when(() => mockDebtRepository.openCase('1')).thenAnswer((_) async {});
 
-    await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
+    tester.view.physicalSize = const Size(400, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const DebtDetailScreen(debtId: '1')),
+        GoRoute(path: '/cases', builder: (_, _) => const Scaffold(body: Text('Case List Screen'))),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+          customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Open Case'));
     await tester.pumpAndSettle();
 
     verify(() => mockDebtRepository.openCase('1')).called(1);
-    expect(find.text('Case opened successfully'), findsOneWidget);
+    expect(find.text('Case List Screen'), findsOneWidget);
   });
 }

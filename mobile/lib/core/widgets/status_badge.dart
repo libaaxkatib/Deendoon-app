@@ -10,7 +10,9 @@ import '../theme/app_colors.dart';
 /// - `debt_status` (the real Postgres CHECK constraint on
 ///   `debts.debt_status`): draft, pending, overdue, partial_paid, paid,
 ///   cancelled, written_off.
-/// No value collides between the two, so one widget/mapping serves both
+/// - `case_status` (the real Postgres CHECK constraint on
+///   `collection_cases.case_status`): open, closed.
+/// No value collides across the three, so one widget/mapping serves all
 /// rather than duplicating an near-identical pill per module.
 class StatusBadge extends StatelessWidget {
   final String status;
@@ -36,6 +38,9 @@ class StatusBadge extends StatelessWidget {
       'paid' => (AppColors.success, 'Paid'),
       'cancelled' => (AppColors.textSecondary, 'Cancelled'),
       'written_off' => (AppColors.textSecondary, 'Written Off'),
+      // case_status
+      'open' => (AppColors.info, 'Open'),
+      'closed' => (AppColors.textSecondary, 'Closed'),
       _ => (AppColors.textSecondary, status),
     };
 
