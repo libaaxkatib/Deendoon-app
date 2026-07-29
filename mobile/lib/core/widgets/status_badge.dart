@@ -12,7 +12,11 @@ import '../theme/app_colors.dart';
 ///   cancelled, written_off.
 /// - `case_status` (the real Postgres CHECK constraint on
 ///   `collection_cases.case_status`): open, closed.
-/// No value collides across the three, so one widget/mapping serves all
+/// - Reminder `status` (never persisted — computed fresh on every read by
+///   `SmartReminderEngine::status()`): today, upcoming, overdue,
+///   completed. `overdue` already exists above (debt_status) and is
+///   reused as-is — identical meaning, identical color.
+/// No value collides across these, so one widget/mapping serves all
 /// rather than duplicating an near-identical pill per module.
 class StatusBadge extends StatelessWidget {
   final String status;
@@ -41,6 +45,10 @@ class StatusBadge extends StatelessWidget {
       // case_status
       'open' => (AppColors.info, 'Open'),
       'closed' => (AppColors.textSecondary, 'Closed'),
+      // reminder status
+      'today' => (AppColors.warning, 'Today'),
+      'upcoming' => (AppColors.info, 'Upcoming'),
+      'completed' => (AppColors.success, 'Completed'),
       _ => (AppColors.textSecondary, status),
     };
 

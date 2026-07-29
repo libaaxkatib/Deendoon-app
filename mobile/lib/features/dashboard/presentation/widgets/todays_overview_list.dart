@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/coming_soon.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/dashboard_providers.dart';
 import '../../../../core/widgets/app_card.dart';
 
 /// §4.3 Today's Overview — four rows: Reminders Due Today, Payments Due,
-/// Client Visits, Follow-up Calls. Each would open a filtered Reminder
-/// Center list, out of scope this sprint, so rows surface "coming soon".
+/// Client Visits, Follow-up Calls. All four now open the real Reminder
+/// Center (Sprint 14). They all land on the same "Today" tab rather than
+/// a per-type filtered view — `GET /reminders` has no `reminder_type`
+/// query parameter (confirmed by reading `ReminderCenterController`
+/// in full), so a type-specific deep link isn't possible; the Reminder
+/// List's own type icons let the user distinguish rows visually once
+/// there.
 class TodaysOverviewList extends ConsumerWidget {
   const TodaysOverviewList({super.key});
 
@@ -31,7 +36,7 @@ class TodaysOverviewList extends ConsumerWidget {
             iconColor: AppColors.info,
             label: 'Reminders Due Today',
             count: data.totalDueToday,
-            onTap: () => showComingSoon(context, 'Reminder Center'),
+            onTap: () => context.go('/reminders'),
           ),
           const SizedBox(height: 10),
           _OverviewRow(
@@ -39,7 +44,7 @@ class TodaysOverviewList extends ConsumerWidget {
             iconColor: AppColors.success,
             label: 'Payments Due',
             count: data.paymentsDue,
-            onTap: () => showComingSoon(context, 'Reminder Center'),
+            onTap: () => context.go('/reminders'),
           ),
           const SizedBox(height: 10),
           _OverviewRow(
@@ -47,7 +52,7 @@ class TodaysOverviewList extends ConsumerWidget {
             iconColor: AppColors.accent,
             label: 'Client Visits',
             count: data.clientVisits,
-            onTap: () => showComingSoon(context, 'Reminder Center'),
+            onTap: () => context.go('/reminders'),
           ),
           const SizedBox(height: 10),
           _OverviewRow(
@@ -55,7 +60,7 @@ class TodaysOverviewList extends ConsumerWidget {
             iconColor: AppColors.warning,
             label: 'Follow-up Calls',
             count: data.followUpCalls,
-            onTap: () => showComingSoon(context, 'Reminder Center'),
+            onTap: () => context.go('/reminders'),
           ),
         ],
       ),

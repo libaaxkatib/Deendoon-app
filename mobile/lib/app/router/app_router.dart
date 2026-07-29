@@ -14,6 +14,10 @@ import '../../features/customers/presentation/screens/customer_list_screen.dart'
 import '../../features/dashboard/presentation/screens/home_dashboard_screen.dart';
 import '../../features/debts/presentation/screens/debt_detail_screen.dart';
 import '../../features/debts/presentation/screens/debt_list_screen.dart';
+import '../../features/reminders/presentation/screens/message_preview_screen.dart';
+import '../../features/reminders/presentation/screens/reminder_detail_screen.dart';
+import '../../features/reminders/presentation/screens/reminder_list_screen.dart';
+import '../../features/reminders/presentation/screens/reminder_schedule_screen.dart';
 import '../../features/shell/presentation/app_shell_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import 'route_paths.dart';
@@ -46,6 +50,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/cases/:id',
         builder: (_, state) => CaseDetailScreen(caseId: state.pathParameters['id']!),
       ),
+      GoRoute(path: '/reminders/new', builder: (_, _) => const ReminderScheduleScreen()),
+      GoRoute(
+        path: '/reminders/:id',
+        builder: (_, state) => ReminderDetailScreen(reminderId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/reminders/:id/edit',
+        builder: (_, state) => ReminderScheduleScreen(reminderId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/reminders/:id/send',
+        builder: (_, state) => MessagePreviewScreen(reminderId: state.pathParameters['id']!),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [
@@ -59,7 +76,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: RoutePaths.cases, builder: (_, _) => const CaseListScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.reminders, builder: (_, _) => const PlaceholderScaffold(title: 'Reminders')),
+            GoRoute(path: RoutePaths.reminders, builder: (_, _) => const ReminderListScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: RoutePaths.documents, builder: (_, _) => const PlaceholderScaffold(title: 'Documents')),
