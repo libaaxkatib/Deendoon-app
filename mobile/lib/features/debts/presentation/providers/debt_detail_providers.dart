@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/payment.dart';
 import '../../data/debt_repository.dart';
 import '../../domain/debt.dart';
-import '../../domain/debt_document.dart';
+import '../../../../core/models/document_summary.dart';
 import '../../domain/debt_timeline.dart';
 
 /// Four independent, family-keyed providers per debt id — same
@@ -18,7 +18,7 @@ final debtPaymentsProvider = FutureProvider.family<List<Payment>, String>(
   (ref, debtId) => ref.watch(debtRepositoryProvider).fetchPayments(debtId),
 );
 
-final debtDocumentsProvider = FutureProvider.family<List<DebtDocument>, String>(
+final debtDocumentsProvider = FutureProvider.family<List<DocumentSummary>, String>(
   (ref, debtId) => ref.watch(debtRepositoryProvider).fetchDocuments(debtId),
 );
 

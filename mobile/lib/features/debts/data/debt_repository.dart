@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/payment.dart';
 import '../../../core/network/api_exception.dart';
 import '../domain/debt.dart';
-import '../domain/debt_document.dart';
+import '../../../core/models/document_summary.dart';
 import '../domain/debt_page.dart';
 import '../domain/debt_timeline.dart';
 import '../domain/promise_to_pay.dart';
@@ -39,7 +39,7 @@ class DebtRepository {
 
   Future<List<Payment>> fetchPayments(String debtId) => _guard(() => _api.payments(debtId));
 
-  Future<List<DebtDocument>> fetchDocuments(String debtId) => _guard(() => _api.documents(debtId));
+  Future<List<DocumentSummary>> fetchDocuments(String debtId) => _guard(() => _api.documents(debtId));
 
   Future<DebtTimeline> fetchTimeline(String debtId) => _guard(() => _api.timeline(debtId));
 

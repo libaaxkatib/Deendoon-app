@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/reminder_repository.dart';
 import '../../domain/reminder.dart';
-import '../../domain/sent_message.dart';
+import '../../../../core/models/sent_message.dart';
 import 'reminder_detail_providers.dart';
 import 'reminder_list_provider.dart';
 

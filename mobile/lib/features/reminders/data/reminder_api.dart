@@ -6,7 +6,7 @@ import '../domain/message_template.dart';
 import '../domain/reminder.dart';
 import '../domain/reminder_page.dart';
 import '../domain/reminder_summary.dart';
-import '../domain/sent_message.dart';
+import '../../../core/models/sent_message.dart';
 
 final reminderApiProvider = Provider<ReminderApi>((ref) => ReminderApi(ref.read(dioProvider)));
 

@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/models/document_summary.dart';
 import '../../../core/models/payment.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/debt.dart';
-import '../domain/debt_document.dart';
 import '../domain/debt_page.dart';
 import '../domain/debt_timeline.dart';
 import '../domain/promise_to_pay.dart';
@@ -50,10 +50,10 @@ class DebtApi {
     return data.map((e) => Payment.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<List<DebtDocument>> documents(String debtId) async {
+  Future<List<DocumentSummary>> documents(String debtId) async {
     final response = await _dio.get('debts/$debtId/documents');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => DebtDocument.fromJson(e as Map<String, dynamic>)).toList();
+    return data.map((e) => DocumentSummary.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<DebtTimeline> timeline(String debtId) async {

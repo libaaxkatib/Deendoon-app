@@ -14,6 +14,10 @@ import '../../features/customers/presentation/screens/customer_list_screen.dart'
 import '../../features/dashboard/presentation/screens/home_dashboard_screen.dart';
 import '../../features/debts/presentation/screens/debt_detail_screen.dart';
 import '../../features/debts/presentation/screens/debt_list_screen.dart';
+import '../../features/documents/presentation/screens/document_list_screen.dart';
+import '../../features/documents/presentation/screens/document_preview_screen.dart';
+import '../../features/documents/presentation/screens/document_share_screen.dart';
+import '../../features/documents/presentation/screens/documents_home_screen.dart';
 import '../../features/reminders/presentation/screens/message_preview_screen.dart';
 import '../../features/reminders/presentation/screens/reminder_detail_screen.dart';
 import '../../features/reminders/presentation/screens/reminder_list_screen.dart';
@@ -63,6 +67,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/reminders/:id/send',
         builder: (_, state) => MessagePreviewScreen(reminderId: state.pathParameters['id']!),
       ),
+      GoRoute(path: '/documents/list', builder: (_, _) => const DocumentListScreen()),
+      GoRoute(
+        path: '/documents/:id',
+        builder: (_, state) => DocumentPreviewScreen(documentId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/documents/:id/share',
+        builder: (_, state) => DocumentShareScreen(documentId: state.pathParameters['id']!),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [
@@ -79,7 +92,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: RoutePaths.reminders, builder: (_, _) => const ReminderListScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.documents, builder: (_, _) => const PlaceholderScaffold(title: 'Documents')),
+            GoRoute(path: RoutePaths.documents, builder: (_, _) => const DocumentsHomeScreen()),
           ]),
         ],
       ),

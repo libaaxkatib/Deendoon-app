@@ -3,7 +3,7 @@ import 'package:mobile/features/reminders/domain/message_template.dart';
 import 'package:mobile/features/reminders/domain/reminder.dart';
 import 'package:mobile/features/reminders/domain/reminder_page.dart';
 import 'package:mobile/features/reminders/domain/reminder_summary.dart';
-import 'package:mobile/features/reminders/domain/sent_message.dart';
+import 'package:mobile/core/models/sent_message.dart';
 
 Map<String, dynamic> _reminderJson({
   String status = 'upcoming',

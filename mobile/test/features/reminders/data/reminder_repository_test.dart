@@ -7,7 +7,7 @@ import 'package:mobile/features/reminders/domain/message_template.dart';
 import 'package:mobile/features/reminders/domain/reminder.dart';
 import 'package:mobile/features/reminders/domain/reminder_page.dart';
 import 'package:mobile/features/reminders/domain/reminder_summary.dart';
-import 'package:mobile/features/reminders/domain/sent_message.dart';
+import 'package:mobile/core/models/sent_message.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockReminderApi extends Mock implements ReminderApi {}

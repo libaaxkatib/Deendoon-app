@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
-import 'package:mobile/features/debts/domain/debt_document.dart';
+import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/debts/domain/debt_page.dart';
 import 'package:mobile/features/debts/domain/debt_timeline.dart';
 import 'package:mobile/features/debts/domain/promise_to_pay.dart';
@@ -68,9 +68,9 @@ void main() {
     });
   });
 
-  group('DebtDocument', () {
+  group('DocumentSummary', () {
     test('parses the common shape shared by all four document resources', () {
-      final document = DebtDocument.fromJson({
+      final document = DocumentSummary.fromJson({
         'id': '01DOC',
         'document_type': 'receipt',
         'reference_number': 'REC-0001',

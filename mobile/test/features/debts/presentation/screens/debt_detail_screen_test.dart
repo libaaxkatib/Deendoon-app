@@ -7,7 +7,7 @@ import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
-import 'package:mobile/features/debts/domain/debt_document.dart';
+import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/debts/domain/debt_timeline.dart';
 import 'package:mobile/features/debts/presentation/screens/debt_detail_screen.dart';
 import 'package:mocktail/mocktail.dart';
@@ -106,7 +106,7 @@ void main() {
     );
     when(() => mockDebtRepository.fetchDocuments('1')).thenAnswer(
       (_) async => const [
-        DebtDocument(id: '1', documentType: 'receipt', referenceNumber: 'REC-0001', generatedAt: '2026-07-20', fileSize: 1024),
+        DocumentSummary(id: '1', documentType: 'receipt', referenceNumber: 'REC-0001', generatedAt: '2026-07-20', fileSize: 1024),
       ],
     );
 

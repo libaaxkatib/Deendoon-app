@@ -1,8 +1,13 @@
 /// Mirrors `App\Http\Resources\SentMessageResource` exactly — the direct
-/// result of `POST /reminders/{id}/send`. There is no backend endpoint to
-/// list a reminder's past delivery attempts (confirmed absent from
-/// `routes/api.php`); this shape is only ever seen as the immediate
-/// response of a real Send action, never fetched as history.
+/// result of both `POST /reminders/{id}/send` (Sprint 14) and
+/// `POST /documents/{id}/share` (Sprint 15), which return an identical
+/// shape. Promoted to `core/models/` once Documents needed the same
+/// resource Reminders already modeled — same reuse rationale as
+/// `Payment` and `DocumentSummary`. There is no backend endpoint to list
+/// past delivery attempts for either a reminder or a document (confirmed
+/// absent from `routes/api.php`); this shape is only ever seen as the
+/// immediate response of a real Send/Share action, never fetched as
+/// history.
 class SentMessage {
   final String id;
   final String? reminderId;

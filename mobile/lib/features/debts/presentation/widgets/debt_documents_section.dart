@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
-import '../../../../core/widgets/coming_soon.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/debt_detail_providers.dart';
 
@@ -16,10 +16,12 @@ const _documentTypeLabels = {
 
 /// Related Documents — `GET /debts/{id}/documents`
 /// (`DocumentController::forDebt`), combining Receipts, Demand Letters,
-/// Statements, and Invoices exactly as the backend already does. Also
-/// fulfils the "View Documents" action — there is no separate document
-/// viewer/downloader built yet, so tapping an entry surfaces "coming
-/// soon" rather than a screen this module doesn't own.
+/// Statements, and Invoices exactly as the backend already does. Tapping
+/// an entry opens the real Document Preview screen (Sprint 15) —
+/// `GET /documents/{id}` resolves any document id across all four
+/// underlying tables regardless of which endpoint originally listed it,
+/// so this reuses the exact same screen the Documents Center itself
+/// navigates to.
 class DebtDocumentsSection extends ConsumerWidget {
   final String debtId;
 
@@ -50,7 +52,7 @@ class DebtDocumentsSection extends ConsumerWidget {
           children: [
             for (final document in documents) ...[
               AppCard(
-                onTap: () => showComingSoon(context, 'Document viewing'),
+                onTap: () => context.push('/documents/${document.id}'),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
