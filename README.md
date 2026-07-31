@@ -38,7 +38,8 @@ Detailed engineering/architecture specifications produced under the governance p
 
 | Module | Version | Status | Dependencies | Document |
 |---|---|---|---|---|
-| Business Health | v1.0 | FROZEN | Risk Level Engine, Recovery Rate (DD-032) | [deendoon/docs/Business_Health_Formula_Specification_v1.0.md](deendoon/docs/Business_Health_Formula_Specification_v1.0.md) |
+| Business Health Engine | v1.0 (Conceptual Architecture) | Approved (Conceptual Architecture) — restates the frozen Formula Specification as a standalone document; two open items (§7) Pending Product Owner Decision | Risk Level Engine (Portfolio Customer Risk Levels input), Recovery Rate (DD-032) | [deendoon/docs/Business_Health_Engine_v1.0.md](deendoon/docs/Business_Health_Engine_v1.0.md) |
+| Business Health — Formula Specification | v1.0 | FROZEN | Business Health Engine (architecture) | [deendoon/docs/Business_Health_Formula_Specification_v1.0.md](deendoon/docs/Business_Health_Formula_Specification_v1.0.md) |
 | Risk Level Engine | v1.0 (Conceptual) | Approved (Conceptual Architecture) — Formula Design proposed, pending approval | Recovery Stage, Collection Case, Professional Collection Request (data sources for Secondary Events only) | [deendoon/docs/Risk_Level_Engine_v1.0.md](deendoon/docs/Risk_Level_Engine_v1.0.md) |
 | Risk Level Engine — Formula Design | v1.0 | DRAFT — Pending Product Owner Approval | Risk Level Engine (architecture) | [deendoon/docs/Risk_Level_Formula_Specification_v1.0.md](deendoon/docs/Risk_Level_Formula_Specification_v1.0.md) |
 | RBAC / Authentication Model | v1.0 | Approved & Implemented | None | [deendoon/docs/RBAC_Architecture_Amendment_Proposal.md](deendoon/docs/RBAC_Architecture_Amendment_Proposal.md) (historical decision record) — current authoritative model in [SRS/08 §5](SRS/08_Security_and_RBAC.md) |
