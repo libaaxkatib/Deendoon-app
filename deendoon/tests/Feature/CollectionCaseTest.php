@@ -42,16 +42,6 @@ class CollectionCaseTest extends TestCase
         return Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create($attributes);
     }
 
-    private function makeOfficer(Tenant $tenant): User
-    {
-        $officer = User::factory()->create();
-        $officer->tenant()->associate($tenant);
-        $officer->save();
-        $officer->assignRole('collection_officer');
-
-        return $officer;
-    }
-
     // --- Escalation (FR-040) ---
 
     public function test_admin_can_escalate_a_debt_to_a_collection_case(): void
@@ -193,10 +183,14 @@ class CollectionCaseTest extends TestCase
 
     public function test_case_resource_includes_customer_name_outstanding_amount_and_risk_level(): void
     {
+        // Risk Level is exclusively system-calculated (RiskLevelService,
+        // Sprint 2B) — escalating this Debt to a Collection Case is itself
+        // one of the engine's trigger points, so the resource's risk_level
+        // is asserted against the Customer's actual post-escalation value
+        // rather than an arbitrary pre-set fixture that the engine would
+        // immediately overwrite.
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $customer = Customer::factory()->for($tenant, 'tenant')->create([
-            'name' => 'Ahmed Trading Co.', 'risk_level' => 'high',
-        ]);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Ahmed Trading Co.']);
         $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')
             ->create(['remaining_balance' => 12988]);
         $this->actingAsTenantUser($tenant);
@@ -205,7 +199,7 @@ class CollectionCaseTest extends TestCase
         $this->getJson("/api/v1/collection-cases/{$caseId}")
             ->assertStatus(200)
             ->assertJsonPath('data.customer_name', 'Ahmed Trading Co.')
-            ->assertJsonPath('data.risk_level', 'high')
+            ->assertJsonPath('data.risk_level', $customer->fresh()->risk_level)
             ->assertJsonPath('data.outstanding_amount', '12988.00');
     }
 
@@ -276,63 +270,6 @@ class CollectionCaseTest extends TestCase
         $this->postJson("/api/v1/collection-cases/{$caseId}/activities", ['details' => 'Follow-up call']);
 
         $this->assertTrue(CollectionCase::find($caseId)->updated_at->gt($before));
-    }
-
-    // --- Assignment (FR-041) ---
-
-    public function test_admin_can_assign_a_collection_officer(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $debt = $this->makeDebt($tenant);
-        $this->actingAsTenantUser($tenant);
-        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
-        $officer = $this->makeOfficer($tenant);
-
-        $response = $this->patchJson("/api/v1/collection-cases/{$caseId}/assign", ['officer_user_id' => (string) $officer->id]);
-
-        $response->assertStatus(200)->assertJsonPath('data.assigned_officer_user_id', (string) $officer->id);
-        $this->assertDatabaseHas('audit_log', ['entity_type' => 'collection_case', 'entity_id' => $caseId, 'action' => 'edited']);
-    }
-
-    public function test_assigning_a_user_without_the_collection_officer_role_is_rejected(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $debt = $this->makeDebt($tenant);
-        $this->actingAsTenantUser($tenant);
-        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
-
-        $nonOfficer = $this->actingAsTenantUser($tenant, 'sales_finance');
-
-        $this->patchJson("/api/v1/collection-cases/{$caseId}/assign", ['officer_user_id' => (string) $nonOfficer->id])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['officer_user_id']);
-    }
-
-    public function test_assigning_an_officer_from_another_tenant_is_rejected(): void
-    {
-        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
-        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
-        $debtA = $this->makeDebt($tenantA);
-        $officerB = $this->makeOfficer($tenantB);
-
-        $this->actingAsTenantUser($tenantA);
-        $caseId = $this->postJson("/api/v1/debts/{$debtA->id}/collection-cases")->json('data.id');
-
-        $this->patchJson("/api/v1/collection-cases/{$caseId}/assign", ['officer_user_id' => (string) $officerB->id])
-            ->assertStatus(422);
-    }
-
-    public function test_assignment_is_rejected_on_a_closed_case(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $debt = $this->makeDebt($tenant);
-        $this->actingAsTenantUser($tenant);
-        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
-        $this->postJson("/api/v1/collection-cases/{$caseId}/close", ['closure_outcome' => 'recovered'])->assertStatus(200);
-
-        $officer = $this->makeOfficer($tenant);
-        $this->patchJson("/api/v1/collection-cases/{$caseId}/assign", ['officer_user_id' => (string) $officer->id])
-            ->assertStatus(409);
     }
 
     // --- Activity Recording (FR-044) ---
@@ -462,11 +399,13 @@ class CollectionCaseTest extends TestCase
         $this->getJson('/api/v1/collection-cases')->assertStatus(401);
     }
 
-    public function test_customer_role_cannot_manage_collection_cases(): void
+    public function test_user_without_admin_role_cannot_manage_collection_cases(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $debt = $this->makeDebt($tenant);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $token = $user->createToken('test')->plainTextToken;
+        $this->withHeader('Authorization', 'Bearer '.$token);
 
         $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->assertStatus(403);
         $this->getJson('/api/v1/collection-cases')->assertStatus(403);

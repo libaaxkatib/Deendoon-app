@@ -45,6 +45,7 @@ class ProductionReadinessTest extends TestCase
     public function test_registration_accepts_a_twelve_character_password(): void
     {
         $response = $this->postJson('/api/v1/register', [
+            'business_name' => 'Acme Co',
             'name' => 'Asad Mohamed',
             'email' => 'ok-pw@example.com',
             'password' => 'TwelveChars1',

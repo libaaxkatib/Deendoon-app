@@ -24,12 +24,15 @@ class RecoveryWorkflowTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -321,11 +324,11 @@ class RecoveryWorkflowTest extends TestCase
         $this->postJson("/api/v1/debts/{$debt->id}/promise-to-pay", [])->assertStatus(401);
     }
 
-    public function test_customer_role_cannot_use_recovery_workflow_endpoints(): void
+    public function test_user_without_admin_role_cannot_use_recovery_workflow_endpoints(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $debt = $this->makeDebt($tenant);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->postJson("/api/v1/debts/{$debt->id}/reminders/whatsapp", [])->assertStatus(403);
         $this->postJson("/api/v1/debts/{$debt->id}/promise-to-pay", [

@@ -33,12 +33,15 @@ class ProfessionalCollectionRequestTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         Sanctum::actingAs($user, ['*']);
 
@@ -337,11 +340,11 @@ class ProfessionalCollectionRequestTest extends TestCase
         $this->getJson('/api/v1/professional-requests')->assertStatus(401);
     }
 
-    public function test_customer_role_cannot_submit_requests(): void
+    public function test_user_without_admin_role_cannot_submit_requests(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->assertStatus(403);
     }

@@ -22,12 +22,15 @@ class CreditRiskTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -75,91 +78,12 @@ class CreditRiskTest extends TestCase
     }
 
     // --- Risk Level (FR-027) ---
-
-    public function test_admin_can_update_risk_level(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $customer = Customer::factory()->for($tenant, 'tenant')->create();
-        $this->actingAsTenantUser($tenant);
-
-        $response = $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", [
-            'risk_level' => 'high',
-        ]);
-
-        $response->assertStatus(200)->assertJsonPath('data.risk_level', 'high');
-        $this->assertSame('high', $customer->fresh()->risk_level);
-    }
-
-    public function test_risk_level_requires_a_non_empty_value(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $customer = Customer::factory()->for($tenant, 'tenant')->create();
-        $this->actingAsTenantUser($tenant);
-
-        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", ['risk_level' => ''])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['risk_level']);
-    }
-
-    public function test_risk_level_rejects_a_value_over_the_column_length(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $customer = Customer::factory()->for($tenant, 'tenant')->create();
-        $this->actingAsTenantUser($tenant);
-
-        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", [
-            'risk_level' => str_repeat('x', 51),
-        ])->assertStatus(422)->assertJsonValidationErrors(['risk_level']);
-    }
-
-    /**
-     * Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §2.9, §5.6, §6.2) resolves
-     * DD-010: Risk Level is fixed to High/Medium/Low. Any other value —
-     * including a previously-accepted arbitrary string — is now rejected.
-     */
-    public function test_risk_level_rejects_a_value_outside_the_approved_set(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $customer = Customer::factory()->for($tenant, 'tenant')->create();
-        $this->actingAsTenantUser($tenant);
-
-        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", [
-            'risk_level' => 'extreme',
-        ])->assertStatus(422)->assertJsonValidationErrors(['risk_level']);
-    }
-
-    public function test_admin_can_set_risk_level_to_medium(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $customer = Customer::factory()->for($tenant, 'tenant')->create();
-        $this->actingAsTenantUser($tenant);
-
-        $response = $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", [
-            'risk_level' => 'medium',
-        ]);
-
-        $response->assertStatus(200)->assertJsonPath('data.risk_level', 'medium');
-        $this->assertSame('medium', $customer->fresh()->risk_level);
-    }
-
-    public function test_risk_level_update_records_an_edited_audit_event(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $customer = Customer::factory()->for($tenant, 'tenant')->create();
-        $user = $this->actingAsTenantUser($tenant);
-
-        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", ['risk_level' => 'low'])
-            ->assertStatus(200);
-
-        $this->assertDatabaseHas('audit_log', [
-            'tenant_id' => $tenant->id,
-            'user_id' => (string) $user->id,
-            'action' => 'edited',
-            'entity_type' => 'customer',
-            'entity_id' => $customer->id,
-            'reason' => "Risk Level updated to 'low'",
-        ]);
-    }
+    //
+    // Manual Risk Level assignment (PATCH /customers/{customer}/risk-level,
+    // UpdateRiskLevelRequest, CustomerPolicy::updateRiskLevel()) was removed
+    // in Sprint 2B: Risk Level is now exclusively system-calculated by
+    // RiskLevelService. See tests/Unit/Services/RiskLevelServiceTest.php
+    // and tests/Feature/RiskLevelEngineTest.php for its coverage.
 
     public function test_risk_level_does_not_affect_credit_score_or_customer_status(): void
     {
@@ -169,12 +93,21 @@ class CreditRiskTest extends TestCase
         $customer = Customer::factory()->for($tenant, 'tenant')->create(['customer_status' => 'active']);
         $this->actingAsTenantUser($tenant);
 
-        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", ['risk_level' => 'high'])
-            ->assertStatus(200);
+        $this->getJson("/api/v1/customers/{$customer->id}")->assertStatus(200);
 
         $fresh = $customer->fresh();
         $this->assertSame('active', $fresh->customer_status);
         $this->assertNull($fresh->credit_score);
+    }
+
+    public function test_manual_risk_level_endpoint_no_longer_exists(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", ['risk_level' => 'low'])
+            ->assertStatus(404);
     }
 
     // --- Credit Limit Reached trigger (FR-028, trigger only — no Module 10) ---
@@ -243,16 +176,14 @@ class CreditRiskTest extends TestCase
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
 
         $this->getJson("/api/v1/customers/{$customer->id}/credit-score")->assertStatus(401);
-        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", ['risk_level' => 'low'])->assertStatus(401);
     }
 
-    public function test_customer_role_cannot_access_credit_risk_endpoints(): void
+    public function test_user_without_admin_role_cannot_access_credit_risk_endpoints(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->getJson("/api/v1/customers/{$customer->id}/credit-score")->assertStatus(403);
-        $this->patchJson("/api/v1/customers/{$customer->id}/risk-level", ['risk_level' => 'low'])->assertStatus(403);
     }
 }

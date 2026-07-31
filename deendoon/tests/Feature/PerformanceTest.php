@@ -43,9 +43,21 @@ class PerformanceTest extends TestCase
         return $user;
     }
 
+    /**
+     * `risk_level` is pre-set to 'low' — the same value RiskLevelService
+     * would itself compute for a brand-new Customer with no qualifying
+     * events — so the Sprint 2B lazy recalculation this endpoint now also
+     * performs is a guaranteed no-op (no UPDATE/audit-log write) here. That
+     * keeps this helper's query cost isolated to what these tests actually
+     * guard (Promise-to-Pay batching); Risk Level's own write cost, which
+     * genuinely scales with the number of Customers whose label actually
+     * changes, is covered separately in RiskLevelServiceTest/
+     * RiskLevelEngineTest instead of being conflated with this regression
+     * guard.
+     */
     private function makeDebt(Tenant $tenant, array $attributes = []): Debt
     {
-        $customer = Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 5000]);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 5000, 'risk_level' => 'low']);
 
         return Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create($attributes);
     }
@@ -147,7 +159,7 @@ class PerformanceTest extends TestCase
             $staff = User::factory()->create();
             $staff->tenant()->associate($tenant);
             $staff->save();
-            $staff->assignRole('sales_finance');
+            $staff->assignRole('admin');
         }
 
         DB::enableQueryLog();

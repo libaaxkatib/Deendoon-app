@@ -22,12 +22,15 @@ class SearchTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -90,11 +93,11 @@ class SearchTest extends TestCase
         $this->assertTrue($ids->contains($customer->id));
     }
 
-    public function test_customer_role_gets_no_results_for_any_entity_type(): void
+    public function test_user_without_admin_role_gets_no_results_for_any_entity_type(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Visible To Nobody']);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $response = $this->getJson('/api/v1/search?q=Visible');
 

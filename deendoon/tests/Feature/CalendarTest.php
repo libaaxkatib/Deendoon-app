@@ -23,12 +23,15 @@ class CalendarTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -175,10 +178,10 @@ class CalendarTest extends TestCase
         $this->getJson('/api/v1/calendar')->assertStatus(401);
     }
 
-    public function test_customer_role_cannot_view_calendar(): void
+    public function test_user_without_admin_role_cannot_view_calendar(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->getJson('/api/v1/calendar')->assertStatus(403);
     }

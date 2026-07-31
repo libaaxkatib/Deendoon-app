@@ -29,12 +29,15 @@ class DocumentTest extends TestCase
         Storage::fake('local');
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -422,11 +425,11 @@ class DocumentTest extends TestCase
         $this->assertTrue($types->contains('invoice'));
     }
 
-    public function test_customer_role_cannot_generate_invoices(): void
+    public function test_user_without_admin_role_cannot_generate_invoices(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $debt = $this->makeDebt($tenant);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->postJson("/api/v1/debts/{$debt->id}/invoices")->assertStatus(403);
     }
@@ -511,10 +514,10 @@ class DocumentTest extends TestCase
         $this->assertSame(0, $response->json('data.pagination.total'));
     }
 
-    public function test_customer_role_cannot_list_documents(): void
+    public function test_user_without_admin_role_cannot_list_documents(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->getJson('/api/v1/documents')->assertStatus(403);
     }
@@ -649,11 +652,11 @@ class DocumentTest extends TestCase
         $this->getJson('/api/v1/documents/nonexistent')->assertStatus(401);
     }
 
-    public function test_customer_role_cannot_generate_or_view_documents(): void
+    public function test_user_without_admin_role_cannot_generate_or_view_documents(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $debt = $this->makeDebt($tenant);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->postJson("/api/v1/debts/{$debt->id}/demand-letters", ['template_type' => 'first_reminder'])->assertStatus(403);
         $this->postJson("/api/v1/customers/{$debt->customer_id}/statements")->assertStatus(403);

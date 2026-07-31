@@ -20,12 +20,15 @@ class CustomerTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -467,24 +470,14 @@ class CustomerTest extends TestCase
 
     // --- Authorization ---
 
-    public function test_customer_role_cannot_manage_customers(): void
+    public function test_user_without_admin_role_cannot_manage_customers(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->getJson('/api/v1/customers')->assertStatus(403);
         $this->postJson('/api/v1/customers', [
             'name' => 'Jane', 'phone' => '254711111111', 'credit_limit' => 100,
         ])->assertStatus(403);
-    }
-
-    public function test_sales_finance_role_can_manage_customers(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'sales_finance');
-
-        $this->postJson('/api/v1/customers', [
-            'name' => 'Jane', 'phone' => '254711111111', 'credit_limit' => 100,
-        ])->assertStatus(201);
     }
 }

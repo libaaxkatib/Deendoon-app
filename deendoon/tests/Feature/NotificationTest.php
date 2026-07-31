@@ -110,28 +110,6 @@ class NotificationTest extends TestCase
         ]);
     }
 
-    public function test_assigning_a_collection_officer_notifies_the_officer_not_the_assigner(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $debt = $this->makeDebt($tenant);
-        $assigner = $this->actingAsTenantUser($tenant);
-        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
-
-        $officer = User::factory()->create();
-        $officer->tenant()->associate($tenant);
-        $officer->save();
-        $officer->assignRole('collection_officer');
-
-        $this->patchJson("/api/v1/collection-cases/{$caseId}/assign", ['officer_user_id' => (string) $officer->id])->assertStatus(200);
-
-        $this->assertDatabaseHas('notifications', [
-            'recipient_user_id' => (string) $officer->id, 'type' => 'collection_assignment', 'related_entity_type' => 'collection_case',
-        ]);
-        $this->assertDatabaseMissing('notifications', [
-            'recipient_user_id' => (string) $assigner->id, 'type' => 'collection_assignment',
-        ]);
-    }
-
     public function test_logging_a_manual_reminder_creates_a_reminder_sent_notification(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
@@ -145,14 +123,14 @@ class NotificationTest extends TestCase
         ]);
     }
 
-    public function test_exceeding_credit_limit_notifies_every_admin_and_sales_finance_user_in_the_tenant(): void
+    public function test_exceeding_credit_limit_notifies_every_admin_user_in_the_tenant(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $admin = $this->actingAsTenantUser($tenant, 'admin');
-        $salesFinance = User::factory()->create();
-        $salesFinance->tenant()->associate($tenant);
-        $salesFinance->save();
-        $salesFinance->assignRole('sales_finance');
+        $secondAdmin = User::factory()->create();
+        $secondAdmin->tenant()->associate($tenant);
+        $secondAdmin->save();
+        $secondAdmin->assignRole('admin');
 
         $customer = Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 500]);
 
@@ -164,7 +142,7 @@ class NotificationTest extends TestCase
         ])->assertStatus(201);
 
         $this->assertDatabaseHas('notifications', ['recipient_user_id' => (string) $admin->id, 'type' => 'credit_limit_reached']);
-        $this->assertDatabaseHas('notifications', ['recipient_user_id' => (string) $salesFinance->id, 'type' => 'credit_limit_reached']);
+        $this->assertDatabaseHas('notifications', ['recipient_user_id' => (string) $secondAdmin->id, 'type' => 'credit_limit_reached']);
     }
 
     public function test_transitioning_a_professional_collection_request_status_notifies_the_submitting_tenant_user(): void

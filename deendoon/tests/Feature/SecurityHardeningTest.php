@@ -28,12 +28,15 @@ class SecurityHardeningTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -46,7 +49,7 @@ class SecurityHardeningTest extends TestCase
     public function test_a_permission_denied_response_matches_the_standard_envelope(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'sales_finance');
+        $this->actingAsTenantUser($tenant, null);
 
         $response = $this->getJson('/api/v1/admin/users');
 
@@ -140,7 +143,7 @@ class SecurityHardeningTest extends TestCase
         ));
 
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'sales_finance');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->getJson('/api/v1/admin/users')->assertStatus(403);
     }

@@ -24,12 +24,15 @@ class ReminderTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    private function actingAsTenantUser(Tenant $tenant, string $role = 'admin'): User
+    private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -267,23 +270,6 @@ class ReminderTest extends TestCase
         $this->assertSoftDeleted('reminders', ['id' => $reminder->id]);
     }
 
-    public function test_collections_staff_cannot_update_another_users_reminder(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $debt = $this->makeDebt($tenant);
-        $creator = User::factory()->create();
-        $creator->tenant()->associate($tenant);
-        $creator->save();
-        $reminder = Reminder::factory()->for($tenant, 'tenant')->create([
-            'related_entity_type' => 'debt', 'related_entity_id' => $debt->id,
-            'created_by_user_id' => (string) $creator->id,
-        ]);
-        $this->actingAsTenantUser($tenant, 'collection_officer');
-
-        $this->putJson("/api/v1/reminders/{$reminder->id}", ['notes' => 'trying to edit'])
-            ->assertStatus(403);
-    }
-
     // --- Complete (§7.3, §7.4) ---
 
     public function test_admin_can_complete_a_reminder(): void
@@ -402,19 +388,11 @@ class ReminderTest extends TestCase
         $this->getJson("/api/v1/reminders/{$reminder->id}")->assertStatus(401);
     }
 
-    public function test_customer_role_cannot_access_reminders(): void
+    public function test_user_without_admin_role_cannot_access_reminders(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'customer');
+        $this->actingAsTenantUser($tenant, null);
 
         $this->getJson('/api/v1/reminders')->assertStatus(403);
-    }
-
-    public function test_collection_officer_can_access_reminders(): void
-    {
-        $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'collection_officer');
-
-        $this->getJson('/api/v1/reminders')->assertStatus(200);
     }
 }
