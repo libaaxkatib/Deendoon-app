@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-04 |
 | **Document Title** | Business Rules |
-| **Version** | 1.3 |
+| **Version** | 1.6 |
 | **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (Module 7 reopened, v1.7) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10) |
 
 ---
 
@@ -22,6 +22,9 @@
 | 1.1 | 2026-07-24 | **Reopened — intentional scope change.** Added Business Rules for Professional Collection Requests (hand-off to Deendoon's own recovery team): BRL-078–BRL-082, a new "Professional Collection Request Status" state transition matrix, and Deferred Decisions DD-042–DD-046. Amended BRL-052 to remove the "external collection agencies are outside Version 1 scope" clause (superseded — this is precisely what was just approved) while explicitly preserving its "legal escalation remains outside Version 1 scope" clause, which this reopening does not touch. No other Business Rule was altered. | Claude |
 | 1.2 | 2026-07-24 | **Correction to 1.1.** Removed the invented "Deendoon Recovery Specialist" actor from BRL-079 and the Professional Collection Request Status transition matrix — all transitions are now attributed to the **Deendoon Super Admin**, the already-approved Deendoon Platform Administrator actor, via the already-approved Super Admin Web Panel. Removed the now-resolved former DD-044 ("Deendoon-side actor/permission model") entirely, without replacement, and renumbered DD-045–DD-047 to DD-044–DD-046, updating every cross-reference in BRL-080/081/082 and the Deferred Decisions table. No other Business Rule was altered. | Claude |
 | 1.3 | 2026-07-24 | Clarified, in BRL-079's Rule Statement and the Professional Collection Request Status transition matrix note, that "Assigned" means the Deendoon Super Admin has accepted ownership of the Request and started handling it — not assignment to another system user, role, or team. Any coordination with other Deendoon staff is manual and outside the system. | Claude |
+| 1.4 | 2026-07-31 | **RBAC Architecture Amendment (Product Owner Decision).** BRL-047 (Assignment Rules) retired alongside FR-041. BRL-071 (Role Assignment) resolved — DD-039 is moot under the one-tenant-role model; single role only. See `08_Security_and_RBAC.md` v1.2 §5 for the full role-model change. | Claude |
+| 1.5 | 2026-07-31 | **Risk Level Engine Architecture Amendment (Product Owner Decision — Documentation Consistency Audit correction).** BRL-028 (Risk Level Value Set) updated from "not resolved" to reflect the approved qualitative value set — Low/Medium/High Risk, with semantics — recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md` §6. DD-010 updated to match: the value set itself is resolved; only the exact numeric thresholds and event point-value catalog remain open, tracked as Formula Design work in the same document. The Section 8 entity table's Risk Level row updated accordingly. This entry applies an already-approved decision to restore consistency with `03_Functional_Requirements.md` v1.9 — it does not introduce or change any business rule. | Claude |
+| 1.6 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4) and `03` (v1.10) following those documents' own updates for the Product Vision Amendment. No business rule changed. | Claude |
 
 ---
 
@@ -284,8 +287,8 @@ These six rules are frozen and restated here for reference only; they are not mo
 
 ### BRL-028 — Risk Level Value Set
 - **Purpose:** Define the qualitative values a Risk Level may take.
-- **Applies To:** Risk Level Assignment (FR-027).
-- **Rule Statement:** **Not resolved in this document.** Risk Levels predates the Version 1 discovery conversation as a pre-existing feature; its specific values were never enumerated anywhere in the approved SRS.
+- **Applies To:** Risk Level Calculation & Recalculation (FR-027).
+- **Rule Statement:** **Resolved as of v1.5.** Risk Level takes exactly three qualitative values — **Low Risk**, **Medium Risk**, **High Risk** — with the following approved semantics (per `deendoon/docs/Risk_Level_Engine_v1.0.md` §6): Low Risk = healthy repayment behavior, no significant collection concerns; Medium Risk = warning signs requiring monitoring and follow-up; High Risk = significant collection risk requiring priority attention. **Not yet resolved:** the exact numeric thresholds mapping the calculation engine's output to each band, and the underlying event point-value catalog — both tracked as Formula Design work in the same document, see DD-010.
 - **Trigger:** N/A — see Deferred Decisions.
 - **Result:** N/A.
 - **Exceptions:** N/A.
@@ -489,14 +492,15 @@ These six rules are frozen and restated here for reference only; they are not mo
 - **Notes:** See DD-020.
 
 ### BRL-047 — Assignment Rules
-- **Purpose:** Determine whether Collection Case assignment is automatic or always manual.
-- **Applies To:** Collection Case Assignment (FR-041).
-- **Rule Statement:** **Not resolved in this document.** Automatic assignment and collector workload balancing are not specified; only manual assignment is defined in Module 7 (FR-041).
+- **Status: Retired v1.4 (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** FR-041 (Collection Case Assignment) is retired — Version 1 has exactly one account per tenant, so there is no second tenant user to assign a Case to, and "Collection Officer" is no longer a login role. Preserved here for history, not deleted.
+- **Purpose:** Define whether Collection Case assignment is automatic or always manual.
+- **Applies To:** Collection Case Assignment (FR-041, retired).
+- **Rule Statement:** **Not resolved in this document.** Automatic assignment and collector workload balancing are not specified; only manual assignment was defined in Module 7 (FR-041), now retired.
 - **Trigger:** N/A — see Deferred Decisions.
-- **Result:** Manual assignment (resolved): authorized user selects a Collection Officer; reassignment follows the same path.
+- **Result:** N/A — FR-041 retired.
 - **Exceptions:** N/A.
-- **Related Functional Requirements:** FR-041.
-- **Notes:** See DD-021 (auto-assignment) and DD-022 (reassignment notification policy).
+- **Related Functional Requirements:** FR-041 (retired).
+- **Notes:** DD-021 (auto-assignment) and DD-022 (reassignment notification policy) are moot under the retired FR-041.
 
 ### BRL-048 — Duplicate Collection Prevention
 - **Purpose:** Prevent two open Collection Cases against the same Debt.
@@ -799,14 +803,15 @@ These six rules are frozen and restated here for reference only; they are not mo
 - **Notes:** See DD-038.
 
 ### BRL-071 — Role Assignment
+- **Status: Resolved v1.4 (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** DD-039 is now moot: Version 1 has exactly one tenant-side role (Business Owner, `admin`), so multi-role assignment has no meaningful case to apply to. Explicit instruction: no multi-role support is introduced.
 - **Purpose:** Determine whether a user may hold more than one Role.
 - **Applies To:** Role & Permission Management (FR-067).
-- **Rule Statement:** **Not resolved in this document.** The approved six roles (Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer) are defined, but whether a single user account may be assigned more than one simultaneously is not specified.
-- **Trigger:** N/A — see Deferred Decisions.
+- **Rule Statement:** A tenant account holds exactly one role (`admin`). Multi-role assignment is not supported.
+- **Trigger:** N/A.
 - **Result:** N/A.
 - **Exceptions:** N/A.
 - **Related Functional Requirements:** FR-067.
-- **Notes:** See DD-039.
+- **Notes:** DD-039 resolved by this amendment — see `08_Security_and_RBAC.md` v1.2 §5.
 
 ### BRL-072 — Permission Validation
 - **Purpose:** Confirm permissions derive strictly from Role assignment.
@@ -934,12 +939,12 @@ Recovered and Closed are terminal. Cells marked ❓ are not confirmed either way
 
 | Entity | Required Fields | Optional Fields | Allowed Values | Invalid Condition → System Response |
 |---|---|---|---|---|
-| Customer | Name, Phone | Credit Limit (defaults per BRL-012), other profile fields (`06_Database_Design.md`) | Customer Status: 7 approved values (BRL-014); Risk Level: pending (DD-010) | Missing/invalid required field → reject with field-level error (FR-007, E1) |
+| Customer | Name, Phone | Credit Limit (defaults per BRL-012), other profile fields (`06_Database_Design.md`) | Customer Status: 7 approved values (BRL-014); Risk Level: 3 approved values — Low/Medium/High (BRL-028); numeric thresholds pending (DD-010) | Missing/invalid required field → reject with field-level error (FR-007, E1) |
 | Debt | Amount (> 0), Due Date | Notes | Debt Status: 7 approved values (BRL-021) | Negative/zero amount, invalid date → reject (FR-017, E1) |
 | Payment | Amount (> 0), Date, Debt reference | Payment Method (pending catalog, DD-019), reference notes | N/A | Non-positive/non-numeric amount → reject (FR-034 validation) |
-| Collection Case | Debt reference (exactly one) | Assigned Officer, Notes & Attachments | Status: Open/Closed (initial value pending, DD-020; outcome set pending, DD-024) | Attempt to reference more than one Debt → not supported (BRL-038) |
+| Collection Case | Debt reference (exactly one) | Notes & Attachments (Assigned Officer field retired v1.4, RBAC Architecture Amendment — see FR-041) | Status: Open/Closed (initial value pending, DD-020; outcome set pending, DD-024) | Attempt to reference more than one Debt → not supported (BRL-038) |
 | Professional Collection Request *(added)* | Collection Case reference (exactly one) | Conversation messages | Status: Submitted…Recovered/Closed (full matrix pending, DD-043) | Submission against a Closed Case → rejected (FR-072, E2); duplicate active Request → not resolved (DD-042) |
-| User Account | Identifier (email or username, per tenant config), name | Contact details | Role: 6 approved values (Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer) | Missing required field → reject (FR-066, E2); invalid Role → reject (FR-067, E2) |
+| User Account | Identifier (email or username, per tenant config), name | Contact details | Role: 1 approved value (Business Owner/`admin` — RBAC Architecture Amendment v1.4) | Missing required field → reject (FR-066, E2); invalid Role → reject (FR-067, E2) |
 
 ---
 
@@ -956,7 +961,7 @@ Per the approved architectural principle **Configuration over Hardcoding** (`01_
 - Recovery-channel selection for password reset (Module 1, FR-004).
 
 **Fixed (approved, not configurable in Version 1):**
-- The six RBAC roles and their existence (Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer) — the role *set* is fixed; only *assignment* to users is an administrative action.
+- The two RBAC roles and their existence (Business Owner/`admin`, Platform Administrator — RBAC Architecture Amendment v1.4) — the role *set* is fixed; only *assignment* to users is an administrative action.
 - The seven Customer Status values, seven Debt Status values, and six Recovery Stage values — these enumerations are fixed; only usage/transition is governed by rules above.
 - The four Demand Letter templates and their names (First Reminder, Second Reminder, Final Demand, Legal Notice).
 - The Auto Numbering prefixes (`DBT-`, `RCT-`, `DL-`, `ST-`, `COL-`) and the five entities that receive them.
@@ -1019,7 +1024,7 @@ Every rule above either formalizes mechanics already implied by an approved FR/B
 | DD-007 | Whether an Archived-but-non-terminal Debt still counts toward Outstanding Balance | Archiving and financial closure are conceptually distinct; not addressed | FR-036, FR-022 |
 | DD-008 | Initial/baseline Credit Score for a new Customer | Not specified | FR-026 |
 | DD-009 | Credit Score point-value catalog and band numeric thresholds | Discussed as illustrative only; never formally approved | FR-026 |
-| DD-010 | Risk Level qualitative value set | Pre-existing feature; values never enumerated | FR-027 |
+| DD-010 | Risk Level exact numeric thresholds and event point-value catalog | Value set itself (Low/Medium/High, with semantics) resolved v1.5 — see BRL-028 and `deendoon/docs/Risk_Level_Engine_v1.0.md` §6; numeric thresholds and point catalog remain open, tracked as Formula Design | FR-027 |
 | DD-011 | Credit Limit Reached (and other) notification re-trigger/suppression policy | Not specified | FR-028, FR-058 |
 | DD-012 | Confirmation of the Recovery Stage → event mapping derived in BRL-031 | Derived from the approved Timeline, not explicitly pre-approved as a stage-automation table | FR-025, FR-032 |
 | DD-013 | Promise to Pay date-revision handling (replace vs. break-then-renew) | Not specified | FR-031 |
@@ -1030,8 +1035,8 @@ Every rule above either formalizes mechanics already implied by an approved FR/B
 | DD-018 | Payment editing, archival/deletion mechanism, and reversal — whether each exists and how | Not specified; Payment not explicitly named in approved Archive scope | FR-034, FR-035 |
 | DD-019 | Payment Method: fixed catalog vs. free text | Not specified | FR-034, FR-070 |
 | DD-020 | Initial Collection Case status at creation | Not specified | FR-040 |
-| DD-021 | Automatic Collection Case assignment / workload balancing | Not specified | FR-041 |
-| DD-022 | Reassignment notification policy | Not specified | FR-041 |
+| DD-021 | Automatic Collection Case assignment / workload balancing | **Moot v1.4** — FR-041 retired (RBAC Architecture Amendment) | FR-041 (retired) |
+| DD-022 | Reassignment notification policy | **Moot v1.4** — FR-041 retired (RBAC Architecture Amendment) | FR-041 (retired) |
 | DD-023 | Duplicate escalation handling (reject vs. redirect to existing case) | Not specified | FR-040 |
 | DD-024 | Collection Case closure-outcome value set | Only "Recovered" implied; full set never enumerated | FR-045 |
 | DD-025 | Whether a Closed Collection Case can be reopened | Not specified | FR-043, FR-044 |
@@ -1048,7 +1053,7 @@ Every rule above either formalizes mechanics already implied by an approved FR/B
 | DD-036 | Mechanism by which a Collection Activity becomes a Calendar entry (Collection Appointments not a distinct entity) | Not specified | FR-062 |
 | DD-037 | Initial user credential/invitation mechanism | Not specified | FR-066 |
 | DD-038 | Handling of deactivating the sole holder of a required Role | Not specified | FR-066 |
-| DD-039 | Whether a user may hold more than one Role simultaneously | Not specified | FR-067 |
+| DD-039 | Whether a user may hold more than one Role simultaneously | **Resolved v1.4** — single role only (RBAC Architecture Amendment) | FR-067 |
 | DD-040 | Validation ranges (min/max) for each System Preference | Not specified | FR-069 |
 | DD-041 | Handling of removing an in-use Lookup & Reference Data value | Not specified | FR-070 |
 | DD-042 | Handling of a duplicate active Professional Collection Request against the same Collection Case (reject vs. surface existing) | Not specified | FR-072 |

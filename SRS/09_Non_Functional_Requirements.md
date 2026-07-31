@@ -4,13 +4,13 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-09 |
 | **Document Title** | Non-Functional Requirements |
-| **Version** | 1.0 |
+| **Version** | 1.2 |
 | **Status** | Approved |
 | **State** | Frozen |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (v1.7 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.3) · `05_UI_UX_Specification.md` (Approved & Frozen, v1.1) · `06_Database_Design.md` (Approved & Frozen, v1.3, PostgreSQL) · `07_API_Design.md` (Approved & Frozen, v1.1) · `08_Security_and_RBAC.md` (Approved & Frozen, v1.1) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.3) · `06_Database_Design.md` (Reopened v1.6 — §6.1 amended, PostgreSQL) · `07_API_Design.md` (Reopened v1.5 — §5.4 amended) · `08_Security_and_RBAC.md` (Reopened v1.4 — §5 amended) |
 
 ---
 
@@ -19,6 +19,8 @@
 | Version | Date | Description | Author |
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: full Non-Functional Requirements specification, closing out every "deferred to `09_Non_Functional_Requirements.md`" reference left open across `06`, `07`, and `08` (rate-limit thresholds, encryption-at-rest/retention policy, backup specifics) — each either resolved here as a stated goal/target or explicitly carried into Section 18 where it remains a genuine deployment/operational decision. Localization (English/Somali) documented for the first time per this request; flagged as new ground not present in any prior document, specified at the goal level only. | Claude |
+| 1.1 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02` through `08` (previously stale). No non-functional target or approved content changed. | Claude |
+| 1.2 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01`, `03`–`08` at their current versions following those documents' own updates. No non-functional target changed. | Claude |
 
 ---
 

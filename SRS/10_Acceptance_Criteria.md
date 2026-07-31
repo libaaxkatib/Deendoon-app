@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-10 |
 | **Document Title** | Acceptance Criteria |
-| **Version** | 1.0 |
+| **Version** | 1.4 |
 | **Status** | ✅ Approved & Frozen |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (v1.7 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.3) · `05_UI_UX_Specification.md` (Approved & Frozen, v1.1) · `06_Database_Design.md` (Approved & Frozen, v1.3, PostgreSQL) · `07_API_Design.md` (Approved & Frozen, v1.1) · `08_Security_and_RBAC.md` (Approved & Frozen, v1.1) · `09_Non_Functional_Requirements.md` (Approved & Frozen, v1.0) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.5) · `06_Database_Design.md` (Reopened v1.6 — §6.1 amended, PostgreSQL) · `07_API_Design.md` (Reopened v1.5 — §5.4 amended) · `08_Security_and_RBAC.md` (Reopened v1.4 — §5 amended) · `09_Non_Functional_Requirements.md` (Approved, v1.2) |
 
 ---
 
@@ -18,6 +18,10 @@
 | Version | Date | Description | Author |
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: testable pass/fail acceptance criteria for all 76 approved Functional Requirements (FR-001–FR-076), closing out every "Acceptance Criteria References: To be defined in `10_Acceptance_Criteria.md`" placeholder left across `03_Functional_Requirements.md`. Organized as Cross-Cutting criteria (apply universally) plus per-FR criteria (module-organized, matching `03`'s structure). Criteria referencing a still-unresolved `04_Business_Rules.md` Deferred Decision are written to validate the *invariant* that holds regardless of how the DD resolves, not a specific outcome — flagged individually. | Claude |
+| 1.1 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02` through `09` (previously stale), and corrected `09`'s cited status from "Approved & Frozen" to "Approved" to match `09`'s own header. No acceptance criterion or approved content changed. | Claude |
+| 1.2 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** FR-041's Acceptance Criteria (AC-041-1, AC-041-2) marked Retired with a notice, matching FR-041's own retirement in `03_Functional_Requirements.md` v1.8 — this document had not previously been updated to reflect that retirement. Criteria text preserved for history, not deleted. Scope Baseline updated to cite `01` at its current version (v1.4). No other acceptance criterion changed. | Claude |
+| 1.3 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `03`–`09` at their current versions following those documents' own updates. No acceptance criterion changed. | Claude |
+| 1.4 | 2026-07-31 | **Final architecture consistency audit correction.** AC-067-1 still assumed "seven approved roles" — missed by every prior sweep. Updated to reflect the single approved role (Business Owner, `admin`), matching FR-067's own amendment and the corresponding fix in `05_UI_UX_Specification.md` v1.5 (SCR-039/040/041). Scope Baseline updated to cite `05` at its current version. No other acceptance criterion changed. | Claude |
 | 1.0 | 2026-07-24 | Approved and frozen without changes. | Product Owner |
 
 ---
@@ -271,6 +275,9 @@ These apply universally, referenced by number from every module below rather tha
 - **AC-040-2 (A1):** A Debt with an existing open Case does not receive a second one. **(Pending DD-023 for reject-vs-surface UX — this criterion validates no duplicate open Case is ever created.)**
 
 ### FR-041 — Collection Case Assignment
+
+> **Retired (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** FR-041 itself was retired in `03_Functional_Requirements.md` v1.8 — Version 1 has exactly one account per tenant (the Business Owner), so there is no second tenant user to assign a Collection Case to, and Collection Officer is no longer a tenant-side role. The criteria below are preserved for history, not deleted, per this project's Documentation Rules; they no longer apply to any implemented endpoint.
+
 - **AC-041-1:** Assigning to a Collection Officer-role user succeeds; Edited event recorded.
 - **AC-041-2 (E2):** Assigning to a non-Collection-Officer user is rejected.
 
@@ -411,7 +418,10 @@ These apply universally, referenced by number from every module below rather tha
 - **AC-066-3 (E1):** An unauthorized role cannot perform any User Administration action.
 
 ### FR-067 — Role & Permission Management
-- **AC-067-1:** Assigning one of the seven approved roles succeeds; Role Changed event recorded; the user's effective permissions update (AC-006-2).
+
+> **Amended (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** Version 1 has exactly one approved role (Business Owner, `admin`) — AC-067-1 updated accordingly; no meaningful role-change scenario remains under the one-account-per-tenant model, matching FR-067's own "deprecated, left functional" status (`03_Functional_Requirements.md`).
+
+- **AC-067-1:** Assigning the one approved role (Business Owner, `admin`) succeeds; Role Changed event recorded; the user's effective permissions update (AC-006-2).
 - **AC-067-2 (E2):** An unrecognized role value is rejected.
 
 ### FR-068 — Company Profile & Branding

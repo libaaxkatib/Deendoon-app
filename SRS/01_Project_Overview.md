@@ -4,11 +4,11 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-01 |
 | **Document Title** | Project Overview |
-| **Version** | 1.3 |
+| **Version** | 1.5 |
 | **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-24 |
+| **Last Updated** | 2026-07-31 |
 | **Scope Baseline** | Version 1 Feature Freeze (approved) |
 
 ---
@@ -21,6 +21,8 @@
 | 1.1 | 2026-07-24 | Documentation polish pass: naming clarification for Customer Mobile App, Reminder Engine/Promise-to-Pay clarification, Notification Center consumption-only clarification, Global Search RBAC-awareness, Archive/search-visibility clarification, added glossary entries (Collection Case, Tenant, Company/Business), added document metadata and Revision History/References sections. No business logic or scope changes. Approved by Product Owner. | Claude |
 | 1.2 | 2026-07-24 | **Reopened — intentional scope change.** Added Professional Collection Requests (hand-off of a Collection Case to Deendoon's own recovery team) as an approved Version 1 capability: new Target User (Deendoon Recovery Specialist), Scope of Version 1 addition, High-Level System Overview addition, and glossary entry. This is the first Version 1 capability that crosses tenant boundaries (Deendoon acting as a service provider to its own customers), distinct from every other approved capability, which is single-tenant-scoped. No other approved content changed. | Claude |
 | 1.3 | 2026-07-24 | **Correction to 1.2.** Removed the invented "Deendoon Recovery Specialist" actor — Version 1 has exactly two application interfaces (Customer Mobile App, Deendoon Super Admin Web Panel) and no additional internal roles, portals, or dashboards. Professional Collection Requests are instead handled entirely by the already-approved Deendoon Platform Administrator (Super Admin), via the already-approved Super Admin Web Panel. Also reverted an earlier mischaracterization of that actor as "tenant-scoped" — it operates at the true platform level, which is what makes reviewing requests from any tenant possible without inventing a new actor. Any further coordination among Deendoon's own staff happens manually, outside the system, and is not modeled. | Claude |
+| 1.4 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** This document had never been updated to reflect the RBAC Architecture Amendment already approved and applied to `02`–`08` (2026-07-31). Section 1.5's Target Users table amended: Operations Manager, Collection Officer (as a tenant role), Finance Staff, Support Staff, and Viewer removed — Version 1 has exactly one tenant-side account, the Business Owner. Collection Officer is redefined as an internal Deendoon operational function (per `02_Business_Requirements.md` v1.4), not a tenant actor. Section 1.6's Administration & Governance capability list, Section 1.8's High-Level System Overview, and the Glossary's Customer Mobile App entry updated to name only the Business Owner and Deendoon Platform Administrator. No workflow, capability, or functionality changed — role references only. | Claude |
+| 1.5 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** Section 1.6's Business Goal → Capability mapping table row "Support multi-staff operation safely" rewritten as "Maintain accountability and access separation between the Business Owner and the Deendoon Platform Administrator," matching the corresponding rewrite of `02_Business_Requirements.md` BG-006/BP-007/BR-028/BR-029/BR-030 (v1.6). This is a current Version 1 requirement, not deferred — no new functionality, workflow, API, or database change introduced; the underlying capabilities (Role-Based Access Control, Audit Trail) are unchanged. | Claude |
 
 ---
 
@@ -82,7 +84,7 @@ Deendoon addresses each of these directly through its Version 1 feature set (Sec
 | Reduce bad debt exposure | Credit Limit Management, Credit Score, Risk Levels, Aging Analysis |
 | Professionalize collections | Demand Letter templates, Digital Receipts, Statements of Account |
 | Provide operational visibility | Executive KPI Cards, Aging Analysis, Notification Center |
-| Support multi-staff operation safely | Role-Based Access Control, Audit Trail |
+| Maintain accountability and access separation between the Business Owner and the Deendoon Platform Administrator | Role-Based Access Control, Audit Trail |
 | Protect financial data integrity | Soft Delete/Archive, Audit Trail, Automated Backups |
 | Enable a scalable, commercial SaaS product | Auto Numbering, System Settings, Global Search, Import tooling |
 
@@ -92,14 +94,11 @@ Deendoon addresses each of these directly through its Version 1 feature set (Sec
 
 | User | Role in the System |
 |---|---|
-| **Business Owner / SME Operator** | Primary user. Manages customers and debts, monitors risk, initiates and reviews recovery activity. Uses the Customer Mobile App. |
-| **Operations Manager** | Oversees day-to-day recovery operations across the business's customer base. Web Panel user. |
-| **Collection Officer** | Executes follow-up actions (calls, reminders, professional collection cases) on assigned customers/debts. |
-| **Finance Staff** | Manages payments, receipts, statements, and financial reporting. |
-| **Support Staff** | Limited operational access to assist customers/business owners; not a financial decision-maker. |
-| **Viewer** | Read-only access, typically for oversight or audit purposes. |
+| **Business Owner** | Primary and only tenant-side user. Registers customers, creates debts, records payments, generates receipts, manages reminders, views analytics, manages documents, and requests Professional Collection from the Deendoon team. Exactly one account per tenant; uses the Customer Mobile App. |
 | **Customer (Debtor)** | Receives reminders and communications (WhatsApp/SMS/Call) and may interact with receipts/statements shared with them. Not a system login role in Version 1 beyond what is explicitly defined in later documents. |
-| **Deendoon Platform Administrator (Super Admin)** | Operates the Deendoon Super Admin Web Panel at the true platform level — across the whole Deendoon platform, not scoped to one tenant. Distinct from the six tenant-scoped RBAC roles (`08_Security_and_RBAC.md`). Handles system configuration, template management, user/role administration, and — as of this reopening — reviews and actions Professional Collection Requests submitted by any tenant business. This is the only actor involved on Deendoon's side; no separate role or staff group is modeled in Version 1. If the Super Admin needs another Deendoon colleague's input, that coordination happens manually, outside the system. |
+| **Deendoon Platform Administrator (Super Admin)** | Operates the Deendoon Super Admin Web Panel at the true platform level — across the whole Deendoon platform, not scoped to one tenant. Distinct from the Business Owner role (`08_Security_and_RBAC.md`). Handles platform administration, Business Owner management, platform settings, tenant management, audit and monitoring, and reviews and actions Professional Collection Requests submitted by any tenant business. This is the only actor involved on Deendoon's side; no separate role or staff group is modeled in Version 1. If the Super Admin needs another Deendoon colleague's input, that coordination happens manually, outside the system. |
+
+> **Retired v1.4 (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** Operations Manager, Collection Officer (as a tenant role), Finance Staff, Support Staff, and Viewer are removed as tenant-side actors — Version 1 has exactly one account per tenant, the Business Owner, matching the two-role model already approved in `02_Business_Requirements.md` v1.4 and `08_Security_and_RBAC.md` v1.2. Collection Officer is redefined as an internal Deendoon operational function, exercised by Platform Administrator staff after a Professional Collection Request is accepted — not a tenant actor.
 
 > **Naming clarification:** "Customer Mobile App" is the application used by Deendoon's own paying customers — i.e., the business owners and their staff listed above. It is **not** used by the business owner's own customers (debtors), who are referred to elsewhere in this document simply as "Customers" within the Debt Register context. This naming collision is inherited from the approved Feature Freeze terminology and is not being renamed here; this note exists solely to prevent misreading in subsequent SRS documents.
 
@@ -124,7 +123,7 @@ Document Scanner · Demand Letter Generator (First Reminder, Second Reminder, Fi
 Premium Mobile UI · Customer Mobile App · Notification Center · Calendar View · Global Search · Quick Actions · Advanced Search & Filters · Duplicate Customer Detection · Customer Import (Excel)
 
 **Administration & Governance**
-Deendoon Super Admin Web Panel · Role-Based Access Control (Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer) · Audit Trail · System Settings · Soft Delete / Archive
+Deendoon Super Admin Web Panel · Role-Based Access Control (Business Owner, Deendoon Platform Administrator) · Audit Trail · System Settings · Soft Delete / Archive
 
 **Platform Foundations**
 Auto Numbering (Debt, Receipt, Demand Letter, Statement, Collection Case) · Automated Infrastructure Backups (non-functional requirement)
@@ -151,7 +150,7 @@ Any additional ideas raised after this point are to be logged in **11_Developmen
 
 Deendoon is a multi-client SaaS system consisting of:
 
-- **Customer Mobile App** — the primary interface for business owners and their staff (Operations Manager, Collection Officer, Finance, Support, Viewer, subject to role permissions). Provides the debt register, reminders, recovery workflow, dashboards, notifications, and document generation.
+- **Customer Mobile App** — the primary interface for the Business Owner. Provides the debt register, reminders, recovery workflow, dashboards, notifications, and document generation.
 - **Deendoon Super Admin Web Panel** — the administrative and configuration surface: role/user management, System Settings, template management, audit trail, platform-wide dashboards, and customer import.
 - **Recovery Automation Engine** — a shared business-rule engine driving Credit Score calculation and Recovery Stage progression, consumed by both clients.
 - **Reminder Engine** — schedules and triggers WhatsApp, SMS, and Call reminders — including Promise-to-Pay due-date reminders — and feeds the Notification Center and Calendar View.
@@ -214,7 +213,7 @@ These principles govern how every subsequent SRS document should resolve ambigui
 | **Global Search** | The unified search capability spanning Customers, Debts, Receipts, Statements, Demand Letters, and Collection Cases. Search is RBAC-aware: results are filtered to only what the requesting user's role and permissions allow them to access, including correct handling of archived records per the Soft Delete / Archive policy. |
 | **Role-Based Access Control (RBAC)** | The permission system restricting module and action access by assigned role. |
 | **Deendoon Super Admin Web Panel** | The administrative web application used for platform configuration, user/role management, and system-wide reporting. |
-| **Customer Mobile App** | The primary mobile application used by Deendoon's business-owner customers and their staff (Operations Manager, Collection Officer, Finance, Support, Viewer) for day-to-day debt recovery operations. Distinct from the "Customer" entity used elsewhere in this document, which refers to the business's own debtors — debtors do not use this application in Version 1. |
+| **Customer Mobile App** | The primary mobile application used by Deendoon's business-owner customers (the Business Owner — exactly one account per tenant) for day-to-day debt recovery operations. Distinct from the "Customer" entity used elsewhere in this document, which refers to the business's own debtors — debtors do not use this application in Version 1. |
 | **Collection Case** | A formal case record created under Professional Collection when a debt is escalated to structured recovery action. Receives its own Auto Numbering identifier (`COL-000001`) and may carry Notes & Attachments. |
 | **Tenant** | A single business account within the Deendoon platform. In Version 1, all Customers, Debts, and configuration belong to exactly one Tenant; multi-location structures within a single Tenant (Branch Management) are out of scope — see Section 1.7. |
 | **Company / Business** | The business entity operating a Deendoon Tenant — the owner of the Customers, Debts, and recovery activity managed within the system. Its identifying details (name, contact information, branding) are configured under System Settings → Company Profile. |

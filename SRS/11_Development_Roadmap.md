@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-11 |
 | **Document Title** | Development Roadmap |
-| **Version** | 1.0 |
+| **Version** | 1.3 |
 | **Status** | Draft — Pending Review |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (v1.7 — **Module 12 still awaiting its original approval, carried forward as an open item below**) · `04_Business_Rules.md` (Reopened v1.3) · `05_UI_UX_Specification.md` (Approved & Frozen, v1.1) · `06_Database_Design.md` (Approved & Frozen, v1.3, PostgreSQL) · `07_API_Design.md` (Approved & Frozen, v1.1) · `08_Security_and_RBAC.md` (Approved & Frozen, v1.1) · `09_Non_Functional_Requirements.md` (Approved & Frozen, v1.0) · `10_Acceptance_Criteria.md` (Approved & Frozen, v1.0) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval, carried forward as an open item below**) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.5) · `06_Database_Design.md` (Reopened v1.6 — §6.1 amended, PostgreSQL) · `07_API_Design.md` (Reopened v1.5 — §5.4 amended) · `08_Security_and_RBAC.md` (Reopened v1.4 — §5 amended) · `09_Non_Functional_Requirements.md` (Approved, v1.2) · `10_Acceptance_Criteria.md` (Approved & Frozen, v1.4) |
 | **Technology Stack** | Laravel 13 · PostgreSQL · Redis · REST API · Laravel Sanctum (Bearer Token mode) · React + TypeScript (Super Admin Web Dashboard) · Flutter (Customer Mobile App) · S3-compatible Object Storage |
 
 ---
@@ -19,6 +19,9 @@
 | Version | Date | Description | Author |
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft. Sequences implementation of the 12 approved Functional Modules (`03`) into 14 phases, grounded exclusively in `01`–`10`. Introduces no new modules, APIs, workflows, permissions, tables, or business rules. | Claude |
+| 1.1 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02` through `10` (previously stale). No phase, sequencing decision, or approved content changed. | Claude |
+| 1.2 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01`, `03`–`10` at their current versions following those documents' own updates. No phase or sequencing decision changed. | Claude |
+| 1.3 | 2026-07-31 | **Scope Baseline metadata correction (Final architecture consistency audit ripple).** Updated the Scope Baseline field to cite `05` (v1.5) and `10` (v1.4) following those documents' corrections for the six/seven-role SCR-039/040/041 and AC-067-1 gaps. No phase or sequencing decision changed. | Claude |
 
 ---
 

@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-05 |
 | **Document Title** | UI/UX Specification |
-| **Version** | 1.1 |
-| **Status** | Approved |
+| **Version** | 1.5 |
+| **Status** | Reopened — RBAC Architecture Amendment (retroactive) applied |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened, v1.3) · `02_Business_Requirements.md` (Reopened, v1.3) · `03_Functional_Requirements.md` (Module 7 reopened, v1.7) · `04_Business_Rules.md` (Reopened, v1.3) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened, v1.5) · `02_Business_Requirements.md` (Reopened, v1.6) · `03_Functional_Requirements.md` (v1.10 — Module 12 still awaiting its original approval) · `04_Business_Rules.md` (Reopened, v1.6) |
 
 ---
 
@@ -19,6 +19,10 @@
 |---|---|---|---|
 | 1.0 | 2026-07-24 | Initial draft: Design Principles, Design System, Layout Standards, Navigation, Component Library, Form/Table/Dashboard Standards, full Screen Inventory and Specifications for all 48 Version 1 screens/states, UX Behavior, Accessibility, Responsive Rules, UI State Catalog, UX Consistency Rules, Traceability, and Validation Checklist. | Claude |
 | 1.1 | 2026-07-24 | Integrated Professional Collection Requests (FR-072–FR-076) into the existing UI architecture: one new screen (SCR-049, Super Admin review, reusing the existing Table + Detail Drawer pattern); amended SCR-005, SCR-006, and SCR-025 to add the tenant-facing submission action, dashboard visibility, and status/conversation surface; extended the Status Chip component and added a Conversation Thread component; updated Navigation, Screen Inventory, Traceability, and Validation Checklist. No new application interface, actor, or RBAC role was introduced — everything lives inside the two approved interfaces (Customer Mobile App, Deendoon Super Admin Web Panel). | Claude |
+| 1.2 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02`, `03`, and `04` (previously stale). No requirement, business rule, UI/UX specification, or approved content changed. | Claude |
+| 1.3 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision) — this document had never been updated for the RBAC Architecture Amendment.** Removed all remaining references to Operations Manager, Collection Officer (as a tenant role), Finance Staff, Support Staff, and Viewer across SCR-005, SCR-007, SCR-018, and SCR-024 — Version 1 has exactly one tenant-side role (Business Owner), matching `02_Business_Requirements.md` v1.4 and `08_Security_and_RBAC.md` v1.2. SCR-026 (Collection Case Assignment Modal) marked **Retired**, matching FR-041's retirement in `03_Functional_Requirements.md` v1.8 — content preserved for history, not deleted. SCR-024 and SCR-025 updated to remove the retired Assigned Officer field/Reassign action; SCR-025's Navigation Exit and SCR-024's Navigation Exit no longer point to the retired SCR-026. Screen Inventory and Traceability tables updated to mark SCR-026 Retired. No workflow, screen behavior, or functionality changed beyond removing what FR-041's retirement already removed — role references and dead navigation targets only. | Claude |
+| 1.4 | 2026-07-31 | **Product Vision Amendment (generic "staff" sweep, Product Owner Decision).** SCR-005's Purpose line ("Give the business owner/staff...") updated to "Give the Business Owner..." — a missed sibling of the earlier SCR-005 Users fix (v1.3). No other content changed. | Claude |
+| 1.5 | 2026-07-31 | **Final architecture consistency audit correction.** SCR-039/SCR-040/SCR-041 (Super Admin's deprecated-but-functional User/Role Administration screens, FR-066/FR-067) still referenced "six/seven approved roles" — missed by every prior sweep since these screens live on the Super Admin Web Panel, not the Customer Mobile App. Updated to reflect the single approved role (Business Owner, `admin`); DD-039 correctly cited as resolved/moot rather than pending. No screen, workflow, or functionality changed — role references only. | Claude |
 
 ---
 
@@ -265,7 +269,7 @@ Each entry defines behavior only — visual styling follows §2.
 | SCR-023 | Payment History Tab | 6 |
 | SCR-024 | Collection Case List | 7 |
 | SCR-025 | Collection Case Details | 7 |
-| SCR-026 | Collection Case Assignment Modal | 7 |
+| SCR-026 | ~~Collection Case Assignment Modal~~ (Retired — FR-041) | 7 |
 | SCR-027 | Collection Activity Modal | 7 |
 | SCR-028 | Collection Case Closure Modal | 7 |
 | SCR-029 | Document Viewer | 8 |
@@ -365,8 +369,8 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Related Functional Requirements:** FR-003.
 
 ### SCR-005 — Dashboard (Customer Mobile App)
-- **Purpose:** Give the business owner/staff an at-a-glance operational summary and fast entry points into daily work.
-- **Users:** Business Owner, Operations Manager, Collection Officer, Finance, Support, Viewer (fields/actions vary by role).
+- **Purpose:** Give the Business Owner an at-a-glance operational summary and fast entry points into daily work.
+- **Users:** Business Owner.
 - **Layout:** Mobile-first single column: Top Bar (Search, Notification Bell, Avatar) → KPI Cards → Quick Actions → (Aging summary widget) → **Professional Collection Requests widget** *(added)* → Bottom Tab Bar.
 - **Sections:** KPI Cards (§8), Quick Actions (§8), Aging Analysis widget (drill-through to SCR-033), Customers Over Credit Limit widget (drill-through to SCR-007, filtered), **Professional Collection Requests widget** *(added, §8)* — Card + compact Table (Case, Status chip, Submitted Date), drill-through to that Case's Deendoon Hand-off tab (SCR-025).
 - **Displayed Data:** Tenant-scoped KPIs (SM-001–006), Aging bucket summary, the tenant's own Professional Collection Requests (FR-074).
@@ -376,7 +380,7 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Empty State:** New tenant with no Customers/Debts yet — Empty State prompting "Add your first Customer" (→ SCR-009). Professional Collection Requests widget: "No cases submitted to Deendoon yet" (no action — submission happens from SCR-025, not here).
 - **Loading State:** Skeleton Loader cards while KPIs compute.
 - **Error State:** Error State per KPI card if that metric fails to load, isolated so one failure doesn't block the rest of the dashboard.
-- **Permission Behavior:** KPI cards a Viewer-role user cannot act on (e.g., Receive Payment) hide or disable the corresponding Quick Action.
+- **Permission Behavior:** Not applicable — Version 1 has exactly one tenant-side role (Business Owner); no Quick Action is hidden or disabled by role within a tenant.
 - **Navigation Entry:** Login (SCR-001), Tab Bar "Dashboard".
 - **Navigation Exit:** Any module via Quick Actions, Tab Bar, or widget drill-through.
 - **Related Functional Requirements:** FR-053, FR-054, FR-055, FR-065, FR-074.
@@ -410,7 +414,7 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Empty State:** "No customers yet — Add Customer" (new tenant) vs. "No customers match these filters" (filtered).
 - **Loading State:** Skeleton table rows / skeleton cards.
 - **Error State:** Error State with Retry.
-- **Permission Behavior:** Archive/Edit row actions hidden for roles lacking that permission (e.g., Viewer sees View only).
+- **Permission Behavior:** Not applicable — Version 1 has exactly one tenant-side role (Business Owner); no row action is hidden by role within a tenant.
 - **Navigation Entry:** Primary Navigation "Customers"; Global Search result; Dashboard widget drill-through.
 - **Navigation Exit:** SCR-008 (row click), SCR-009, SCR-012.
 - **Related Functional Requirements:** FR-015, FR-010, FR-011.
@@ -597,7 +601,7 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Empty State:** N/A (always shows values, defaults applied per BRL-012).
 - **Loading State:** Skeleton within the panel.
 - **Error State:** Inline error on failed inline-edit save.
-- **Permission Behavior:** Edit controls hidden for Viewer-class roles; Credit Score and Risk Level are never directly editable by the same control (independently maintained, BRL-006).
+- **Permission Behavior:** Credit Score and Risk Level are never directly editable by the same control (independently maintained, BRL-006).
 - **Navigation Entry:** Embedded in SCR-008.
 - **Navigation Exit:** N/A (embedded).
 - **Related Functional Requirements:** FR-013, FR-026, FR-027, FR-028.
@@ -691,37 +695,40 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Purpose:** Browse Collection Cases.
 - **Users:** Roles with Collection view permission.
 - **Layout:** Table (desktop/tablet) / Card list (mobile).
-- **Sections:** Search/Filter (Status, Assigned Officer), Table, Pagination.
-- **Displayed Data:** Case reference (`COL-000001`), linked Debt/Customer, assigned Officer, status.
+- **Sections:** Search/Filter (Status), Table, Pagination.
+- **Displayed Data:** Case reference (`COL-000001`), linked Debt/Customer, status.
 - **Primary Actions:** None (cases are created via escalation, not manually from this list, per FR-040 — a manual-escalation entry point appears on SCR-014 instead, pending DD-014).
-- **Secondary Actions:** Row menu: View, Assign.
+- **Secondary Actions:** Row menu: View.
 - **Validation:** N/A.
 - **Empty State:** "No collection cases yet."
 - **Loading State:** Skeleton rows.
 - **Error State:** Error State with Retry.
-- **Permission Behavior:** Collection Officer role sees only cases assigned to them (per RBAC, `08_Security_and_RBAC.md`); Operations Manager sees all.
+- **Permission Behavior:** Not applicable — Version 1 has exactly one tenant-side role (Business Owner), who sees all Collection Cases for their own tenant.
 - **Navigation Entry:** Primary Navigation "Collection Cases."
-- **Navigation Exit:** SCR-025, SCR-026.
+- **Navigation Exit:** SCR-025.
 - **Related Functional Requirements:** FR-042.
 
 ### SCR-025 — Collection Case Details
-- **Purpose:** Full Collection Case record: linked Debt, assignment, activity, closure, and (as of this update) its Deendoon hand-off status.
-- **Users:** Roles with Collection view permission.
+- **Purpose:** Full Collection Case record: linked Debt, activity, closure, and (as of this update) its Deendoon hand-off status.
+- **Users:** Business Owner.
 - **Layout:** Header (Case reference, status chip) + Tabs: Details / Activity / History / **Deendoon Hand-off** *(added)*.
-- **Sections:** Linked Debt summary (→ SCR-014), assigned Officer, Notes & Attachments, Activity log (Activity Feed). **Deendoon Hand-off tab** *(added)*: if no Request has been submitted, a single explanatory line plus a "Submit Case to Deendoon" action; if a Request exists, its Status Chip (Professional Collection Request Status, §5) plus the shared Conversation Thread component (§5).
+- **Sections:** Linked Debt summary (→ SCR-014), Notes & Attachments, Activity log (Activity Feed). **Deendoon Hand-off tab** *(added)*: if no Request has been submitted, a single explanatory line plus a "Submit Case to Deendoon" action; if a Request exists, its Status Chip (Professional Collection Request Status, §5) plus the shared Conversation Thread component (§5).
 - **Displayed Data:** Per FR-042. Deendoon Hand-off tab additionally shows the linked Request's status and message history, per FR-073/FR-074/FR-075.
 - **Primary Actions:** Record Activity (→ SCR-027), Close Case (→ SCR-028).
-- **Secondary Actions:** Reassign (→ SCR-026), Generate Demand Letter (→ SCR-031), **Submit Case to Deendoon** *(added, Deendoon Hand-off tab only, shown only when the Case has no active Request)*.
+- **Secondary Actions:** Generate Demand Letter (→ SCR-031), **Submit Case to Deendoon** *(added, Deendoon Hand-off tab only, shown only when the Case has no active Request)*.
 - **Validation:** N/A (view screen); actions validated in their own modals. Submit Case to Deendoon is confirmed via a Confirmation Dialog (§5) — a single-step confirmation, not a form, since no additional fields are required (FR-072).
 - **Empty State:** Activity tab: "No activity recorded yet." Deendoon Hand-off tab: "This case hasn't been submitted to Deendoon" (with the Submit action).
 - **Loading State:** Skeleton per section.
 - **Error State:** Error State with Retry.
-- **Permission Behavior:** Record Activity/Close hidden once Case is Closed, pending reopening decision (`04_Business_Rules.md`, DD-025). Submit Case to Deendoon hidden for roles without submission permission and once an active Request already exists (FR-072, A1).
+- **Permission Behavior:** Record Activity/Close hidden once Case is Closed, pending reopening decision (`04_Business_Rules.md`, DD-025). Submit Case to Deendoon hidden once an active Request already exists (FR-072, A1).
 - **Navigation Entry:** SCR-024 row click, SCR-014 (linked case), Notification.
-- **Navigation Exit:** SCR-014, SCR-026, SCR-027, SCR-028, SCR-031.
+- **Navigation Exit:** SCR-014, SCR-027, SCR-028, SCR-031.
 - **Related Functional Requirements:** FR-042, FR-043, FR-046, FR-072, FR-074, FR-075.
 
 ### SCR-026 — Collection Case Assignment Modal
+
+> **Retired (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** FR-041 (Collection Case Assignment) was retired in `03_Functional_Requirements.md` v1.8 — Version 1 has exactly one account per tenant (the Business Owner), so there is no second tenant user to assign a Case to, and Collection Officer is no longer a tenant-side role. This screen is preserved below for history, not deleted, per this project's Documentation Rules; it does not correspond to any implemented screen.
+
 - **Purpose:** Assign/reassign a Collection Officer to a Case.
 - **Users:** Roles with assignment permission.
 - **Layout:** Modal, single field.
@@ -943,6 +950,9 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Related Functional Requirements:** FR-063.
 
 ### SCR-039 — User Administration List
+
+> **Amended (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** This screen and SCR-040/SCR-041 below describe the deprecated-but-functional `AdminUserController` flow (`03_Functional_Requirements.md` FR-066/FR-067). Version 1 has exactly one tenant-side role (Business Owner) — Role fields, selectors, and validation throughout these three screens now reflect that single value rather than the retired six/seven-role model. Not retired outright, matching FR-067's own "deprecated, left functional" status.
+
 - **Purpose:** Browse and manage user accounts.
 - **Users:** Super Admin / Platform Administrator.
 - **Layout:** Table (desktop-only screen — Super Admin Web Panel).
@@ -967,7 +977,7 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Displayed Data:** Existing values on Edit.
 - **Primary Actions:** Save.
 - **Secondary Actions:** Cancel.
-- **Validation:** Required fields per BRL-069/BRL-071; Role must be one of the six approved values.
+- **Validation:** Required fields per BRL-069/BRL-071; Role must be Business Owner (`admin`) — the only approved role (RBAC Architecture Amendment, FR-067).
 - **Empty State:** N/A.
 - **Loading State:** Submit button Loading Spinner.
 - **Error State:** Inline errors.
@@ -980,11 +990,11 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Purpose:** Assign/change a user's Role.
 - **Users:** Super Admin / Platform Administrator.
 - **Layout:** Modal or dedicated panel from SCR-039/SCR-040.
-- **Sections:** Role selector (six approved roles), current-role display.
+- **Sections:** Role selector (one approved role: Business Owner), current-role display.
 - **Displayed Data:** Current Role.
 - **Primary Actions:** Save.
 - **Secondary Actions:** Cancel.
-- **Validation:** Role required, one of six approved values (multi-role pending `04_Business_Rules.md` DD-039).
+- **Validation:** Role required; Business Owner (`admin`) is the only approved value — DD-039 (multi-role support) is moot under the one-role model (`04_Business_Rules.md` BRL-071).
 - **Empty State:** N/A.
 - **Loading State:** Submit button Loading Spinner.
 - **Error State:** Inline error.
@@ -1248,7 +1258,7 @@ This specification supports every approved Functional Requirement in `03_Functio
 | SCR-023 Payment History Tab | FR-035 |
 | SCR-024 Collection Case List | FR-042 |
 | SCR-025 Collection Case Details | FR-042, FR-043, FR-046, FR-072, FR-074, FR-075 |
-| SCR-026 Collection Case Assignment Modal | FR-041 |
+| ~~SCR-026 Collection Case Assignment Modal~~ (Retired) | FR-041 |
 | SCR-027 Collection Activity Modal | FR-044 |
 | SCR-028 Collection Case Closure Modal | FR-045 |
 | SCR-029 Document Viewer | FR-050, FR-051 |

@@ -4,13 +4,13 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-06 |
 | **Document Title** | Database Design |
-| **Version** | 1.3 |
-| **Status** | Approved |
-| **State** | Frozen |
+| **Version** | 1.6 |
+| **Status** | Reopened — Section 6.1 (`roles`) amended by the RBAC Architecture Amendment |
+| **State** | Frozen (pending re-freeze) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (v1.7 — **Module 12 still awaiting its original approval**, see 03's Revision History 1.5) · `04_Business_Rules.md` (Reopened v1.3) · `05_UI_UX_Specification.md` (Approved & Frozen, v1.1) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval**, see 03's Revision History 1.5) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.3) |
 
 ---
 
@@ -22,6 +22,9 @@
 | 1.1 | 2026-07-24 | Architecture review follow-up (four approved changes only): (1) Primary keys changed from UUID to ULID (`CHAR(26)`) throughout, with rationale updated to explain the InnoDB clustered-index write-performance benefit on high-insert tables; (2) `risk_level`, `payment_method`, and `closure_outcome` documentation tightened to state explicitly that they are application-validated against `reference_data`, not foreign-key enforced, so the schema doesn't imply a constraint that isn't actually built; (3) Audit Log design left unchanged — confirmed as an intentional event log, not change-data-capture, matching BR-030/FR-071 verbatim; (4) `archived_at` confirmed as the soft-delete column (not Laravel's default `deleted_at`), with an implementation note added showing `const DELETED_AT = 'archived_at'` preserves full `SoftDeletes` trait support. No other content changed. | Claude |
 | 1.2 | 2026-07-24 | **Reopened — database engine change.** The project's database engine is now officially PostgreSQL, replacing the MySQL assumption throughout v1.0/v1.1. Every MySQL/InnoDB-specific type, rationale, and enforcement note has been replaced with a PostgreSQL equivalent: `ENUM(...)` → `VARCHAR` + `CHECK` constraint; `TIMESTAMP` → `TIMESTAMPTZ`; `JSON` → `JSONB`; `TINYINT UNSIGNED`/`SMALLINT UNSIGNED` → `SMALLINT` + `CHECK` (PostgreSQL has no unsigned integer types). The ULID primary-key rationale (Section 3) is re-justified against PostgreSQL's heap-storage/B-tree architecture rather than InnoDB's clustered index. The Foreign-Key indexing note (Section 10) is corrected — PostgreSQL, unlike MySQL/InnoDB, does **not** auto-index foreign keys, which changes the prior guidance from "no action needed" to "must be created explicitly," and every FK-backed index already listed in Section 6 is retained/confirmed for exactly this reason. PostgreSQL Row-Level Security is evaluated and **adopted** as a defense-in-depth layer alongside (not replacing) the already-approved application-layer tenant filtering (Section 2). No table, column, relationship, cardinality, or business rule was added, removed, or renamed — every change is a physical-type or enforcement-mechanism substitution required for PostgreSQL compatibility. | Claude |
 | 1.3 | 2026-07-24 | **Architecture review refinement to v1.2's RLS design.** Two changes, both to how RLS is described, not to any table/column/entity: (1) RLS is now presented as the **recommended** PostgreSQL implementation for tenant isolation, with final adoption stated explicitly as an architecture decision belonging to the Product Owner — not asserted as an already-settled fact, throughout Section 2 and every per-table "RLS" annotation in Section 6; (2) the platform-admin bypass on `collection_cases`, `debts`, `tenants`, and `audit_log` is replaced with a **relationship-scoped** policy — visibility requires an `EXISTS` check tracing back through an actual `professional_collection_requests` row, not a flag-only bypass — so the Deendoon Super Admin's access is bounded to exactly what BR-042 approves (data reachable through a submitted Request) rather than a blanket cross-tenant grant. `professional_collection_requests` and `request_messages` keep a flag-based condition, with the reasoning made explicit: for those two tables, "any submitted Request is reviewable" *is* the approved business relationship (BR-042 draws no narrower boundary), so a further `EXISTS` clause there would be circular, not more precise. No business rule, workflow, or entity was changed. **Approved and frozen at this version.** | Claude |
+| 1.4 | 2026-07-31 | **RBAC Architecture Amendment (Product Owner Decision).** Section 6.1's `roles` table is amended from seven approved rows (six tenant-scoped + one platform) to exactly **two**: Business Owner (`admin`) and Platform Administrator (`deendoon_platform_administrator`) — see `08_Security_and_RBAC.md` v1.2 §5 for the full role-model change and rationale. `is_tenant_scoped` remains `FALSE` only for the Platform Administrator row. This entry does not reconcile the pre-existing, separate gap between this section's dedicated `roles`/`user_roles` table design and the actual running implementation (spatie/laravel-permission's own tables) — that reconciliation, if pursued, is a distinct decision outside this amendment's scope; see `deendoon/docs/Role_Model_Audit.md` §1.7/§2.2 for the documented gap. | Claude |
+| 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02`, `03`, `04`, and `05` (previously stale). No table, column, relationship, constraint, or approved schema content changed — including `customers.risk_level`, whose database representation is separately tracked as a deferred Database Architecture Decision (`deendoon/docs/Known_Backend_Issues.md` §3.9), explicitly out of scope for this correction. | Claude |
+| 1.6 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4), `03` (v1.10), `04` (v1.6), and `05` (Reopened, v1.3) following those documents' own updates. No table, column, or schema content changed. | Claude |
 
 ---
 
@@ -55,7 +58,7 @@ This document defines the physical data model that implements the approved Versi
 
 **The one approved exception:** Professional Collection Requests (`professional_collection_requests`, Section 6.5) are created by a tenant (`tenant_id` set, identifying the submitting business) but are reviewed and actioned by the **Deendoon Super Admin** — the one platform-level actor confirmed in `01_Project_Overview.md` (BA-008) who is explicitly *not* tenant-scoped. The Super Admin's queries against this table are the one approved case where the `tenant_id` filter is intentionally *not* applied — they see requests across all tenants by design (BR-042). Every other role, on every other table, is always tenant-filtered.
 
-**Users are the other structural exception:** `users.tenant_id` is **nullable** — required for the six tenant RBAC roles, `NULL` for the Deendoon Platform Administrator (Super Admin), who is a platform-level account per the correction in `01_Project_Overview.md` §1.5. This is not a new actor — it is the schema representation of the actor already approved there.
+**Users are the other structural exception:** `users.tenant_id` is **nullable** — required for the tenant RBAC role (`admin`/Business Owner — RBAC Architecture Amendment v1.4), `NULL` for the Deendoon Platform Administrator (Super Admin), who is a platform-level account per the correction in `01_Project_Overview.md` §1.5. This is not a new actor — it is the schema representation of the actor already approved there.
 
 ### Row-Level Security: recommended architecture, pending Product Owner approval
 
@@ -198,7 +201,7 @@ Reporting (Module 9) and Search (Module 11) introduce **no new tables** — per 
 **Foreign Keys:** none. **Indexes:** none beyond PK (single-row lookups by `id` only). **RLS (recommended, pending Product Owner approval):** `tenants` is the tenancy boundary itself, so its policy is a variant of the pattern used elsewhere — if adopted, a session sees its own row (`id = current_setting('app.current_tenant_id', true)::char(26)`), **or** — relationship-scoped, not a directory-wide bypass — the Deendoon Super Admin sees a tenant's identity (e.g., `business_name`, shown on SCR-049) only where `EXISTS (SELECT 1 FROM professional_collection_requests pcr WHERE pcr.tenant_id = tenants.id)`, i.e., only tenants that have actually submitted a Request, never a full list of every business on the platform (see Section 2's policy table).
 
 #### `users`
-**Purpose:** All authenticated accounts — the six tenant RBAC roles and the one platform-level Deendoon Super Admin (Module 1, Module 12).
+**Purpose:** All authenticated accounts — the one tenant RBAC role (Business Owner/`admin`) and the one platform-level Deendoon Super Admin (Module 1, Module 12) — RBAC Architecture Amendment v1.4.
 
 | Column | Type | Constraints | Default | Notes |
 |---|---|---|---|---|
@@ -213,15 +216,15 @@ Reporting (Module 9) and Search (Module 11) introduce **no new tables** — per 
 **Foreign Keys:** `tenant_id` → `tenants.id`. **Indexes:** `(tenant_id, identifier)` unique; `(identifier)` for the NULL-tenant case; `(status)`. **RLS (recommended, pending Product Owner approval):** if adopted, a row would be visible where `tenant_id = current_setting('app.current_tenant_id', true)::char(26)` or `tenant_id IS NULL AND current_setting('app.is_platform_admin', true) = 'true'`. This is not a cross-tenant bypass — the `tenant_id IS NULL` branch only ever matches the Deendoon Super Admin's own account row(s), never another tenant's staff.
 
 #### `roles`
-**Purpose:** Fixed lookup of the seven approved roles — six tenant-scoped, one platform-level. Not user-editable (no FR permits creating new roles — RBAC role *names* are fixed by BR-029; only role *assignment* is a user action).
+**Purpose:** Fixed lookup of the two approved account types (RBAC Architecture Amendment, v1.4) — one tenant-scoped (Business Owner), one platform-level (Platform Administrator). Not user-editable (no FR permits creating new roles — RBAC role *names* are fixed by BR-029; only role *assignment* is a user action).
 
 | Column | Type | Constraints | Default | Notes |
 |---|---|---|---|---|
 | `id` | `CHAR(26)` | PK | — | |
-| `name` | `VARCHAR(50)` | NOT NULL, UNIQUE, `CHECK (name IN ('super_admin','operations_manager','collection_officer','finance','support','viewer','deendoon_platform_administrator'))` | — | BR-029; last value is BA-008 |
+| `name` | `VARCHAR(50)` | NOT NULL, UNIQUE, `CHECK (name IN ('admin','deendoon_platform_administrator'))` | — | BR-029; second value is BA-008 |
 | `is_tenant_scoped` | `BOOLEAN` | NOT NULL | `TRUE` | `FALSE` only for `deendoon_platform_administrator` |
 
-Seeded with exactly seven rows at deployment; no FR provides a create/edit/delete path for this table. **RLS:** not applicable — a fixed, platform-wide lookup table with no tenant ownership.
+Seeded with exactly two rows at deployment; no FR provides a create/edit/delete path for this table. **RLS:** not applicable — a fixed, platform-wide lookup table with no tenant ownership.
 
 #### `user_roles`
 **Purpose:** Join table between `users` and `roles`.

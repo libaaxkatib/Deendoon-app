@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-07 |
 | **Document Title** | API Design |
-| **Version** | 1.2 |
-| **Status** | Draft — Pending Review |
+| **Version** | 1.5 |
+| **Status** | Reopened — Section 5.4 (Collection Cases) amended |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-26 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.3) · `02_Business_Requirements.md` (Reopened v1.3) · `03_Functional_Requirements.md` (v1.7 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.3) · `05_UI_UX_Specification.md` (Approved & Frozen, v1.1) · `06_Database_Design.md` (Approved & Frozen, v1.1) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.3) · `06_Database_Design.md` (Reopened v1.6 — §6.1 amended) |
 
 ---
 
@@ -20,6 +20,9 @@
 | 1.0 | 2026-07-24 | Initial draft: full API specification derived from Documents 01–06 — every endpoint already committed in `03_Functional_Requirements.md`'s "Related APIs" annotations, consolidated, organized, and given complete request/response models, validation rules, and error semantics. No controller code, routes, or OpenAPI/Swagger generated — specification only, per instruction. | Claude |
 | 1.1 | 2026-07-24 | Consolidated architecture review: (1) Section 2 now states Laravel Sanctum (Bearer Token mode) explicitly as the authentication mechanism, with no reference to Passport or a custom implementation as alternatives; (2) removed any implication that Sanctum replaces or restructures `06_Database_Design.md`'s approved `sessions` table — the Sanctum/database mapping is now stated as an implementation-time concern only, with `06` reaffirmed as the sole source of truth for database architecture; (3) verified every endpoint against `03`, `05`, and `06` — no untraceable endpoint found, none removed; (4) consistency pass: added `/professional-requests` to the Pagination section's applicable-endpoints list (was missing), extended the `data`+`warning` response envelope note to explicitly cover Duplicate Customer Detection (FR-014) alongside Credit Limit (FR-018) rather than showing only one example, and added an explicit "no dedicated endpoint" note for FR-056 (Report Filtering) matching the existing FR-064 treatment. No new actor, workflow, permission, module, or business behavior introduced. | Claude |
 | 1.2 | 2026-07-26 | Product Owner decision (Deendoon Backend Excellence Phase, Sprint 1.1): Section 5.1's Authentication endpoints corrected from the drafted `/auth/*` path prefix to the flat path convention actually implemented and approved for production (`/register`, `/login`, `/logout`, `/forgot-password`, `/reset-password`) — the `/auth/` prefix was never built and is not adopted. `/register` (FR-001) added to the table; it was implemented from Module 1 but never listed here. `/change-password` (FR-005) and `/me` (FR-006) corrected to the same flat convention; both remain approved-but-unimplemented, unchanged from v1.1 in that respect. Section 5's endpoint-count note, Section 12's audit-logging note, and Section 13's traceability matrix updated to match. No endpoint, method, request/response shape, FR, or business rule changed — path prefix only. | Claude |
+| 1.3 | 2026-07-31 | RBAC Architecture Amendment (Product Owner Decision — see `docs/RBAC_Architecture_Amendment_Proposal.md` and `08_Security_and_RBAC.md` v1.2): Version 1 has exactly one account per tenant (the Business Owner) and Collection Officer is no longer a login role, so there is no second tenant user to assign a Collection Case to. Section 5.4's `PATCH /collection-cases/{id}/assign` row (FR-041) marked Retired, consistent with `03_Functional_Requirements.md` v1.8. `GET /me` (FR-006) confirmed implemented (flat path, single-role response — see `08_Security_and_RBAC.md` v1.2). No other endpoint, method, request/response shape, FR, or business rule changed. | Claude |
+| 1.4 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02`, `03`, `04`, `05`, and `06` (previously stale). No endpoint, method, request/response shape, FR, or business rule changed. | Claude |
+| 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4), `03` (v1.10), `04` (v1.6), `05` (Reopened, v1.3), and `06` (v1.6) following those documents' own updates. No endpoint or contract changed. | Claude |
 
 ---
 
@@ -112,7 +115,7 @@ Organized by resource group, mirroring `06_Database_Design.md` Section 5's group
 
 ### 5.1 Authentication (Module 1)
 
-**Path convention:** flat, not grouped under an `/auth/` prefix — Product Owner decision (Deendoon Backend Excellence Phase, Sprint 1.1), matching the convention already implemented and approved for production since Module 1. `/change-password` and `/me` remain approved (FR-005/FR-006) but unimplemented, same as prior versions of this document.
+**Path convention:** flat, not grouped under an `/auth/` prefix — Product Owner decision (Deendoon Backend Excellence Phase, Sprint 1.1), matching the convention already implemented and approved for production since Module 1. `/change-password` remains approved (FR-005) but unimplemented, same as prior versions of this document. `/me` (FR-006) is now implemented (RBAC Architecture Amendment, v1.3) — resolves the current session's single role only; no permission array is returned (see `08_Security_and_RBAC.md` v1.2).
 
 | Method | Path | Purpose | FR |
 |---|---|---|---|
@@ -175,7 +178,7 @@ Organized by resource group, mirroring `06_Database_Design.md` Section 5's group
 |---|---|---|---|
 | `GET` | `/collection-cases` 🔒 | List Collection Cases *(list endpoint required by SCR-024)* | FR-042 |
 | `GET` | `/collection-cases/{id}` 🔒 | Collection Case Details | FR-042 |
-| `PATCH` | `/collection-cases/{id}/assign` 🔒 | Assign/reassign Collection Officer | FR-041 |
+| ~~`PATCH`~~ | ~~`/collection-cases/{id}/assign`~~ | **Retired v1.3** — no second tenant user exists to assign a case to; see FR-041 | FR-041 |
 | `PUT` | `/collection-cases/{id}` 🔒 | Update non-financial Case details | FR-043 |
 | `POST` | `/collection-cases/{id}/activities` 🔒 | Record Collection Activity | FR-044 |
 | `POST` | `/collection-cases/{id}/close` 🔒 | Close with recorded outcome | FR-045 |

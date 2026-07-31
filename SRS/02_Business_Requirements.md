@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-02 |
 | **Document Title** | Business Requirements |
-| **Version** | 1.3 |
+| **Version** | 1.6 |
 | **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.3) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.5) |
 
 ---
 
@@ -21,6 +21,9 @@
 | 1.1 | 2026-07-24 | Documentation polish pass: clarified BR-011 (configurable reminder timing), BR-018 (full/partial payments), BR-024 (historical KPI periods), BR-030 (immutable audit records), BR-035 (branding elements); added SM-007 and SM-008. No scope or functionality changes. Approved by Product Owner — frozen as the official Business Requirements baseline. | Claude |
 | 1.2 | 2026-07-24 | **Reopened — intentional scope change.** Added Professional Collection Requests (hand-off to Deendoon's own recovery team): new Business Actor (BA-009), new Business Process (BP-011), new Business Requirements (BR-039–BR-042), new Business Constraint (BC-009), new Success Metric (SM-009), new high-level Business Rule (BRL-077), and corresponding Traceability Matrix entries. No previously approved requirement was altered. | Claude |
 | 1.3 | 2026-07-24 | **Correction to 1.2.** Removed BA-009 (the invented "Deendoon Recovery Specialist" actor). Version 1 has exactly two application interfaces and no additional internal roles. BA-008 (Deendoon Platform Administrator / Super Admin) is now the sole actor for Professional Collection Requests, clarified as operating at the true platform level. Updated BP-011 and BR-042 wording accordingly (removed "assign," since there is no team to assign among — the Super Admin actions Requests directly). Traceability Matrix references to BA-009 removed. | Claude |
+| 1.4 | 2026-07-31 | **RBAC Architecture Amendment (Product Owner Decision), applying the same principle 1.3 already established for BA-009 to BA-002/004/005/006.** Removed BA-002 (Operations Manager), BA-004 (Finance Staff), BA-005 (Support Staff), and BA-006 (Viewer) — Version 1 has exactly two application interfaces and no internal staff-role differentiation beyond the single Business Owner account per tenant; these four actors described distinct staff tiers that were never given a distinct interface to operate. Redefined BA-003 (Collection Officer) as Deendoon's own internal operational function (Platform Administrator staff, exercised after a Professional Collection Request is accepted), not a tenant-side actor. BA-001, BA-007, BA-008 unchanged. BR-029's role list updated to match; see `08_Security_and_RBAC.md` v1.2 for the corresponding RBAC table amendment. | Claude |
+| 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` at its current version (v1.4). No business requirement changed. | Claude |
+| 1.6 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision) — obsolete multi-staff assumptions removed, not deferred.** BG-006, BP-007 (renamed from "Staff Access Governance" to "Access Governance"), BR-028, BR-029, and BR-030's rationale rewritten as current Version 1 requirements reflecting the approved two-account architecture (Business Owner, tenant-side; Deendoon Platform Administrator, platform-side) — no internal staff tiers, no role assignment, no multi-user tenant. Each item's original intent (data-access protection, role-appropriate access, accountability) is preserved, only re-grounded in the actual two accounts that exist rather than a retired multi-staff model. IDs, traceability (`Traces To` columns), and structure unchanged. No workflow, API, database design, or business logic changed beyond this. Scope Baseline updated to cite `01` at v1.5. | Claude |
 
 ---
 
@@ -38,14 +41,12 @@ Each requirement carries a unique identifier for traceability through the remain
 
 | ID | Actor | Description | Baseline Reference |
 |---|---|---|---|
-| BA-001 | Business Owner / SME Operator | Primary user; owns the Deendoon tenant; manages customers, debts, and recovery activity. | 01 §1.5 |
-| BA-002 | Operations Manager | Oversees day-to-day recovery operations across the business's customer base. | 01 §1.5 |
-| BA-003 | Collection Officer | Executes follow-up and collection actions on assigned customers/debts. | 01 §1.5 |
-| BA-004 | Finance Staff | Manages payments, receipts, statements, and financial reporting. | 01 §1.5 |
-| BA-005 | Support Staff | Limited operational access; assists but does not make financial decisions. | 01 §1.5 |
-| BA-006 | Viewer | Read-only access, typically for oversight or audit. | 01 §1.5 |
+| BA-001 | Business Owner / SME Operator | The single account per tenant on the Customer Mobile App; owns the Deendoon tenant; manages customers, debts, and recovery activity. | 01 §1.5 |
+| BA-003 | Collection Officer | **Amended v1.4:** an internal Deendoon operational function, not a tenant actor — work performed by Platform Administrator staff (BA-008) on an accepted Professional Collection Request. Not a distinct login account. | 01 §1.5 |
 | BA-007 | Customer (Debtor) | External actor; owes money to the business; receives reminders and documents. Does not use the Customer Mobile App. | 01 §1.5 |
-| BA-008 | Deendoon Platform Administrator (Super Admin) | Operates the Super Admin Web Panel at the true platform level, across the whole Deendoon platform. As of this reopening, also reviews and actions Professional Collection Requests submitted by any tenant. The only Deendoon-side actor in Version 1 — no additional roles, staff groups, or interfaces exist. | 01 §1.5 |
+| BA-008 | Deendoon Platform Administrator (Super Admin) | Operates the Super Admin Web Panel at the true platform level, across the whole Deendoon platform. Also reviews and actions Professional Collection Requests submitted by any tenant. The only Deendoon-side actor in Version 1 — no additional roles, staff groups, or interfaces exist. | 01 §1.5 |
+
+**Retired v1.4 (RBAC Architecture Amendment):** BA-002 (Operations Manager), BA-004 (Finance Staff), BA-005 (Support Staff), BA-006 (Viewer) — Version 1 has no tenant-side staff-role differentiation beyond the single Business Owner (BA-001) account; these described distinct capability tiers that were never given a distinct interface to operate, and are not modeled as separate login accounts.
 
 ---
 
@@ -58,7 +59,7 @@ Each requirement carries a unique identifier for traceability through the remain
 | BG-003 | Reduce the business's exposure to customers who are unlikely to pay. | 01 §1.4 |
 | BG-004 | Give the business formal, credible tools to escalate and document collection activity. | 01 §1.4 |
 | BG-005 | Give business owners and managers real-time insight into receivables, risk, and recovery performance. | 01 §1.4 |
-| BG-006 | Allow multiple staff to participate in recovery operations without compromising data control or accountability. | 01 §1.4 |
+| BG-006 | Maintain data control and accountability for all recovery operations through a single, auditable Business Owner account per tenant, kept strictly separate from Deendoon's own platform administration. | 01 §1.4 |
 | BG-007 | Ensure financial records remain accurate, traceable, and never irrecoverably lost. | 01 §1.4 |
 | BG-008 | Support Deendoon's operation and growth as a scalable, commercial multi-tenant SaaS product. | 01 §1.4 |
 
@@ -76,7 +77,7 @@ High-level business processes that Version 1 must support. These describe *what 
 | BP-004 | Formal Escalation & Documentation | Moving unresolved debts into a formal, documented collection process when informal follow-up fails. |
 | BP-005 | Payment Recording & Proof | Recording every payment received and providing verifiable proof to both business and customer. |
 | BP-006 | Business Oversight & Reporting | Monitoring overall receivables health and recovery performance. |
-| BP-007 | Staff Access Governance | Controlling which staff can view or act on which financial data. |
+| BP-007 | Access Governance | Controlling access to financial data through the two approved account types — full tenant-side access for the Business Owner, platform-level administration exclusively for the Deendoon Platform Administrator. |
 | BP-008 | Accountability & Audit | Attributing every significant system action to a specific user and point in time. |
 | BP-009 | Business Configuration | Tuning credit and recovery policy without engineering involvement. |
 | BP-010 | Customer Data Onboarding & Maintenance | Bringing existing customer records into the system and keeping them free of duplication. |
@@ -139,14 +140,14 @@ Each requirement is Mandatory for Version 1 unless stated otherwise, per the Fea
 
 | ID | Requirement | Rationale | Traces To |
 |---|---|---|---|
-| BR-028 | The business must be able to restrict staff access to only the data and actions relevant to their role. | Protects sensitive financial data as the business scales its team. | BG-006, BG-007 · BP-007 · Role-Based Access Control |
-| BR-029 | The business must be able to assign staff to a defined set of roles reflecting real operational responsibilities. | Ensures access reflects actual job function. | BG-006 · BP-007 · RBAC (Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer) |
+| BR-028 | The system must ensure the Deendoon Platform Administrator cannot view or act on a tenant's financial data except where the Professional Collection Request workflow explicitly grants it; the Business Owner has full access within their own tenant. | Protects sensitive financial data by keeping tenant-side and platform-side access strictly separate. | BG-006, BG-007 · BP-007 · Role-Based Access Control |
+| BR-029 | The system must enforce exactly two fixed account types — Business Owner (tenant-side) and Deendoon Platform Administrator (platform-side) — each reflecting a distinct, real operational responsibility, with no role assignment or additional tiers within a tenant. | Ensures access reflects the two real operational responsibilities that exist in Version 1. | BG-006 · BP-007 · RBAC (Business Owner; Platform Administrator — amended v1.4, see Revision History) |
 
 ### 2.5.6 Data Integrity & Auditability
 
 | ID | Requirement | Rationale | Traces To |
 |---|---|---|---|
-| BR-030 | The business must be able to determine who performed any significant action in the system and when, from an immutable record that normal users cannot alter. | Establishes accountability across a multi-staff operation; accountability is meaningless if the record itself can be edited. | BG-007 · BP-008 · Audit Trail |
+| BR-030 | The business must be able to determine who performed any significant action in the system and when, from an immutable record that normal users cannot alter. | Establishes accountability for every action taken by the Business Owner account and by the Deendoon Platform Administrator; accountability is meaningless if the record itself can be edited. | BG-007 · BP-008 · Audit Trail |
 | BR-031 | The business must never permanently lose a financial record through user action. | Financial records are the business's core asset; irreversible loss is unacceptable. | BG-007 · BP-008 · Soft Delete / Archive |
 | BR-032 | The business must be able to recover an archived record if removed in error or needed again. | Complements BR-031 with a practical reversal path. | BG-007 · BP-008 · Soft Delete / Archive (Restore) |
 | BR-033 | The platform must protect the business's data against system-level loss through regular backups, independent of user action. | Provides continuity assurance beyond user-level safeguards. | BG-007 · BP-008 · Automated Infrastructure Backups (NFR) |

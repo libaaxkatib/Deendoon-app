@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.7 (In Progress) |
-| **Status** | Reopened — Module 7 amended for Professional Collection Requests; Module 12 still awaiting its original approval (see Revision History 1.5) |
+| **Version** | 1.10 |
+| **Status** | Reopened — RBAC Architecture Amendment (FR-041 retired, FR-067 narrowed) and Risk Level Engine Architecture Amendment (FR-027 rewritten) both applied; Module 12 still awaiting its original approval (see Revision History 1.5) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-24 |
-| **Scope Baseline** | `01_Project_Overview.md` (Approved) · `02_Business_Requirements.md` (Approved) |
+| **Last Updated** | 2026-07-31 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.5) · `02_Business_Requirements.md` (Reopened — Pending Re-Approval, v1.6) |
 
 ---
 
@@ -34,6 +34,9 @@
 | 1.5 | 2026-07-24 | **Reopened — intentional scope change.** Module 7 amended to add Professional Collection Requests (hand-off to Deendoon's own recovery team): FR-072–FR-076, updated Scope Boundary, updated Traceability Summary, and updated Open Items (former Open Item #7 "External collection agencies" is now resolved/removed rather than left contradictory; remaining items renumbered 1–10). No other module was modified. **Self-correction:** an earlier status summary of this document (given verbally during the Guardian status check) stated Module 12 was "Approved & Frozen" — this was inaccurate. Module 12 was only ever "Submitted for Review"; no explicit approval was recorded for it. That approval remains outstanding, independent of this reopening, and should be resolved before this document is considered fully frozen. | Claude |
 | 1.6 | 2026-07-24 | **Correction to 1.5.** Removed the invented "Deendoon Recovery Specialist" actor throughout Module 7 (FR-072–FR-076, Scope Boundary). All Professional Collection Request review, status transitions, conversation, and closure are now attributed to the **Deendoon Super Admin** — the same, already-approved Deendoon Platform Administrator actor operating the existing Deendoon Super Admin Web Panel. No new role, queue, portal, or dashboard is introduced. Removed the now-resolved Open Item on "Deendoon-side actor/permission model" and renumbered the remaining Open Items (1–15). | Claude |
 | 1.7 | 2026-07-24 | Clarified, wherever the "Assigned" Professional Collection Request status is described (FR-073 Main Flow, Open Item 13), that it means the Deendoon Super Admin has accepted ownership of the Request and started handling it — not assignment to another system user, role, or team. Any coordination with other Deendoon staff is manual and outside the system. | Claude |
+| 1.8 | 2026-07-31 | **RBAC Architecture Amendment (Product Owner Decision).** FR-041 (Collection Case Assignment) removed — Version 1 has exactly one account per tenant (the Business Owner), so there is no second tenant user to assign a Case to; the endpoint and its "Collection Officer" role restriction (Exception E2) are retired. FR-067 (Role & Permission Management) narrowed from six assignable roles to one (`admin`) — see `08_Security_and_RBAC.md` v1.2 §5. Module 7's Traceability Summary and FR-041's cross-references elsewhere in this document updated accordingly. | Claude |
+| 1.9 | 2026-07-31 | **Risk Level Engine Architecture Amendment (Product Owner Decision — Documentation Consistency Audit correction).** FR-027 rewritten from "Risk Level Assignment" (manual, user-selected from a dropdown) to "Risk Level Calculation & Recalculation" (fully system-calculated, deterministic, event-driven, no manual override) — matching the architecture already approved and recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md`. This corrects a gap where that architecture had been approved but never applied back to this document. The Module 4 Open Items entry for the Risk Level value set updated to reflect that Low/Medium/High and their semantics are now defined (`04_Business_Rules.md` BRL-028); exact numeric thresholds remain pending. **Also corrected in this version (Scope Baseline synchronization):** this document's own Scope Baseline field, which incorrectly cited `01` and `02` as "Approved" when both are actually Reopened — updated to their correct current status and version. No new business rule, workflow, or scope introduced anywhere in this revision — this entry applies already-approved decisions and corrects stale metadata, it does not make a new decision. | Claude |
+| 1.10 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** FR-008's Alternate Flow A1 no longer cites "Viewer" as an example restricted role — Viewer was retired as a tenant role in `02_Business_Requirements.md` v1.4. Scope Baseline updated to cite `01` at its current version (v1.4). No business rule, workflow, or requirement changed. | Claude |
 
 ---
 
@@ -350,7 +353,7 @@ As with Authentication in Module 1, the ability to create and maintain a Custome
 3. If the Customer is Archived, system displays the record in a restore-eligible state per BR-032.
 
 **Alternate Flows**
-- **A1 — Requesting user's role restricts field-level visibility:** System displays only the fields permitted for that role (e.g., Viewer), per `08_Security_and_RBAC.md`.
+- **A1 — Requesting user's role restricts field-level visibility:** System displays only the fields permitted for that role, per `08_Security_and_RBAC.md`.
 
 **Exceptions**
 - **E1 — User lacks permission to view this Customer:** Access is denied.
@@ -944,7 +947,7 @@ This module specifies the computation and management of the two customer-level r
 | ID | Requirement | Traces To |
 |---|---|---|
 | FR-026 | The system shall calculate and maintain a Customer's Credit Score (0–100, banded Excellent/Good/Fair/Poor) using a deterministic, rule-based method triggered by qualifying payment-behavior events. | BR-004 |
-| FR-027 | The system shall allow an authorized user to assign or update a Customer's Risk Level from an approved qualitative value set. | BR-005 |
+| FR-027 | The system shall calculate and maintain a Customer's Risk Level (Low/Medium/High) using a deterministic, event-driven method, with no manual assignment or override. | BR-005 |
 | FR-028 | The system shall notify the business owner when a Customer's outstanding exposure reaches their approved Credit Limit. | BR-007 |
 
 ---
@@ -978,29 +981,32 @@ This module specifies the computation and management of the two customer-level r
 
 ---
 
-### FR-027 — Risk Level Assignment
+### FR-027 — Risk Level Calculation & Recalculation
+
+> **Rewritten v1.9 (Risk Level Engine Architecture Amendment, Product Owner Decision, 2026-07-31).** Risk Level is no longer manually assigned. It is now fully system-calculated, deterministic, and event-driven, with no manual override — matching Credit Score's existing determinism principle (FR-026) — per the architecture recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md`. A business owner's own qualitative assessment of a customer may in future be captured separately as internal notes, but any such note must never change the system-calculated Risk Level; that is a distinct, not-yet-approved feature, not an override path into this one.
 
 **Preconditions**
-- Customer record exists; user holds permission to assign Risk Level.
+- Customer record exists (Module 2).
 
 **Triggers**
-- Authorized user selects or updates a Customer's Risk Level.
+- A qualifying **Primary Event** occurs against the Customer — customer behavior such as a broken or fulfilled Promise to Pay, a Debt remaining outstanding beyond a defined duration, or a Debt being recovered (Modules 3 and 5).
+- A qualifying **Secondary Event** occurs — collection workflow/escalation activity such as a Recovery Stage advancement, Collection Case creation or successful closure, or Professional Collection Request submission or successful completion (Module 5, Module 7).
 
 **Main Flow**
-1. User selects a Risk Level value for the Customer from the approved qualitative value set.
-2. System validates the value against the approved set.
-3. System updates the Customer's Risk Level (Module 2, FR-013).
-4. System records an **Edited** event in the Audit Trail (User, Timestamp, Action = Edited, Entity = Customer, Field = Risk Level).
+1. A qualifying Primary or Secondary event occurs against a Customer's Debt or Collection Case.
+2. System applies the corresponding deterministic point adjustment for that event, per the event catalog defined in `deendoon/docs/Risk_Level_Engine_v1.0.md` §§4–5 and formally confirmed in `04_Business_Rules.md`. Primary Events (customer behavior) always take precedence over Secondary Events (workflow/escalation) — Secondary Events are a confirmation signal only and never independently drive the outcome. Exact point values and the precedence mechanism are not yet formally approved Business Rules — see Open Item below.
+3. System maps the resulting value to the approved qualitative band — Low, Medium, or High Risk (semantics per `04_Business_Rules.md` BRL-028; exact numeric thresholds confirmed there once Formula Design completes).
+4. System updates the Customer's displayed Risk Level (Module 2, FR-013).
+5. System records a **Risk Level Recalculated** event in the Audit Trail (User = "System", Timestamp, Action = Risk Level Recalculated, Entity = Customer).
 
 **Alternate Flows**
-- None beyond the general update path.
+- **A1 — New Customer with no event history:** System assigns a defined baseline Risk Level; exact baseline value confirmed in `04_Business_Rules.md` (see Open Item below).
 
 **Exceptions**
-- **E1 — Invalid or unrecognized Risk Level value submitted:** System rejects the change.
-- **E2 — User lacks permission:** Action is not available.
+- **E1 — Multiple qualifying events occur concurrently:** System applies each event's point adjustment cumulatively, in the order the underlying events occurred, respecting Primary-over-Secondary precedence; exact ordering/concurrency handling confirmed in `04_Business_Rules.md`.
 
-**Business Rule References:** BRL-006 (Risk Level is independently maintained from Credit Score, Customer Status, and Debt Status). See open item below regarding the Risk Level value set.
-**Related APIs (reference only):** `PATCH /customers/{id}/risk-level` — see `07_API_Design.md`.
+**Business Rule References:** BRL-006 (Risk Level is independently maintained from Credit Score, Customer Status, and Debt Status); BRL-028 (Risk Level qualitative value set — Low/Medium/High and their semantics are approved; exact numeric thresholds pending, see Open Item below); deterministic/event-driven/no-manual-override/no-AI-ML architecture per `deendoon/docs/Risk_Level_Engine_v1.0.md` §§1–2.
+**Related APIs (reference only):** the previous manual-assignment endpoint (`PATCH /customers/{id}/risk-level`) is retired along with manual assignment itself. A read-access contract for the system-calculated value, if needed as a dedicated endpoint distinct from the Customer Profile response (FR-013), is deferred to `07_API_Design.md` — not defined here.
 **Related Database Entities (reference only):** Customer, AuditLog — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-027.
 
@@ -1044,7 +1050,7 @@ This module specifies the computation and management of the two customer-level r
 
 ## Open Items Identified During Module 4 Specification
 
-1. **Risk Level value set (FR-027):** Unlike Customer Status, Debt Status, and Recovery Stage, the approved Feature Freeze never enumerated the specific Risk Level values (Risk Levels is a pre-existing feature that predates the Version 1 discovery conversation). This module references "the approved qualitative value set" without inventing specific values; the value set itself must be confirmed and recorded in `04_Business_Rules.md`.
+1. **Risk Level value set (FR-027):** Resolved as of v1.9 — the qualitative value set is Low/Medium/High Risk, with semantics approved and recorded in `04_Business_Rules.md` BRL-028 and `deendoon/docs/Risk_Level_Engine_v1.0.md` §6. What remains open: the exact numeric thresholds mapping the calculation engine's output to each band, and the event point-value catalog itself (`deendoon/docs/Risk_Level_Engine_v1.0.md` §7, Formula Design — not yet complete).
 2. **New-Customer baseline Credit Score (FR-026, A1):** No baseline starting score was specified in the Feature Freeze. Deferred to `04_Business_Rules.md`.
 3. **Credit Score point values and band thresholds (FR-026):** Illustrative point values per event and illustrative band language (Excellent/Good/Fair/Poor) were discussed during product discovery but are not yet formally approved as Business Rules. The exact point-value catalog and numeric band thresholds must be confirmed and recorded in `04_Business_Rules.md` before implementation.
 
@@ -1556,6 +1562,8 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 
 ### FR-041 — Collection Case Assignment
 
+> **Retired v1.8 (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** Version 1 has exactly one account per tenant (the Business Owner) — there is no second tenant user to assign a Collection Case to, and "Collection Officer" is no longer a login role (it is an internal Deendoon operational function on the Platform Administrator side, exercised only after a Professional Collection Request is accepted — see FR-072 onward). The endpoint below (`PATCH /collection-cases/{id}/assign`) has been removed from the implementation. Preserved here for history, not deleted, per this project's Documentation Rules.
+
 **Preconditions**
 - Collection Case exists and is open; user holds permission to assign cases.
 
@@ -1768,7 +1776,7 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 **Exceptions**
 - **E1 — Attempted transition outside the approved sequence:** Rejected; exact full transition matrix confirmed in `04_Business_Rules.md`.
 
-**Business Rule References:** BR-040, BR-042; BRL-077 (02, high-level). All transitions are performed by the Deendoon Platform Administrator (Super Admin) — an actor already approved and distinct from the six tenant RBAC roles; no new actor or permission model is introduced. Full transition matrix confirmed in `04_Business_Rules.md` (see Open Items).
+**Business Rule References:** BR-040, BR-042; BRL-077 (02, high-level). All transitions are performed by the Deendoon Platform Administrator (Super Admin) — an actor already approved and distinct from the tenant RBAC role (`admin`, RBAC Architecture Amendment v1.8); no new actor or permission model is introduced. Full transition matrix confirmed in `04_Business_Rules.md` (see Open Items).
 **Related APIs (reference only):** `PATCH /professional-requests/{id}/status` — see `07_API_Design.md`.
 **Related Database Entities (reference only):** ProfessionalCollectionRequest, AuditLog — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-073.
@@ -2715,7 +2723,7 @@ This module owns administrative configuration and system governance: user accoun
 | ID | Requirement | Traces To |
 |---|---|---|
 | FR-066 | The system shall allow an authorized administrator to create, view, update, and deactivate user accounts. | BR-028, BR-029 |
-| FR-067 | The system shall allow an authorized administrator to assign or change a user's Role from the six approved roles. | BR-029 |
+| FR-067 | The system shall allow an authorized administrator to assign or change a user's Role from the approved role(s). | BR-029 |
 | FR-068 | The system shall allow an authorized administrator to configure the Company Profile and Branding used on generated documents. | BR-035 |
 | FR-069 | The system shall allow an authorized administrator to configure system-wide preferences: Credit Policy, Recovery Policy, Notification Settings, and Document Templates. | BR-034, BR-035, BR-011 |
 | FR-070 | The system shall allow an authorized administrator to manage configurable Lookup & Reference Data value sets. | BC-003 |
@@ -2754,6 +2762,8 @@ This module owns administrative configuration and system governance: user accoun
 
 ### FR-067 — Role & Permission Management
 
+> **Amended v1.8 (RBAC Architecture Amendment, Product Owner Decision, 2026-07-31).** Version 1 has exactly one tenant-side role (Business Owner, `admin`) — there is no second role to change a user *to*. The implementation (`AdminUserController`, deprecated but left functional per the same decision) still supports this FR mechanically, in case a residual dependency exists, but no meaningful role-change scenario remains under the one-account-per-tenant model. No multi-role support is introduced.
+
 **Preconditions**
 - User account exists (FR-066); requesting administrator holds permission to assign roles.
 
@@ -2761,13 +2771,13 @@ This module owns administrative configuration and system governance: user accoun
 - Administrator assigns or changes a user's Role.
 
 **Main Flow**
-1. Administrator selects a user and assigns one of the six approved roles: Super Admin, Operations Manager, Collection Officer, Finance, Support, Viewer.
+1. Administrator selects a user and assigns the one approved role: Business Owner (`admin`).
 2. System updates the user's Role assignment.
 3. System records a **Role Changed** event in the Audit Trail.
 4. Per Module 1, FR-006 (Alternate Flow A1, already approved), the affected user's effective permissions are refreshed to reflect the new Role without requiring re-login; exact refresh timing is governed in `08_Security_and_RBAC.md`.
 
 **Alternate Flows**
-- **A1 — User is assigned more than one Role:** Whether multi-role assignment is supported is not specified in the approved Feature Freeze; deferred to `04_Business_Rules.md` (see Open Items).
+- **A1 — User is assigned more than one Role:** Not supported — single role only (RBAC Architecture Amendment, explicit instruction). No multi-role support is introduced.
 
 **Exceptions**
 - **E1 — Requesting administrator lacks permission to assign roles:** Action is not available.
