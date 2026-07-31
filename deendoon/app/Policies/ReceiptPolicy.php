@@ -6,9 +6,9 @@ use App\Models\Receipt;
 use App\Models\User;
 
 /**
- * Same judgment call as every other tenant-scoped Policy under the
- * interim 3-role RBAC (Product Owner Decision 4): admin and sales_finance
- * are authorized to view/download Documents.
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): Documents are a Business Owner capability
+ * (role `admin`).
  */
 class ReceiptPolicy
 {
@@ -24,6 +24,6 @@ class ReceiptPolicy
 
     private function isAuthorized(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'sales_finance']);
+        return $user->hasRole('admin');
     }
 }

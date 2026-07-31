@@ -8,12 +8,11 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
- * FR-066/FR-067: Product Owner ruling — administrator sets the initial
- * password directly (no self-service invitation mechanism exists in this
- * project). `role` is required at creation, restricted to the four
- * tenant-scoped roles this project actually implements under the interim
- * RBAC model (Product Owner Decision 4) — `deendoon_platform_administrator`
- * is a distinct, non-tenant-scoped actor (08 §5) never assignable here.
+ * @deprecated Serves the deprecated AdminUserController — no second
+ * tenant user exists to create under the Version 1 one-account-per-tenant
+ * model (RBAC Architecture Amendment, Product Owner Decision,
+ * 2026-07-30). `role` whitelist narrowed to the one tenant-side role that
+ * still exists.
  */
 class CreateUserRequest extends FormRequest
 {
@@ -38,7 +37,7 @@ class CreateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', 'string', Rule::in(['admin', 'sales_finance', 'customer', 'collection_officer'])],
+            'role' => ['required', 'string', Rule::in(['admin'])],
         ];
     }
 }

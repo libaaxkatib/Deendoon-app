@@ -29,6 +29,7 @@ Verified directly against running code — not judgment calls or open design que
 
 ### 1.3 `POST /register` creates a permission-less, tenant-less user account
 
+- **Status: RESOLVED (2026-07-31)** — per the RBAC Architecture Amendment (Product Owner Decision), `POST /register` now creates a Tenant and its Business Owner account (role `admin`) together, in a transaction. See `AuthController::register()`, `RegisterRequest` (now requires `business_name`), and `RBAC_Architecture_Amendment_Proposal.md` Revision 2, Decision 3.
 - **Priority:** Medium
 - **Risk:** `AuthController::register()` sets only `name`/`email`/`password` — no `tenant_id` (since `User` doesn't use `BelongsToTenant`'s auto-fill) and no role. The resulting account can authenticate but is authorized for nothing (every Policy/Gate in the system requires a role or a matching non-null `tenant_id`). It is functionally inert today, but it's a public, unauthenticated, rate-limited-but-otherwise-unrestricted endpoint that writes a real row to `users` for anyone who calls it — confirmed the Flutter app defines the endpoint constant but never calls it, and no registration screen exists anywhere in the mobile app's router.
 - **Recommendation:** Get an explicit decision on this endpoint's intended purpose. Either (a) implement it properly — create the `Tenant` row and assign the `admin` role, if it's meant to be a self-service tenant-bootstrap flow — or (b) remove it from the public API surface entirely if all user creation is meant to go through `AdminUserController::store()` (the actual approved FR-066 flow, which always assigns both). Leaving it half-functional is the worst of the three options.
@@ -129,6 +130,14 @@ Structural characteristics that are working as implemented today but represent r
 - **Risk:** `spatie/laravel-permission`'s `Permission` model, migration, and config are fully present but have zero references in application code — authorization is role-only throughout. Not inconsistent with any documentation, but a future engineer skimming `config/permission.php` could reasonably assume fine-grained permissions are in use somewhere.
 - **Recommendation:** A one-line note in onboarding/README material clarifying that RBAC in this project is role-only by deliberate choice. No code change needed.
 - **Should Fix Before Production:** No
+
+### 3.9 `risk_level`'s designed database representation may no longer match its approved architecture — Deferred Database Architecture Decision
+
+- **Status:** Deferred — explicit Product Owner decision (2026-07-31). No change to `06_Database_Design.md` at this time. To be addressed during the Database Design review phase.
+- **Priority:** Medium
+- **Risk:** `06_Database_Design.md` §6 designs `customers.risk_level` as a `VARCHAR(50)`, application-validated against a tenant-configurable `reference_data` category (`DD-010`) — the same pattern used for Payment Method and Collection Outcome, i.e., a value set each tenant can customize. But the Risk Level Engine (`deendoon/docs/Risk_Level_Engine_v1.0.md`, approved 2026-07-31) fixes Risk Level as exactly three product-wide values — Low/Medium/High — with fixed semantics, calculated deterministically by a backend engine, not configured per tenant. A tenant-configurable reference-data column and a fixed, engine-calculated three-value output are two different data models; as designed today, `06`'s schema documents the former while the approved architecture requires the latter.
+- **Recommendation:** During the Database Design review phase, reconcile `customers.risk_level`'s representation with the Risk Level Engine's architecture — most likely a fixed `CHECK (risk_level IN ('low','medium','high'))` constraint (matching the pattern already used for `customer_status`), rather than a `reference_data`-driven configurable column. This is a schema decision requiring Product Owner approval; it is not resolved by this entry.
+- **Should Fix Before Production:** **Yes** — before Risk Level Engine implementation begins, since the column design determines how the engine can write its output.
 
 ---
 
@@ -254,7 +263,7 @@ For quick scanning, every item marked Yes above, in one place:
 | # | Item | Section |
 |---|---|---|
 | 1 | `MessageController::templates()`/`render()` missing authorization | §1.1 |
-| 2 | `POST /register` ambiguous account-creation decision | §1.3 |
+| 2 | ~~`POST /register` ambiguous account-creation decision~~ — **RESOLVED 2026-07-31** | §1.3 |
 | 3 | Verify `collection_cases` FK migration ordering against real deploy history | §2.1 |
 | 4 | `AuditLog`/`User` tenant-scoping decision | §2.3 |
 | 5 | Real WhatsApp/SMS delivery — *only if* claimed as a working feature this release | §3.3 |

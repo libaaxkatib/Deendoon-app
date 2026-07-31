@@ -6,6 +6,14 @@ This document is the official UI Specification for the Deendoon Mobile
 Application. It is the master reference for Backend Development, Flutter
 Development, QA Testing, and all future product releases.
 
+> **Amendment note (2026-07-31, Product Vision Amendment, Product Owner Decision).** All Permissions sections throughout this document previously listed Sales & Finance Staff and Collections Staff alongside Business Owner/Administrator — Version 1 has exactly one tenant-side role, the Business Owner, matching `SRS/08_Security_and_RBAC.md` v1.4 and `docs/00_PROJECT_GOVERNANCE.md`. Every Permissions section now reads "Business Owner" only. No UI layout, navigation, workflow, or business logic was changed — role references only.
+>
+> **Second amendment note (2026-07-31, same decision).** The Case Actions component's "Assign Officer" action, and its Required APIs entry, were retired — Version 1 has no second tenant user to assign a Case to.
+>
+> **Third amendment note (2026-07-31, same decision, generic "staff" sweep).** Fifteen Business Objective lines used the generic word "staff" ("Let staff...", "Give staff...") — Version 1 has no tenant employees, so every one now reads "Let the Business Owner..." / "Give the Business Owner..." instead. No screen, layout, workflow, or business logic was changed — prose wording only.
+>
+> **Fourth amendment note (2026-07-31, final architecture consistency audit correction).** The Reminder Details screen's Permissions line still referenced "the reminder's creator or a manager-level role" — missed by every prior sweep. Updated to "the reminder's creator" only, matching the same fix already applied to `Backend_v2.1_UI_Mapping.md` and `Backend_v2.1_REST_API_Specification.md`.
+
 ---
 
 ## 1. Introduction
@@ -290,8 +298,7 @@ capture API; Message composition API.
 records, Reminder records, Case records, Invoice records, Message/
 Reminder records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles, with individual Quick Actions further gated per
+**Permissions:** Visible to Business Owner, with individual Quick Actions further gated per
 Section 4.4.
 
 **Empty State:** Each component displays its own defined empty state, as
@@ -341,8 +348,7 @@ as underlying data changes.
 **Required Database Tables:** Customer records, Debt records, Payment
 records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** For a tenant with no recorded debts or payments, the
 score displays a neutral baseline state rather than an artificially
@@ -399,8 +405,7 @@ filtered to High Risk; Collected This Month navigates to Analytics.
 **Required Database Tables:** Debt records, Payment records, Customer
 records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A tenant with no qualifying records for a given card
 displays a zero value with no delta, rather than omitting the card.
@@ -447,8 +452,7 @@ reminders.
 
 **Required Database Tables:** Reminder records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A row with zero items due today displays a zero count
 rather than being hidden.
@@ -542,8 +546,7 @@ count, with the full list available via "View All."
 **Required Database Tables:** Case records, Customer records, Debt
 records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** If no cases have recent activity, the section displays
 an explicit "no recent activity" message.
@@ -598,8 +601,7 @@ Analytics KPI retrieval API; Risk Distribution retrieval API.
 **Required Database Tables:** Debt records, Payment records, Customer
 records, Collection Case records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** Each tab and component displays its own defined empty
 state, as documented in Sections 5.1–5.6.
@@ -645,8 +647,7 @@ immediately whenever the date range changes.
 **Required Database Tables:** Debt records, Payment records, Customer
 records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A period with no qualifying activity displays zero
 values across all Overview components rather than an error.
@@ -694,8 +695,7 @@ report API, Report Export API.
 **Required Database Tables:** Debt records, Customer records, Collection
 Case records, Payment records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A report with no matching records displays an explicit
 "no records" message.
@@ -738,8 +738,7 @@ non-inverted start and end date.
 
 **Required Database Tables:** Payment records, Debt records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A range with no activity renders a flat, zero-value
 trend line rather than an empty chart.
@@ -786,8 +785,7 @@ category.
 
 **Required Database Tables:** Payment records, Debt records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A period with no payments displays zero values across
 all three cards.
@@ -831,8 +829,7 @@ center total is the sum of remaining balances across all open debts.
 
 **Required Database Tables:** Debt records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A bracket with no debts renders as a zero-value segment
 rather than being omitted from the legend.
@@ -874,8 +871,7 @@ the current classification of the full active customer base.
 
 **Required Database Tables:** Customer records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A risk level with zero customers renders as a
 zero-value segment.
@@ -895,7 +891,7 @@ distribution of the active customer base.
 collection case, with a path into full case detail, activity history, and
 available actions.
 
-**Business Objective:** Let collections staff see what needs attention
+**Business Objective:** Let the Business Owner see what needs attention
 and act on it without searching customer-by-customer.
 
 **Layout Description:** A filterable Case List at the top level, leading
@@ -918,15 +914,14 @@ defined in Sections 6.1–6.5.
 in Sections 6.1–6.5.
 
 **Required APIs:** Case List retrieval API; Case Details retrieval API;
-Case Timeline retrieval API; Payment Recording API; Officer Assignment
-API; Escalation API; Case Closure API.
+Case Timeline retrieval API; Payment Recording API; Escalation API;
+Case Closure API.
 
 **Required Database Tables:** Case records, Customer records, Debt
 records, Promise to Pay records, Case Activity/Follow-Up records, Audit
 records, Payment records.
 
-**Permissions:** Visible to Business Owner/Administrator, Sales & Finance
-Staff, and Collections Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** Each component displays its own defined empty state, as
 documented in Sections 6.1–6.5.
@@ -945,7 +940,7 @@ as documented in Sections 6.1–6.5.
 **Purpose:** Present a scannable, filterable list of all collection
 cases.
 
-**Business Objective:** Let collections staff see what needs attention
+**Business Objective:** Let the Business Owner see what needs attention
 without searching customer-by-customer.
 
 **Layout Description:** A header with a running total case count, four
@@ -972,8 +967,7 @@ recorded activity against that case.
 **Required Database Tables:** Case records, Customer records, Debt
 records.
 
-**Permissions:** Visible to Business Owner/Administrator, Sales & Finance
-Staff, and Collections Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A tab with zero matching cases displays an explicit "no
 cases" message.
@@ -991,7 +985,7 @@ with an accurate total count.
 **Purpose:** Narrow the Case List to a specific subset relevant to the
 user's current task.
 
-**Business Objective:** Let staff quickly isolate the highest-priority or
+**Business Objective:** Let the Business Owner quickly isolate the highest-priority or
 most relevant cases.
 
 **Layout Description:** A tab selector (All, High Risk, Follow Up,
@@ -1039,7 +1033,7 @@ criteria.
 
 **Purpose:** Present the complete profile of a single collection case.
 
-**Business Objective:** Give staff everything needed to understand and
+**Business Objective:** Give the Business Owner everything needed to understand and
 act on a case without navigating elsewhere.
 
 **Layout Description:** A header with the customer name and case
@@ -1083,7 +1077,7 @@ load; a not-found state is shown if the case no longer exists.
 
 **Purpose:** Present the full chronological activity history of a case.
 
-**Business Objective:** Let staff understand everything that has already
+**Business Objective:** Let the Business Owner understand everything that has already
 happened on a case before taking further action.
 
 **Layout Description:** A reverse-chronological list of activity entries
@@ -1127,18 +1121,19 @@ displayed.
 
 **Purpose:** Provide every action a user may take against a case.
 
-**Business Objective:** Let staff move a case forward without leaving
-Case Details.
+**Business Objective:** Let the Business Owner move a case forward
+without leaving Case Details.
 
 **Layout Description:** An actions section on Case Details, presenting
 the actions available for the case's current status (e.g., Record
-Payment, Schedule Reminder, Assign Officer, Escalate, Close Case).
+Payment, Schedule Reminder, Escalate, Close Case).
 
-**Components:** A set of action buttons, varying by case status and user
-role.
+**Components:** A set of action buttons, varying by case status.
 
-**User Actions:** Record a payment; schedule a reminder; assign an
-officer; escalate the case; close the case.
+**User Actions:** Record a payment; schedule a reminder;
+escalate the case; close the case.
+
+> **Retired (Product Vision Amendment, Product Owner Decision, 2026-07-31).** "Assign Officer" is removed from this action set — Version 1 has no second tenant user to assign a Case to.
 
 **Navigation:** "Record Payment" opens payment recording. "Schedule
 Reminder" opens Reminder Scheduling (Section 7.5). Other actions complete
@@ -1151,15 +1146,13 @@ selected).
 **Business Rules:** Only actions valid for the case's current status are
 presented (e.g., a closed case does not offer "Close Case" again).
 
-**Required APIs:** Payment Recording API, Officer Assignment API,
-Escalation API, Case Closure API.
+**Required APIs:** Payment Recording API, Escalation API, Case Closure
+API.
 
 **Required Database Tables:** Case records, Debt records, Payment
 records.
 
-**Permissions:** Each action is independently permission-gated; case
-management actions are restricted to Business Owner/Administrator, Sales
-& Finance Staff, and assigned Collections Staff.
+**Permissions:** Each action is independently permission-gated to the Business Owner.
 
 **Empty State:** Not applicable.
 
@@ -1217,8 +1210,7 @@ Send via SMS API.
 **Required Database Tables:** Reminder records, Debt records, Promise to
 Pay records, Message Template records, Sent Message records.
 
-**Permissions:** Visible to Business Owner/Administrator, Sales & Finance
-Staff, and Collections Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** Each component displays its own defined empty state, as
 documented in Sections 7.1–7.9.
@@ -1236,7 +1228,7 @@ data, as documented in Sections 7.1–7.9.
 
 **Purpose:** Present a live summary of the day's follow-up workload.
 
-**Business Objective:** Let staff immediately see how much work is due
+**Business Objective:** Let the Business Owner immediately see how much work is due
 today and how it breaks down by type.
 
 **Layout Description:** A header with search and add icons, followed by a
@@ -1261,8 +1253,7 @@ past their due date whose status is not Completed.
 
 **Required Database Tables:** Reminder records.
 
-**Permissions:** Visible to Business Owner/Administrator, Sales & Finance
-Staff, and Collections Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A zero-workload day displays all-zero counts.
 
@@ -1327,7 +1318,7 @@ records.
 **Purpose:** Present every reminder, filterable by status, in one
 scrollable list.
 
-**Business Objective:** Let staff work through their follow-up load
+**Business Objective:** Let the Business Owner work through their follow-up load
 systematically, by status.
 
 **Layout Description:** A tab selector (All, Today, Upcoming, Overdue,
@@ -1374,7 +1365,7 @@ inline actions update their card immediately.
 **Purpose:** Present the complete detail of a single reminder and the
 actions available on it.
 
-**Business Objective:** Give staff everything needed to decide and act on
+**Business Objective:** Give the Business Owner everything needed to decide and act on
 one specific follow-up.
 
 **Layout Description:** A header with edit and delete icons. Below: the
@@ -1410,8 +1401,7 @@ Reminder Deletion API; Reminder Completion API; Reminder Send API.
 **Required Database Tables:** Reminder records.
 
 **Permissions:** Viewing is available to the same roles as Section 7.1;
-editing and deletion are restricted to the reminder's creator or a
-manager-level role.
+editing and deletion are restricted to the reminder's creator.
 
 **Empty State:** Not applicable — this screen always represents one
 existing reminder.
@@ -1430,7 +1420,7 @@ and each action reflects the reminder's current state.
 
 **Purpose:** Create a new reminder or reschedule an existing one.
 
-**Business Objective:** Let staff proactively set up future follow-up
+**Business Objective:** Let the Business Owner proactively set up future follow-up
 work rather than only reacting to work as it becomes due.
 
 **Layout Description:** A header with a save icon. Below: "When should
@@ -1485,7 +1475,7 @@ screen with the new or updated reminder reflected immediately.
 **Purpose:** Present all dated follow-up work in a calendar grid, viewable
 by Day, Week, or Month.
 
-**Business Objective:** Let staff see follow-up workload distribution
+**Business Objective:** Let the Business Owner see follow-up workload distribution
 across time, not only as a flat list.
 
 **Layout Description:** A header with a "+" icon. Below: a Day/Week/Month
@@ -1517,8 +1507,7 @@ with at least one item is visually marked; a date with none is not.
 **Required Database Tables:** Reminder records, Debt records, Promise to
 Pay records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A selected date with no items displays an explicit
 "nothing scheduled" message.
@@ -1537,7 +1526,7 @@ the item list matches the currently selected date.
 **Purpose:** Preview and send a fully rendered reminder message to a
 customer via WhatsApp.
 
-**Business Objective:** Let staff confirm the exact wording of an
+**Business Objective:** Let the Business Owner confirm the exact wording of an
 outbound customer message before it is sent.
 
 **Layout Description:** A header with an info icon. Below: a recipient
@@ -1722,8 +1711,7 @@ API; Send via WhatsApp API; Send via SMS API.
 Letter records, Statement records, Document Event records, Sent Message
 records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** Each component displays its own defined empty state, as
 documented in Sections 8.1–8.8.
@@ -1742,7 +1730,7 @@ data, as documented in Sections 8.1–8.8.
 **Purpose:** Present every document across all types in one searchable,
 filterable list.
 
-**Business Objective:** Let staff find any document quickly without
+**Business Objective:** Let the Business Owner find any document quickly without
 navigating through the customer or case it originated from.
 
 **Layout Description:** A header with search and filter icons. Below:
@@ -1772,8 +1760,7 @@ API.
 **Required Database Tables:** Invoice records, Receipt records, Demand
 Letter records, Statement records.
 
-**Permissions:** Visible to Business Owner/Administrator and Sales &
-Finance Staff roles.
+**Permissions:** Visible to Business Owner.
 
 **Empty State:** A tab with no matching documents displays an explicit
 "no documents" message. A new tenant with no documents at all displays an
@@ -1791,7 +1778,7 @@ Storage Usage reflects current, live usage.
 
 **Purpose:** Present all invoice documents.
 
-**Business Objective:** Give staff quick access to every invoice issued
+**Business Objective:** Give the Business Owner quick access to every invoice issued
 to customers.
 
 **Layout Description:** The "Invoices" tab within All Documents (8.1),
@@ -1828,7 +1815,7 @@ message.
 
 **Purpose:** Present all receipt documents.
 
-**Business Objective:** Give staff quick access to proof of every payment
+**Business Objective:** Give the Business Owner quick access to proof of every payment
 collected.
 
 **Layout Description:** The "Receipts" tab within All Documents (8.1),
@@ -1864,7 +1851,7 @@ message.
 
 **Purpose:** Present all demand letter documents.
 
-**Business Objective:** Give staff quick access to formal collection
+**Business Objective:** Give the Business Owner quick access to formal collection
 correspondence issued to customers.
 
 **Layout Description:** The "Letters" tab within All Documents (8.1),
@@ -1901,7 +1888,7 @@ message.
 
 **Purpose:** Present all account statement documents.
 
-**Business Objective:** Give staff quick access to full-account
+**Business Objective:** Give the Business Owner quick access to full-account
 statements for any customer.
 
 **Layout Description:** Presented under the "Other" tab within All
@@ -2021,7 +2008,7 @@ device.
 
 **Purpose:** Send a document directly to a customer via WhatsApp or SMS.
 
-**Business Objective:** Let staff deliver a document to a customer
+**Business Objective:** Let the Business Owner deliver a document to a customer
 without leaving the application.
 
 **Layout Description:** A share action available from the Preview

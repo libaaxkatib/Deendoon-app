@@ -11,6 +11,10 @@ other than a specific, traceable requirement in those two documents. No
 UI behavior, business rule, or feature is added, removed, or reinterpreted
 here.
 
+> **Amendment note (2026-07-31, Product Vision Amendment, Product Owner Decision).** All Required Permission lines throughout this document previously listed Sales & Finance Staff and Collections Staff alongside Business Owner/Administrator, and some referenced a "manager-level role" — Version 1 has exactly one tenant-level role, the Business Owner, matching `SRS/08_Security_and_RBAC.md` v1.4. Every permission reference now reads "Business Owner" only.
+>
+> **Second amendment note (2026-07-31, same decision, follow-up correction).** The "Assign Officer" endpoint (formerly §6.5's Case Assignment action) is now marked **Retired** — Version 1 has no second tenant user to assign a Case to, so an endpoint that exists solely to perform that assignment is itself obsolete, not merely mis-permissioned. Content preserved below for history, not deleted. The `assigned_officer` read-only response field on **Get Case Details** is unaffected — the underlying column remains in the schema (approved decision) and continues to be displayed read-only; only the write endpoint is retired.
+
 ---
 
 # 1. Introduction
@@ -167,8 +171,7 @@ this document depends on — not a full account-management feature set.
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`; `500 Server Error`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Dashboard KPIs
 
@@ -189,8 +192,7 @@ this document depends on — not a full account-management feature set.
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`; `500 Server Error`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Today's Overview
 
@@ -211,8 +213,7 @@ this document depends on — not a full account-management feature set.
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`; `500 Server Error`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Recent Cases
 
@@ -235,8 +236,7 @@ this document depends on — not a full account-management feature set.
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`; `500 Server Error`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Quick Actions
 
@@ -282,8 +282,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error` (date_to before date_from);
   `401 Unauthorized`; `500 Server Error`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Customers Report
 
@@ -304,8 +303,7 @@ each delegates directly to its owning module's creation endpoint, per
   10 for the pagination envelope shape.
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Debts Report
 
@@ -318,8 +316,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Response Fields:** Paginated list of debt records.
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Collection Cases Report
 
@@ -331,8 +328,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Response Fields:** Paginated list of case records.
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Payments Report
 
@@ -344,8 +340,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Response Fields:** Paginated list of payment records.
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Credit Risk Report
 
@@ -359,8 +354,7 @@ each delegates directly to its owning module's creation endpoint, per
   risk fields.
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Export Report
 
@@ -381,8 +375,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Success Responses:** `200 OK` with the file attached.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`; `404
   Not Found` (unknown report_type).
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Collections Trend
 
@@ -409,8 +402,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error` (invalid range or metric);
   `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Collection Analytics KPIs
 
@@ -431,8 +423,7 @@ each delegates directly to its owning module's creation endpoint, per
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Aging Analysis
 
@@ -451,8 +442,7 @@ each delegates directly to its owning module's creation endpoint, per
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Risk Distribution
 
@@ -470,8 +460,7 @@ each delegates directly to its owning module's creation endpoint, per
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ---
 
@@ -505,8 +494,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error` (unknown tab value); `401
   Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff, Collections Staff.
+- **Required Permission:** Business Owner.
 
 ## Create Case
 
@@ -526,8 +514,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Success Responses:** `201 Created`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`; `403
   Forbidden`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Case Details
 
@@ -594,10 +581,11 @@ each delegates directly to its owning module's creation endpoint, per
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`; `403
   Forbidden`; `404 Not Found`; `409 Conflict` (case not in a status that
   permits recording a payment).
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff, assigned Collections Staff.
+- **Required Permission:** Business Owner.
 
 ## Assign Officer
+
+> **Retired (Product Vision Amendment, Product Owner Decision, 2026-07-31).** Version 1 has exactly one account per tenant (the Business Owner), so there is no second tenant user to assign a Case to, and Collections Staff/Collection Officer is no longer a tenant-side role — matching the retirement already recorded for `SRS/03_Functional_Requirements.md` FR-041, `SRS/05_UI_UX_Specification.md` SCR-026, and `SRS/10_Acceptance_Criteria.md` AC-041. This endpoint does not exist in the active API and must not be implemented. Preserved below for history, not deleted, per this project's Documentation Rules.
 
 - **Endpoint Name:** Assign Officer
 - **HTTP Method:** PATCH
@@ -613,8 +601,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`; `403
   Forbidden`; `404 Not Found`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Escalate Case
 
@@ -634,8 +621,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`; `403 Forbidden`; `404 Not
   Found`; `409 Conflict` (case status does not permit escalation).
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Close Case
 
@@ -654,8 +640,7 @@ each delegates directly to its owning module's creation endpoint, per
 - **Error Responses:** `422 Validation Error` (missing closure_outcome);
   `401 Unauthorized`; `403 Forbidden`; `404 Not Found`; `409 Conflict`
   (case already closed).
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ---
 
@@ -682,8 +667,7 @@ components §7.1–7.9, per `Backend_v2.1_UI_Mapping.md` Section 5.*
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff, Collections Staff.
+- **Required Permission:** Business Owner.
 
 ## List Reminders
 
@@ -778,9 +762,8 @@ components §7.1–7.9, per `Backend_v2.1_UI_Mapping.md` Section 5.*
 - **Response Fields:** The updated reminder.
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`; `403
-  Forbidden` (not the creator or a manager-level role); `404 Not Found`.
-- **Required Permission:** The reminder's creator, or a manager-level
-  role.
+  Forbidden` (not the creator); `404 Not Found`.
+- **Required Permission:** The reminder's creator.
 
 ## Delete Reminder
 
@@ -793,8 +776,7 @@ components §7.1–7.9, per `Backend_v2.1_UI_Mapping.md` Section 5.*
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `401 Unauthorized`; `403 Forbidden`; `404 Not
   Found`.
-- **Required Permission:** The reminder's creator, or a manager-level
-  role.
+- **Required Permission:** The reminder's creator.
 
 ## Complete Reminder
 
@@ -855,8 +837,7 @@ components §7.1–7.9, per `Backend_v2.1_UI_Mapping.md` Section 5.*
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## WhatsApp Preview and SMS Preview
 
@@ -905,8 +886,7 @@ and Update Reminder (Reschedule).
 
 - **Success Responses:** `200 OK`.
 - **Error Responses:** `422 Validation Error`; `401 Unauthorized`.
-- **Required Permission:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permission:** Business Owner.
 
 ## Get Storage Usage
 
@@ -1440,7 +1420,7 @@ Master inventory of every endpoint defined in this specification.
 | Cases | GET | /api/v1/cases/{case_id} | Case details | Authenticated |
 | Cases | GET | /api/v1/cases/{case_id}/timeline | Case activity timeline | Authenticated |
 | Cases | POST | /api/v1/cases/{case_id}/payments | Record a payment | Authenticated |
-| Cases | PATCH | /api/v1/cases/{case_id}/assign-officer | Assign an officer | Authenticated |
+| ~~Cases~~ | ~~PATCH~~ | ~~/api/v1/cases/{case_id}/assign-officer~~ | **Retired** — see "Assign Officer" section above | — |
 | Cases | POST | /api/v1/cases/{case_id}/escalate | Escalate a case | Authenticated |
 | Cases | POST | /api/v1/cases/{case_id}/close | Close a case | Authenticated |
 | Reminders | GET | /api/v1/reminders/summary | Today's reminder counts | Authenticated |

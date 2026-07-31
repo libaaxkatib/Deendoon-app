@@ -11,6 +11,8 @@ traceable requirement in one of the three documents above. No table is
 added because it is conventional, only because the approved UI or API
 already requires it.
 
+> **Amendment note (2026-07-31, Product Vision Amendment, Product Owner Decision).** The Users role description previously enumerated three tenant-level roles (Business Owner/Administrator, Sales & Finance Staff, Collections Staff) — Version 1 has exactly one tenant-level role, the Business Owner, matching `SRS/08_Security_and_RBAC.md` v1.4. No table, column, relationship, or schema structure changed — the role field itself remains a single field on Users, now enumerating one value instead of three.
+
 ---
 
 # 1. Introduction
@@ -67,9 +69,8 @@ the frozen UI, so none is included here.
 
 - **Purpose:** Represents an individual who authenticates and acts within
   a tenant — the actor behind every "Created By," "Assigned Officer," and
-  audit entry across the system. Each user holds exactly one of the
-  three tenant-level roles (Business Owner/Administrator, Sales &
-  Finance Staff, Collections Staff), carried as a single role field on
+  audit entry across the system. Each user holds the single tenant-level
+  role (Business Owner), carried as a single role field on
   the user record — sufficient to satisfy every "any of" permission
   check in `Backend_v2.1_UI_Mapping.md` §10 without a separate roles
   table or join.
@@ -173,7 +174,7 @@ No SQL. Primary keys and foreign keys are described conceptually.
 | Table Name | Purpose | Primary Key | Foreign Keys | Referenced By |
 |---|---|---|---|---|
 | Tenants | The business/account boundary | tenant_id | — | Every tenant-owned table below |
-| Users | An individual who authenticates and acts, holding exactly one role (role field: Business Owner/Administrator, Sales & Finance Staff, or Collections Staff) | user_id | tenant_id → Tenants | Auth Tokens, Cases, Reminders, Audit Log, Case Activity, Document Events, Notifications |
+| Users | An individual who authenticates and acts, holding the single tenant-level role (role field: Business Owner) | user_id | tenant_id → Tenants | Auth Tokens, Cases, Reminders, Audit Log, Case Activity, Document Events, Notifications |
 | Auth Tokens | Issued access/refresh tokens for a session | token_id | user_id → Users | — |
 | Customers | A tenant's customer | customer_id | tenant_id → Tenants | Debts, Statements |
 | Debts | An amount owed by a customer | debt_id | tenant_id → Tenants; customer_id → Customers | Cases, Payments, Invoices, Demand Letters, Promise to Pay, Reminders (via related_entity) |
@@ -247,9 +248,7 @@ No SQL. Primary keys and foreign keys are described conceptually.
   reference points to exactly one Customer, Debt, or Case, depending on
   its type (§7.2); this is a polymorphic many-to-one, not a many-to-many,
   since each reminder relates to exactly one entity at a time.
-- **Case → Officer (User)** — a case is assigned to at most one officer
-  at a time (§6.5 Assign Officer); a single officer may be assigned to
-  many cases.
+- **Case → Officer (User)** — **Retired (Product Vision Amendment, 2026-07-31).** The Assign Officer action itself is retired (see `Backend_v2.1_REST_API_Specification.md`) — Version 1 has no second tenant user to assign a Case to. The `assigned_officer_user_id` column remains in the schema (approved decision) but is no longer written to by any active endpoint; this relationship is not actively maintained going forward.
 
 ## Many-to-Many
 
@@ -595,7 +594,7 @@ independent while still supporting the unified list view.
 | Cases — Case List / Filters (§6.1, §6.2) | GET /cases | Cases, Customers, Debts, Promise to Pay |
 | Cases — Case Details (§6.3) | GET /cases/{id} | Cases, Customers, Debts |
 | Cases — Timeline (§6.4) | GET /cases/{id}/timeline | Case Activity, Audit Log |
-| Cases — Actions (§6.5) | POST /cases/{id}/payments, PATCH .../assign-officer, POST .../escalate, POST .../close | Cases, Debts, Payments, Demand Letters (via escalation) |
+| Cases — Actions (§6.5) | POST /cases/{id}/payments, POST .../escalate, POST .../close (~~PATCH .../assign-officer~~ Retired) | Cases, Debts, Payments, Demand Letters (via escalation) |
 | Reminder Center — Dashboard (§7.1) | GET /reminders/summary | Reminders |
 | Reminder Center — Reminder List (§7.3) | GET /reminders | Reminders |
 | Reminder Center — Reminder Details (§7.4) | GET/PUT/DELETE /reminders/{id}, PATCH .../complete | Reminders |
@@ -630,9 +629,8 @@ approved UI or API:
    recalculates it — the only capture point consistent with every
    document being "immutable once generated" (§8.2–8.5). This is now
    recorded as a Required Field in Section 7.
-3. **Role representation on Users — resolved.** Each user holds exactly
-   one of the three tenant-level roles (Business Owner/Administrator,
-   Sales & Finance Staff, Collections Staff), carried as a single role
+3. **Role representation on Users — resolved.** Each user holds the
+   single tenant-level role (Business Owner), carried as a single role
    field on the existing Users table. This fully satisfies every "any
    of" permission check in `Backend_v2.1_UI_Mapping.md` §10 without
    introducing a separate roles table or a user-role join.

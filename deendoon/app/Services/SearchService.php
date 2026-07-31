@@ -20,7 +20,7 @@ use Illuminate\Support\Collection;
  * each entity's existing Policy — no new authorization rule is invented.
  * Payment has no dedicated Policy anywhere in the project (PaymentController
  * authorizes via Debt's policy instead); Search applies the same
- * admin/sales_finance interim mapping every other Policy in this project
+ * Business Owner (`admin`) check every other Policy in this project
  * already encodes, rather than adding a Policy class whose only consumer
  * would be this one read-only aggregation.
  *
@@ -56,7 +56,7 @@ class SearchService
                 ->limit(self::LIMIT_PER_TYPE)->get());
         }
 
-        if ($user->hasAnyRole(['admin', 'sales_finance'])) {
+        if ($user->hasRole('admin')) {
             $results->put('payments', Payment::whereRaw('LOWER(reference_notes) LIKE ?', [$like])
                 ->limit(self::LIMIT_PER_TYPE)->get());
         }

@@ -8,6 +8,15 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
+/**
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): exactly two account types — Business Owner
+ * (`admin`, Customer Mobile App) and Platform Administrator
+ * (`deendoon_platform_administrator`, Super Admin Web Dashboard, tenant_id
+ * null). The former interim `sales_finance`/`customer` roles and the
+ * `collection_officer` role (never truly an authentication role) are
+ * retired — see database/migrations/2026_08_10_090000_retire_obsolete_roles.php.
+ */
 class RoleAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
@@ -21,17 +30,11 @@ class RoleAuthorizationTest extends TestCase
 
     // --- Role assignment ---
 
-    /**
-     * Module 7 (Professional Collection) added 'collection_officer' (FR-041
-     * E2 names it explicitly by role) and 'deendoon_platform_administrator'
-     * (FR-072–076's distinct, non-tenant-scoped actor) to the original
-     * three-role interim set — see RoleSeeder.
-     */
-    public function test_role_seeder_creates_exactly_the_five_approved_roles(): void
+    public function test_role_seeder_creates_exactly_the_two_approved_roles(): void
     {
-        $this->assertDatabaseCount('roles', 5);
+        $this->assertDatabaseCount('roles', 2);
 
-        foreach (['admin', 'sales_finance', 'customer', 'collection_officer', 'deendoon_platform_administrator'] as $role) {
+        foreach (['admin', 'deendoon_platform_administrator'] as $role) {
             $this->assertDatabaseHas('roles', ['name' => $role]);
         }
     }
@@ -41,7 +44,7 @@ class RoleAuthorizationTest extends TestCase
         $this->seed(RoleSeeder::class);
         $this->seed(RoleSeeder::class);
 
-        $this->assertDatabaseCount('roles', 5);
+        $this->assertDatabaseCount('roles', 2);
     }
 
     public function test_user_can_be_assigned_a_role(): void
@@ -58,8 +61,7 @@ class RoleAuthorizationTest extends TestCase
         $user = User::factory()->create();
 
         $this->assertFalse($user->hasRole('admin'));
-        $this->assertFalse($user->hasRole('sales_finance'));
-        $this->assertFalse($user->hasRole('customer'));
+        $this->assertFalse($user->hasRole('deendoon_platform_administrator'));
     }
 
     // --- Permission checks ---
@@ -72,38 +74,19 @@ class RoleAuthorizationTest extends TestCase
         $this->assertTrue(Gate::forUser($user)->allows('admin-only'));
     }
 
-    public function test_sales_finance_gate_allows_sales_finance_role(): void
+    public function test_admin_gate_denies_platform_administrator_role(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('sales_finance');
-
-        $this->assertTrue(Gate::forUser($user)->allows('sales-finance-only'));
-    }
-
-    public function test_customer_gate_allows_customer_role(): void
-    {
-        $user = User::factory()->create();
-        $user->assignRole('customer');
-
-        $this->assertTrue(Gate::forUser($user)->allows('customer-only'));
-    }
-
-    // --- Forbidden requests (role mismatch) ---
-
-    public function test_admin_gate_denies_non_admin_role(): void
-    {
-        $user = User::factory()->create();
-        $user->assignRole('customer');
+        $user->assignRole('deendoon_platform_administrator');
 
         $this->assertTrue(Gate::forUser($user)->denies('admin-only'));
     }
 
-    public function test_sales_finance_gate_denies_non_sales_finance_role(): void
+    public function test_admin_gate_denies_user_with_no_role(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('admin');
 
-        $this->assertTrue(Gate::forUser($user)->denies('sales-finance-only'));
+        $this->assertTrue(Gate::forUser($user)->denies('admin-only'));
     }
 
     // --- Protected routes / unauthenticated requests ---
@@ -118,7 +101,7 @@ class RoleAuthorizationTest extends TestCase
     public function test_protected_route_accepts_authenticated_request_regardless_of_role(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('customer');
+        $user->assignRole('admin');
         $token = $user->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)

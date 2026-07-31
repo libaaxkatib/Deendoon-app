@@ -6,10 +6,9 @@ use App\Models\Debt;
 use App\Models\User;
 
 /**
- * Same judgment call as CustomerPolicy, under the current interim 3-role
- * RBAC (Product Owner Decision 4): admin and sales_finance are authorized;
- * customer has no defined meaning as a backend actor anywhere in the
- * approved SRS. Not itself specified by any approved document.
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): the Debt Register is a Business Owner
+ * capability (role `admin`) — the only tenant-side account type.
  */
 class DebtPolicy
 {
@@ -65,6 +64,6 @@ class DebtPolicy
 
     private function isAuthorized(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'sales_finance']);
+        return $user->hasRole('admin');
     }
 }

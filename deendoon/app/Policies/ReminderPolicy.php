@@ -6,12 +6,11 @@ use App\Models\Reminder;
 use App\Models\User;
 
 /**
- * docs/Backend_v2.1_UI_Mapping.md §10: Reminder Center is granted to
- * Business Owner/Administrator, Sales & Finance Staff, AND Collections
- * Staff — three roles, unlike Customers/Debts/Cases' interim two-role
- * mapping (admin/sales_finance only). Mapped to this project's existing
- * seeded roles exactly as established in Sprint 1: admin, sales_finance,
- * collection_officer.
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): the Reminder Center is a Business Owner
+ * capability (role `admin`) — the only tenant-side account type. The
+ * distinct Sales & Finance Staff / Collections Staff roles this policy
+ * previously mapped to no longer exist as authentication roles.
  */
 class ReminderPolicy
 {
@@ -31,16 +30,15 @@ class ReminderPolicy
     }
 
     /**
-     * docs/Mobile_UI_V1_Frozen.md §7.4: "editing and deletion are
-     * restricted to the reminder's creator or a manager-level role."
-     * Manager-level is read as admin/sales_finance (this project's only
-     * roles above Collections Staff), so a Collections Staff user may
-     * update/delete only their own reminders.
+     * Under Version 1's one-account-per-tenant model, the tenant's single
+     * Business Owner account is always both the only possible actor and
+     * the only possible creator of any Reminder in that tenant, so the
+     * former creator-or-manager distinction has no remaining case where it
+     * would differ from a plain role check.
      */
     public function update(User $user, Reminder $reminder): bool
     {
-        return $user->hasAnyRole(['admin', 'sales_finance'])
-            || (string) $user->id === $reminder->created_by_user_id;
+        return $this->isAuthorized($user);
     }
 
     public function delete(User $user, Reminder $reminder): bool
@@ -60,6 +58,6 @@ class ReminderPolicy
 
     private function isAuthorized(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'sales_finance', 'collection_officer']);
+        return $user->hasRole('admin');
     }
 }

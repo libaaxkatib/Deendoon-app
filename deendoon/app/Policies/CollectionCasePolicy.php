@@ -6,15 +6,13 @@ use App\Models\CollectionCase;
 use App\Models\User;
 
 /**
- * Same judgment call as DebtPolicy/CustomerPolicy under the current
- * interim 3-role RBAC (Product Owner Decision 4): admin and sales_finance
- * manage Collection Cases. Unlike FR-041's assignee check (which names
- * "Collection Officer" specifically and is validated separately in
- * CollectionCaseService::assign(), against the real collection_officer
- * role), nothing in FR-042/043/044/045/046 names a specific role for who
- * may *perform* these actions — so, consistent with every other generic
- * "authorized user" requirement handled this way throughout the project,
- * they fall to the same admin/sales_finance interim mapping.
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): Collection Case management is a Business
+ * Owner capability (role `admin`). Collection Officer is not an
+ * authentication role in Version 1 — it is an internal Deendoon
+ * operational responsibility exercised only after a Professional
+ * Collection Request has been accepted (see
+ * ProfessionalCollectionRequestPolicy), never a tenant-side role.
  */
 class CollectionCasePolicy
 {
@@ -35,6 +33,6 @@ class CollectionCasePolicy
 
     private function isAuthorized(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'sales_finance']);
+        return $user->hasRole('admin');
     }
 }

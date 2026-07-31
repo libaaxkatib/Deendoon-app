@@ -6,9 +6,9 @@ use App\Models\Invoice;
 use App\Models\User;
 
 /**
- * Same judgment call as ReceiptPolicy/DemandLetterPolicy/StatementPolicy
- * under the current interim 3-role RBAC: admin and sales_finance are
- * authorized to view/download/share/generate Documents.
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): Documents are a Business Owner capability
+ * (role `admin`).
  */
 class InvoicePolicy
 {
@@ -24,6 +24,6 @@ class InvoicePolicy
 
     private function isAuthorized(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'sales_finance']);
+        return $user->hasRole('admin');
     }
 }

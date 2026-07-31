@@ -7,6 +7,9 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 /**
+ * @deprecated Serves the deprecated AdminUserController (RBAC
+ * Architecture Amendment, Product Owner Decision, 2026-07-30).
+ *
  * FR-066. `password` is optional — 08 §14's flagged gap ("Admin-initiated
  * password reset for another (locked-out) user") is covered here, per its
  * own suggested resolution: this Update User capability.

@@ -12,6 +12,14 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
+/**
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): AdminUserController/UserPolicy are
+ * deprecated (no second tenant user exists to administer under the
+ * one-account-per-tenant model) but left functional pending confirmation
+ * of no residual dependency — these tests continue to exercise them
+ * against the one role that still exists (`admin`).
+ */
 class AdministrationTest extends TestCase
 {
     use RefreshDatabase;
@@ -29,7 +37,10 @@ class AdministrationTest extends TestCase
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
-        $user->assignRole($role);
+
+        if ($role !== null) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
@@ -49,13 +60,13 @@ class AdministrationTest extends TestCase
             'email' => 'jane@acme.test',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
-            'role' => 'sales_finance',
+            'role' => 'admin',
         ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('users', ['email' => 'jane@acme.test', 'tenant_id' => $tenant->id]);
         $newUser = User::where('email', 'jane@acme.test')->first();
-        $this->assertTrue($newUser->hasRole('sales_finance'));
+        $this->assertTrue($newUser->hasRole('admin'));
     }
 
     public function test_creating_a_user_rejects_the_platform_administrator_role(): void
@@ -72,12 +83,15 @@ class AdministrationTest extends TestCase
         ])->assertStatus(422);
     }
 
-    public function test_sales_finance_role_cannot_administer_users(): void
+    public function test_user_without_admin_role_cannot_administer_users(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant, 'sales_finance');
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+        $token = $user->createToken('test')->plainTextToken;
 
-        $this->getJson('/api/v1/admin/users')->assertStatus(403);
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/admin/users')
+            ->assertStatus(403);
     }
 
     public function test_admin_can_update_and_deactivate_a_user(): void
@@ -87,7 +101,7 @@ class AdministrationTest extends TestCase
         $staff = User::factory()->create(['name' => 'Old Name']);
         $staff->tenant()->associate($tenant);
         $staff->save();
-        $staff->assignRole('sales_finance');
+        $staff->assignRole('admin');
 
         $this->putJson("/api/v1/admin/users/{$staff->id}", [
             'name' => 'New Name',
@@ -109,7 +123,7 @@ class AdministrationTest extends TestCase
         $staff = User::factory()->create();
         $staff->tenant()->associate($tenant);
         $staff->save();
-        $staff->assignRole('sales_finance');
+        $staff->assignRole('admin');
         $staff->createToken('test');
 
         $this->assertSame(1, $staff->tokens()->count());
@@ -126,12 +140,11 @@ class AdministrationTest extends TestCase
         $staff = User::factory()->create();
         $staff->tenant()->associate($tenant);
         $staff->save();
-        $staff->assignRole('sales_finance');
         $staff->createToken('test');
 
         $this->assertSame(1, $staff->tokens()->count());
 
-        $this->patchJson("/api/v1/admin/users/{$staff->id}/role", ['role' => 'collection_officer'])->assertStatus(200);
+        $this->patchJson("/api/v1/admin/users/{$staff->id}/role", ['role' => 'admin'])->assertStatus(200);
 
         $this->assertSame(0, $staff->tokens()->count());
     }
@@ -143,7 +156,7 @@ class AdministrationTest extends TestCase
         $staff = User::factory()->create();
         $staff->tenant()->associate($tenant);
         $staff->save();
-        $staff->assignRole('sales_finance');
+        $staff->assignRole('admin');
         $staff->delete();
 
         $this->assertSame('archived', $staff->fresh()->status);
@@ -171,7 +184,7 @@ class AdministrationTest extends TestCase
         $staff = User::factory()->create();
         $staff->tenant()->associate($tenant);
         $staff->save();
-        $staff->assignRole('sales_finance');
+        $staff->assignRole('admin');
         $staff->delete();
 
         $response = $this->getJson('/api/v1/admin/users');
@@ -185,21 +198,25 @@ class AdministrationTest extends TestCase
 
     // --- FR-067: Role & Permission Management ---
 
-    public function test_admin_can_change_a_users_role(): void
+    /**
+     * Version 1 has only one tenant-side role (`admin`), so this no longer
+     * exercises a *change* between two distinct roles (that scenario no
+     * longer exists) — it confirms the endpoint still functions correctly
+     * against the one role that remains.
+     */
+    public function test_admin_can_assign_the_admin_role_to_a_user(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $this->actingAsTenantUser($tenant);
         $staff = User::factory()->create();
         $staff->tenant()->associate($tenant);
         $staff->save();
-        $staff->assignRole('sales_finance');
 
-        $this->patchJson("/api/v1/admin/users/{$staff->id}/role", ['role' => 'collection_officer'])
+        $this->patchJson("/api/v1/admin/users/{$staff->id}/role", ['role' => 'admin'])
             ->assertStatus(200)
-            ->assertJsonPath('data.role', 'collection_officer');
+            ->assertJsonPath('data.role', 'admin');
 
-        $this->assertTrue($staff->fresh()->hasRole('collection_officer'));
-        $this->assertFalse($staff->fresh()->hasRole('sales_finance'));
+        $this->assertTrue($staff->fresh()->hasRole('admin'));
     }
 
     // --- FR-068: Company Profile & Branding ---
@@ -321,7 +338,7 @@ class AdministrationTest extends TestCase
         $this->actingAsTenantUser($tenant);
         $this->postJson('/api/v1/admin/users', [
             'name' => 'Jane Staff', 'email' => 'jane@acme.test',
-            'password' => 'Password123!', 'password_confirmation' => 'Password123!', 'role' => 'sales_finance',
+            'password' => 'Password123!', 'password_confirmation' => 'Password123!', 'role' => 'admin',
         ])->assertStatus(201);
 
         $response = $this->getJson('/api/v1/admin/audit-trail');

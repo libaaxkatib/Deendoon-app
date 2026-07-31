@@ -10,6 +10,8 @@ is added, removed, redesigned, or reinterpreted here — this document
 answers only "what must the backend provide," never "what should the UI
 do."
 
+> **Amendment note (2026-07-31, Product Vision Amendment, Product Owner Decision).** All Required Permissions throughout this document previously listed Sales & Finance Staff and Collections Staff alongside Business Owner/Administrator, and some referenced a "manager-level role" — Version 1 has exactly one tenant-level role, the Business Owner, matching `SRS/08_Security_and_RBAC.md` v1.4. Every permission reference now reads "Business Owner" only. No screen, component, endpoint, workflow, or business rule was changed — role references only.
+
 ---
 
 # 1. Introduction
@@ -76,8 +78,7 @@ inventing one.
 - **Required Background Jobs:** None. §4.1 mandates continuous, on-demand
   recalculation, not a periodic snapshot.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 4.2 KPI Cards
 
@@ -96,8 +97,7 @@ inventing one.
 - **Required Background Jobs:** None. Prior-period comparisons can be
   computed on demand from existing records.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 4.3 Today's Overview
 
@@ -112,8 +112,7 @@ inventing one.
 - **Required Background Jobs:** None directly; relies on the Smart
   Reminder Engine (Section 5) for accurate status.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 4.4 Quick Actions
 
@@ -147,8 +146,7 @@ inventing one.
   7).
 - **Required Background Jobs:** None.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ---
 
@@ -170,8 +168,7 @@ inventing one.
   "immediately whenever the date range changes" — a live, on-demand
   requirement, not a cached one.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 5.2 Reports
 
@@ -187,8 +184,7 @@ inventing one.
 - **Required Background Jobs:** None. §5.2 specifies live data on
   viewing, not a precomputed report.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 5.3 Trends
 
@@ -200,8 +196,7 @@ inventing one.
 - **Required Services:** Trend Aggregation Service.
 - **Required Background Jobs:** None required for correctness.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 5.4 Collection Analytics
 
@@ -214,8 +209,7 @@ inventing one.
 - **Required Services:** Collection Analytics Service.
 - **Required Background Jobs:** None.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 5.5 Aging Analysis
 
@@ -228,8 +222,7 @@ inventing one.
   §5.2 and Home §4.2 — Section 7).
 - **Required Background Jobs:** None.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 5.6 Risk Distribution
 
@@ -241,8 +234,7 @@ inventing one.
   §6.2 and Home §4.2 — Section 7).
 - **Required Background Jobs:** None.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ---
 
@@ -262,8 +254,7 @@ inventing one.
 - **Required Services:** Case List Service.
 - **Required Background Jobs:** None.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff, Collections Staff.
+- **Required Permissions:** Business Owner.
 
 ## 6.2 Filters
 
@@ -311,7 +302,9 @@ inventing one.
 
 ## 6.5 Actions
 
-- **Required APIs:** Payment Recording; Officer Assignment; Escalation;
+> **Amendment note (2026-07-31, Product Vision Amendment, Product Owner Decision).** Officer Assignment removed from this action bundle — Version 1 has no second tenant user to assign a Case to, so the assignment action itself is retired (see `Backend_v2.1_REST_API_Specification.md`'s "Assign Officer" endpoint, marked Retired). Payment Recording, Escalation, and Case Closure are unaffected.
+
+- **Required APIs:** Payment Recording; Escalation;
   Case Closure; "Schedule Reminder" delegates to Reminder Creation
   (Section 5).
 - **Required Database Tables:** Case records, Debt records, Payment
@@ -319,15 +312,14 @@ inventing one.
 - **Required Business Logic:** Only actions valid for the case's current
   status are permitted (e.g., a closed case cannot be closed again);
   closure requires a recorded closure outcome.
-- **Required Services:** Case Action Service (payment recording, officer
-  assignment, escalation, closure); delegates to the Reminder Service for
+- **Required Services:** Case Action Service (payment recording,
+  escalation, closure); delegates to the Reminder Service for
   scheduling.
 - **Required Background Jobs:** None.
 - **Required Notifications:** None — the frozen UI does not specify a
-  notification for Officer Assignment or Escalation; only the recorded
+  notification for Escalation; only the recorded
   action itself is required (§6.5).
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff, assigned Collections Staff; each action independently gated.
+- **Required Permissions:** Business Owner; each action independently gated.
 
 ---
 
@@ -351,8 +343,7 @@ backend mechanism behind requirements the frozen UI already specifies.*
 - **Required Background Jobs:** Depends on the Smart Reminder Engine
   (below) for correct Overdue status.
 - **Required Notifications:** None directly.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff, Collections Staff.
+- **Required Permissions:** Business Owner.
 
 ## 7.2 Reminder Types
 
@@ -424,7 +415,7 @@ backend mechanism behind requirements the frozen UI already specifies.*
 - **Required Background Jobs:** None directly.
 - **Required Notifications:** None directly.
 - **Required Permissions:** Viewing — same as §7.1; editing and deletion
-  — the reminder's creator or a manager-level role.
+  — the reminder's creator.
 
 ## 7.5 Reminder Scheduling
 
@@ -458,8 +449,7 @@ backend mechanism behind requirements the frozen UI already specifies.*
 - **Required Background Jobs:** None. Aggregation is computed on
   request.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 7.7 WhatsApp (WhatsApp Preview)
 
@@ -536,8 +526,7 @@ backend mechanism behind requirements the frozen UI already specifies.*
   computed live or maintained incrementally — an implementation choice,
   not a UI requirement.
 - **Required Notifications:** None.
-- **Required Permissions:** Business Owner/Administrator, Sales & Finance
-  Staff.
+- **Required Permissions:** Business Owner.
 
 ## 8.2 Invoices
 
@@ -752,17 +741,17 @@ Permissions field already specified throughout `Mobile_UI_V1_Frozen.md`:
 | Screen / Action | Required Role(s) |
 |---|---|
 | Bottom Navigation (§3) | Any authenticated user (destination access governed per-screen below) |
-| Home Dashboard — all components (§4.1–4.5) | Business Owner/Administrator, Sales & Finance Staff |
-| Analytics — all components (§5.1–5.6) | Business Owner/Administrator, Sales & Finance Staff |
-| Cases — Case List, Filters, Case Details, Timeline (§6.1–6.4) | Business Owner/Administrator, Sales & Finance Staff, Collections Staff |
-| Cases — Actions (§6.5) | Business Owner/Administrator, Sales & Finance Staff, assigned Collections Staff (per-action gated) |
-| Reminder Center — Dashboard, Reminder List (§7.1, §7.3) | Business Owner/Administrator, Sales & Finance Staff, Collections Staff |
-| Reminder Center — Reminder Details, viewing (§7.4) | Business Owner/Administrator, Sales & Finance Staff, Collections Staff |
-| Reminder Center — Reminder Details, edit/delete (§7.4) | The reminder's creator, or a manager-level role |
-| Reminder Center — Reminder Scheduling (§7.5) | Business Owner/Administrator, Sales & Finance Staff, Collections Staff |
-| Reminder Center — Smart Calendar (§7.6) | Business Owner/Administrator, Sales & Finance Staff |
-| Reminder Center — WhatsApp/SMS Preview (§7.7, §7.8) | Business Owner/Administrator, Sales & Finance Staff, Collections Staff |
-| Documents — all components (§8.1–8.8) | Business Owner/Administrator, Sales & Finance Staff |
+| Home Dashboard — all components (§4.1–4.5) | Business Owner |
+| Analytics — all components (§5.1–5.6) | Business Owner |
+| Cases — Case List, Filters, Case Details, Timeline (§6.1–6.4) | Business Owner |
+| Cases — Actions (§6.5) | Business Owner (per-action gated) |
+| Reminder Center — Dashboard, Reminder List (§7.1, §7.3) | Business Owner |
+| Reminder Center — Reminder Details, viewing (§7.4) | Business Owner |
+| Reminder Center — Reminder Details, edit/delete (§7.4) | The reminder's creator |
+| Reminder Center — Reminder Scheduling (§7.5) | Business Owner |
+| Reminder Center — Smart Calendar (§7.6) | Business Owner |
+| Reminder Center — WhatsApp/SMS Preview (§7.7, §7.8) | Business Owner |
+| Documents — all components (§8.1–8.8) | Business Owner |
 
 All permission checks are additionally scoped to the authenticated user's
 own tenant, per §11's Tenant Isolation rule — no permission grants access

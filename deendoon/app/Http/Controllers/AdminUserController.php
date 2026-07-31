@@ -13,10 +13,18 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
+ * @deprecated Version 1 authentication model (RBAC Architecture
+ * Amendment, Product Owner Decision, 2026-07-30): the Customer Mobile
+ * App has exactly one account per tenant (the Business Owner) — there is
+ * no second tenant user for this controller to administer. Left in place
+ * and functional (not removed) pending confirmation of no residual
+ * dependency; scheduled for removal in a future cleanup pass. Do not
+ * build new functionality against this controller.
+ *
  * FR-066/FR-067 — User Administration and Role & Permission Management.
  * Every action is scoped to the requesting administrator's own tenant
  * (UserPolicy); the Deendoon Platform Administrator is never modeled by
- * this controller (08 §5: not one of the six tenant roles).
+ * this controller.
  */
 class AdminUserController extends Controller
 {

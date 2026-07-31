@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FollowUpActionType;
-use App\Http\Requests\AssignCollectionCaseRequest;
 use App\Http\Requests\CloseCollectionCaseRequest;
 use App\Http\Requests\EscalateDebtRequest;
 use App\Http\Requests\RecordCollectionActivityRequest;
@@ -12,7 +11,6 @@ use App\Http\Resources\CollectionCaseResource;
 use App\Models\AuditLog;
 use App\Models\CollectionCase;
 use App\Models\Debt;
-use App\Models\User;
 use App\Services\CollectionCaseService;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,24 +79,6 @@ class CollectionCaseController extends Controller
         $case->loadMissing(['debt.customer']);
 
         return $this->successResponse(new CollectionCaseResource($case));
-    }
-
-    public function assign(AssignCollectionCaseRequest $request, CollectionCase $case): JsonResponse
-    {
-        $this->authorize('manage', $case);
-
-        $officer = User::find($request->validated('officer_user_id'));
-
-        if (! $officer) {
-            return $this->errorResponse(
-                'The selected user does not exist.',
-                ['officer_user_id' => ['The selected user does not exist.']],
-            );
-        }
-
-        $this->collectionCases->assign($case, $officer, $request->user());
-
-        return $this->successResponse(new CollectionCaseResource($case->fresh()), 'Collection Case assigned successfully');
     }
 
     public function update(UpdateCollectionCaseRequest $request, CollectionCase $case): JsonResponse

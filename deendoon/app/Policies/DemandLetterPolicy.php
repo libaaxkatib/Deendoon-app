@@ -19,6 +19,6 @@ class DemandLetterPolicy
 
     private function isAuthorized(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'sales_finance']);
+        return $user->hasRole('admin');
     }
 }

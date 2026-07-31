@@ -6,9 +6,11 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * FR-067. See CreateUserRequest's docblock for the tenant-scoped-role
- * whitelist rationale. FR-067 A1 (multi-role): Product Owner ruling —
- * single role only, matching every prior module's implementation.
+ * @deprecated Serves the deprecated AdminUserController — no second
+ * tenant role exists to assign under the Version 1 one-account-per-tenant
+ * model (RBAC Architecture Amendment, Product Owner Decision,
+ * 2026-07-30). Single role only, per that decision's explicit
+ * "no multi-role support" instruction.
  */
 class AssignUserRoleRequest extends FormRequest
 {
@@ -23,7 +25,7 @@ class AssignUserRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['required', 'string', Rule::in(['admin', 'sales_finance', 'customer', 'collection_officer'])],
+            'role' => ['required', 'string', Rule::in(['admin'])],
         ];
     }
 }

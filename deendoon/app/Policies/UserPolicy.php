@@ -5,13 +5,16 @@ namespace App\Policies;
 use App\Models\User;
 
 /**
+ * @deprecated Version 1 authentication model (RBAC Architecture
+ * Amendment, Product Owner Decision, 2026-07-30): gates
+ * AdminUserController, itself deprecated for the same reason — no second
+ * tenant user exists to view/create/update/deactivate/re-role under the
+ * one-account-per-tenant model. Left in place pending confirmation of no
+ * residual dependency.
+ *
  * FR-066 Precondition: "Requesting user holds Administration permission
- * (typically Super Admin)." 08_Security_and_RBAC.md §5 explicitly scopes
- * Administration to the Super Admin role (interim model: `admin`) — unlike
- * every other module's generic "authorized user" (admin + sales_finance),
- * 08 line 84 explicitly excludes Operations Manager from Administration's
- * default scope, so this is admin-only, not the usual admin/sales_finance
- * pair.
+ * (typically Super Admin)." Administration is scoped to the Business
+ * Owner role (`admin`) only.
  */
 class UserPolicy
 {

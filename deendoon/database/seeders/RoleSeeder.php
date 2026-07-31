@@ -10,19 +10,21 @@ class RoleSeeder extends Seeder
     /**
      * Seeds the application's roles. firstOrCreate keeps this idempotent
      * across repeated runs.
+     *
+     * Version 1 authentication model (RBAC Architecture Amendment, Product
+     * Owner Decision, 2026-07-30): exactly two account types exist —
+     * Business Owner (Customer Mobile App, this role) and Platform
+     * Administrator (Super Admin Web Dashboard, tenant_id null). The
+     * former interim `sales_finance`/`customer` roles and the
+     * `collection_officer` role (never an authentication role — it is an
+     * internal Deendoon operational responsibility exercised only after a
+     * Professional Collection Request is accepted) are retired; see
+     * `2026_08_10_090000_retire_obsolete_roles.php` for the migration that
+     * reassigns any existing holders of those roles before they're removed.
      */
     public function run(): void
     {
-        // 'collection_officer' and 'deendoon_platform_administrator' are the
-        // two additional roles Module 7 (Professional Collection) requires:
-        // FR-041 E2 explicitly names Collection Officer by role (08 §5: "the
-        // one place an FR names a specific role by name, not just
-        // 'authorized user'"), and FR-072–076 require the Deendoon Platform
-        // Administrator, a distinct (tenant_id = NULL) actor per 08 §5 —
-        // neither is substitutable by the interim admin/sales_finance
-        // simplification the way every other generic "authorized user"
-        // requirement has been throughout this project.
-        foreach (['admin', 'sales_finance', 'customer', 'collection_officer', 'deendoon_platform_administrator'] as $role) {
+        foreach (['admin', 'deendoon_platform_administrator'] as $role) {
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
     }

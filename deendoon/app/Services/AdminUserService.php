@@ -7,6 +7,13 @@ use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 /**
+ * @deprecated Version 1 authentication model (RBAC Architecture
+ * Amendment, Product Owner Decision, 2026-07-30): no second tenant user
+ * exists to administer under the one-account-per-tenant model. Left in
+ * place and functional pending confirmation of no residual dependency;
+ * scheduled for removal in a future cleanup pass alongside
+ * AdminUserController.
+ *
  * FR-066/FR-067. Product Owner rulings applied here:
  * - Initial credentials: administrator sets the password directly.
  * - FR-066 A1 (sole role holder): deactivating the last active user
@@ -65,12 +72,10 @@ class AdminUserService
 
     /**
      * FR-066 A1: blocks deactivating the tenant's sole active `admin`
-     * (Super Admin) user. The Product Owner ruling's own stated rationale
-     * — "prevents a tenant from locking itself out of administration" —
-     * is specific to the role that gates Administration access at all
-     * (UserPolicy, `admin-only` Gate); it does not generalize to every
-     * role (a tenant's last `sales_finance` or `collection_officer` user
-     * is ordinary staff turnover, not an administration lockout).
+     * (Business Owner) user — the only tenant-side role under Version 1's
+     * one-account-per-tenant model, per the Product Owner ruling's stated
+     * rationale ("prevents a tenant from locking itself out of
+     * administration").
      */
     public function deactivate(User $user, User $actor): void
     {

@@ -4,6 +4,16 @@
 **Companion document:** [`Backend_Audit_Report.md`](./Backend_Audit_Report.md) — the point-in-time findings (endpoint inventory, gaps, risks, tech debt) this reference was built alongside. This document is the *structural map*; that one is the *analysis*.
 **How to keep this current:** update this document whenever a migration, model, service, policy, or route is added/removed/renamed. Treat drift here the same way this project already treats drift in `docs/Domain_Events.md` — a living document, not a one-time snapshot.
 
+> **Superseded content notice (2026-07-31):** Section 6 (Authorization Model) below describes the 5-role interim RBAC model as it existed before the **RBAC Architecture Amendment** (Product Owner Decision, 2026-07-30/31). It is preserved here for history, not deleted, per this project's own Documentation Rules. **It no longer reflects the running code.** The current, authoritative model is:
+> - Exactly **two account types**: **Business Owner** (role `admin`, Customer Mobile App, one per tenant) and **Platform Administrator** (role `deendoon_platform_administrator`, Super Admin Web Dashboard, `tenant_id` null).
+> - `sales_finance`, `customer`, and `collection_officer` are **retired as authentication roles**. Collection Officer is now an internal Deendoon operational responsibility (Platform Administrator side, post-Request-acceptance), never a login role.
+> - `AdminUserController`/`AdminUserService`/`UserPolicy` and their three Form Requests are **deprecated** (marked `@deprecated`, left functional) — no second tenant user exists to administer under the one-account-per-tenant model.
+> - `CollectionCaseController::assign()` and `PATCH /collection-cases/{case}/assign` are **removed** — `collection_cases.assigned_officer_user_id` remains in the schema (approved decision) but is no longer written to.
+> - `POST /register` now creates a Tenant **and** its Business Owner account together (was previously a standalone, tenant-less User).
+> - `GET /me` (FR-006) now exists, returning a single resolved role.
+>
+> See [`Role_Model_Audit.md`](./Role_Model_Audit.md), [`RBAC_Architecture_Amendment_Proposal.md`](./RBAC_Architecture_Amendment_Proposal.md) (Revision 2, approved), [`Backend_V1_Alignment_Audit.md`](./Backend_V1_Alignment_Audit.md), and [`Backend_Cleanup_Plan.md`](./Backend_Cleanup_Plan.md) for the full decision trail and implementation record.
+
 ---
 
 ## 1. System Overview

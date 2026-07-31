@@ -47,22 +47,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Version 1 authentication model (RBAC Architecture Amendment,
+        // Product Owner Decision, 2026-07-30): exactly two account types
+        // exist — Business Owner (role `admin`) and Platform
+        // Administrator (role `deendoon_platform_administrator`,
+        // tenant_id null). 'sales-finance-only' and 'customer-only' were
+        // removed along with the 'sales_finance'/'customer' roles they
+        // gated — neither role exists as an authentication concept.
         Gate::define('admin-only', fn (User $user): bool => $user->hasRole('admin'));
-        Gate::define('sales-finance-only', fn (User $user): bool => $user->hasRole('sales_finance'));
-        Gate::define('customer-only', fn (User $user): bool => $user->hasRole('customer'));
 
-        // Module 9 — Reporting. No FR names a specific role for report
-        // access (unlike FR-041's Collection Officer), so this follows the
-        // same interim admin/sales_finance mapping used for every other
-        // generic "authorized user" requirement in this project.
-        Gate::define('view-reports', fn (User $user): bool => $user->hasAnyRole(['admin', 'sales_finance']));
+        // Module 9 — Reporting. Reports are a Business Owner capability.
+        Gate::define('view-reports', fn (User $user): bool => $user->hasRole('admin'));
 
         // FR-053 explicitly names "system-wide" as a role-dependent
         // Dashboard variant — the only report in this module with that
         // property — so the Deendoon Platform Administrator (Module 7's
         // existing, bounded cross-tenant actor) is additionally granted
         // Dashboard access only, not the other report endpoints.
-        Gate::define('view-dashboard', fn (User $user): bool => $user->hasAnyRole(['admin', 'sales_finance'])
+        Gate::define('view-dashboard', fn (User $user): bool => $user->hasRole('admin')
             || ($user->tenant_id === null && $user->hasRole('deendoon_platform_administrator')));
 
         Gate::policy(Customer::class, CustomerPolicy::class);
