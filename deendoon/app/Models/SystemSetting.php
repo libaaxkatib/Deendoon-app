@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'default_credit_limit', 'credit_limit_reminder_enabled', 'soft_limit_warning_threshold',
     'whatsapp_reminder_days', 'sms_reminder_days', 'call_reminder_days',
     'professional_collection_threshold_days', 'notification_settings',
+    'long_outstanding_debt_days',
 ])]
 class SystemSetting extends Model
 {
@@ -28,6 +29,17 @@ class SystemSetting extends Model
     use BelongsToTenant, HasFactory, HasUlids;
 
     public $timestamps = false;
+
+    /**
+     * Mirrors the column DEFAULT (migration
+     * 2026_08_11_090000_add_long_outstanding_debt_days_to_system_settings_table.php)
+     * so a freshly-created, unsaved-and-unrefreshed instance already reads
+     * 90 — matching AdminSettingsService::systemSettingsFor()'s pattern of
+     * returning the instance it just saved without a refresh().
+     */
+    protected $attributes = [
+        'long_outstanding_debt_days' => 90,
+    ];
 
     protected function casts(): array
     {
@@ -40,6 +52,7 @@ class SystemSetting extends Model
             'call_reminder_days' => 'array',
             'professional_collection_threshold_days' => 'integer',
             'notification_settings' => 'array',
+            'long_outstanding_debt_days' => 'integer',
             'updated_at' => 'datetime',
         ];
     }

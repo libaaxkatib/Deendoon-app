@@ -12,6 +12,7 @@ use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use App\Services\AuditLogService;
 use App\Services\CustomerDuplicateDetectionService;
+use App\Services\RiskLevelService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ class CustomerController extends Controller
     public function __construct(
         private readonly CustomerDuplicateDetectionService $duplicateDetection,
         private readonly AuditLogService $auditLog,
+        private readonly RiskLevelService $riskLevel,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -63,6 +65,13 @@ class CustomerController extends Controller
         $customers = $query->orderBy('name')->paginate(
             perPage: $this->perPage($request),
         );
+
+        // Risk Level Engine (Sprint 2B), Formula Spec §8: lazy, on-access
+        // recalculation (Long Outstanding Debt's time-based check has no
+        // discrete triggering write) for every Customer actually viewed.
+        // Batched (fixed query count regardless of page size) — see
+        // RiskLevelService::recalculateForMany()'s docblock.
+        $this->riskLevel->recalculateForMany(collect($customers->items()));
 
         return $this->successResponse([
             'customers' => CustomerResource::collection($customers->items()),
@@ -115,6 +124,8 @@ class CustomerController extends Controller
     public function show(Customer $customer): JsonResponse
     {
         $this->authorize('view', $customer);
+
+        $this->riskLevel->recalculate($customer);
 
         return $this->successResponse(new CustomerResource($customer));
     }

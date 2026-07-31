@@ -16,6 +16,7 @@ use App\Services\AuditLogService;
 use App\Services\CustomerBalanceService;
 use App\Services\PromiseToPayService;
 use App\Services\ReferenceNumberService;
+use App\Services\RiskLevelService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ class DebtController extends Controller
         private readonly CustomerBalanceService $balances,
         private readonly AuditLogService $auditLog,
         private readonly PromiseToPayService $promiseToPay,
+        private readonly RiskLevelService $riskLevel,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -77,6 +79,16 @@ class DebtController extends Controller
         $pageDebts->each(fn (Debt $debt) => $this->refreshOverdueStatus($debt));
         $this->promiseToPay->refreshBrokenPromisesForMany($pageDebts);
         $this->promiseToPay->refreshDuePromisesForMany($pageDebts);
+
+        // Risk Level Engine (Sprint 2B), Formula Spec §8: lazy, on-access
+        // recalculation for every distinct Customer represented on this
+        // page of Debts. Uses the batched entry point (fixed query count
+        // regardless of page size), the same Phase 13 discipline already
+        // applied to refreshBrokenPromisesForMany/refreshDuePromisesForMany
+        // above — a per-Customer loop calling recalculate() individually
+        // would reintroduce exactly the N+1 that batching exists to avoid.
+        $pageCustomers = Customer::whereIn('id', $pageDebts->pluck('customer_id')->unique())->get();
+        $this->riskLevel->recalculateForMany($pageCustomers);
 
         return $this->successResponse([
             'debts' => DebtResource::collection($debts->items()),
@@ -137,6 +149,7 @@ class DebtController extends Controller
         $this->refreshOverdueStatus($debt);
         $this->promiseToPay->refreshBrokenPromises($debt);
         $this->promiseToPay->refreshDuePromises($debt);
+        $this->riskLevel->recalculate($debt->customer);
 
         return $this->successResponse(new DebtResource($debt->fresh()));
     }

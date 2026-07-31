@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Enums\AuditAction;
 use App\Enums\NotificationType;
 use App\Models\CollectionCase;
+use App\Models\Customer;
+use App\Models\Debt;
 use App\Models\ProfessionalCollectionRequest;
 use App\Models\RequestMessage;
 use App\Models\User;
@@ -42,6 +44,7 @@ class ProfessionalCollectionRequestService
         private readonly ReferenceNumberService $referenceNumbers,
         private readonly AuditLogService $auditLog,
         private readonly NotificationService $notifications,
+        private readonly RiskLevelService $riskLevel,
     ) {}
 
     /**
@@ -79,6 +82,10 @@ class ProfessionalCollectionRequestService
                 null,
                 $case->tenant_id,
             );
+
+            // Risk Level Engine (Sprint 2B): Professional Collection
+            // Request Submitted.
+            $this->riskLevel->recalculate($case->debt->customer);
 
             return $request->refresh();
         });
@@ -138,6 +145,20 @@ class ProfessionalCollectionRequestService
             $request->tenant_id,
         );
 
+        // Risk Level Engine (Sprint 2B): Professional Collection Request
+        // Successfully Completed — only a `recovered` outcome actually
+        // contributes (Formula Spec §2.2); recalculate() no-ops for any
+        // other terminal outcome since nothing scored changes. close() is
+        // reachable by the Deendoon Platform Administrator (tenant_id
+        // NULL), so the CollectionCase/Debt/Customer chain is looked up
+        // bypassing BelongsToTenant's scope — same reasoning as
+        // AuditLogService's explicit $tenantId override just above:
+        // relation-lazy-loading would otherwise filter by the Platform
+        // Administrator's own (null) tenant, not the Request's real one.
+        if ($customer = $this->customerForRequest($request)) {
+            $this->riskLevel->recalculate($customer);
+        }
+
         $this->notifications->notify($request->tenant_id, $request->submitted_by_user_id, NotificationType::ProfessionalCollectionRequestUpdate, 'professional_collection_request', $request->id);
     }
 
@@ -173,6 +194,14 @@ class ProfessionalCollectionRequestService
         }
 
         return $message;
+    }
+
+    private function customerForRequest(ProfessionalCollectionRequest $request): ?Customer
+    {
+        $case = CollectionCase::withoutGlobalScope('tenant')->find($request->collection_case_id);
+        $debt = $case ? Debt::withoutGlobalScope('tenant')->find($case->debt_id) : null;
+
+        return $debt ? Customer::withoutGlobalScope('tenant')->find($debt->customer_id) : null;
     }
 
     private function conflict(string $message): never

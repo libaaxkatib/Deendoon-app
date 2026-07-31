@@ -38,6 +38,8 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('change-password', [AuthController::class, 'changePassword']);
 
         Route::get('customers', [CustomerController::class, 'index']);
         Route::post('customers', [CustomerController::class, 'store']);
@@ -52,7 +54,6 @@ Route::prefix('v1')->group(function () {
         Route::get('customers/{customer}/credit-profile', [CustomerController::class, 'creditProfile']);
         Route::patch('customers/{customer}/credit-limit', [CustomerController::class, 'updateCreditLimit']);
         Route::get('customers/{customer}/credit-score', [CreditRiskController::class, 'creditScore']);
-        Route::patch('customers/{customer}/risk-level', [CreditRiskController::class, 'updateRiskLevel']);
         Route::post('customers/{customer}/debts', [DebtController::class, 'store']);
         Route::get('customers/{customer}/payments', [PaymentController::class, 'forCustomer']);
         Route::get('customers/{customer}/documents', [DocumentController::class, 'forCustomer']);
@@ -81,7 +82,6 @@ Route::prefix('v1')->group(function () {
 
         Route::get('collection-cases', [CollectionCaseController::class, 'index']);
         Route::get('collection-cases/{case}', [CollectionCaseController::class, 'show']);
-        Route::patch('collection-cases/{case}/assign', [CollectionCaseController::class, 'assign']);
         Route::put('collection-cases/{case}', [CollectionCaseController::class, 'update']);
         Route::post('collection-cases/{case}/activities', [CollectionCaseController::class, 'recordActivity']);
         Route::post('collection-cases/{case}/close', [CollectionCaseController::class, 'close']);
@@ -143,6 +143,11 @@ Route::prefix('v1')->group(function () {
 
         Route::get('search', [SearchController::class, 'index']);
 
+        // Deprecated (RBAC Architecture Amendment, Product Owner Decision,
+        // 2026-07-30): Version 1 has exactly one account per tenant (the
+        // Business Owner) — no second tenant user exists to administer.
+        // Left in place and functional pending confirmation of no residual
+        // dependency; scheduled for removal in a future cleanup pass.
         Route::get('admin/users', [AdminUserController::class, 'index']);
         Route::post('admin/users', [AdminUserController::class, 'store']);
         Route::get('admin/users/{user}', [AdminUserController::class, 'show']);

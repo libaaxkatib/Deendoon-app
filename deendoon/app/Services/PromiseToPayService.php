@@ -44,6 +44,7 @@ class PromiseToPayService
         private readonly AuditLogService $auditLog,
         private readonly FollowUpHistoryService $followUpHistory,
         private readonly NotificationService $notifications,
+        private readonly RiskLevelService $riskLevel,
     ) {}
 
     public function refreshBrokenPromises(Debt $debt): void
@@ -93,6 +94,10 @@ class PromiseToPayService
         );
 
         PromiseBroken::dispatch($promise);
+
+        // Risk Level Engine (Sprint 2B): Broken Promise to Pay + Repeated
+        // Missed Commitments (the rolling 12-month pattern check).
+        $this->riskLevel->recalculate($debt->customer);
     }
 
     /**

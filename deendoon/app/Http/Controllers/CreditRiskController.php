@@ -2,11 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AuditAction;
-use App\Http\Requests\UpdateRiskLevelRequest;
-use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
-use App\Services\AuditLogService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -15,17 +11,19 @@ use Illuminate\Http\JsonResponse;
  *
  * FR-026's scoring engine and FR-028's notification trigger are not
  * implemented here — see the Credit & Risk Module report's "Deferred
- * calculations" section for why. This controller implements only what is
- * genuinely approved and derivable today: reading the current score
- * (FR-026's display aspect) and assigning Risk Level (FR-027).
+ * calculations" section for why. This controller implements only Credit
+ * Score's read-only display aspect (FR-026).
+ *
+ * Risk Level (FR-027) has no controller of its own since Sprint 2B: it is
+ * fully system-calculated by RiskLevelService and exposed only for reading
+ * via CustomerResource (Customer show/index) — there is no manual
+ * assignment endpoint (the former PATCH /customers/{customer}/risk-level
+ * was removed, along with UpdateRiskLevelRequest and
+ * CustomerPolicy::updateRiskLevel(), as part of that sprint).
  */
 class CreditRiskController extends Controller
 {
     use ApiResponse;
-
-    public function __construct(
-        private readonly AuditLogService $auditLog,
-    ) {}
 
     public function creditScore(Customer $customer): JsonResponse
     {
@@ -36,24 +34,5 @@ class CreditRiskController extends Controller
             'credit_score' => $customer->credit_score,
             'credit_score_band' => $customer->credit_score_band,
         ]);
-    }
-
-    public function updateRiskLevel(UpdateRiskLevelRequest $request, Customer $customer): JsonResponse
-    {
-        $this->authorize('updateRiskLevel', $customer);
-
-        $riskLevel = $request->validated('risk_level');
-
-        $customer->update(['risk_level' => $riskLevel]);
-
-        $this->auditLog->record(
-            AuditAction::Edited,
-            'customer',
-            $customer->id,
-            $request->user(),
-            "Risk Level updated to '{$riskLevel}'",
-        );
-
-        return $this->successResponse(new CustomerResource($customer->fresh()), 'Risk level updated successfully');
     }
 }

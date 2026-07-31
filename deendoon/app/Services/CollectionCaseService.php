@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\AuditAction;
 use App\Enums\FollowUpActionType;
-use App\Enums\NotificationType;
 use App\Models\CollectionCase;
 use App\Models\Debt;
 use App\Models\User;
@@ -34,7 +33,7 @@ class CollectionCaseService
         private readonly AuditLogService $auditLog,
         private readonly FollowUpHistoryService $followUpHistory,
         private readonly RecoveryStageService $recoveryStage,
-        private readonly NotificationService $notifications,
+        private readonly RiskLevelService $riskLevel,
     ) {}
 
     /**
@@ -72,30 +71,14 @@ class CollectionCaseService
             $this->followUpHistory->record($debt, FollowUpActionType::Escalated, $actor, null, $case->id);
             $this->recoveryStage->advanceTo($debt, 5, 'Recovery Stage advanced to 5 (Professional Collection): Debt escalated to Collection Case', $actor);
 
+            // Risk Level Engine (Sprint 2B): Collection Case Created.
+            // (Collection Case Successfully Closed, in close() below, is
+            // deliberately NOT wired — Formula Spec §2.2 gives it no
+            // scoring effect until DD-024 is resolved.)
+            $this->riskLevel->recalculate($debt->customer);
+
             return $case->refresh();
         });
-    }
-
-    public function assign(CollectionCase $case, User $officer, User $actor): void
-    {
-        $this->assertOpen($case);
-
-        if (! $officer->hasRole('collection_officer') || $officer->tenant_id !== $case->tenant_id) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'message' => 'The selected user does not hold the Collection Officer role for this tenant.',
-                'data' => null,
-                'errors' => ['officer_user_id' => ['The selected user does not hold the Collection Officer role for this tenant.']],
-            ], 422));
-        }
-
-        $case->update(['assigned_officer_user_id' => $officer->id]);
-
-        $this->auditLog->record(AuditAction::Edited, 'collection_case', $case->id, $actor, 'Assigned Officer changed');
-
-        // FR-058: recipient is the newly assigned officer, not the acting
-        // user who performed the assignment.
-        $this->notifications->notify($case->tenant_id, (string) $officer->id, NotificationType::CollectionAssignment, 'collection_case', $case->id);
     }
 
     public function recordActivity(CollectionCase $case, ?string $details, User $actor): void

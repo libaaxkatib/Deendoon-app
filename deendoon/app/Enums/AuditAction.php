@@ -30,4 +30,5 @@ enum AuditAction: string
     case RecoveryStageOverride = 'recovery_stage_override';
     case ProfessionalCollectionRequestSubmitted = 'professional_collection_request_submitted';
     case ProfessionalCollectionRequestStatusChanged = 'professional_collection_request_status_changed';
+    case RiskLevelRecalculated = 'risk_level_recalculated';
 }

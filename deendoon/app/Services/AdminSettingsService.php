@@ -50,9 +50,24 @@ class AdminSettingsService
         return $tenant->fresh();
     }
 
+    /**
+     * Explicitly bypasses BelongsToTenant's global scope: this method's
+     * whole contract is "give me the settings for the tenant I was told,"
+     * not "give me the acting user's own tenant." Every existing caller
+     * happens to always pass the acting user's own tenant_id (this
+     * distinction was previously latent), but Sprint 2B's RiskLevelService
+     * legitimately calls this on behalf of whichever tenant owns the
+     * Customer being recalculated — including from a Deendoon Platform
+     * Administrator action (tenant_id NULL), where the scope would
+     * otherwise silently filter out the real tenant's row and attempt to
+     * insert a colliding duplicate. Safe: every HTTP-facing caller
+     * (AdminSettingsController) already restricts $tenantId to
+     * `$request->user()->tenant_id`, so no new cross-tenant read path is
+     * introduced at the API boundary.
+     */
     public function systemSettingsFor(string $tenantId): SystemSetting
     {
-        $settings = SystemSetting::where('tenant_id', $tenantId)->first();
+        $settings = SystemSetting::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)->first();
 
         if ($settings) {
             return $settings;

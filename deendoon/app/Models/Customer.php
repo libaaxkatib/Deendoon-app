@@ -14,7 +14,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'phone', 'credit_limit', 'customer_status', 'risk_level'])]
+/**
+ * `risk_level` is deliberately NOT fillable (Sprint 2B): it is exclusively
+ * system-calculated by RiskLevelService, which sets it via direct property
+ * assignment + save() — the same pattern already used for
+ * `outstanding_balance` (CustomerBalanceService) — never via mass
+ * assignment, so no manual-override path can ever reappear accidentally.
+ */
+#[Fillable(['name', 'phone', 'credit_limit', 'customer_status'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */

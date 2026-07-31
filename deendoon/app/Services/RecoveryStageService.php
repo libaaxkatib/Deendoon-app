@@ -24,6 +24,7 @@ class RecoveryStageService
 {
     public function __construct(
         private readonly AuditLogService $auditLog,
+        private readonly RiskLevelService $riskLevel,
     ) {}
 
     public function advanceTo(Debt $debt, int $stage, string $reason, ?User $actor = null): void
@@ -35,5 +36,8 @@ class RecoveryStageService
         $debt->update(['recovery_stage' => $stage]);
 
         $this->auditLog->record(AuditAction::StatusChanged, 'debt', $debt->id, $actor, $reason);
+
+        // Risk Level Engine (Sprint 2B): Recovery Stage Advancement.
+        $this->riskLevel->recalculate($debt->customer);
     }
 }

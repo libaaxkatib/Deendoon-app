@@ -53,6 +53,7 @@ class PaymentService
         private readonly RecoveryStageService $recoveryStage,
         private readonly DocumentService $documents,
         private readonly NotificationService $notifications,
+        private readonly RiskLevelService $riskLevel,
     ) {}
 
     /**
@@ -77,6 +78,13 @@ class PaymentService
             $this->recalculateDebt($debt);
             $this->balances->recalculate($debt->customer);
             $this->promiseToPay->evaluateFulfillment($debt, $payment->payment_date->toDateString());
+
+            // Risk Level Engine (Sprint 2B): Fulfilled Promise to Pay, Debt
+            // Recovered/Paid in Full, Sustained Positive Repayment Behavior,
+            // and Long Outstanding Debt (remaining_balance may have just
+            // reached 0) are all re-evaluated together here, once, after
+            // every side effect of this payment has already been applied.
+            $this->riskLevel->recalculate($debt->customer);
 
             $this->documents->generateReceipt($payment);
 
