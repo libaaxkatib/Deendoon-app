@@ -238,6 +238,35 @@ class ReportingTest extends TestCase
         $this->getJson('/api/v1/dashboard/kpis')->assertJsonPath('data.recovery_rate', null);
     }
 
+    /**
+     * Sprint 17B — dashboard/kpis folds in BusinessHealthService's own
+     * result rather than a second, divergent calculation; still Neutral
+     * Baseline today since DD-032/Outstanding Exposure remain unresolved.
+     */
+    public function test_dashboard_kpis_includes_business_health(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.business_health.status', 'neutral_baseline')
+            ->assertJsonPath('data.business_health.score', null);
+    }
+
+    /**
+     * `Mobile_UI_V1_Frozen.md` §4.1: Business Health is "Visible to
+     * Business Owner" only — no system-wide definition exists for it, so
+     * the Platform Administrator's system-wide KPI view omits it entirely
+     * rather than computing something meaningless.
+     */
+    public function test_platform_admin_kpis_omit_business_health(): void
+    {
+        $this->actingAsPlatformAdmin();
+
+        $this->getJson('/api/v1/dashboard/kpis')->assertJsonPath('data.business_health', null);
+    }
+
     public function test_platform_admin_sees_system_wide_kpis(): void
     {
         $tenantA = Tenant::create(['business_name' => 'Tenant A']);

@@ -22,6 +22,10 @@ class ReportingService
 {
     private const CLOSED_DEBT_STATUSES = ['paid', 'cancelled', 'written_off'];
 
+    public function __construct(
+        private readonly BusinessHealthService $businessHealth,
+    ) {}
+
     /**
      * BRL-059: the five resolved KPIs. Recovery Rate is explicitly
      * unresolved (DD-032, at least two valid formulas were never narrowed
@@ -33,6 +37,11 @@ class ReportingService
      * names as warranting the system-wide variant (BR-042's existing,
      * bounded cross-tenant exception, not a new one). No other report in
      * this module extends that exception.
+     *
+     * Sprint 17B: `business_health` folds `BusinessHealthService::
+     * calculate()`'s result into this same aggregated payload — the exact
+     * same computation `GET /dashboard/business-health` (Logical Unit 2)
+     * exposes on its own, not a second, divergent calculation.
      */
     public function dashboardKpis(User $user, string $period): array
     {
@@ -70,6 +79,14 @@ class ReportingService
             'total_outstanding_amount' => $this->money($totalOutstanding),
             'total_collected_period' => $this->money($totalCollected),
             'recovery_rate' => null,
+            // `Mobile_UI_V1_Frozen.md` §4.1: "Visible to Business Owner"
+            // only — Business Health has no system-wide definition (it
+            // measures one tenant's portfolio), so the Deendoon Platform
+            // Administrator's system-wide KPI view omits it entirely
+            // rather than computing something meaningless, matching
+            // `DashboardController::businessHealth()`'s own `admin-only`
+            // restriction (Sprint 17B, Logical Unit 2).
+            'business_health' => $isPlatformAdmin ? null : $this->businessHealth->calculate(),
             'high_risk_customers' => $highRiskCustomers,
             'total_overdue_debts' => [
                 'count' => $overdueCount,
