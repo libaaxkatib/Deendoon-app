@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CollectionCaseResource;
 use App\Models\CollectionCase;
+use App\Services\BusinessHealthService;
 use App\Services\ReminderService;
 use App\Services\ReportingService;
 use App\Traits\ApiResponse;
@@ -17,7 +18,9 @@ use Illuminate\Validation\Rule;
  * presentation layer only: every KPI/aggregate value is computed by
  * ReportingService (Analytics) or reused as-is from ReminderService/
  * CollectionCaseResource; this controller performs no calculation of its
- * own, per this sprint's Dashboard Consistency Policy.
+ * own, per this sprint's Dashboard Consistency Policy. Sprint 17B adds
+ * Business Health (§4.1) on the same basis, computed by
+ * BusinessHealthService.
  */
 class DashboardController extends Controller
 {
@@ -26,7 +29,23 @@ class DashboardController extends Controller
     public function __construct(
         private readonly ReportingService $reporting,
         private readonly ReminderService $reminders,
+        private readonly BusinessHealthService $businessHealth,
     ) {}
+
+    /**
+     * §4.1: "Permissions: Visible to Business Owner" — narrower than
+     * `kpis()`'s `view-dashboard` gate, which also admits the Deendoon
+     * Platform Administrator's system-wide variant. Business Health has
+     * no system-wide equivalent (it measures one tenant's portfolio), so
+     * this reuses the existing `admin-only` gate (Business Owner only)
+     * rather than defining a new, narrower gate that would duplicate it.
+     */
+    public function businessHealth(): JsonResponse
+    {
+        Gate::authorize('admin-only');
+
+        return $this->successResponse($this->businessHealth->calculate());
+    }
 
     public function kpis(Request $request): JsonResponse
     {

@@ -103,6 +103,7 @@ Route::prefix('v1')->group(function () {
         Route::post('documents/{id}/share', [DocumentController::class, 'share']);
         Route::get('documents/{id}', [DocumentController::class, 'show']);
 
+        Route::get('dashboard/business-health', [DashboardController::class, 'businessHealth']);
         Route::get('dashboard/kpis', [DashboardController::class, 'kpis']);
         Route::get('dashboard/todays-overview', [DashboardController::class, 'todaysOverview']);
         Route::get('dashboard/recent-cases', [DashboardController::class, 'recentCases']);
