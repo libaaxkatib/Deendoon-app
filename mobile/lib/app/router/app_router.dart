@@ -1,7 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/placeholder_scaffold.dart';
+import '../../features/analytics/presentation/screens/aging_bucket_debts_screen.dart';
+import '../../features/analytics/presentation/screens/analytics_screen.dart';
+import '../../features/analytics/presentation/screens/report_collection_cases_screen.dart';
+import '../../features/analytics/presentation/screens/report_credit_risk_screen.dart';
+import '../../features/analytics/presentation/screens/report_customers_screen.dart';
+import '../../features/analytics/presentation/screens/report_debts_screen.dart';
+import '../../features/analytics/presentation/screens/report_payments_screen.dart';
 import '../../features/auth/domain/auth_state.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -76,6 +82,24 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/documents/:id/share',
         builder: (_, state) => DocumentShareScreen(documentId: state.pathParameters['id']!),
       ),
+      GoRoute(
+        path: '/analytics/reports/customers',
+        builder: (_, state) => ReportCustomersScreen(initialRiskLevel: state.uri.queryParameters['riskLevel']),
+      ),
+      GoRoute(path: '/analytics/reports/debts', builder: (_, _) => const ReportDebtsScreen()),
+      GoRoute(
+        path: '/analytics/reports/debts/aging/:bucket',
+        builder: (_, state) => AgingBucketDebtsScreen(bucket: state.pathParameters['bucket']!),
+      ),
+      GoRoute(path: '/analytics/reports/collection-cases', builder: (_, _) => const ReportCollectionCasesScreen()),
+      GoRoute(
+        path: '/analytics/reports/payments',
+        builder: (_, state) => ReportPaymentsScreen(
+          initialDateFrom: state.uri.queryParameters['dateFrom'],
+          initialDateTo: state.uri.queryParameters['dateTo'],
+        ),
+      ),
+      GoRoute(path: '/analytics/reports/credit-risk', builder: (_, _) => const ReportCreditRiskScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [
@@ -83,7 +107,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: RoutePaths.home, builder: (_, _) => const HomeDashboardScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.analytics, builder: (_, _) => const PlaceholderScaffold(title: 'Analytics')),
+            GoRoute(path: RoutePaths.analytics, builder: (_, _) => const AnalyticsScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: RoutePaths.cases, builder: (_, _) => const CaseListScreen()),
