@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditAction;
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\PasswordResetService;
@@ -15,6 +17,7 @@ use App\Services\SecurityEventLogger;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -43,13 +46,33 @@ class AuthController extends Controller
         private readonly SecurityEventLogger $securityLog,
     ) {}
 
+    /**
+     * Version 1 authentication model (RBAC Architecture Amendment,
+     * Product Owner Decision, 2026-07-30): registration creates a new
+     * Tenant and its single Business Owner account (role `admin`)
+     * together — the only account-creation path for the Customer Mobile
+     * App. Wrapped in a transaction since it writes two related rows.
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create([
-            'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'),
-        ]);
+        $user = DB::transaction(function () use ($request) {
+            $tenant = Tenant::create([
+                'business_name' => $request->validated('business_name'),
+            ]);
+
+            $user = new User([
+                'name' => $request->validated('name'),
+                'email' => $request->validated('email'),
+                'password' => $request->validated('password'),
+            ]);
+            $user->tenant_id = $tenant->id;
+            $user->save();
+            $user->assignRole('admin');
+
+            $this->auditLog->record(AuditAction::Created, 'user', (string) $user->id, $user);
+
+            return $user->fresh();
+        });
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -116,6 +139,26 @@ class AuthController extends Controller
     }
 
     /**
+     * FR-006 — Role Resolution. Version 1 authentication model (RBAC
+     * Architecture Amendment, Product Owner Decision, 2026-07-30): exactly
+     * two account types exist, so this returns a single resolved role
+     * (`admin` for the Business Owner, `deendoon_platform_administrator`
+     * for the Platform Administrator) — no permission array, no
+     * multi-role support, per that decision's explicit instruction.
+     */
+    public function me(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return $this->successResponse([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->roles()->value('name'),
+        ]);
+    }
+
+    /**
      * FR-004. Always returns the same response whether or not the email
      * belongs to an account — PasswordResetService silently no-ops for an
      * unknown (or deactivated/archived) email rather than signaling that
@@ -150,5 +193,27 @@ class AuthController extends Controller
         }
 
         return $this->successResponse(null, 'Password reset successfully');
+    }
+
+    /**
+     * FR-005 — Change Password. The authenticated counterpart to
+     * forgotPassword()/resetPassword() (FR-004): proves ownership via the
+     * caller's current password instead of a mailed token. Delegates to
+     * PasswordResetService for the actual verify/hash/revoke/audit steps,
+     * exactly as resetPassword() does.
+     */
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $success = $this->passwordReset->changePassword(
+            $request->user(),
+            $request->validated('current_password'),
+            $request->validated('password'),
+        );
+
+        if (! $success) {
+            return $this->errorResponse('The current password is incorrect.', null, 422);
+        }
+
+        return $this->successResponse(null, 'Password changed successfully');
     }
 }

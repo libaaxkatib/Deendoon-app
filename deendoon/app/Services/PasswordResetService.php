@@ -102,6 +102,30 @@ class PasswordResetService
         return true;
     }
 
+    /**
+     * FR-005 — Change Password. Same token-revocation and audit-logging
+     * rules as reset() (08 §9's "revoke all tokens... triggered
+     * automatically by password change") — the difference is the caller
+     * is already authenticated and proves ownership via their current
+     * password rather than a mailed token, so there is no token record to
+     * validate or delete here.
+     */
+    public function changePassword(User $user, string $currentPassword, string $newPassword): bool
+    {
+        if (! Hash::check($currentPassword, $user->password)) {
+            return false;
+        }
+
+        $user->password = $newPassword;
+        $user->save();
+
+        $user->tokens()->delete();
+
+        $this->auditLog->record(AuditAction::Edited, 'user', (string) $user->id, $user, 'Password changed by user');
+
+        return true;
+    }
+
     private function isExpired(?Carbon $createdAt): bool
     {
         if (! $createdAt) {
