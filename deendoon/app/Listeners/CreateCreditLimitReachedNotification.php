@@ -11,11 +11,10 @@ use App\Services\NotificationService;
  * FR-058/BR-007. `CreditLimitReached` carries only the affected Customer —
  * no acting user, since it can fire from several different contexts
  * (Debt creation, status change) that may not always have one in scope.
- * With no single designated "owner" of a Customer (unlike a Collection
- * Case's assigned officer), this notifies every tenant user authorized to
- * manage Customers/Debts (admin/sales_finance, the interim RBAC model),
- * consistent with BR-007's "the business must be notified" framing rather
- * than inventing a single-recipient rule the SRS doesn't specify.
+ * Version 1 authentication model (RBAC Architecture Amendment, Product
+ * Owner Decision, 2026-07-30): the tenant's single Business Owner account
+ * (`admin`) is the only tenant-side recipient, consistent with BR-007's
+ * "the business must be notified" framing.
  */
 class CreateCreditLimitReachedNotification
 {
@@ -25,7 +24,7 @@ class CreateCreditLimitReachedNotification
     {
         $customer = $event->customer;
 
-        $recipients = User::role(['admin', 'sales_finance'])
+        $recipients = User::role('admin')
             ->where('tenant_id', $customer->tenant_id)
             ->get();
 
