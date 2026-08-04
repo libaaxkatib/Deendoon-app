@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/dashboard/data/dashboard_repository.dart';
+import 'package:mobile/features/dashboard/domain/business_health.dart';
 import 'package:mobile/features/dashboard/domain/dashboard_kpis.dart';
 import 'package:mobile/features/dashboard/domain/recent_case.dart';
 import 'package:mobile/features/dashboard/domain/todays_overview.dart';
@@ -8,6 +9,8 @@ import 'package:mobile/features/dashboard/presentation/providers/dashboard_provi
 import 'package:mocktail/mocktail.dart';
 
 class _MockDashboardRepository extends Mock implements DashboardRepository {}
+
+const _health = BusinessHealth(status: 'healthy', score: 90);
 
 const _kpis = DashboardKpis(
   totalOutstandingAmount: '800.00',
@@ -34,9 +37,13 @@ void main() {
   });
 
   test('each provider resolves independently — one failure does not affect the others', () async {
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer((_) async => _health);
     when(() => mockRepository.fetchKpis()).thenAnswer((_) async => _kpis);
     when(() => mockRepository.fetchTodaysOverview()).thenThrow(Exception('network down'));
     when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
+
+    final health = await container.read(businessHealthProvider.future);
+    expect(health, _health);
 
     final kpis = await container.read(dashboardKpisProvider.future);
     expect(kpis, _kpis);
@@ -48,11 +55,17 @@ void main() {
 
     // Confirms the failure is isolated to its own AsyncValue, not
     // propagated to sibling providers.
+    expect(container.read(businessHealthProvider), isA<AsyncData<BusinessHealth>>());
     expect(container.read(dashboardKpisProvider), isA<AsyncData<DashboardKpis>>());
     expect(container.read(todaysOverviewProvider), isA<AsyncError<TodaysOverview>>());
   });
 
-  test('refreshDashboard re-fetches all three after invalidation', () async {
+  test('refreshDashboard re-fetches all four after invalidation', () async {
+    var healthCallCount = 0;
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer((_) async {
+      healthCallCount++;
+      return _health;
+    });
     var kpisCallCount = 0;
     when(() => mockRepository.fetchKpis()).thenAnswer((_) async {
       kpisCallCount++;
@@ -61,18 +74,23 @@ void main() {
     when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
     when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
 
+    await container.read(businessHealthProvider.future);
     await container.read(dashboardKpisProvider.future);
+    expect(healthCallCount, 1);
     expect(kpisCallCount, 1);
 
+    container.invalidate(businessHealthProvider);
     container.invalidate(dashboardKpisProvider);
     container.invalidate(todaysOverviewProvider);
     container.invalidate(recentCasesProvider);
     await Future.wait([
+      container.read(businessHealthProvider.future),
       container.read(dashboardKpisProvider.future),
       container.read(todaysOverviewProvider.future),
       container.read(recentCasesProvider.future),
     ]);
 
+    expect(healthCallCount, 2);
     expect(kpisCallCount, 2);
   });
 }

@@ -19,6 +19,7 @@ const _pageOneCustomer = Customer(
   riskLevel: null,
   creditScore: null,
   creditScoreBand: null,
+  archivedAt: null,
 );
 
 const _pageTwoCustomer = Customer(
@@ -32,6 +33,7 @@ const _pageTwoCustomer = Customer(
   riskLevel: null,
   creditScore: null,
   creditScoreBand: null,
+  archivedAt: null,
 );
 
 void main() {
@@ -104,5 +106,35 @@ void main() {
 
     final state = container.read(customerListProvider).value!;
     expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
+  });
+
+  test('toggleIncludeArchived() re-fetches page 1 with a real includeArchived query param', () async {
+    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
+        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 1, total: 1));
+    await container.read(customerListProvider.future);
+
+    when(() => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+          includeArchived: true,
+        )).thenAnswer(
+      (_) async => const CustomerPage(customers: [_pageOneCustomer, _pageTwoCustomer], currentPage: 1, lastPage: 1, total: 2),
+    );
+
+    await container.read(customerListProvider.notifier).toggleIncludeArchived();
+
+    final state = container.read(customerListProvider).value!;
+    expect(state.includeArchived, isTrue);
+    expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
+
+    // Toggling again goes back to the default (excluded) filter.
+    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
+        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 1, total: 1));
+
+    await container.read(customerListProvider.notifier).toggleIncludeArchived();
+
+    expect(container.read(customerListProvider).value!.includeArchived, isFalse);
   });
 }

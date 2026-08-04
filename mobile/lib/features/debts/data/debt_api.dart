@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/document_summary.dart';
 import '../../../core/models/payment.dart';
 import '../../../core/network/dio_client.dart';
+import '../../cases/domain/collection_case.dart';
+import '../domain/credit_limit_warning.dart';
 import '../domain/debt.dart';
 import '../domain/debt_page.dart';
+import '../domain/debt_save_result.dart';
 import '../domain/debt_timeline.dart';
 import '../domain/promise_to_pay.dart';
 
@@ -85,8 +88,74 @@ class DebtApi {
   }
 
   /// `EscalateDebtRequest` takes no fields — opening a case is a bare
-  /// confirm-and-submit action.
-  Future<void> openCase(String debtId) async {
-    await _dio.post('debts/$debtId/collection-cases');
+  /// confirm-and-submit action. Returns the created case (the `store()`
+  /// response already includes it via `CollectionCaseResource`) so callers
+  /// can deep-link straight to it rather than falling back to the Case List.
+  Future<CollectionCase> openCase(String debtId) async {
+    final response = await _dio.post('debts/$debtId/collection-cases');
+    return CollectionCase.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// `POST /customers/{customer}/debts` (`StoreDebtRequest`: `amount`,
+  /// `due_date`, `notes`). Attaches a `CREDIT_LIMIT_EXCEEDED` warning
+  /// (BRL-023) when applicable — informational, the debt is still created.
+  Future<DebtSaveResult> store({
+    required String customerId,
+    required String amount,
+    required String dueDate,
+    String? notes,
+  }) async {
+    final response = await _dio.post('customers/$customerId/debts', data: {
+      'amount': amount,
+      'due_date': dueDate,
+      'notes': notes,
+    });
+    final data = response.data['data'] as Map<String, dynamic>;
+    return (
+      debt: Debt.fromJson(data['debt'] as Map<String, dynamic>),
+      warning: data['warning'] != null ? CreditLimitWarning.fromJson(data['warning'] as Map<String, dynamic>) : null,
+    );
+  }
+
+  /// `PUT /debts/{debt}` (`UpdateDebtRequest`: `due_date`, `notes` only —
+  /// FR-020, `amount` is deliberately immutable after creation).
+  Future<Debt> update({required String debtId, required String dueDate, String? notes}) async {
+    final response = await _dio.put('debts/$debtId', data: {
+      'due_date': dueDate,
+      'notes': notes,
+    });
+    return Debt.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// `POST /debts/{debt}/statements` (`GenerateStatementRequest` — bare, no
+  /// fields) — the per-debt Statement of Account, distinct from
+  /// `CustomerApi.generateStatement`'s per-customer equivalent.
+  Future<DocumentSummary> generateStatement(String debtId) async {
+    final response = await _dio.post('debts/$debtId/statements');
+    return DocumentSummary.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// FR-030 Manual Reminder — `POST /debts/{debt}/reminders/whatsapp`
+  /// (`SendManualReminderRequest`: `details` optional). Records that a
+  /// WhatsApp reminder was sent (actual provider delivery is out of
+  /// scope) and feeds the Follow-up Timeline's `whatsapp_reminder` stage.
+  Future<Debt> logWhatsAppReminder({required String debtId, String? details}) async {
+    final response = await _dio.post('debts/$debtId/reminders/whatsapp', data: {'details': details});
+    return Debt.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// `POST /debts/{debt}/reminders/sms` — same contract as
+  /// [logWhatsAppReminder], feeds the `sms_reminder` timeline stage.
+  Future<Debt> logSmsReminder({required String debtId, String? details}) async {
+    final response = await _dio.post('debts/$debtId/reminders/sms', data: {'details': details});
+    return Debt.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// `POST /debts/{debt}/reminders/call` (`LogCallRequest`: `details`
+  /// optional — FR-030 A1, a call with no answer/outcome is still a valid
+  /// recordable attempt). Feeds the `phone_call` timeline stage.
+  Future<Debt> logCallReminder({required String debtId, String? details}) async {
+    final response = await _dio.post('debts/$debtId/reminders/call', data: {'details': details});
+    return Debt.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 }

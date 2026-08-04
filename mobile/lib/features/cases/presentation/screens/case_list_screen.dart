@@ -15,10 +15,13 @@ import '../widgets/case_card.dart';
 /// loading/empty/error states. There is no `search` parameter on
 /// `GET /collection-cases` at all — no search box is shown rather than
 /// displaying a non-functional control (see the Sprint 13 summary's
-/// "Missing Backend Support Required"). Also hosts the one entry point
-/// into the Customers module (still not one of the 5 frozen tabs).
+/// "Missing Backend Support Required"). Also hosts the entry points into
+/// the Customers module and Professional Collection Requests (neither is
+/// one of the 5 frozen tabs).
 class CaseListScreen extends ConsumerStatefulWidget {
-  const CaseListScreen({super.key});
+  final String? initialTab;
+
+  const CaseListScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<CaseListScreen> createState() => _CaseListScreenState();
@@ -38,6 +41,9 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    if (widget.initialTab != null) {
+      Future.microtask(() => ref.read(caseListProvider.notifier).filterByTab(widget.initialTab));
+    }
   }
 
   @override
@@ -65,6 +71,11 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
             icon: const Icon(Icons.people_outline),
             tooltip: 'Browse Customers',
             onPressed: () => context.push('/customers'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.assignment_outlined),
+            tooltip: 'Professional Collection Requests',
+            onPressed: () => context.push('/professional-requests'),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
@@ -24,6 +25,7 @@ const _customer = Customer(
   riskLevel: 'high',
   creditScore: 720,
   creditScoreBand: 'good',
+  archivedAt: null,
 );
 
 const _debt = Debt(
@@ -123,5 +125,90 @@ void main() {
     verify(() => mockDebtRepository.fetchDebts(page: 1, customerId: '01CUST', status: 'overdue', dateFrom: null, dateTo: null))
         .called(1);
     expect(find.text('No debts with this status'), findsOneWidget);
+  });
+
+  testWidgets('the FAB opens the Add Debt screen', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    when(() => mockDebtRepository.fetchDebts(page: 1, customerId: '01CUST', status: null, dateFrom: null, dateTo: null))
+        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const DebtListScreen(customerId: '01CUST')),
+        GoRoute(path: '/customers/01CUST/debts/new', builder: (_, _) => const Text('Add Debt Screen')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+          customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add Debt Screen'), findsOneWidget);
+  });
+
+  testWidgets('selection mode: title changes, FAB is hidden, and tapping a card pops with the Debt', (tester) async {
+    when(() => mockDebtRepository.fetchDebts(page: 1, customerId: '01CUST', status: null, dateFrom: null, dateTo: null))
+        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    Debt? popped;
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => Builder(
+            builder: (context) => TextButton(
+              onPressed: () async {
+                popped = await context.push<Debt>('/select');
+              },
+              child: const Text('Open Picker'),
+            ),
+          ),
+        ),
+        GoRoute(path: '/select', builder: (_, _) => const DebtListScreen(customerId: '01CUST', selectionMode: true)),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+          customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open Picker'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select Debt'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await tester.tap(find.text('DBT-0001'));
+    await tester.pumpAndSettle();
+
+    expect(popped, _debt);
   });
 }

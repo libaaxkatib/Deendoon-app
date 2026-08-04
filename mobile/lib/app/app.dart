@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/localization/locale_provider.dart';
+import '../core/localization/somali_fallback_delegates.dart';
 import '../core/theme/app_theme.dart';
+import '../l10n/generated/app_localizations.dart';
 import 'router/app_router.dart';
 
 class DeendoonApp extends ConsumerWidget {
@@ -10,12 +14,23 @@ class DeendoonApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       title: 'Deendoon',
       debugShowCheckedModeBanner: false,
       theme: buildAppDarkTheme(),
       routerConfig: router,
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        SomaliMaterialLocalizationsDelegate(),
+        SomaliCupertinoLocalizationsDelegate(),
+      ],
     );
   }
 }

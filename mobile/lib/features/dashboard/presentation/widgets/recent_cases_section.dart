@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/coming_soon.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/risk_badge.dart';
 import '../providers/dashboard_providers.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/avatar_initial.dart';
 
 /// §4.5 Recent Cases — header with "View All", a short list of case
 /// entries (customer name, outstanding amount, risk badge), most-recent-
-/// activity first (already ordered server-side). Cases and Case Details
-/// are out of scope this sprint, so both "View All" and individual case
-/// taps surface "coming soon" instead of navigating.
+/// activity first (already ordered server-side). "View All" switches to
+/// the real Cases tab; each row opens the real Case Detail screen
+/// (`RecentCase.id` already matches `CollectionCase.id`).
 class RecentCasesSection extends ConsumerWidget {
   const RecentCasesSection({super.key});
 
@@ -27,7 +29,7 @@ class RecentCasesSection extends ConsumerWidget {
         SectionHeader(
           title: 'Recent Cases',
           trailing: TextButton(
-            onPressed: () => showComingSoon(context, 'Cases'),
+            onPressed: () => context.go(RoutePaths.cases),
             child: const Text('View All'),
           ),
         ),
@@ -49,23 +51,29 @@ class RecentCasesSection extends ConsumerWidget {
               children: [
                 for (final recentCase in data) ...[
                   AppCard(
-                    onTap: () => showComingSoon(context, 'Case Details'),
+                    onTap: () => context.push('/cases/${recentCase.id}'),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     child: Row(
                       children: [
+                        AvatarInitial(name: recentCase.customerName, radius: 18),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 recentCase.customerName,
-                                style: AppTypography.body,
+                                style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 3),
                               Text(
                                 recentCase.outstandingAmount,
-                                style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),

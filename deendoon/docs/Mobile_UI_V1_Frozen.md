@@ -13,6 +13,8 @@ Development, QA Testing, and all future product releases.
 > **Third amendment note (2026-07-31, same decision, generic "staff" sweep).** Fifteen Business Objective lines used the generic word "staff" ("Let staff...", "Give staff...") — Version 1 has no tenant employees, so every one now reads "Let the Business Owner..." / "Give the Business Owner..." instead. No screen, layout, workflow, or business logic was changed — prose wording only.
 >
 > **Fourth amendment note (2026-07-31, final architecture consistency audit correction).** The Reminder Details screen's Permissions line still referenced "the reminder's creator or a manager-level role" — missed by every prior sweep. Updated to "the reminder's creator" only, matching the same fix already applied to `Backend_v2.1_UI_Mapping.md` and `Backend_v2.1_REST_API_Specification.md`.
+>
+> **Fifth amendment note (2026-08-02, V1 Scope Expansion, Product Owner Decision).** Two modules are added to Version 1: **Notifications** (new Section 9) and **Account / Profile** (new Section 10). Sections 9–13 of the prior document (Reusable Components, UX Rules, Business Rules, Version History, Freeze Declaration) are renumbered 11–15 accordingly. The Home Dashboard's header (Section 4) now opens with a Notification Bell in place of the prior plain Logout icon; Logout itself moves into the new Account / Profile section (Section 10.5), reached by tapping the greeting. Notifications (Section 9) is **not new backend scope** — it implements `SRS/03_Functional_Requirements.md` Module 10 (FR-058–062), already approved and frozen there, against `NotificationController`'s four already-built endpoints (`GET /notifications`, `GET /notifications/history`, `PATCH /notifications/{id}/read`, `PATCH /notifications/mark-all-read`); this amendment only closes the pre-existing gap between that already-approved backend module and the Flutter UI. Account / Profile (Section 10) **is** new scope: Profile and Change Password are real (cached `{id, name, email}` from `UserResource`; `POST /change-password`), but Business Profile and Settings have no Business-Owner-reachable backend yet — the only company-profile endpoint (`GET/PUT /admin/settings/company-profile`) is Super Admin-only, and no personal-settings endpoint exists at all. Per Product Owner decision, both are built now as real navigation destinations with an honest "not yet connected" empty state, explicitly not fabricated data and not a disabled/"Not Available" treatment — their repository layers are marked `TODO(Backend Required)` for later wiring.
 
 ---
 
@@ -34,7 +36,10 @@ approved: the five primary destinations reachable from the Bottom
 Navigation (Home Dashboard, Analytics, Cases, Reminder Center, Documents)
 and every screen, sub-screen, and workflow reachable from them, including
 Case Details, Reminder Scheduling, Smart Calendar, WhatsApp and SMS
-Preview, and document Preview/Download/Share. It also defines the global
+Preview, and document Preview/Download/Share. It also covers Notifications
+(Section 9) and Account / Profile (Section 10), both reached from the Home
+Dashboard's header rather than the Bottom Navigation, which remains fixed
+at exactly five destinations (Section 3). It also defines the global
 design standards, reusable components, cross-cutting UX rules, and
 business rules that apply across the entire application.
 
@@ -132,7 +137,7 @@ color and a heavier weight.
 ### 2.4 Components
 
 The application is built from a fixed set of reusable components,
-catalogued in full in Section 9: header bars, tab selectors, KPI cards,
+catalogued in full in Section 11: header bars, tab selectors, KPI cards,
 list rows/cards, donut charts, line charts, progress bars, buttons,
 status badges/pills, icons with colored backgrounds, form inputs, and the
 calendar grid.
@@ -267,21 +272,26 @@ cases.
 business is doing and what needs attention today — without navigating
 anywhere else.
 
-**Layout Description:** From top to bottom: a Business Health card, a
-2×2 KPI grid, a Today's Overview list, a Quick Actions grid, and a Recent
-Cases section, followed by the Bottom Navigation bar.
+**Layout Description:** A header showing the time-of-day greeting and the
+signed-in user's name (tappable, opening Account / Profile — Section 10)
+and a Notification Bell (Section 4.6). Below the header, top to bottom: a
+Business Health card, a 2×2 KPI grid, a Today's Overview list, a Quick
+Actions grid, and a Recent Cases section, followed by the Bottom
+Navigation bar.
 
-**Components:** Business Health (Section 4.1); KPI Cards (Section 4.2);
-Today's Overview (Section 4.3); Quick Actions (Section 4.4); Recent Cases
-(Section 4.5).
+**Components:** Header Greeting and Notification Bell (Section 4.6);
+Business Health (Section 4.1); KPI Cards (Section 4.2); Today's Overview
+(Section 4.3); Quick Actions (Section 4.4); Recent Cases (Section 4.5).
 
-**User Actions:** As documented in Sections 4.1–4.5: tap the Business
+**User Actions:** As documented in Sections 4.1–4.6: tap the greeting to
+open Account / Profile, tap the Notification Bell, tap the Business
 Health card, tap any KPI card, tap a Today's Overview row, tap a Quick
 Action tile, tap "View All" or a case entry in Recent Cases.
 
-**Navigation:** Entry point after login. Leads to Analytics (Section 5),
-Cases (Section 6), Reminder Center (Section 7), and each Quick Action's
-own workflow, as detailed in Sections 4.1–4.5.
+**Navigation:** Entry point after login. Leads to Account / Profile
+(Section 10), Notifications (Section 9), Analytics (Section 5), Cases
+(Section 6), Reminder Center (Section 7), and each Quick Action's own
+workflow, as detailed in Sections 4.1–4.6.
 
 **Validation Rules:** Governed collectively by the validation rules
 defined in Sections 4.1–4.5.
@@ -559,6 +569,49 @@ load.
 
 **Success State:** The most recently active cases are displayed in the
 correct order.
+
+### 4.6 Notification Bell
+
+**Purpose:** Give the Home Dashboard header a primary entry point into
+Notifications (Section 9), replacing the prior plain Logout icon there.
+
+**Business Objective:** Let the Business Owner see, at a glance, that a
+new business event has occurred, without leaving the Home Dashboard.
+
+**Layout Description:** A bell icon in the Home Dashboard's header,
+opposite the greeting. A small dot badge is shown on the bell whenever at
+least one unread notification exists on the already-loaded first page of
+Notifications; no numeric count is shown, since no unread-count endpoint
+exists.
+
+**Components:** Bell icon; unread indicator dot.
+
+**User Actions:** Tap the bell to open Notifications.
+
+**Navigation:** Opens Notifications (Section 9).
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** The unread indicator reflects only real, already-
+fetched notification data — never a fabricated or estimated count.
+
+**Required APIs:** `GET /notifications` (the same call Notifications'
+List, Section 9.1, already makes).
+
+**Required Database Tables:** Notification records.
+
+**Permissions:** Visible to Business Owner.
+
+**Empty State:** No unread notifications — the bell shows no badge.
+
+**Loading State:** The bell shows no badge until the first page of
+notifications has loaded.
+
+**Error State:** Not applicable — a failed fetch simply shows no badge
+rather than an error indicator on the header.
+
+**Success State:** The badge accurately reflects whether at least one
+unread notification exists.
 
 ---
 
@@ -2050,7 +2103,411 @@ the document's history.
 
 ---
 
-## 9. Reusable Components
+## 9. Notifications
+
+**Purpose:** Present every business event generated elsewhere in the
+system (Reminder Engine, Payment Tracking, Document Generation, Credit &
+Risk Management, Professional Collection) as an in-app, consumption-only
+notification.
+
+**Business Objective:** Ensure the Business Owner never misses a
+qualifying business event without having to check every module
+individually.
+
+**Layout Description:** A List (Section 9.1) reached from the Home
+Dashboard's Notification Bell (Section 4.6), leading into a Detail view
+(Section 9.2) for any tapped entry.
+
+**Components:** List (Section 9.1); Detail (Section 9.2).
+
+**User Actions:** As documented in Sections 9.1–9.2: view the list, mark
+one or all notifications read, tap an entry to view its detail, open the
+entry's related record where resolvable.
+
+**Navigation:** Reached from the Home Dashboard's Notification Bell
+(Section 4.6). Leads to Detail (Section 9.2) and, where resolvable, the
+related Debt, Customer, or Professional Collection Request record.
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** This module is strictly consumption-only, per
+`01_Project_Overview.md` §1.8/§1.9 — it never generates, schedules, or
+originates an event itself; every notification is created as a passive
+consequence of a qualifying event in its owning module. There is no
+create endpoint (`07_API_Design.md` §11) and no single-item retrieval
+endpoint — a notification is only ever reached from an already-loaded
+List entry, never deep-linked.
+
+**Required APIs:** `GET /notifications` (paginated, optional `type`
+filter); `GET /notifications/history`; `PATCH /notifications/{id}/read`;
+`PATCH /notifications/mark-all-read`.
+
+**Required Database Tables:** Notification records.
+
+**Permissions:** Every notification is strictly personal — scoped to the
+authenticated user's own `recipient_user_id`, in addition to tenant
+scoping. Visible to Business Owner.
+
+**Empty State:** No notifications yet displays an explicit "No
+notifications yet" message.
+
+**Loading State:** The list displays a loading indicator while the first
+page loads.
+
+**Error State:** A retry affordance is shown if the list fails to load.
+
+**Success State:** All components display accurate, current notification
+data, as documented in Sections 9.1–9.2.
+
+### 9.1 List
+
+**Purpose:** Present every notification, most recent first, in one
+scrollable list.
+
+**Business Objective:** Let the Business Owner scan every recent business
+event in one place.
+
+**Layout Description:** A list of notification rows, each showing a
+type-specific icon (Section 2.5 convention), a type label, the related
+entity type, a timestamp, and an unread indicator dot. An app bar action
+to mark every notification read appears whenever at least one unread
+notification is present.
+
+**Components:** Notification row list; "Mark all read" action.
+
+**User Actions:** Tap a row (marks it read and opens Detail, Section
+9.2); tap "Mark all read"; pull to refresh; scroll to load more.
+
+**Navigation:** Tapping a row opens Detail (Section 9.2).
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** Tapping a row marks that notification read via the
+real endpoint before opening Detail — never a client-only state change.
+"Mark all read" calls the real bulk endpoint and updates every visible
+row.
+
+**Required APIs:** `GET /notifications`; `PATCH /notifications/{id}/read`;
+`PATCH /notifications/mark-all-read`.
+
+**Required Database Tables:** Notification records.
+
+**Permissions:** Same as Section 9.
+
+**Empty State:** No notifications yet displays an explicit "No
+notifications yet" message.
+
+**Loading State:** A loading indicator is displayed while the first page
+loads; a smaller one while loading the next page.
+
+**Error State:** A retry affordance is shown if the list fails to load.
+
+**Success State:** The list accurately reflects current notification
+data, and read/unread state updates immediately after each action.
+
+### 9.2 Detail
+
+**Purpose:** Present the complete detail of a single notification.
+
+**Business Objective:** Give the Business Owner the full context of one
+event and, where possible, a direct path to the record it concerns.
+
+**Layout Description:** A type icon and label, the related entity type
+and reference id, the received timestamp, read/unread status, and — only
+for entity types this app can resolve to a real screen (`debt`,
+`customer`, `professional_collection_request`) — an "Open" button.
+
+**Components:** Notification detail panel; conditional "Open" button.
+
+**User Actions:** View the detail; tap "Open" where available.
+
+**Navigation:** Reached only from an already-loaded List (Section 9.1)
+entry, never deep-linked (there is no single-item retrieval endpoint).
+"Open" navigates to the related Debt, Customer, or Professional
+Collection Request Detail screen.
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** "Open" is offered only for entity types this app
+confidently resolves to an existing screen and id space; document-
+generating types (`receipt`, `invoice`, `demand_letter`, `statement`) and
+`payment` are not offered an "Open" action rather than guessing at an
+unconfirmed id space.
+
+**Required APIs:** None beyond Section 9.1's `GET /notifications` — this
+screen renders data already fetched by the List.
+
+**Required Database Tables:** Notification records.
+
+**Permissions:** Same as Section 9.
+
+**Empty State:** Not applicable — this screen always represents one
+already-loaded notification.
+
+**Loading State:** Not applicable — no additional fetch occurs.
+
+**Error State:** Not applicable.
+
+**Success State:** The complete notification detail is displayed
+accurately.
+
+---
+
+## 10. Account / Profile
+
+**Purpose:** Provide the Business Owner a single place to view their
+profile, change their password, and reach Business Profile, Settings, and
+Notifications, plus Logout.
+
+**Business Objective:** Consolidate account-level actions off the Home
+Dashboard header (which now leads with the Notification Bell, Section
+4.6) into one dedicated destination.
+
+**Layout Description:** A menu screen reached by tapping the Home
+Dashboard's greeting: Profile, Business Profile, Settings, Notifications,
+Logout, each leading to its own screen (Notifications leads to Section 9).
+
+**Components:** Menu (Section 10.1); Profile (Section 10.2); Business
+Profile (Section 10.3); Settings (Section 10.4); Logout (Section 10.5).
+
+**User Actions:** As documented in Sections 10.1–10.5: open any menu
+item, view profile, change password, log out.
+
+**Navigation:** Reached by tapping the greeting on the Home Dashboard
+(Section 4). Leads to Profile (10.2), Business Profile (10.3), Settings
+(10.4), Notifications (Section 9), and Logout (10.5).
+
+**Validation Rules:** Governed collectively by the validation rules
+defined in Sections 10.1–10.5.
+
+**Business Rules:** Governed collectively by the business rules defined
+in Sections 10.1–10.5.
+
+**Required APIs:** `POST /change-password` (Section 10.2). Business
+Profile (10.3) and Settings (10.4) have no Business-Owner-reachable
+backend today — see their own sections.
+
+**Required Database Tables:** User records.
+
+**Permissions:** Visible to Business Owner.
+
+**Empty State:** Each component displays its own defined state, as
+documented in Sections 10.1–10.5.
+
+**Loading State:** Not applicable at the menu level.
+
+**Error State:** Not applicable at the menu level.
+
+**Success State:** Each menu item reliably opens its corresponding
+screen.
+
+### 10.1 Menu
+
+**Purpose:** List every Account / Profile destination.
+
+**Business Objective:** Give the Business Owner one predictable place to
+find every account-level action.
+
+**Layout Description:** Five rows, in order: Profile, Business Profile,
+Settings, Notifications, Logout — each with an icon and a label.
+
+**Components:** Five menu rows.
+
+**User Actions:** Tap any row.
+
+**Navigation:** As listed in Section 10's own Navigation.
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** All five rows are always shown, regardless of which
+destinations have a live backend today (Section 10.3/10.4).
+
+**Required APIs:** Not applicable — a pure navigation menu.
+
+**Required Database Tables:** Not applicable.
+
+**Permissions:** Visible to Business Owner.
+
+**Empty State:** Not applicable.
+
+**Loading State:** Not applicable.
+
+**Error State:** Not applicable.
+
+**Success State:** All five rows are displayed and each reliably opens
+its destination.
+
+### 10.2 Profile
+
+**Purpose:** Show the signed-in user's own name and email, and provide
+access to Change Password.
+
+**Business Objective:** Let the Business Owner confirm their own account
+identity and update their credential.
+
+**Layout Description:** Name and email (read-only), and a Change Password
+row.
+
+**Components:** Name/email display; Change Password row.
+
+**User Actions:** View name/email; tap Change Password.
+
+**Navigation:** Change Password opens a form on the same flow, submitting
+directly (no separate confirmation screen).
+
+**Validation Rules:** Change Password requires the current password and a
+new password meeting the platform-wide policy (minimum 12 characters),
+confirmed by re-entry.
+
+**Business Rules:** Name and email are the same `{id, name, email}`
+already cached from login/refresh (`UserResource`) — no separate profile-
+retrieval call is made. There is no self-service update-profile endpoint,
+so name and email are read-only; no edit action is offered.
+
+**Required APIs:** `POST /change-password`.
+
+**Required Database Tables:** User records.
+
+**Permissions:** Visible to the signed-in user, for their own account
+only.
+
+**Empty State:** Not applicable.
+
+**Loading State:** Not applicable — data is already cached.
+
+**Error State:** An incorrect current password displays the server's own
+message inline; the form remains editable.
+
+**Success State:** Change Password displays a confirmation on success.
+
+### 10.3 Business Profile
+
+**Purpose:** Show the Business Owner's own business/company details.
+
+**Business Objective:** Let the Business Owner view their business's
+identifying information from within the mobile app.
+
+**Layout Description:** A dedicated screen, currently showing an honest
+"will appear here once this is connected" message rather than fabricated
+business data.
+
+**Components:** Empty-state panel.
+
+**User Actions:** None beyond navigating to and from this screen today.
+
+**Navigation:** Reached from the Account / Profile menu (10.1).
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** The only company-profile endpoint that exists today
+(`GET/PUT /admin/settings/company-profile`) is Super Admin-only (the
+Deendoon Platform Administrator's web-panel capability), not reachable by
+the Business Owner's mobile account. TODO(Backend Required): a
+self-service, Business-Owner-reachable company-profile endpoint does not
+exist yet. The Flutter model (`BusinessProfile`) already mirrors the real
+`CompanyProfileResource` shape (`business_name`, `logo_path`, `address`,
+`contact_email`, `contact_phone`) so that wiring a future endpoint is a
+data-layer change only, not a UI redesign.
+
+**Required APIs:** None today. Future: a Business-Owner-reachable
+equivalent of `GET /admin/settings/company-profile`.
+
+**Required Database Tables:** Tenant records.
+
+**Permissions:** Visible to Business Owner.
+
+**Empty State:** "Your business details will appear here once this is
+connected." — an honest, non-fabricated placeholder, not an error.
+
+**Loading State:** Not applicable — no network call is made yet.
+
+**Error State:** Not applicable.
+
+**Success State:** Not applicable until a real endpoint exists.
+
+### 10.4 Settings
+
+**Purpose:** Reserve a place for personal, per-user app settings.
+
+**Business Objective:** Give the Business Owner a predictable place to
+find app settings once any are approved and built.
+
+**Layout Description:** A dedicated screen, currently showing an honest
+"will appear here once this is connected" message. No specific setting
+items are shown, since none are approved in any SRS module today —
+`Module 12` (FR-066–071) covers tenant-wide System Preferences, which is
+Super Admin-only, not a personal settings surface.
+
+**Components:** Empty-state panel.
+
+**User Actions:** None beyond navigating to and from this screen today.
+
+**Navigation:** Reached from the Account / Profile menu (10.1).
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** TODO(Backend Required) and TODO(Requirements): no
+personal-settings endpoint, and no approved specification of what a
+personal setting would be, exists yet. Rather than inventing setting
+items with no approved specification behind them, this screen is real
+navigation to a real, honest empty destination.
+
+**Required APIs:** None today.
+
+**Required Database Tables:** Not applicable today.
+
+**Permissions:** Visible to Business Owner.
+
+**Empty State:** "App settings will appear here once this is connected."
+— an honest, non-fabricated placeholder, not an error.
+
+**Loading State:** Not applicable.
+
+**Error State:** Not applicable.
+
+**Success State:** Not applicable until real settings are approved and
+built.
+
+### 10.5 Logout
+
+**Purpose:** End the current session.
+
+**Business Objective:** Let the Business Owner securely sign out.
+
+**Layout Description:** A Logout row at the bottom of the Account /
+Profile menu (10.1) — moved here from the Home Dashboard header, which
+now leads with the Notification Bell (Section 4.6) instead.
+
+**Components:** Logout row.
+
+**User Actions:** Tap Logout.
+
+**Navigation:** Returns to Login.
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** A best-effort server-side token revocation is
+attempted; local session state is always cleared regardless of whether
+the network call succeeds.
+
+**Required APIs:** `POST /logout`.
+
+**Required Database Tables:** Not applicable (token revocation only).
+
+**Permissions:** Visible to the signed-in user.
+
+**Empty State:** Not applicable.
+
+**Loading State:** Not applicable.
+
+**Error State:** Not applicable — logout always succeeds locally even if
+the server call fails.
+
+**Success State:** The session ends and the user is returned to Login.
+
+---
+
+## 11. Reusable Components
 
 The following components recur across multiple screens and are governed
 by the standards in Section 2 wherever they appear:
@@ -2080,7 +2537,7 @@ by the standards in Section 2 wherever they appear:
 
 ---
 
-## 10. UX Rules
+## 12. UX Rules
 
 - Every screen must present its most important value or status before
   any supporting detail.
@@ -2107,7 +2564,7 @@ by the standards in Section 2 wherever they appear:
 
 ---
 
-## 11. Business Rules
+## 13. Business Rules
 
 The following business rules apply globally, across multiple screens:
 
@@ -2135,15 +2592,16 @@ The following business rules apply globally, across multiple screens:
 
 ---
 
-## 12. Version History
+## 14. Version History
 
 | Version | Date | Status | Description |
 |---|---|---|---|
 | 1.0 | 2026-07-27 | **FROZEN** | Initial approved UI specification, covering Home Dashboard, Analytics, Cases, Reminder Center, and Documents, and all screens reachable from them. |
+| 1.0 (amended) | 2026-08-02 | **FROZEN** | V1 Scope Expansion (Product Owner Decision): added Section 9 (Notifications, implementing already-approved/frozen SRS Module 10 against its already-built backend) and Section 10 (Account / Profile, new scope — Profile and Change Password real; Business Profile and Settings honestly empty pending backend). Home Dashboard header (Section 4) now leads with a Notification Bell (Section 4.6) in place of the prior Logout icon, which moved to Section 10.5. See the fifth amendment note at the top of this document. |
 
 ---
 
-## 13. Freeze Declaration
+## 15. Freeze Declaration
 
 **DEENDOON MOBILE APP — UI VERSION 1.0 — STATUS: FROZEN**
 

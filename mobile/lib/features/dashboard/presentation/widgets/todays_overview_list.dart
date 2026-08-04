@@ -9,13 +9,14 @@ import '../providers/dashboard_providers.dart';
 import '../../../../core/widgets/app_card.dart';
 
 /// §4.3 Today's Overview — four rows: Reminders Due Today, Payments Due,
-/// Client Visits, Follow-up Calls. All four now open the real Reminder
-/// Center (Sprint 14). They all land on the same "Today" tab rather than
-/// a per-type filtered view — `GET /reminders` has no `reminder_type`
-/// query parameter (confirmed by reading `ReminderCenterController`
-/// in full), so a type-specific deep link isn't possible; the Reminder
-/// List's own type icons let the user distinguish rows visually once
-/// there.
+/// Client Visits, Follow-up Calls. All four open the real Reminder
+/// Center (Sprint 14) with the matching filter chip already selected via
+/// the `?filter=` query param (`ReminderListScreen.initialFilter`) — a
+/// client-side deep link only, since `GET /reminders` itself still has
+/// no `reminder_type` query parameter (confirmed by reading
+/// `ReminderCenterController` in full); the Reminder Center filters its
+/// own already-fetched "All" page by the real `Reminder.type` field
+/// rather than asking the backend for anything new.
 class TodaysOverviewList extends ConsumerWidget {
   const TodaysOverviewList({super.key});
 
@@ -36,31 +37,31 @@ class TodaysOverviewList extends ConsumerWidget {
             iconColor: AppColors.info,
             label: 'Reminders Due Today',
             count: data.totalDueToday,
-            onTap: () => context.go('/reminders'),
+            onTap: () => context.go('/reminders?filter=today'),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           _OverviewRow(
             icon: Icons.payments_outlined,
             iconColor: AppColors.success,
             label: 'Payments Due',
             count: data.paymentsDue,
-            onTap: () => context.go('/reminders'),
+            onTap: () => context.go('/reminders?filter=payments'),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           _OverviewRow(
             icon: Icons.person_outline,
             iconColor: AppColors.accent,
             label: 'Client Visits',
             count: data.clientVisits,
-            onTap: () => context.go('/reminders'),
+            onTap: () => context.go('/reminders?filter=visits'),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           _OverviewRow(
             icon: Icons.call_outlined,
             iconColor: AppColors.warning,
             label: 'Follow-up Calls',
             count: data.followUpCalls,
-            onTap: () => context.go('/reminders'),
+            onTap: () => context.go('/reminders?filter=calls'),
           ),
         ],
       ),
@@ -87,23 +88,31 @@ class _OverviewRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
+      splashColor: iconColor.withValues(alpha: 0.14),
+      highlightColor: iconColor.withValues(alpha: 0.06),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 27,
+            height: 27,
             decoration: BoxDecoration(
               color: iconColor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: iconColor.withValues(alpha: 0.25), width: 1),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
+            child: Icon(icon, color: iconColor, size: 15),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(child: Text(label, style: AppTypography.body)),
-          Text('$count', style: AppTypography.subheading),
-          const SizedBox(width: 4),
-          Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary),
+          Text('$count', style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(width: 6),
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+            child: const Icon(Icons.chevron_right, size: 16, color: AppColors.textSecondary),
+          ),
         ],
       ),
     );

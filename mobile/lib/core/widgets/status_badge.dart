@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// Generic status pill, shared across every module. Two real, distinct
-/// status vocabularies feed it today:
+/// Generic status pill, shared across every module. Real, distinct status
+/// vocabularies feed it today:
 /// - `customer_status` (`UpdateCustomerStatusRequest`): active,
 ///   good_standing, late_payer, high_risk, in_collection, recovered,
 ///   blocked.
@@ -16,8 +16,19 @@ import '../theme/app_colors.dart';
 ///   `SmartReminderEngine::status()`): today, upcoming, overdue,
 ///   completed. `overdue` already exists above (debt_status) and is
 ///   reused as-is — identical meaning, identical color.
-/// No value collides across these, so one widget/mapping serves all
-/// rather than duplicating an near-identical pill per module.
+/// - Professional Collection Request `status` (the real Postgres CHECK
+///   constraint on `professional_collection_requests.status`): submitted,
+///   under_review, need_more_information, accepted, assigned,
+///   in_progress, recovered, closed. `recovered`/`closed` already exist
+///   above (customer_status/case_status) and are reused as-is — same
+///   meaning (successful outcome / terminal-neutral), same color. Of the
+///   6 new values, only `need_more_information` is the one status where
+///   the Business Owner has an actionable item (respond via Messages), so
+///   it alone gets `warning`; the other 5 are neutral in-progress states
+///   and get `info`, matching how `pending`/`upcoming` are colored above.
+/// No value collides across these with a different meaning, so one
+/// widget/mapping serves all rather than duplicating a near-identical
+/// pill per module.
 class StatusBadge extends StatelessWidget {
   final String status;
 
@@ -49,6 +60,15 @@ class StatusBadge extends StatelessWidget {
       'today' => (AppColors.warning, 'Today'),
       'upcoming' => (AppColors.info, 'Upcoming'),
       'completed' => (AppColors.success, 'Completed'),
+      // professional_collection_request status (submitted/under_review/
+      // need_more_information/accepted/assigned/in_progress only —
+      // recovered/closed are already mapped above and reused as-is)
+      'submitted' => (AppColors.info, 'Submitted'),
+      'under_review' => (AppColors.info, 'Under Review'),
+      'need_more_information' => (AppColors.warning, 'Need More Information'),
+      'accepted' => (AppColors.info, 'Accepted'),
+      'assigned' => (AppColors.info, 'Assigned'),
+      'in_progress' => (AppColors.info, 'In Progress'),
       _ => (AppColors.textSecondary, status),
     };
 

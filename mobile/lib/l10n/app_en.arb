@@ -1,0 +1,45 @@
+{
+  "@@locale": "en",
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": {"description": "Settings screen app bar title"},
+
+  "sectionGeneral": "General",
+  "sectionNotifications": "Notifications",
+  "sectionSecurity": "Security",
+  "sectionBusiness": "Business",
+
+  "language": "Language",
+  "languageEnglish": "English",
+  "languageSomali": "Somali",
+
+  "pushNotifications": "Push Notifications",
+  "reminderNotifications": "Reminder Notifications",
+  "paymentNotifications": "Payment Notifications",
+  "notificationsDisclosure": "Saved to your business preferences.",
+
+  "changePassword": "Change Password",
+  "biometricLogin": "Biometric Login",
+  "biometricNotSupported": "Not supported on this device",
+  "comingSoon": "Coming soon",
+
+  "defaultCreditLimit": "Default Credit Limit",
+  "creditLimitReminderEnabled": "Credit Limit Reminder",
+  "softLimitWarningThreshold": "Soft Limit Warning Threshold (%)",
+  "whatsappReminderDays": "WhatsApp Reminder Days",
+  "smsReminderDays": "SMS Reminder Days",
+  "callReminderDays": "Call Reminder Days",
+  "reminderDaysHint": "Comma-separated days, e.g. 1, 3, 7",
+  "professionalCollectionThresholdDays": "Professional Collection Threshold (Days)",
+  "defaultCurrency": "Default Currency",
+  "defaultDateFormat": "Default Date Format",
+  "noBackendEndpoint": "No backend endpoint yet",
+
+  "saveChanges": "Save Changes",
+  "settingsSavedSuccessfully": "Settings updated successfully",
+  "couldNotLoadSettings": "Could not load Settings.",
+  "retry": "Retry",
+  "fieldRequired": "This field is required",
+  "enterValidNumber": "Enter a valid number",
+  "enterValueBetween0And100": "Enter a value between 0 and 100"
+}

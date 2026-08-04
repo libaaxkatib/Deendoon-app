@@ -6,11 +6,15 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/reminder_detail_providers.dart';
+import '../providers/reminder_list_provider.dart';
 
 /// §7.1 Dashboard — "a total due-today count plus per-type sub-counts
 /// (Visits, Calls, Payments) and an Overdue count." Loads and errors
 /// independently of the list below it, per the section's own "each
-/// component loads independently" rule.
+/// component loads independently" rule. Each mini-stat is also a
+/// shortcut into the matching filter chip below (Visits/Calls/Payments
+/// are client-side `Reminder.type` filters, Overdue is the real backend
+/// `tab=overdue`) rather than a second, separate navigation target.
 class ReminderSummaryRow extends ConsumerWidget {
   const ReminderSummaryRow({super.key});
 
@@ -41,13 +45,38 @@ class ReminderSummaryRow extends ConsumerWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _MiniStat(label: 'Visits', value: summary.clientVisits)),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Visits',
+                  value: summary.clientVisits,
+                  onTap: () => ref.read(reminderListProvider.notifier).filterByType('client_visit'),
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _MiniStat(label: 'Calls', value: summary.followUpCalls)),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Calls',
+                  value: summary.followUpCalls,
+                  onTap: () => ref.read(reminderListProvider.notifier).filterByType('follow_up_call'),
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _MiniStat(label: 'Payments', value: summary.paymentsDue)),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Payments',
+                  value: summary.paymentsDue,
+                  onTap: () => ref.read(reminderListProvider.notifier).filterByType('payment_due'),
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _MiniStat(label: 'Overdue', value: summary.overdueCount, color: AppColors.danger)),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Overdue',
+                  value: summary.overdueCount,
+                  color: AppColors.danger,
+                  onTap: () => ref.read(reminderListProvider.notifier).filterByTab('overdue'),
+                ),
+              ),
             ],
           ),
         ],
@@ -60,12 +89,14 @@ class _MiniStat extends StatelessWidget {
   final String label;
   final int value;
   final Color? color;
+  final VoidCallback onTap;
 
-  const _MiniStat({required this.label, required this.value, this.color});
+  const _MiniStat({required this.label, required this.value, required this.onTap, this.color});
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       child: Column(
         children: [

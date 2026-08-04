@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/features/cases/data/collection_case_repository.dart';
 import 'package:mobile/features/cases/domain/collection_case.dart';
 import 'package:mobile/features/cases/domain/collection_case_page.dart';
@@ -25,7 +26,11 @@ const _case = CollectionCase(
   closedAt: null,
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockCollectionCaseRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockCollectionCaseRepository repository,
+  String? initialTab,
+}) async {
   tester.view.physicalSize = const Size(400, 1400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -34,7 +39,7 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockCollectionCaseRepos
   await tester.pumpWidget(
     ProviderScope(
       overrides: [collectionCaseRepositoryProvider.overrideWithValue(repository)],
-      child: const MaterialApp(home: CaseListScreen()),
+      child: MaterialApp(home: CaseListScreen(initialTab: initialTab)),
     ),
   );
 }
@@ -93,5 +98,49 @@ void main() {
 
     verify(() => mockRepository.fetchCases(page: 1, tab: 'high_risk')).called(1);
     expect(find.text('No cases match this filter'), findsOneWidget);
+  });
+
+  testWidgets('an initialTab constructor argument applies the filter on first load', (tester) async {
+    when(() => mockRepository.fetchCases(page: 1, tab: null))
+        .thenAnswer((_) async => const CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchCases(page: 1, tab: 'high_risk'))
+        .thenAnswer((_) async => const CollectionCasePage(cases: [], currentPage: 1, lastPage: 1, total: 0));
+
+    await _pumpScreen(tester, repository: mockRepository, initialTab: 'high_risk');
+    await tester.pumpAndSettle();
+
+    verify(() => mockRepository.fetchCases(page: 1, tab: 'high_risk')).called(1);
+    expect(find.text('No cases match this filter'), findsOneWidget);
+  });
+
+  testWidgets('the Professional Collection Requests icon opens the real list screen', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    when(() => mockRepository.fetchCases(page: 1, tab: null))
+        .thenAnswer((_) async => const CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1));
+
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const CaseListScreen()),
+        GoRoute(path: '/professional-requests', builder: (_, _) => const Text('Professional Collection Requests Screen')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [collectionCaseRepositoryProvider.overrideWithValue(mockRepository)],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Professional Collection Requests'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Professional Collection Requests Screen'), findsOneWidget);
   });
 }

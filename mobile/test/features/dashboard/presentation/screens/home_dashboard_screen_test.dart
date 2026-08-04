@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/features/dashboard/data/dashboard_repository.dart';
+import 'package:mobile/features/dashboard/domain/business_health.dart';
 import 'package:mobile/features/dashboard/domain/dashboard_kpis.dart';
 import 'package:mobile/features/dashboard/domain/recent_case.dart';
 import 'package:mobile/features/dashboard/domain/todays_overview.dart';
@@ -9,6 +11,8 @@ import 'package:mobile/features/dashboard/presentation/screens/home_dashboard_sc
 import 'package:mocktail/mocktail.dart';
 
 class _MockDashboardRepository extends Mock implements DashboardRepository {}
+
+const _health = BusinessHealth(status: 'neutral_baseline', score: null);
 
 const _kpis = DashboardKpis(
   totalOutstandingAmount: '800.00',
@@ -55,6 +59,7 @@ void main() {
 
   setUp(() {
     mockRepository = _MockDashboardRepository();
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer((_) async => _health);
   });
 
   testWidgets('shows a loading indicator per section before data arrives', (tester) async {
@@ -101,7 +106,9 @@ void main() {
 
     // Quick Actions render regardless of data state (static grid).
     expect(find.text('Add Case'), findsOneWidget);
-    expect(find.text('Send Message'), findsOneWidget);
+    expect(find.text('Record Payment'), findsOneWidget);
+    expect(find.text('Add Reminder'), findsOneWidget);
+    expect(find.text('Global Search'), findsOneWidget);
   });
 
   testWidgets('shows the explicit empty state when there are no recent cases', (tester) async {
@@ -154,5 +161,134 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => mockRepository.fetchKpis()).called(1);
+  });
+
+  group('navigation', () {
+    Future<void> pumpWithRouter(WidgetTester tester, GoRouter router) async {
+      tester.view.physicalSize = const Size(400, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      when(() => mockRepository.fetchKpis()).thenAnswer((_) async => _kpis);
+      when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
+      when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => [_recentCase]);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dashboardRepositoryProvider.overrideWithValue(mockRepository)],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Total Outstanding opens the tenant-wide Debts report', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+          GoRoute(
+            path: '/analytics/reports/debts',
+            builder: (_, state) => Text('Debts Report — status=${state.uri.queryParameters['status']}'),
+          ),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('Total Outstanding'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Debts Report — status=null'), findsOneWidget);
+    });
+
+    testWidgets('Overdue Amount opens the Debts report pre-filtered to overdue', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+          GoRoute(
+            path: '/analytics/reports/debts',
+            builder: (_, state) => Text('Debts Report — status=${state.uri.queryParameters['status']}'),
+          ),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('Overdue Amount'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Debts Report — status=overdue'), findsOneWidget);
+    });
+
+    testWidgets('Collected This Month opens Analytics', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+          GoRoute(path: '/analytics', builder: (_, _) => const Text('Analytics Screen')),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('Collected This Month'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Analytics Screen'), findsOneWidget);
+    });
+
+    testWidgets('High Risk Customers opens Cases pre-filtered to the high_risk tab', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+          GoRoute(
+            path: '/cases',
+            builder: (_, state) => Text('Cases — tab=${state.uri.queryParameters['tab']}'),
+          ),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('High Risk Customers'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cases — tab=high_risk'), findsOneWidget);
+    });
+
+    testWidgets('Recent Cases "View All" opens the Cases tab', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+          GoRoute(path: '/cases', builder: (_, _) => const Text('Cases Screen')),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('View All'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cases Screen'), findsOneWidget);
+    });
+
+    testWidgets('tapping a Recent Cases row opens that case\'s detail screen', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+          GoRoute(
+            path: '/cases/:id',
+            builder: (_, state) => Text('Case Detail — ${state.pathParameters['id']}'),
+          ),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('Somali Builders'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Case Detail — 01ABC'), findsOneWidget);
+    });
   });
 }

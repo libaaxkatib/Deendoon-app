@@ -85,6 +85,41 @@ void main() {
     expect(state.tab, 'today');
   });
 
+  test('filterByType() re-fetches under tab=null and records the type client-side', () async {
+    when(() => mockRepository.fetchReminders(page: 1, tab: null))
+        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 1, total: 1));
+    await container.read(reminderListProvider.future);
+
+    when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+      (_) async => const ReminderPage(reminders: [_reminderOne, _reminderTwo], currentPage: 1, lastPage: 1, total: 2),
+    );
+
+    await container.read(reminderListProvider.notifier).filterByType('client_visit');
+
+    final state = container.read(reminderListProvider).value!;
+    expect(state.tab, isNull);
+    expect(state.typeFilter, 'client_visit');
+    expect(state.reminders, [_reminderOne, _reminderTwo]);
+    verify(() => mockRepository.fetchReminders(page: 1, tab: null)).called(2);
+  });
+
+  test('filterByTab() clears any active typeFilter', () async {
+    when(() => mockRepository.fetchReminders(page: 1, tab: null))
+        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 1, total: 1));
+    await container.read(reminderListProvider.future);
+    await container.read(reminderListProvider.notifier).filterByType('payment_due');
+    expect(container.read(reminderListProvider).value!.typeFilter, 'payment_due');
+
+    when(() => mockRepository.fetchReminders(page: 1, tab: 'overdue'))
+        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderTwo], currentPage: 1, lastPage: 1, total: 1));
+
+    await container.read(reminderListProvider.notifier).filterByTab('overdue');
+
+    final state = container.read(reminderListProvider).value!;
+    expect(state.tab, 'overdue');
+    expect(state.typeFilter, isNull);
+  });
+
   test('loadMore() appends the next page and stops once lastPage is reached', () async {
     when(() => mockRepository.fetchReminders(page: 1, tab: null))
         .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 2, total: 2));

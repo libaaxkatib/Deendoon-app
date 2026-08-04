@@ -1,0 +1,44 @@
+{
+  "@@locale": "so",
+
+  "settingsTitle": "Dejinta",
+
+  "sectionGeneral": "Guud",
+  "sectionNotifications": "Ogeysiisyada",
+  "sectionSecurity": "Amniga",
+  "sectionBusiness": "Ganacsiga",
+
+  "language": "Luqadda",
+  "languageEnglish": "Ingiriisi",
+  "languageSomali": "Soomaali",
+
+  "pushNotifications": "Ogeysiisyada Push",
+  "reminderNotifications": "Ogeysiisyada Xasuusinta",
+  "paymentNotifications": "Ogeysiisyada Lacag-bixinta",
+  "notificationsDisclosure": "Waxaa lagu keydiyaa dejinta ganacsigaaga.",
+
+  "changePassword": "Beddel Password-ka",
+  "biometricLogin": "Gelitaanka Biometric-ka (Farta/Wejiga)",
+  "biometricNotSupported": "Qalabkan lama taageero",
+  "comingSoon": "Dhawaan",
+
+  "defaultCreditLimit": "Xaddiga Deynta ee Caadiga ah",
+  "creditLimitReminderEnabled": "Xasuusinta Xaddiga Deynta",
+  "softLimitWarningThreshold": "Heerka Digniinta Xaddiga Jilicsan (%)",
+  "whatsappReminderDays": "Maalmaha Xasuusinta WhatsApp",
+  "smsReminderDays": "Maalmaha Xasuusinta SMS",
+  "callReminderDays": "Maalmaha Xasuusinta Wicitaanka",
+  "reminderDaysHint": "Maalmo kala saxeexan comma, tusaale 1, 3, 7",
+  "professionalCollectionThresholdDays": "Maalmaha Xadka Ururinta Xirfadeed",
+  "defaultCurrency": "Lacagta Caadiga ah",
+  "defaultDateFormat": "Qaabka Taariikhda ee Caadiga ah",
+  "noBackendEndpoint": "Weli lama helin endpoint backend ah",
+
+  "saveChanges": "Kaydi Isbeddellada",
+  "settingsSavedSuccessfully": "Dejinta si guul leh ayaa loo cusboonaysiiyay",
+  "couldNotLoadSettings": "Dejinta lama soo geli karin.",
+  "retry": "Isku day mar kale",
+  "fieldRequired": "Goobtan waa lagama maarmaan",
+  "enterValidNumber": "Geli tiro sax ah",
+  "enterValueBetween0And100": "Geli qiime u dhexeeya 0 iyo 100"
+}

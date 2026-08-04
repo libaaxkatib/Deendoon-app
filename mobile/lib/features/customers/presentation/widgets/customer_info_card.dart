@@ -10,11 +10,14 @@ import '../../domain/customer.dart';
 
 /// Customer Information + Contact Details + Outstanding Balance + Credit
 /// Limit + Risk Level — everything `GET /customers/{id}` (`CustomerResource`)
-/// actually returns, in one card.
+/// actually returns, in one card. [onEditCreditLimit] is optional so this
+/// card can still be reused read-only elsewhere (e.g. `CaseDetailScreen`'s
+/// Customer Summary).
 class CustomerInfoCard extends StatelessWidget {
   final Customer customer;
+  final VoidCallback? onEditCreditLimit;
 
-  const CustomerInfoCard({super.key, required this.customer});
+  const CustomerInfoCard({super.key, required this.customer, this.onEditCreditLimit});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +52,20 @@ class CustomerInfoCard extends StatelessWidget {
           const Divider(height: 32, color: AppColors.background),
           _InfoRow(label: 'Outstanding Balance', value: customer.outstandingBalance),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Credit Limit', value: customer.creditLimit),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: _InfoRow(label: 'Credit Limit', value: customer.creditLimit)),
+              if (onEditCreditLimit != null)
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  tooltip: 'Edit Credit Limit',
+                  onPressed: onEditCreditLimit,
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.only(left: 8),
+                ),
+            ],
+          ),
           const SizedBox(height: 12),
           _InfoRow(label: 'Remaining Credit', value: customer.remainingCredit),
           if (customer.creditScore != null) ...[

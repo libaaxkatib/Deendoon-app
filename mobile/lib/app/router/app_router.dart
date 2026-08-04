@@ -1,6 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/account/presentation/screens/about_screen.dart';
+import '../../features/account/presentation/screens/account_screen.dart';
+import '../../features/account/presentation/screens/business_profile_screen.dart';
+import '../../features/account/presentation/screens/change_password_screen.dart';
+import '../../features/account/presentation/screens/profile_screen.dart';
+import '../../features/account/presentation/screens/settings_screen.dart';
 import '../../features/analytics/presentation/screens/aging_bucket_debts_screen.dart';
 import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/analytics/presentation/screens/report_collection_cases_screen.dart';
@@ -9,25 +15,39 @@ import '../../features/analytics/presentation/screens/report_customers_screen.da
 import '../../features/analytics/presentation/screens/report_debts_screen.dart';
 import '../../features/analytics/presentation/screens/report_payments_screen.dart';
 import '../../features/auth/domain/auth_state.dart';
+import '../../features/calendar/presentation/screens/calendar_screen.dart';
+import '../../features/customer_import/presentation/screens/bulk_import_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/cases/presentation/screens/case_detail_screen.dart';
 import '../../features/cases/presentation/screens/case_list_screen.dart';
+import '../../features/customers/presentation/screens/add_edit_customer_screen.dart';
 import '../../features/customers/presentation/screens/customer_detail_screen.dart';
+import '../../features/customers/presentation/screens/customer_documents_screen.dart';
 import '../../features/customers/presentation/screens/customer_list_screen.dart';
 import '../../features/dashboard/presentation/screens/home_dashboard_screen.dart';
+import '../../features/debts/presentation/screens/add_edit_debt_screen.dart';
 import '../../features/debts/presentation/screens/debt_detail_screen.dart';
 import '../../features/debts/presentation/screens/debt_list_screen.dart';
 import '../../features/documents/presentation/screens/document_list_screen.dart';
 import '../../features/documents/presentation/screens/document_preview_screen.dart';
 import '../../features/documents/presentation/screens/document_share_screen.dart';
 import '../../features/documents/presentation/screens/documents_home_screen.dart';
+import '../../features/notifications/domain/app_notification.dart';
+import '../../features/notifications/presentation/screens/notification_detail_screen.dart';
+import '../../features/notifications/presentation/screens/notification_list_screen.dart';
+import '../../features/professional_collection/presentation/screens/professional_collection_detail_screen.dart';
+import '../../features/professional_collection/presentation/screens/professional_collection_list_screen.dart';
+import '../../features/professional_collection/presentation/screens/professional_collection_messages_screen.dart';
+import '../../features/quick_actions/domain/add_case_review_input.dart';
+import '../../features/quick_actions/presentation/screens/add_case_review_screen.dart';
 import '../../features/reminders/presentation/screens/message_preview_screen.dart';
 import '../../features/reminders/presentation/screens/reminder_detail_screen.dart';
 import '../../features/reminders/presentation/screens/reminder_list_screen.dart';
 import '../../features/reminders/presentation/screens/reminder_schedule_screen.dart';
+import '../../features/search/presentation/screens/global_search_screen.dart';
 import '../../features/shell/presentation/app_shell_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import 'route_paths.dart';
@@ -43,23 +63,62 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RoutePaths.login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: RoutePaths.forgotPassword, builder: (_, _) => const ForgotPasswordScreen()),
       GoRoute(path: RoutePaths.resetPassword, builder: (_, _) => const ResetPasswordScreen()),
-      GoRoute(path: '/customers', builder: (_, _) => const CustomerListScreen()),
+      GoRoute(
+        path: '/customers',
+        builder: (_, state) => CustomerListScreen(selectionMode: state.uri.queryParameters['select'] == 'true'),
+      ),
+      GoRoute(path: '/customers/new', builder: (_, _) => const AddEditCustomerScreen()),
+      GoRoute(path: '/customers/draft', builder: (_, _) => const AddEditCustomerScreen(deferSubmit: true)),
       GoRoute(
         path: '/customers/:id',
         builder: (_, state) => CustomerDetailScreen(customerId: state.pathParameters['id']!),
       ),
       GoRoute(
-        path: '/customers/:id/debts',
-        builder: (_, state) => DebtListScreen(customerId: state.pathParameters['id']!),
+        path: '/customers/:id/edit',
+        builder: (_, state) => AddEditCustomerScreen(customerId: state.pathParameters['id']!),
       ),
+      GoRoute(
+        path: '/customers/:id/documents',
+        builder: (_, state) => CustomerDocumentsScreen(customerId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/customers/:id/debts',
+        builder: (_, state) => DebtListScreen(
+          customerId: state.pathParameters['id']!,
+          selectionMode: state.uri.queryParameters['select'] == 'true',
+        ),
+      ),
+      GoRoute(
+        path: '/customers/:id/debts/new',
+        builder: (_, state) => AddEditDebtScreen(customerId: state.pathParameters['id']!),
+      ),
+      GoRoute(path: '/debts/draft', builder: (_, _) => const AddEditDebtScreen(deferSubmit: true)),
       GoRoute(
         path: '/debts/:id',
         builder: (_, state) => DebtDetailScreen(debtId: state.pathParameters['id']!),
       ),
       GoRoute(
+        path: '/debts/:id/edit',
+        builder: (_, state) => AddEditDebtScreen(debtId: state.pathParameters['id']!),
+      ),
+      GoRoute(
         path: '/cases/:id',
         builder: (_, state) => CaseDetailScreen(caseId: state.pathParameters['id']!),
       ),
+      GoRoute(
+        path: '/add-case/review',
+        builder: (_, state) => AddCaseReviewScreen(input: state.extra! as AddCaseReviewInput),
+      ),
+      GoRoute(path: '/professional-requests', builder: (_, _) => const ProfessionalCollectionListScreen()),
+      GoRoute(
+        path: '/professional-requests/:id',
+        builder: (_, state) => ProfessionalCollectionDetailScreen(requestId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/professional-requests/:id/messages',
+        builder: (_, state) => ProfessionalCollectionMessagesScreen(requestId: state.pathParameters['id']!),
+      ),
+      GoRoute(path: '/calendar', builder: (_, _) => const CalendarScreen()),
       GoRoute(path: '/reminders/new', builder: (_, _) => const ReminderScheduleScreen()),
       GoRoute(
         path: '/reminders/:id',
@@ -86,7 +145,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/analytics/reports/customers',
         builder: (_, state) => ReportCustomersScreen(initialRiskLevel: state.uri.queryParameters['riskLevel']),
       ),
-      GoRoute(path: '/analytics/reports/debts', builder: (_, _) => const ReportDebtsScreen()),
+      GoRoute(
+        path: '/analytics/reports/debts',
+        builder: (_, state) => ReportDebtsScreen(initialStatus: state.uri.queryParameters['status']),
+      ),
       GoRoute(
         path: '/analytics/reports/debts/aging/:bucket',
         builder: (_, state) => AgingBucketDebtsScreen(bucket: state.pathParameters['bucket']!),
@@ -100,6 +162,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/analytics/reports/credit-risk', builder: (_, _) => const ReportCreditRiskScreen()),
+      GoRoute(path: '/notifications', builder: (_, _) => const NotificationListScreen()),
+      GoRoute(
+        path: '/notifications/:id',
+        builder: (_, state) => NotificationDetailScreen(notification: state.extra! as AppNotification),
+      ),
+      GoRoute(path: '/search', builder: (_, _) => const GlobalSearchScreen()),
+      GoRoute(path: '/account', builder: (_, _) => const AccountScreen()),
+      GoRoute(path: '/account/profile', builder: (_, _) => const ProfileScreen()),
+      GoRoute(path: '/account/about', builder: (_, _) => const AboutScreen()),
+      GoRoute(path: '/account/business-profile', builder: (_, _) => const BusinessProfileScreen()),
+      GoRoute(path: '/account/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(path: '/account/change-password', builder: (_, _) => const ChangePasswordScreen()),
+      GoRoute(path: '/account/bulk-import', builder: (_, _) => const BulkImportScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [
@@ -110,10 +185,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: RoutePaths.analytics, builder: (_, _) => const AnalyticsScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.cases, builder: (_, _) => const CaseListScreen()),
+            GoRoute(
+              path: RoutePaths.cases,
+              builder: (_, state) => CaseListScreen(initialTab: state.uri.queryParameters['tab']),
+            ),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.reminders, builder: (_, _) => const ReminderListScreen()),
+            GoRoute(
+              path: RoutePaths.reminders,
+              builder: (_, state) => ReminderListScreen(initialFilter: state.uri.queryParameters['filter']),
+            ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: RoutePaths.documents, builder: (_, _) => const DocumentsHomeScreen()),

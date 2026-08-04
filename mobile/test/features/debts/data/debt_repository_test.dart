@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/core/models/payment.dart';
 import 'package:mobile/core/network/api_exception.dart';
+import 'package:mobile/features/cases/domain/collection_case.dart';
 import 'package:mobile/features/debts/data/debt_api.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
+import 'package:mobile/features/debts/domain/credit_limit_warning.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
 import 'package:mobile/features/debts/domain/debt_page.dart';
 import 'package:mobile/features/debts/domain/debt_timeline.dart';
@@ -97,11 +100,27 @@ void main() {
     expect(result, promise);
   });
 
-  test('openCase delegates to the api', () async {
-    when(() => mockApi.openCase('1')).thenAnswer((_) async {});
+  test('openCase delegates to the api and returns the created case', () async {
+    const collectionCase = CollectionCase(
+      id: '01CASE',
+      debtId: '1',
+      customerId: '01CUST',
+      customerName: 'Somali Builders',
+      outstandingAmount: '1000.00',
+      riskLevel: 'high',
+      referenceNumber: 'COL-0001',
+      assignedOfficerUserId: null,
+      caseStatus: 'open',
+      closureOutcome: null,
+      lastActivityAt: '2026-08-01T10:00:00.000000Z',
+      createdAt: '2026-08-01T10:00:00.000000Z',
+      closedAt: null,
+    );
+    when(() => mockApi.openCase('1')).thenAnswer((_) async => collectionCase);
 
-    await repository.openCase('1');
+    final result = await repository.openCase('1');
 
+    expect(result, collectionCase);
     verify(() => mockApi.openCase('1')).called(1);
   });
 
@@ -110,5 +129,86 @@ void main() {
     when(() => mockApi.timeline('1')).thenAnswer((_) async => timeline);
 
     expect(await repository.fetchTimeline('1'), timeline);
+  });
+
+  test('createDebt delegates every field to the api and returns the save result', () async {
+    const result = (debt: _debt, warning: null);
+    when(() => mockApi.store(customerId: '01CUST', amount: '1000.00', dueDate: '2026-07-01', notes: 'Call first'))
+        .thenAnswer((_) async => result);
+
+    final saved = await repository.createDebt(
+      customerId: '01CUST',
+      amount: '1000.00',
+      dueDate: '2026-07-01',
+      notes: 'Call first',
+    );
+
+    expect(saved.debt, _debt);
+    expect(saved.warning, isNull);
+  });
+
+  test('createDebt surfaces a credit-limit-exceeded warning when present', () async {
+    const warning = CreditLimitWarning(
+      type: 'CREDIT_LIMIT_EXCEEDED',
+      message: 'This customer has exceeded the approved credit limit.',
+      creditLimit: '5000.00',
+      projectedOutstanding: '5500.00',
+    );
+    const result = (debt: _debt, warning: warning);
+    when(() => mockApi.store(customerId: '01CUST', amount: '1000.00', dueDate: '2026-07-01', notes: null))
+        .thenAnswer((_) async => result);
+
+    final saved = await repository.createDebt(customerId: '01CUST', amount: '1000.00', dueDate: '2026-07-01');
+
+    expect(saved.warning, warning);
+  });
+
+  test('updateDebt delegates to the api', () async {
+    when(() => mockApi.update(debtId: '1', dueDate: '2026-08-01', notes: 'Updated notes'))
+        .thenAnswer((_) async => _debt);
+
+    final result = await repository.updateDebt(debtId: '1', dueDate: '2026-08-01', notes: 'Updated notes');
+
+    expect(result, _debt);
+  });
+
+  test('generateStatement delegates to the api', () async {
+    const statement = DocumentSummary(
+      id: '3',
+      documentType: 'statement',
+      referenceNumber: 'STM-0001',
+      generatedAt: '2026-08-01T00:00:00.000000Z',
+      fileSize: 3000,
+    );
+    when(() => mockApi.generateStatement('1')).thenAnswer((_) async => statement);
+
+    final result = await repository.generateStatement('1');
+
+    expect(result, statement);
+  });
+
+  test('logWhatsAppReminder delegates the details to the api', () async {
+    when(() => mockApi.logWhatsAppReminder(debtId: '1', details: 'Sent via WhatsApp'))
+        .thenAnswer((_) async => _debt);
+
+    final result = await repository.logWhatsAppReminder(debtId: '1', details: 'Sent via WhatsApp');
+
+    expect(result, _debt);
+  });
+
+  test('logSmsReminder delegates the details to the api', () async {
+    when(() => mockApi.logSmsReminder(debtId: '1', details: null)).thenAnswer((_) async => _debt);
+
+    final result = await repository.logSmsReminder(debtId: '1');
+
+    expect(result, _debt);
+  });
+
+  test('logCallReminder delegates the details to the api', () async {
+    when(() => mockApi.logCallReminder(debtId: '1', details: 'No answer')).thenAnswer((_) async => _debt);
+
+    final result = await repository.logCallReminder(debtId: '1', details: 'No answer');
+
+    expect(result, _debt);
   });
 }

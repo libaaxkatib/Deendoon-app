@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/cases/data/collection_case_repository.dart';
 import 'package:mobile/features/cases/domain/case_history.dart';
 import 'package:mobile/features/cases/domain/collection_case.dart';
@@ -9,6 +11,8 @@ import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
+import 'package:mobile/features/professional_collection/data/professional_collection_repository.dart';
+import 'package:mobile/features/professional_collection/domain/professional_collection_request.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCollectionCaseRepository extends Mock implements CollectionCaseRepository {}
@@ -16,6 +20,8 @@ class _MockCollectionCaseRepository extends Mock implements CollectionCaseReposi
 class _MockCustomerRepository extends Mock implements CustomerRepository {}
 
 class _MockDebtRepository extends Mock implements DebtRepository {}
+
+class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
 
 const _customer = Customer(
   id: '01CUST',
@@ -28,6 +34,7 @@ const _customer = Customer(
   riskLevel: 'high',
   creditScore: 480,
   creditScoreBand: 'poor',
+  archivedAt: null,
 );
 
 const _debt = Debt(
@@ -101,11 +108,13 @@ void main() {
   late _MockCollectionCaseRepository mockCaseRepository;
   late _MockCustomerRepository mockCustomerRepository;
   late _MockDebtRepository mockDebtRepository;
+  late _MockProfessionalCollectionRepository mockProfessionalCollectionRepository;
 
   setUp(() {
     mockCaseRepository = _MockCollectionCaseRepository();
     mockCustomerRepository = _MockCustomerRepository();
     mockDebtRepository = _MockDebtRepository();
+    mockProfessionalCollectionRepository = _MockProfessionalCollectionRepository();
 
     when(() => mockCustomerRepository.fetchCustomer('01CUST')).thenAnswer((_) async => _customer);
     when(() => mockDebtRepository.fetchDebt('01DEBT')).thenAnswer((_) async => _debt);
@@ -197,5 +206,88 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => mockCaseRepository.close(caseId: '01CASE', closureOutcome: 'Paid in full')).called(1);
+  });
+
+  group('Submit to Professional Collection', () {
+    Future<void> pumpWithRouter(WidgetTester tester, GoRouter router) async {
+      tester.view.physicalSize = const Size(400, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      when(() => mockCaseRepository.fetchCase('01CASE')).thenAnswer((_) async => _openCase);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            collectionCaseRepositoryProvider.overrideWithValue(mockCaseRepository),
+            customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+            debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+            professionalCollectionRepositoryProvider.overrideWithValue(mockProfessionalCollectionRepository),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('on success, navigates straight to the new Request Detail screen', (tester) async {
+      const createdRequest = ProfessionalCollectionRequest(
+        id: '01PCR',
+        collectionCaseId: '01CASE',
+        referenceNumber: 'PCR-0001',
+        status: 'submitted',
+        submittedByUserId: '01USER',
+        actionedByUserId: null,
+        createdAt: '2026-08-01T00:00:00.000000Z',
+        closedAt: null,
+      );
+      when(() => mockProfessionalCollectionRepository.submit('01CASE')).thenAnswer((_) async => createdRequest);
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const CaseDetailScreen(caseId: '01CASE')),
+          GoRoute(
+            path: '/professional-requests/:id',
+            builder: (_, state) => Text('Request Detail ${state.pathParameters['id']}'),
+          ),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('Submit to Professional Collection'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockProfessionalCollectionRepository.submit('01CASE')).called(1);
+      expect(find.text('Request Detail 01PCR'), findsOneWidget);
+    });
+
+    testWidgets('on a 409 conflict, shows the exact backend message and does not navigate', (tester) async {
+      when(() => mockProfessionalCollectionRepository.submit('01CASE')).thenThrow(
+        const ApiException(
+          message: 'This Collection Case already has an active Professional Collection Request.',
+          statusCode: 409,
+        ),
+      );
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const CaseDetailScreen(caseId: '01CASE')),
+          GoRoute(path: '/professional-requests/:id', builder: (_, _) => const Text('Request Detail')),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('Submit to Professional Collection'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('This Collection Case already has an active Professional Collection Request.'),
+        findsOneWidget,
+      );
+      expect(find.text('Request Detail'), findsNothing);
+    });
   });
 }

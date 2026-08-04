@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/route_paths.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/coming_soon.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/dashboard_providers.dart';
 import 'kpi_card.dart';
+import 'kpi_period_selector.dart';
 
-/// §4.2 KPI Cards — "KPI Overview" header and a 2x2 grid: Total
-/// Outstanding, Collected This Month, Overdue Amount, High Risk Customers.
-/// No period filter is shown — the backend has no period-switching support
-/// wired to this screen, and a non-functional control isn't shown just for
-/// looks. Their real destinations (Debts view, Analytics, Cases filtered
-/// to High Risk) are out of scope this sprint, so taps surface a "coming
-/// soon" notice instead of navigating.
+/// §4.2 KPI Cards — "KPI Overview" header (with a real period selector,
+/// Section 10's own UI state — see `kpi_period_provider.dart`) and a 2x2
+/// grid: Total Outstanding, Collected This Month, Overdue Amount, High
+/// Risk Customers. Each card navigates to its real destination: Total
+/// Outstanding and Overdue Amount open the tenant-wide Debts report
+/// (Overdue pre-filtered to `status=overdue`), Collected This Month opens
+/// the Analytics tab, and High Risk Customers opens the Cases tab
+/// pre-filtered to the `high_risk` tab.
 class KpiGrid extends ConsumerWidget {
   const KpiGrid({super.key});
 
@@ -24,8 +28,13 @@ class KpiGrid extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('KPI Overview', style: AppTypography.heading),
-        const SizedBox(height: 12),
+        const Row(
+          children: [
+            Expanded(child: Text('KPI Overview', style: AppTypography.heading)),
+            KpiPeriodSelector(),
+          ],
+        ),
+        const SizedBox(height: 4),
         kpis.when(
           loading: () => const SectionLoading(),
           error: (error, _) => RetrySection(
@@ -36,29 +45,34 @@ class KpiGrid extends ConsumerWidget {
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.6,
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 8,
+            childAspectRatio: 3.0,
             children: [
               KpiCard(
+                icon: Icons.account_balance_wallet_outlined,
                 label: 'Total Outstanding',
                 value: data.totalOutstandingAmount,
-                onTap: () => showComingSoon(context, 'Debts'),
+                onTap: () => context.push('/analytics/reports/debts'),
               ),
               KpiCard(
+                icon: Icons.savings_outlined,
                 label: 'Collected This Month',
                 value: data.totalCollectedPeriod,
-                onTap: () => showComingSoon(context, 'Analytics'),
+                onTap: () => context.go(RoutePaths.analytics),
               ),
               KpiCard(
+                icon: Icons.warning_amber_outlined,
                 label: 'Overdue Amount',
                 value: data.overdueValue,
-                onTap: () => showComingSoon(context, 'Debts'),
+                valueColor: AppColors.danger,
+                onTap: () => context.push('/analytics/reports/debts?status=overdue'),
               ),
               KpiCard(
+                icon: Icons.groups_outlined,
                 label: 'High Risk Customers',
                 value: '${data.highRiskCustomers}',
-                onTap: () => showComingSoon(context, 'Cases'),
+                onTap: () => context.go('${RoutePaths.cases}?tab=high_risk'),
               ),
             ],
           ),

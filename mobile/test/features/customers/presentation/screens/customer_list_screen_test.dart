@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/customers/domain/customer_page.dart';
@@ -20,6 +21,21 @@ const _customer = Customer(
   riskLevel: 'low',
   creditScore: 720,
   creditScoreBand: 'good',
+  archivedAt: null,
+);
+
+const _archivedCustomer = Customer(
+  id: '2',
+  name: 'Old Traders',
+  phone: '+252699999999',
+  customerStatus: 'active',
+  creditLimit: '1000.00',
+  outstandingBalance: '0.00',
+  remainingCredit: '1000.00',
+  riskLevel: null,
+  creditScore: null,
+  creditScoreBand: null,
+  archivedAt: '2026-06-01T00:00:00.000000Z',
 );
 
 Future<void> _pumpScreen(WidgetTester tester, {required _MockCustomerRepository mockRepository}) async {
@@ -32,6 +48,28 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockCustomerRepository 
     ProviderScope(
       overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
       child: const MaterialApp(home: CustomerListScreen()),
+    ),
+  );
+}
+
+Future<void> _pumpScreenWithRouter(WidgetTester tester, {required _MockCustomerRepository mockRepository}) async {
+  tester.view.physicalSize = const Size(400, 1400);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  final router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(path: '/', builder: (_, _) => const CustomerListScreen()),
+      GoRoute(path: '/customers/new', builder: (_, _) => const Text('Add Customer Screen')),
+    ],
+  );
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
+      child: MaterialApp.router(routerConfig: router),
     ),
   );
 }
@@ -105,5 +143,126 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => mockRepository.fetchCustomers(page: 1, search: 'somali', status: null, riskLevel: null)).called(1);
+  });
+
+  testWidgets('the FAB opens the Add Customer screen', (tester) async {
+    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
+        .thenAnswer((_) async => const CustomerPage(customers: [_customer], currentPage: 1, lastPage: 1, total: 1));
+
+    await _pumpScreenWithRouter(tester, mockRepository: mockRepository);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add Customer Screen'), findsOneWidget);
+  });
+
+  testWidgets('the Show Archived chip includes archived customers via a real query param', (tester) async {
+    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
+        .thenAnswer((_) async => const CustomerPage(customers: [_customer], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+          includeArchived: true,
+        )).thenAnswer(
+      (_) async => const CustomerPage(customers: [_customer, _archivedCustomer], currentPage: 1, lastPage: 1, total: 2),
+    );
+
+    await _pumpScreen(tester, mockRepository: mockRepository);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilterChip, 'Show Archived'));
+    await tester.pumpAndSettle();
+
+    verify(() => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+          includeArchived: true,
+        )).called(1);
+    expect(find.text('Old Traders'), findsOneWidget);
+    expect(find.text('Archived'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Restore'), findsOneWidget);
+  });
+
+  testWidgets('tapping Restore on an archived customer calls the real endpoint', (tester) async {
+    when(() => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+          includeArchived: true,
+        )).thenAnswer(
+      (_) async => const CustomerPage(customers: [_archivedCustomer], currentPage: 1, lastPage: 1, total: 1),
+    );
+    when(() => mockRepository.restoreCustomer('2')).thenAnswer((_) async => _archivedCustomer);
+
+    await _pumpScreen(tester, mockRepository: mockRepository);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'Show Archived'));
+    await tester.pumpAndSettle();
+
+    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
+        .thenAnswer((_) async => const CustomerPage(customers: [], currentPage: 1, lastPage: 1, total: 0));
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Restore'));
+    await tester.pumpAndSettle();
+
+    verify(() => mockRepository.restoreCustomer('2')).called(1);
+    expect(find.text('Customer restored successfully'), findsOneWidget);
+  });
+
+  testWidgets('selection mode: title changes, FAB is hidden, and tapping a card pops with the Customer', (
+    tester,
+  ) async {
+    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
+        .thenAnswer((_) async => const CustomerPage(customers: [_customer], currentPage: 1, lastPage: 1, total: 1));
+
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    Customer? popped;
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, _) => Builder(
+            builder: (context) => TextButton(
+              onPressed: () async {
+                popped = await context.push<Customer>('/select');
+              },
+              child: const Text('Open Picker'),
+            ),
+          ),
+        ),
+        GoRoute(path: '/select', builder: (_, _) => const CustomerListScreen(selectionMode: true)),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open Picker'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select Customer'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await tester.tap(find.text('Somali Builders'));
+    await tester.pumpAndSettle();
+
+    expect(popped, _customer);
   });
 }

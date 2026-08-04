@@ -14,14 +14,52 @@ import '../../domain/customer.dart';
 /// initial, customer name, outstanding amount, a status pill, a risk
 /// badge"). No "company" field is shown — none exists on the Customer
 /// model/resource.
+///
+/// An archived customer (`archived_at` set) cannot be opened — the
+/// backend's `show`/`update` routes are not `->withTrashed()`, so Detail
+/// would 404 — so this renders a muted "Archived" row with a Restore
+/// button instead of the normal tap-to-detail card, and [onTap] is never
+/// invoked for it.
 class CustomerCard extends StatelessWidget {
   final Customer customer;
   final VoidCallback onTap;
+  final VoidCallback? onRestore;
 
-  const CustomerCard({super.key, required this.customer, required this.onTap});
+  const CustomerCard({super.key, required this.customer, required this.onTap, this.onRestore});
 
   @override
   Widget build(BuildContext context) {
+    if (customer.isArchived) {
+      return AppCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AvatarInitial(name: customer.name),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    customer.name,
+                    style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(customer.phone, style: AppTypography.caption),
+                  const SizedBox(height: 8),
+                  const _ArchivedBadge(),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton(onPressed: onRestore, child: const Text('Restore')),
+          ],
+        ),
+      );
+    }
+
     return AppCard(
       onTap: onTap,
       child: Row(
@@ -63,6 +101,22 @@ class CustomerCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ArchivedBadge extends StatelessWidget {
+  const _ArchivedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Text('Archived', style: AppTypography.caption),
     );
   }
 }

@@ -10,6 +10,9 @@ class AppCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
   final EdgeInsetsGeometry padding;
+  final double elevation;
+  final Color? splashColor;
+  final Color? highlightColor;
 
   static const radius = 16.0;
 
@@ -18,6 +21,9 @@ class AppCard extends StatelessWidget {
     required this.child,
     this.onTap,
     this.padding = const EdgeInsets.all(16),
+    this.elevation = 1,
+    this.splashColor,
+    this.highlightColor,
   });
 
   @override
@@ -25,11 +31,13 @@ class AppCard extends StatelessWidget {
     return Material(
       color: AppColors.surface,
       borderRadius: BorderRadius.circular(radius),
-      elevation: 1,
+      elevation: elevation,
       shadowColor: Colors.black.withValues(alpha: 0.4),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
+        splashColor: splashColor,
+        highlightColor: highlightColor,
         child: Padding(padding: padding, child: child),
       ),
     );

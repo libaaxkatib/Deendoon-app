@@ -61,14 +61,37 @@ const _customer = Customer(
   riskLevel: 'low',
   creditScore: 720,
   creditScoreBand: 'good',
+  archivedAt: null,
+);
+
+const _clientVisitReminder = Reminder(
+  id: '2',
+  type: 'client_visit',
+  title: 'Client Visit',
+  relatedEntityType: 'customer',
+  relatedEntityId: '01CUST',
+  relatedCaseId: null,
+  dueDate: '2026-07-28T10:00:00.000000Z',
+  amountDue: null,
+  timingRule: 'same_day',
+  customFireAt: null,
+  deliveryMethods: ['push'],
+  notes: null,
+  status: 'today',
+  createdByUserId: '01USER',
+  createdAt: '2026-07-20T09:00:00.000000Z',
+  updatedAt: '2026-07-20T09:00:00.000000Z',
+  completedAt: null,
 );
 
 Future<void> _pumpScreen(
   WidgetTester tester, {
   required _MockReminderRepository reminderRepository,
   required _MockCustomerRepository customerRepository,
+  String? initialFilter,
+  double width = 400,
 }) async {
-  tester.view.physicalSize = const Size(400, 1600);
+  tester.view.physicalSize = Size(width, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -81,7 +104,7 @@ Future<void> _pumpScreen(
         debtRepositoryProvider.overrideWithValue(_MockDebtRepository()),
         collectionCaseRepositoryProvider.overrideWithValue(_MockCollectionCaseRepository()),
       ],
-      child: const MaterialApp(home: ReminderListScreen()),
+      child: MaterialApp(home: ReminderListScreen(initialFilter: initialFilter)),
     ),
   );
 }
@@ -95,6 +118,16 @@ void main() {
     mockCustomerRepository = _MockCustomerRepository();
     when(() => mockReminderRepository.fetchSummary()).thenAnswer((_) async => _summary);
     when(() => mockCustomerRepository.fetchCustomer('01CUST')).thenAnswer((_) async => _customer);
+  });
+
+  testWidgets('renders a Calendar entry point icon in the app bar', (tester) async {
+    when(() => mockReminderRepository.fetchReminders(page: 1, tab: null))
+        .thenAnswer((_) async => const ReminderPage(reminders: [], currentPage: 1, lastPage: 1, total: 0));
+
+    await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Calendar'), findsOneWidget);
   });
 
   testWidgets('renders the summary row and reminder cards with real fields', (tester) async {
@@ -143,6 +176,88 @@ void main() {
 
     verify(() => mockReminderRepository.fetchReminders(page: 1, tab: 'today')).called(1);
     expect(find.text('Nothing due in this filter'), findsOneWidget);
+  });
+
+  testWidgets('renders the 8 filter chips matching the dashboard reminder categories', (tester) async {
+    when(() => mockReminderRepository.fetchReminders(page: 1, tab: null))
+        .thenAnswer((_) async => const ReminderPage(reminders: [_reminder], currentPage: 1, lastPage: 1, total: 1));
+
+    // Wide enough that the horizontal chip row lays out all 8 chips
+    // without needing a scroll — the default 400-wide phone viewport used
+    // elsewhere in this file only realizes chips within its cache extent.
+    await _pumpScreen(
+      tester,
+      reminderRepository: mockReminderRepository,
+      customerRepository: mockCustomerRepository,
+      width: 1200,
+    );
+    await tester.pumpAndSettle();
+
+    for (final label in ['All', 'Today', 'Payments', 'Visits', 'Calls', 'Upcoming', 'Overdue', 'Completed']) {
+      expect(find.widgetWithText(ChoiceChip, label), findsOneWidget, reason: '$label chip should render');
+    }
+  });
+
+  testWidgets('tapping the Visits chip shows only client_visit reminders from the same All fetch', (tester) async {
+    when(() => mockReminderRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+      (_) async =>
+          const ReminderPage(reminders: [_reminder, _clientVisitReminder], currentPage: 1, lastPage: 1, total: 2),
+    );
+
+    await _pumpScreen(
+      tester,
+      reminderRepository: mockReminderRepository,
+      customerRepository: mockCustomerRepository,
+      width: 1200,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Visits'));
+    await tester.pumpAndSettle();
+
+    // Both calls are the same real "All" fetch (initial load, then re-fetched
+    // by filterByType) — Visits is a client-side filter, never a distinct
+    // `tab`/`reminder_type` API call.
+    verify(() => mockReminderRepository.fetchReminders(page: 1, tab: null)).called(2);
+    expect(find.text('Client Visit'), findsWidgets);
+    expect(find.text('Payment Due'), findsNothing);
+  });
+
+  testWidgets('tapping the Visits mini-stat card applies the same Visits filter', (tester) async {
+    when(() => mockReminderRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+      (_) async =>
+          const ReminderPage(reminders: [_reminder, _clientVisitReminder], currentPage: 1, lastPage: 1, total: 2),
+    );
+
+    await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
+    await tester.pumpAndSettle();
+
+    // 'Visits' also labels the filter chip below — the mini-stat is the
+    // first match in tree order since the summary row renders above it.
+    await tester.tap(find.text('Visits').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Client Visit'), findsWidgets);
+    expect(find.text('Payment Due'), findsNothing);
+    expect(find.widgetWithText(ChoiceChip, 'Visits'), findsOneWidget);
+  });
+
+  testWidgets('an initialFilter of payments pre-selects the Payments chip and filters the list', (tester) async {
+    when(() => mockReminderRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+      (_) async =>
+          const ReminderPage(reminders: [_reminder, _clientVisitReminder], currentPage: 1, lastPage: 1, total: 2),
+    );
+
+    await _pumpScreen(
+      tester,
+      reminderRepository: mockReminderRepository,
+      customerRepository: mockCustomerRepository,
+      initialFilter: 'payments',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Payment Due'), findsWidgets);
+    expect(find.text('Client Visit'), findsNothing);
   });
 
   testWidgets('tapping Complete on a card calls the real endpoint', (tester) async {

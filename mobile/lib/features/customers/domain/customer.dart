@@ -15,6 +15,7 @@ class Customer {
   final String? riskLevel;
   final int? creditScore;
   final String? creditScoreBand;
+  final String? archivedAt;
 
   const Customer({
     required this.id,
@@ -27,7 +28,10 @@ class Customer {
     required this.riskLevel,
     required this.creditScore,
     required this.creditScoreBand,
+    required this.archivedAt,
   });
+
+  bool get isArchived => archivedAt != null;
 
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
         id: json['id'].toString(),
@@ -40,5 +44,6 @@ class Customer {
         riskLevel: json['risk_level'] as String?,
         creditScore: json['credit_score'] as int?,
         creditScoreBand: json['credit_score_band'] as String?,
+        archivedAt: json['archived_at'] as String?,
       );
 }

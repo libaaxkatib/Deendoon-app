@@ -11,6 +11,7 @@ class CustomerListState {
   final int lastPage;
   final int total;
   final String search;
+  final bool includeArchived;
   final bool isLoadingMore;
 
   const CustomerListState({
@@ -19,6 +20,7 @@ class CustomerListState {
     required this.lastPage,
     required this.total,
     required this.search,
+    required this.includeArchived,
     this.isLoadingMore = false,
   });
 
@@ -30,6 +32,7 @@ class CustomerListState {
     int? lastPage,
     int? total,
     String? search,
+    bool? includeArchived,
     bool? isLoadingMore,
   }) {
     return CustomerListState(
@@ -38,6 +41,7 @@ class CustomerListState {
       lastPage: lastPage ?? this.lastPage,
       total: total ?? this.total,
       search: search ?? this.search,
+      includeArchived: includeArchived ?? this.includeArchived,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
@@ -48,20 +52,32 @@ final customerListProvider =
 
 class CustomerListNotifier extends AsyncNotifier<CustomerListState> {
   @override
-  Future<CustomerListState> build() => _fetchFirstPage(search: '');
+  Future<CustomerListState> build() => _fetchFirstPage(search: '', includeArchived: false);
 
   CustomerRepository get _repository => ref.read(customerRepositoryProvider);
 
   /// Resets to page 1 under a new search term — always a real API call,
   /// never a client-side filter of already-loaded results.
   Future<void> search(String query) async {
+    final includeArchived = state.valueOrNull?.includeArchived ?? false;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(search: query));
+    state = await AsyncValue.guard(() => _fetchFirstPage(search: query, includeArchived: includeArchived));
+  }
+
+  /// "Show Archived" filter chip — a real `includeArchived` query param
+  /// on `GET /customers` (`CustomerController::index()`), not a
+  /// client-side filter.
+  Future<void> toggleIncludeArchived() async {
+    final search = state.valueOrNull?.search ?? '';
+    final includeArchived = !(state.valueOrNull?.includeArchived ?? false);
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _fetchFirstPage(search: search, includeArchived: includeArchived));
   }
 
   Future<void> refresh() async {
     final search = state.valueOrNull?.search ?? '';
-    state = await AsyncValue.guard(() => _fetchFirstPage(search: search));
+    final includeArchived = state.valueOrNull?.includeArchived ?? false;
+    state = await AsyncValue.guard(() => _fetchFirstPage(search: search, includeArchived: includeArchived));
   }
 
   /// Guards against duplicate/concurrent requests and against requesting
@@ -75,6 +91,7 @@ class CustomerListNotifier extends AsyncNotifier<CustomerListState> {
       final next = await _repository.fetchCustomers(
         page: current.currentPage + 1,
         search: current.search,
+        includeArchived: current.includeArchived,
       );
       state = AsyncData(current.copyWith(
         customers: [...current.customers, ...next.customers],
@@ -90,14 +107,15 @@ class CustomerListNotifier extends AsyncNotifier<CustomerListState> {
     }
   }
 
-  Future<CustomerListState> _fetchFirstPage({required String search}) async {
-    final page = await _repository.fetchCustomers(page: 1, search: search);
+  Future<CustomerListState> _fetchFirstPage({required String search, required bool includeArchived}) async {
+    final page = await _repository.fetchCustomers(page: 1, search: search, includeArchived: includeArchived);
     return CustomerListState(
       customers: page.customers,
       currentPage: page.currentPage,
       lastPage: page.lastPage,
       total: page.total,
       search: search,
+      includeArchived: includeArchived,
     );
   }
 }

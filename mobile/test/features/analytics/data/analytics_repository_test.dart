@@ -24,6 +24,7 @@ const _customer = Customer(
   riskLevel: 'high',
   creditScore: 700,
   creditScoreBand: 'good',
+  archivedAt: null,
 );
 
 void main() {

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../providers/customer_actions.dart';
 import '../providers/customer_list_provider.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/customer_search_bar.dart';
@@ -15,7 +17,13 @@ import '../widgets/customer_search_bar.dart';
 /// language is reused from the already-approved Home Dashboard and the
 /// frozen Case List's own card description (§6.1).
 class CustomerListScreen extends ConsumerStatefulWidget {
-  const CustomerListScreen({super.key});
+  /// When true, tapping a card pops the route with the selected [Customer]
+  /// instead of pushing to its detail screen — reused as-is (no duplicate
+  /// picker screen) by any flow that needs to pick an existing customer,
+  /// e.g. the Add Case and Record Payment Quick Actions.
+  final bool selectionMode;
+
+  const CustomerListScreen({super.key, this.selectionMode = false});
 
   @override
   ConsumerState<CustomerListScreen> createState() => _CustomerListScreenState();
@@ -43,12 +51,29 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     }
   }
 
+  Future<void> _restore(String customerId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(customerActionsProvider).restore(customerId);
+      messenger.showSnackBar(const SnackBar(content: Text('Customer restored successfully')));
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customerListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Customers')),
+      appBar: AppBar(title: Text(widget.selectionMode ? 'Select Customer' : 'Customers')),
+      floatingActionButton: widget.selectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => context.push('/customers/new'),
+              tooltip: 'Add Customer',
+              child: const Icon(Icons.add),
+            ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -57,7 +82,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             CustomerSearchBar(
               onChanged: (query) => ref.read(customerListProvider.notifier).search(query),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilterChip(
+                label: const Text('Show Archived'),
+                selected: customersAsync.valueOrNull?.includeArchived ?? false,
+                onSelected: (_) => ref.read(customerListProvider.notifier).toggleIncludeArchived(),
+              ),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: customersAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -93,7 +127,11 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                         final customer = state.customers[index];
                         return CustomerCard(
                           customer: customer,
-                          onTap: () => context.push('/customers/${customer.id}'),
+                          onTap: widget.selectionMode
+                              ? () => context.pop(customer)
+                              : () => context.push('/customers/${customer.id}'),
+                          onRestore:
+                              (!widget.selectionMode && customer.isArchived) ? () => _restore(customer.id) : null,
                         );
                       },
                     ),

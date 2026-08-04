@@ -176,6 +176,51 @@ void main() {
     });
   });
 
+  group('changePassword', () {
+    test('returns the success message when the current password is correct', () async {
+      when(() => mockApi.changePassword(
+            currentPassword: 'old-password-123',
+            newPassword: 'a-very-long-password',
+          )).thenAnswer((_) async => 'Password changed successfully');
+
+      final message = await repository.changePassword(
+        currentPassword: 'old-password-123',
+        newPassword: 'a-very-long-password',
+      );
+
+      expect(message, 'Password changed successfully');
+    });
+
+    test('throws ApiException with the server message when the current password is wrong', () async {
+      when(() => mockApi.changePassword(
+            currentPassword: 'wrong-password',
+            newPassword: 'a-very-long-password',
+          )).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/change-password'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/change-password'),
+            statusCode: 422,
+            data: {
+              'success': false,
+              'message': 'The current password is incorrect.',
+              'data': null,
+              'errors': null,
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      expect(
+        () => repository.changePassword(currentPassword: 'wrong-password', newPassword: 'a-very-long-password'),
+        throwsA(
+          isA<ApiException>().having((e) => e.message, 'message', 'The current password is incorrect.'),
+        ),
+      );
+    });
+  });
+
   group('resetPassword', () {
     test('returns the success message when the token is valid', () async {
       when(() => mockApi.resetPassword(

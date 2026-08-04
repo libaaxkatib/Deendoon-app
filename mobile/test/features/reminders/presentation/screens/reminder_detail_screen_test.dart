@@ -70,6 +70,7 @@ const _customer = Customer(
   riskLevel: 'low',
   creditScore: 720,
   creditScoreBand: 'good',
+  archivedAt: null,
 );
 
 Future<void> _pumpScreen(

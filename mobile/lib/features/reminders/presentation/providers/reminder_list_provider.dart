@@ -5,17 +5,25 @@ import '../../domain/reminder.dart';
 
 /// Immutable snapshot of the tenant-wide, paginated, tab-filtered
 /// Reminder List — real backend pagination/filtering only, no local
-/// filtering. `tab` is the ONLY real filter `GET /reminders` supports
-/// (one of: all/today/upcoming/overdue/completed) — there is no
-/// `customer_id`/`debt_id`/`case_id`/`reminder_type`/`delivery_channel`/
-/// date-range/`search` parameter (see the Sprint 14 summary's "Missing
-/// Backend Support Required").
+/// filtering of what's *fetched*. `tab` is the ONLY real filter
+/// `GET /reminders` supports (one of: all/today/upcoming/overdue/
+/// completed) — there is no `customer_id`/`debt_id`/`case_id`/
+/// `reminder_type`/`delivery_channel`/date-range/`search` parameter (see
+/// the Sprint 14 summary's "Missing Backend Support Required").
+///
+/// `typeFilter` is a client-side-only display filter (one of the five
+/// real `Reminder.type` values already present on every fetched resource)
+/// layered on top of the real `tab=null` ("All") fetch — it narrows which
+/// already-fetched reminders are *shown*, it never changes what's
+/// requested from the server. `tab` and `typeFilter` are mutually
+/// exclusive in the UI (selecting one clears the other).
 class ReminderListState {
   final List<Reminder> reminders;
   final int currentPage;
   final int lastPage;
   final int total;
   final String? tab;
+  final String? typeFilter;
   final bool isLoadingMore;
 
   const ReminderListState({
@@ -24,6 +32,7 @@ class ReminderListState {
     required this.lastPage,
     required this.total,
     required this.tab,
+    this.typeFilter,
     this.isLoadingMore = false,
   });
 
@@ -35,6 +44,7 @@ class ReminderListState {
     int? lastPage,
     int? total,
     String? tab,
+    String? typeFilter,
     bool? isLoadingMore,
   }) {
     return ReminderListState(
@@ -43,6 +53,7 @@ class ReminderListState {
       lastPage: lastPage ?? this.lastPage,
       total: total ?? this.total,
       tab: tab ?? this.tab,
+      typeFilter: typeFilter ?? this.typeFilter,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
@@ -57,15 +68,28 @@ class ReminderListNotifier extends AsyncNotifier<ReminderListState> {
   ReminderRepository get _repository => ref.read(reminderRepositoryProvider);
 
   /// `tab` is one of the five real, approved values (or null for "All") —
-  /// always a real API call, never a client-side filter.
+  /// always a real API call, never a client-side filter. Selecting a tab
+  /// clears any active `typeFilter`, since the two are mutually exclusive
+  /// in the UI.
   Future<void> filterByTab(String? tab) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _fetchFirstPage(tab: tab));
   }
 
+  /// Selects one of the five real `Reminder.type` values as a client-side
+  /// display filter. Always fetches under `tab=null` ("All") — the
+  /// backend has no `reminder_type` query parameter — and narrows what's
+  /// shown to reminders whose real `type` field matches, in
+  /// `ReminderListScreen`'s own build method.
+  Future<void> filterByType(String type) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _fetchFirstPage(tab: null, typeFilter: type));
+  }
+
   Future<void> refresh() async {
     final tab = state.valueOrNull?.tab;
-    state = await AsyncValue.guard(() => _fetchFirstPage(tab: tab));
+    final typeFilter = state.valueOrNull?.typeFilter;
+    state = await AsyncValue.guard(() => _fetchFirstPage(tab: tab, typeFilter: typeFilter));
   }
 
   Future<void> loadMore() async {
@@ -109,7 +133,7 @@ class ReminderListNotifier extends AsyncNotifier<ReminderListState> {
     ));
   }
 
-  Future<ReminderListState> _fetchFirstPage({required String? tab}) async {
+  Future<ReminderListState> _fetchFirstPage({required String? tab, String? typeFilter}) async {
     final page = await _repository.fetchReminders(page: 1, tab: tab);
     return ReminderListState(
       reminders: page.reminders,
@@ -117,6 +141,7 @@ class ReminderListNotifier extends AsyncNotifier<ReminderListState> {
       lastPage: page.lastPage,
       total: page.total,
       tab: tab,
+      typeFilter: typeFilter,
     );
   }
 }

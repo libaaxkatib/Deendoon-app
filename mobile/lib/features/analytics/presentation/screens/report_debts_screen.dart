@@ -25,7 +25,9 @@ const _statusFilters = <String?, String>{
 /// `risk_level` on `DebtResource`, and resolving one per row would mean an
 /// N+1 lookup) — `RiskBadge` already renders that honestly as "Unknown".
 class ReportDebtsScreen extends ConsumerStatefulWidget {
-  const ReportDebtsScreen({super.key});
+  final String? initialStatus;
+
+  const ReportDebtsScreen({super.key, this.initialStatus});
 
   @override
   ConsumerState<ReportDebtsScreen> createState() => _ReportDebtsScreenState();
@@ -38,6 +40,11 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    if (widget.initialStatus != null) {
+      Future.microtask(
+        () => ref.read(reportDebtsProvider.notifier).filterByStatus(widget.initialStatus),
+      );
+    }
   }
 
   @override

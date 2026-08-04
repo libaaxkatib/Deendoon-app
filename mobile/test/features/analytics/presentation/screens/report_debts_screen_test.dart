@@ -21,7 +21,11 @@ const _debt = Debt(
   notes: null,
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockAnalyticsRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockAnalyticsRepository repository,
+  String? initialStatus,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -30,7 +34,7 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockAnalyticsRepository
   await tester.pumpWidget(
     ProviderScope(
       overrides: [analyticsRepositoryProvider.overrideWithValue(repository)],
-      child: const MaterialApp(home: ReportDebtsScreen()),
+      child: MaterialApp(home: ReportDebtsScreen(initialStatus: initialStatus)),
     ),
   );
 }
@@ -82,6 +86,18 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(ChoiceChip, 'Overdue'));
+    await tester.pumpAndSettle();
+
+    verify(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue')).called(1);
+  });
+
+  testWidgets('an initialStatus constructor argument applies the filter on first load', (tester) async {
+    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
+        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue'))
+        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+
+    await _pumpScreen(tester, repository: mockRepository, initialStatus: 'overdue');
     await tester.pumpAndSettle();
 
     verify(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue')).called(1);

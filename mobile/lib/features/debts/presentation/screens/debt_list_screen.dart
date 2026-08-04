@@ -20,7 +20,12 @@ import '../widgets/debt_card.dart';
 class DebtListScreen extends ConsumerStatefulWidget {
   final String customerId;
 
-  const DebtListScreen({super.key, required this.customerId});
+  /// When true, tapping a card pops the route with the selected [Debt]
+  /// instead of pushing to its detail screen — reused as-is by any flow
+  /// that needs to pick one of a customer's debts, e.g. Record Payment.
+  final bool selectionMode;
+
+  const DebtListScreen({super.key, required this.customerId, this.selectionMode = false});
 
   @override
   ConsumerState<DebtListScreen> createState() => _DebtListScreenState();
@@ -63,8 +68,15 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(customerAsync.valueOrNull?.name ?? 'Debts'),
+        title: Text(widget.selectionMode ? 'Select Debt' : (customerAsync.valueOrNull?.name ?? 'Debts')),
       ),
+      floatingActionButton: widget.selectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => context.push('/customers/${widget.customerId}/debts/new'),
+              tooltip: 'Add Debt',
+              child: const Icon(Icons.add),
+            ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -125,7 +137,9 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
                         return DebtCard(
                           debt: debt,
                           riskLevel: riskLevel,
-                          onTap: () => context.push('/debts/${debt.id}'),
+                          onTap: widget.selectionMode
+                              ? () => context.pop(debt)
+                              : () => context.push('/debts/${debt.id}'),
                         );
                       },
                     ),

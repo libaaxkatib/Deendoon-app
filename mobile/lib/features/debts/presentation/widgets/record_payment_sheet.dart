@@ -29,6 +29,7 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _methodController = TextEditingController();
+  final _notesController = TextEditingController();
   DateTime _paymentDate = DateTime.now();
   bool _isLoading = false;
   String? _error;
@@ -37,6 +38,7 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
   void dispose() {
     _amountController.dispose();
     _methodController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -64,6 +66,7 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
             amount: _amountController.text.trim(),
             paymentDate: _paymentDate.toIso8601String().split('T').first,
             paymentMethod: _methodController.text.trim().isEmpty ? null : _methodController.text.trim(),
+            referenceNotes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
           );
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
@@ -112,6 +115,12 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
             TextFormField(
               controller: _methodController,
               decoration: const InputDecoration(labelText: 'Payment Method (optional)'),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Notes (optional)'),
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),

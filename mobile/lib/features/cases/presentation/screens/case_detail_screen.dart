@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/unavailable_section.dart';
@@ -11,6 +13,7 @@ import '../../../debts/presentation/widgets/debt_documents_section.dart';
 import '../../../debts/presentation/widgets/debt_payment_history.dart';
 import '../../../debts/presentation/widgets/debt_summary_card.dart';
 import '../../../debts/presentation/widgets/promise_to_pay_sheet.dart';
+import '../../../professional_collection/presentation/providers/professional_collection_actions.dart';
 import '../providers/case_detail_providers.dart';
 import '../widgets/case_summary_card.dart';
 import '../widgets/case_timeline_section.dart';
@@ -31,6 +34,24 @@ class CaseDetailScreen extends ConsumerWidget {
   final String caseId;
 
   const CaseDetailScreen({super.key, required this.caseId});
+
+  /// BRL-078: the backend 409s if the case already has an active
+  /// (non-terminal) Professional Collection Request — surfaced as a
+  /// snackbar with the exact backend message, same pattern as every other
+  /// conflict-handling action in the app. On success, navigates straight
+  /// to the new Request's Detail screen (the backend returns it directly,
+  /// unlike Open Case which has no such deep-link).
+  Future<void> _submitProfessionalCollection(BuildContext context, WidgetRef ref, String caseId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    try {
+      final request = await ref.read(professionalCollectionActionsProvider).submit(caseId);
+      messenger.showSnackBar(const SnackBar(content: Text('Professional Collection Request submitted successfully')));
+      router.push('/professional-requests/${request.id}');
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -162,6 +183,11 @@ class CaseDetailScreen extends ConsumerWidget {
                   OutlinedButton(
                     onPressed: () => showCloseCaseSheet(context, caseId),
                     child: const Text('Close Case'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () => _submitProfessionalCollection(context, ref, caseId),
+                    child: const Text('Submit to Professional Collection'),
                   ),
                 ] else ...[
                   const UnavailableSection(

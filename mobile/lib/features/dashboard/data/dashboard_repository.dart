@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../domain/business_health.dart';
 import '../domain/dashboard_kpis.dart';
 import '../domain/recent_case.dart';
 import '../domain/todays_overview.dart';
@@ -17,6 +18,8 @@ class DashboardRepository {
   final DashboardApi _api;
 
   const DashboardRepository(this._api);
+
+  Future<BusinessHealth> fetchBusinessHealth() => _guard(() => _api.businessHealth());
 
   Future<DashboardKpis> fetchKpis() => _guard(() => _api.kpis());
 

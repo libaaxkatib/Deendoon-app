@@ -60,6 +60,20 @@ class AuthApi {
     return response.data['message'] as String;
   }
 
+  /// `POST /change-password` — `ChangePasswordRequest` requires
+  /// `current_password` and a `confirmed` `password` (min 12 chars, the
+  /// project-wide default policy). A wrong current password returns a 422
+  /// with a specific message, surfaced by `ApiException` like any other
+  /// validation failure.
+  Future<String> changePassword({required String currentPassword, required String newPassword}) async {
+    final response = await _dio.post('change-password', data: {
+      'current_password': currentPassword,
+      'password': newPassword,
+      'password_confirmation': newPassword,
+    });
+    return response.data['message'] as String;
+  }
+
   (User, String) _parseAuthPayload(Map<String, dynamic> body) {
     final data = body['data'] as Map<String, dynamic>;
     final user = User.fromJson(data['user'] as Map<String, dynamic>);

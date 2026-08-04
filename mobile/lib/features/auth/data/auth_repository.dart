@@ -80,6 +80,16 @@ class AuthRepository {
     }
   }
 
+  /// Throws `ApiException` on an incorrect current password (422) or a
+  /// validation failure (e.g. new password too short).
+  Future<String> changePassword({required String currentPassword, required String newPassword}) async {
+    try {
+      return await _api.changePassword(currentPassword: currentPassword, newPassword: newPassword);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
   /// Throws `ApiException` on an invalid/expired token or a validation
   /// failure (e.g. password too short, confirmation mismatch).
   Future<String> resetPassword({
