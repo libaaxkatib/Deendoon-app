@@ -575,4 +575,47 @@ class RiskLevelServiceTest extends TestCase
         // +15 (broken) - 20 (recovered) = -5, clamped to 0 -> Low.
         $this->assertSame('low', $customer->fresh()->risk_level);
     }
+
+    // --- Batch entry point parity (recalculateForMany) ---
+
+    /**
+     * Backend Completion Audit (Phase 2 — Testing Debt): the class
+     * docblock claims recalculate() and recalculateForMany() "differ only
+     * in how the underlying data is fetched," but nothing previously
+     * exercised the batch path at all. Three customers, each covering a
+     * different band via different rule combinations, batched in one call
+     * and compared against calling recalculate() on each individually.
+     */
+    public function test_recalculate_for_many_matches_recalculate_for_each_customer_individually(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+
+        $low = $this->customer($tenant);
+        $this->debt($tenant, $low);
+
+        $medium = $this->customer($tenant);
+        $mediumDebt = $this->debt($tenant, $medium);
+        PromiseToPay::factory()->for($tenant, 'tenant')->for($mediumDebt, 'debt')->count(3)->create([
+            'status' => 'broken', 'resolved_at' => now()->subMonths(6),
+        ]);
+
+        $high = $this->customer($tenant);
+        $highDebt = $this->debt($tenant, $high);
+        PromiseToPay::factory()->for($tenant, 'tenant')->for($highDebt, 'debt')->count(10)->create([
+            'status' => 'broken', 'resolved_at' => now(),
+        ]);
+
+        $this->service()->recalculateForMany(collect([$low, $medium, $high]));
+
+        $this->assertSame('low', $low->fresh()->risk_level);
+        $this->assertSame('medium', $medium->fresh()->risk_level);
+        $this->assertSame('high', $high->fresh()->risk_level);
+    }
+
+    public function test_recalculate_for_many_is_a_no_op_for_an_empty_collection(): void
+    {
+        $this->service()->recalculateForMany(collect());
+
+        $this->addToAssertionCount(1);
+    }
 }
