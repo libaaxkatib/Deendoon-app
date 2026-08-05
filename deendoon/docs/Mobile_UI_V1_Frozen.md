@@ -15,6 +15,8 @@ Development, QA Testing, and all future product releases.
 > **Fourth amendment note (2026-07-31, final architecture consistency audit correction).** The Reminder Details screen's Permissions line still referenced "the reminder's creator or a manager-level role" — missed by every prior sweep. Updated to "the reminder's creator" only, matching the same fix already applied to `Backend_v2.1_UI_Mapping.md` and `Backend_v2.1_REST_API_Specification.md`.
 >
 > **Fifth amendment note (2026-08-02, V1 Scope Expansion, Product Owner Decision).** Two modules are added to Version 1: **Notifications** (new Section 9) and **Account / Profile** (new Section 10). Sections 9–13 of the prior document (Reusable Components, UX Rules, Business Rules, Version History, Freeze Declaration) are renumbered 11–15 accordingly. The Home Dashboard's header (Section 4) now opens with a Notification Bell in place of the prior plain Logout icon; Logout itself moves into the new Account / Profile section (Section 10.5), reached by tapping the greeting. Notifications (Section 9) is **not new backend scope** — it implements `SRS/03_Functional_Requirements.md` Module 10 (FR-058–062), already approved and frozen there, against `NotificationController`'s four already-built endpoints (`GET /notifications`, `GET /notifications/history`, `PATCH /notifications/{id}/read`, `PATCH /notifications/mark-all-read`); this amendment only closes the pre-existing gap between that already-approved backend module and the Flutter UI. Account / Profile (Section 10) **is** new scope: Profile and Change Password are real (cached `{id, name, email}` from `UserResource`; `POST /change-password`), but Business Profile and Settings have no Business-Owner-reachable backend yet — the only company-profile endpoint (`GET/PUT /admin/settings/company-profile`) is Super Admin-only, and no personal-settings endpoint exists at all. Per Product Owner decision, both are built now as real navigation destinations with an honest "not yet connected" empty state, explicitly not fabricated data and not a disabled/"Not Available" treatment — their repository layers are marked `TODO(Backend Required)` for later wiring.
+>
+> **Sixth amendment note (2026-08-05, V1 Implementation Alignment, Product Owner Decision).** After a Flutter-vs-documentation compliance review, the Product Owner confirmed that the shipped Version 1 Flutter implementation — not the pre-implementation wording of several sections in this document — is the approved Version 1 behavior. This amendment updates the documentation to match that approved implementation. No screen was redesigned and no new feature was introduced; the changes are: **(1) §4.4 Quick Actions** are now Add Case, Record Payment, Add Reminder, and Global Search (the earlier "Scan Invoice" and "Send Message" tiles are retired). **(2) §7.7 / §7.8 WhatsApp & SMS** are sent by rendering the message and then launching the user's own installed WhatsApp/SMS app (native app intent first, `wa.me` browser fallback for WhatsApp), where the user manually presses Send — no WhatsApp Business API, no paid messaging gateway, no server-side send record, and no automatic delivery tracking in Version 1. **(3) §7.4 Reminder Details** actions are split into two approved operational groupings — Client Visit (Navigate, Check In, Log Visit Outcome, Mark as Completed) and Follow-up (Call, WhatsApp, SMS, Mark as Completed, Reschedule). **(4) §7.1 / §7.6 Calendar** is reached from the Reminder Center's AppBar Calendar icon. **(5) §10 Account** now documents the real Business Profile form (wired to `GET/PUT /admin/settings/company-profile`, reachable by the Business Owner, who holds the tenant admin role) and the real Settings screen (Language, Notifications, Business, and Security groups), replacing the earlier "honest empty" placeholders, and documents the Bulk Import (Customer Import, §10.6) and About (§10.7) destinations, both approved parts of the Account module. **(6) §13** the audit-trail rule is narrowed to reflect that Version 1 does not record WhatsApp/SMS sends. Backend endpoints, APIs, database schema, and business logic are unchanged by this amendment — documentation only.
 
 ---
 
@@ -301,8 +303,8 @@ in Sections 4.1–4.5.
 
 **Required APIs:** Business Health Score retrieval API; Dashboard KPI
 Summary retrieval API; Today's Reminder Summary retrieval API; Recent
-Cases retrieval API; Case creation API; Payment recording API; Invoice
-capture API; Message composition API.
+Cases retrieval API; Case creation API; Payment recording API; Reminder
+creation API; Search retrieval API.
 
 **Required Database Tables:** Customer records, Debt records, Payment
 records, Reminder records, Case records, Invoice records, Message/
@@ -483,30 +485,30 @@ tasks.
 **Business Objective:** Minimize the number of taps required to start the
 most common workflows.
 
-**Layout Description:** A 2×2 grid of tappable tiles beneath Today's
-Overview: Add Case, Add Payment, Scan Invoice, Send Message.
+**Layout Description:** A grid of four tappable tiles beneath Today's
+Overview: Add Case, Record Payment, Add Reminder, Global Search.
 
 **Components:** Four tiles, each with an icon and a label.
 
 **User Actions:** Tap a tile to begin the corresponding workflow.
 
-**Navigation:** "Add Case" opens case creation. "Add Payment" opens
-payment recording. "Scan Invoice" opens invoice capture. "Send Message"
-opens WhatsApp Preview (Section 7.7) or SMS Preview (Section 7.8).
+**Navigation:** "Add Case" opens the case-creation flow. "Record Payment"
+opens the payment-recording flow. "Add Reminder" opens Reminder
+Scheduling (Section 7.5). "Global Search" opens the Global Search screen.
 
 **Validation Rules:** Not applicable at the tile level; each destination
 workflow enforces its own validation.
 
-**Business Rules:** All four actions are available to any user permitted
-to perform the underlying workflow, regardless of current data state
-(e.g., "Add Case" is always available, not conditional on existing
-cases).
+**Business Rules:** All four actions are always available regardless of
+current data state (e.g., "Add Case" is always available, not conditional
+on existing cases). Each tile is a shortcut into an existing workflow and
+introduces no business logic of its own.
 
-**Required APIs:** Case creation API, Payment recording API, Invoice
-capture API, Message composition API.
+**Required APIs:** Case creation API, Payment recording API, Reminder
+creation API, Search retrieval API.
 
-**Required Database Tables:** Case records, Payment records, Invoice
-records, Message/Reminder records.
+**Required Database Tables:** Case records, Payment records, Reminder
+records, Customer records.
 
 **Permissions:** Each tile is independently permission-gated by the
 role(s) permitted to perform that specific action.
@@ -1255,10 +1257,12 @@ defined in Sections 7.1–7.9.
 in Sections 7.1–7.9.
 
 **Required APIs:** Reminder Summary retrieval API; Reminder List
-retrieval API; Reminder Detail, Update, Deletion, Completion, and Send
-APIs; Reminder Creation API; Calendar Aggregation retrieval API; Message
-Template retrieval API; Message Rendering API; Send via WhatsApp API;
-Send via SMS API.
+retrieval API; Reminder Detail, Update, Deletion, and Completion APIs;
+Reminder Creation API; Calendar Aggregation retrieval API; Message
+Template retrieval API; Message Rendering API. WhatsApp and SMS are not
+sent through a backend API in Version 1 — after the message is rendered,
+delivery is handed off to the device's own WhatsApp/SMS app (Sections
+7.7 / 7.8).
 
 **Required Database Tables:** Reminder records, Debt records, Promise to
 Pay records, Message Template records, Sent Message records.
@@ -1284,17 +1288,19 @@ data, as documented in Sections 7.1–7.9.
 **Business Objective:** Let the Business Owner immediately see how much work is due
 today and how it breaks down by type.
 
-**Layout Description:** A header with search and add icons, followed by a
-summary row — a total due-today count plus per-type sub-counts (Visits,
-Calls, Payments) and an Overdue count.
+**Layout Description:** A header with a Calendar icon and an add ("+")
+icon, followed by a summary row — a total due-today count plus per-type
+sub-counts (Visits, Calls, Payments) and an Overdue count.
 
-**Components:** Header with search/add icons; summary row with total and
+**Components:** Header with Calendar/add icons; summary row with total and
 per-type counts.
 
-**User Actions:** Tap search; tap add to open Reminder Scheduling; tap a
-count to filter the Reminder List below.
+**User Actions:** Tap the Calendar icon to open the Smart Calendar; tap
+add to open Reminder Scheduling; tap a count to filter the Reminder List
+below.
 
-**Navigation:** The "+" icon opens Reminder Scheduling (Section 7.5).
+**Navigation:** The Calendar icon opens the Smart Calendar (Section 7.6).
+The "+" icon opens Reminder Scheduling (Section 7.5).
 
 **Validation Rules:** Not applicable.
 
@@ -1424,21 +1430,34 @@ one specific follow-up.
 **Layout Description:** A header with edit and delete icons. Below: the
 reminder's icon, title, related entity name, and due label. Below: a
 details list — Type, Due Date, Amount Due, Related Case, Created By,
-Created On. Below: a Notes section. Below: three action buttons — Send
-Reminder (primary), Mark as Completed (secondary), Reschedule
-(destructive).
+Created On. Below: a Notes section. Below: a set of action buttons that
+depends on the reminder's operational grouping:
+- **Client Visit** reminders (`Client Visit` type): Navigate, Check In,
+  Log Visit Outcome, and Mark as Completed. Communication actions (Call/
+  WhatsApp/SMS) are never shown for this grouping.
+- **Follow-up** reminders (every other type): Call, WhatsApp, SMS, Mark
+  as Completed, and Reschedule.
 
-**Components:** Details list; Notes section; three action buttons.
+**Components:** Details list; Notes section; the grouping-specific action
+buttons above.
 
-**User Actions:** Edit the reminder; delete the reminder; send the
-reminder; mark it completed; reschedule it.
+**User Actions:** Edit the reminder; delete the reminder; mark it
+completed; and, per grouping: navigate to / check in at / log the outcome
+of a Client Visit, or Call / WhatsApp / SMS / reschedule a Follow-up.
 
-**Navigation:** Reached from Reminder List or Smart Calendar. "Send
-Reminder" opens WhatsApp Preview (7.7) or SMS Preview (7.8). "Reschedule"
-opens Reminder Scheduling (7.5), pre-filled with this reminder's data.
+**Navigation:** Reached from Reminder List or Smart Calendar. On a
+Follow-up reminder, "WhatsApp" and "SMS" open the Message Preview screen
+(Sections 7.7 / 7.8, pre-selected to the chosen channel); "Call" places a
+call — for a debt-related reminder it opens the manual call-log sheet
+(FR-030) so the attempt is recorded, otherwise it launches the device's
+own phone dialer. On a Client Visit reminder, "Navigate" launches the
+device's maps app and "Log Visit Outcome" opens a sheet that saves the
+outcome. "Reschedule" opens Reminder Scheduling (7.5), pre-filled with
+this reminder's data.
 
 **Validation Rules:** "Mark as Completed" is only available while the
-reminder is not already Completed.
+reminder is not already Completed. "Check In" is available once per
+screen visit and becomes disabled after use.
 
 **Business Rules:** Amount Due is displayed only for reminder types that
 carry a monetary amount (Payment Due, Promise to Pay); it is omitted for
@@ -1446,10 +1465,19 @@ Client Visit, Follow-up Call, and Contract Renewal. Created By and
 Created On are fixed at creation and never change. Deleting a reminder is
 distinct from completing it: a deleted reminder does not appear in any
 subsequent view, whereas a completed reminder remains visible under the
-Completed tab.
+Completed tab. **Check In** records a visit check-in on the device only —
+Version 1 has no server field for a check-in timestamp, so it is local,
+in-memory state and never claims a server-confirmed result. **Log Visit
+Outcome** saves the entered outcome into the reminder's Notes via the
+Reminder Update API (no new endpoint or field). The **WhatsApp / SMS**
+actions render the message and hand off to the device's own messaging app
+per Sections 7.7 / 7.8 — no send is recorded and no delivery is tracked
+in Version 1.
 
-**Required APIs:** Reminder Detail retrieval API; Reminder Update API;
-Reminder Deletion API; Reminder Completion API; Reminder Send API.
+**Required APIs:** Reminder Detail retrieval API; Reminder Update API
+(also used by Log Visit Outcome and Reschedule); Reminder Deletion API;
+Reminder Completion API; Message Rendering API (for the WhatsApp/SMS
+preview); Manual Call-Log API (for a debt-related Call).
 
 **Required Database Tables:** Reminder records.
 
@@ -1545,8 +1573,9 @@ date item list.
 periods; tap a marked date to update the item list; tap an item to open
 Reminder Details; tap "+" to schedule a new reminder.
 
-**Navigation:** Reached from the Reminder Center. Leads to Reminder
-Details (7.4) and Reminder Scheduling (7.5).
+**Navigation:** Reached from the Reminder Center's AppBar via the
+Calendar icon (Section 7.1). Leads to Reminder Details (7.4) and Reminder
+Scheduling (7.5).
 
 **Validation Rules:** Not applicable.
 
@@ -1582,52 +1611,65 @@ customer via WhatsApp.
 **Business Objective:** Let the Business Owner confirm the exact wording of an
 outbound customer message before it is sent.
 
-**Layout Description:** A header with an info icon. Below: a recipient
-row (name, phone number, avatar). Below: a message bubble showing the
-fully rendered message — greeting, reminder content with the customer's
-specific amount and due date, closing, and sender name. Below: a "Use
-Template" selector row showing the currently selected template name.
-Below: a primary "Send via WhatsApp" button and a secondary "Send via
-SMS" button.
+**Layout Description:** A WhatsApp / SMS channel toggle at the top. Below:
+a recipient row (name, phone number) shown once a template is selected.
+Below: a "Use Template" selector row and, beneath it, a message bubble
+showing the fully rendered message — greeting, reminder content with the
+customer's specific amount and due date, closing, and sender name. Below:
+a single contextual send button whose label follows the toggle ("Send via
+WhatsApp" or "Send via SMS"). WhatsApp Preview and SMS Preview (Section
+7.8) are the same screen with the toggle set to the respective channel.
 
-**Components:** Recipient row; message preview bubble; template selector;
-two send buttons.
+**Components:** Channel toggle; recipient row; template selector; message
+preview bubble; contextual send button.
 
-**User Actions:** Change the selected template; send via WhatsApp; send
-via SMS.
+**User Actions:** Switch channel; change the selected template; send via
+the selected channel.
 
-**Navigation:** Reached from Reminder Details' "Send Reminder" action, or
-from a document's Share action. "Send via SMS" is documented separately in
-Section 7.8.
+**Navigation:** Reached from a Follow-up reminder's WhatsApp or SMS action
+on Reminder Details (Section 7.4). (Document sharing uses its own separate
+Share screen — see Section 8.8 — not this reminder preview.) Pressing the
+send button hands the rendered message off to the device's own WhatsApp
+(or SMS) app and returns to the previous screen.
 
 **Validation Rules:** A template must be selected before sending is
-enabled. The recipient's phone number must be present and valid.
+enabled. The recipient's phone number must be present.
 
 **Business Rules:** The message body is generated by substituting live
 data — customer name, amount due, due date, sender/company name — into
-the selected template. Every send is recorded against the originating
-reminder or case for audit purposes.
+the selected template, via the Message Rendering API. In Version 1 the
+message is **not** sent through any backend or third-party API: pressing
+"Send via WhatsApp" launches the user's own installed WhatsApp application
+(the native `whatsapp://send` app intent, opening the chat directly; if
+WhatsApp is not installed, it falls back to the `wa.me` "click to chat"
+web link in the browser) with the recipient and rendered text pre-filled,
+and **the user manually presses Send inside WhatsApp**. There is no
+WhatsApp Business API, no paid messaging gateway, no server-side
+"sent-message" record, and no automatic delivery tracking — the app has
+no confirmation that the user actually pressed Send, so it never claims
+one.
 
-**Required APIs:** Message Template retrieval API; Message Rendering API;
-Send via WhatsApp API.
+**Required APIs:** Message Template retrieval API; Message Rendering API.
+(No send API is called from the client in Version 1.)
 
-**Required Database Tables:** Message Template records, Reminder or Case
-records, Sent Message records.
+**Required Database Tables:** Message Template records; Reminder records
+(read only — no Sent Message record is written by this flow in Version 1).
 
 **Permissions:** Same as Section 7.1.
 
-**Empty State:** If no templates are available, the template selector
-displays an empty state and sending is disabled.
+**Empty State:** If no templates are available for the selected channel,
+the template selector displays an empty state and sending is disabled.
 
 **Loading State:** The message preview displays a loading state while
-being rendered; the send button displays a busy state while the send
-request is in flight.
+being rendered; the send button displays a busy state while the external
+app is being launched.
 
-**Error State:** A failed send displays an error message; the preview
-remains available for retry or channel/template change.
+**Error State:** If the message cannot be rendered, or the device has no
+app able to handle the WhatsApp/SMS launch, an error message is shown and
+the preview remains available for retry or channel/template change.
 
-**Success State:** A confirmation is shown on successful send, and the
-send is recorded in the relevant history.
+**Success State:** The device's WhatsApp app opens to the recipient's
+chat with the rendered message pre-filled, ready for the user to send.
 
 ### 7.8 SMS Preview
 
@@ -1637,10 +1679,10 @@ customer via SMS.
 **Business Objective:** Provide an equivalent, reliable delivery channel
 for customers not reachable via WhatsApp.
 
-**Layout Description:** Identical in structure to WhatsApp Preview
-(Section 7.7): recipient row, rendered message preview, template
-selector, and send buttons, with "Send via SMS" as the primary action in
-this context.
+**Layout Description:** The same screen as WhatsApp Preview (Section 7.7)
+with the channel toggle set to SMS: recipient row, rendered message
+preview, template selector, and a single contextual send button labelled
+"Send via SMS".
 
 **Components:** Recipient row; message preview; template selector; send
 buttons.
@@ -1655,14 +1697,17 @@ channels are available from the same preview screen.
 enabled. The recipient's phone number must be present and valid for SMS
 delivery.
 
-**Business Rules:** Identical rendering and recording rules as Section
-7.7, applied to the SMS channel.
+**Business Rules:** Identical rendering rules as Section 7.7, applied to
+the SMS channel. Sending launches the device's own SMS app via the
+standard `sms:` URI with the rendered text pre-filled, and the user
+manually presses Send there. As with WhatsApp, Version 1 writes no
+server-side "sent-message" record and performs no delivery tracking.
 
-**Required APIs:** Message Template retrieval API; Message Rendering API;
-Send via SMS API.
+**Required APIs:** Message Template retrieval API; Message Rendering API.
+(No send API is called from the client in Version 1.)
 
-**Required Database Tables:** Message Template records, Reminder or Case
-records, Sent Message records.
+**Required Database Tables:** Message Template records; Reminder records
+(read only — no Sent Message record is written by this flow in Version 1).
 
 **Permissions:** Same as Section 7.1.
 
@@ -1688,10 +1733,14 @@ workflow expressed across Sections 7.1–7.8.
 **Components:** The reminder lifecycle is expressed through the four
 statuses defined in Section 7.3 — Today, Upcoming, Overdue, and
 Completed — together with the actions that move a reminder between them:
-Schedule (creates a reminder with a due date, per Section 7.5), Send
-(dispatches the reminder via its selected delivery methods, per Sections
-7.7/7.8), Complete (per Section 7.4), and Reschedule (per Section 7.5,
-assigning a new due date).
+Schedule (creates a reminder with a due date, per Section 7.5), the
+grouping-specific action set on Reminder Details (per Section 7.4 — for a
+Follow-up reminder: Call / WhatsApp / SMS, where WhatsApp and SMS render
+the message and hand off to the device's own app per Sections 7.7/7.8;
+for a Client Visit reminder: Navigate / Check In / Log Visit Outcome),
+Complete (per Section 7.4), and Reschedule (per Section 7.5, assigning a
+new due date). Version 1 records no server-side send and tracks no
+delivery for the manual WhatsApp/SMS actions.
 
 **User Actions:** Create (schedule), send, complete, reschedule, delete —
 each as documented in their respective sections above.
@@ -2065,15 +2114,20 @@ device.
 without leaving the application.
 
 **Layout Description:** A share action available from the Preview
-screen's header, opening the WhatsApp Preview (7.7) or SMS Preview (7.8)
-flow with the document attached.
+screen's header, opening the document's own Share screen — a WhatsApp/SMS
+channel picker and a message-template selector for the document. This is
+distinct from the Reminder WhatsApp/SMS Preview (Sections 7.7 / 7.8):
+document Share sends server-side via `POST /documents/{id}/share` (and is
+recorded), whereas the Reminder actions hand off to the device's own app
+without a record.
 
-**Components:** Share icon/button; channel selection.
+**Components:** Share icon/button; channel selection; template selector.
 
-**User Actions:** Tap Share; select a delivery channel; send.
+**User Actions:** Tap Share; select a delivery channel; select a
+template; send.
 
-**Navigation:** Available from Preview (Section 8.6). Leads to WhatsApp
-Preview (7.7) or SMS Preview (7.8).
+**Navigation:** Available from Preview (Section 8.6). Opens the document's
+Share screen and, on send, returns to Preview.
 
 **Validation Rules:** The recipient's contact information must be present
 and valid for the selected channel.
@@ -2256,38 +2310,47 @@ accurately.
 ## 10. Account / Profile
 
 **Purpose:** Provide the Business Owner a single place to view their
-profile, change their password, and reach Business Profile, Settings, and
-Notifications, plus Logout.
+profile, change their password, and reach Business Profile, Settings,
+Notifications, and Bulk Import, plus Logout.
 
 **Business Objective:** Consolidate account-level actions off the Home
 Dashboard header (which now leads with the Notification Bell, Section
 4.6) into one dedicated destination.
 
-**Layout Description:** A menu screen reached by tapping the Home
-Dashboard's greeting: Profile, Business Profile, Settings, Notifications,
-Logout, each leading to its own screen (Notifications leads to Section 9).
+**Layout Description:** A screen reached by tapping the Home Dashboard's
+greeting/avatar. It opens with a profile summary card (avatar, name,
+email) that itself is the entry point to the Profile screen (Section
+10.2), followed by a grouped menu — Business Profile, Settings,
+Notifications, About, Bulk Import — and a separated Logout action below.
 
 **Components:** Menu (Section 10.1); Profile (Section 10.2); Business
-Profile (Section 10.3); Settings (Section 10.4); Logout (Section 10.5).
+Profile (Section 10.3); Settings (Section 10.4); Logout (Section 10.5);
+Bulk Import (Section 10.6); About (Section 10.7).
 
-**User Actions:** As documented in Sections 10.1–10.5: open any menu
-item, view profile, change password, log out.
+**User Actions:** As documented in Sections 10.1–10.7: open any menu
+item, view profile, change password, run a customer import, read the
+About screen, log out.
 
 **Navigation:** Reached by tapping the greeting on the Home Dashboard
 (Section 4). Leads to Profile (10.2), Business Profile (10.3), Settings
-(10.4), Notifications (Section 9), and Logout (10.5).
+(10.4), Notifications (Section 9), Bulk Import (10.6), About (10.7),
+and Logout (10.5).
 
 **Validation Rules:** Governed collectively by the validation rules
-defined in Sections 10.1–10.5.
+defined in Sections 10.1–10.7.
 
 **Business Rules:** Governed collectively by the business rules defined
-in Sections 10.1–10.5.
+in Sections 10.1–10.7.
 
-**Required APIs:** `POST /change-password` (Section 10.2). Business
-Profile (10.3) and Settings (10.4) have no Business-Owner-reachable
-backend today — see their own sections.
+**Required APIs:** `POST /change-password` (Section 10.2);
+`GET / PUT /admin/settings/company-profile` (Business Profile, Section
+10.3); `GET / PUT /admin/settings/preferences` (Settings, Section 10.4);
+`POST /customers/import` and `POST /customers/import/{batch}/commit`
+(Bulk Import, Section 10.6); `POST /logout` (Section 10.5). All are
+reachable by the Business Owner, who holds the tenant admin role.
 
-**Required Database Tables:** User records.
+**Required Database Tables:** User records, Tenant records, System
+Settings records, Customer records, Import Batch/Row records.
 
 **Permissions:** Visible to Business Owner.
 
@@ -2308,19 +2371,21 @@ screen.
 **Business Objective:** Give the Business Owner one predictable place to
 find every account-level action.
 
-**Layout Description:** Five rows, in order: Profile, Business Profile,
-Settings, Notifications, Logout — each with an icon and a label.
+**Layout Description:** A tappable profile summary card at the top
+(avatar, name, email → Profile, Section 10.2), then a grouped menu card
+with rows in order — Business Profile, Settings, Notifications, About,
+Bulk Import — each with an icon and a label, and a separated Logout
+action beneath the group.
 
-**Components:** Five menu rows.
+**Components:** Profile summary card; grouped menu rows; Logout action.
 
-**User Actions:** Tap any row.
+**User Actions:** Tap the profile card or any menu row.
 
 **Navigation:** As listed in Section 10's own Navigation.
 
 **Validation Rules:** Not applicable.
 
-**Business Rules:** All five rows are always shown, regardless of which
-destinations have a live backend today (Section 10.3/10.4).
+**Business Rules:** All rows are always shown.
 
 **Required APIs:** Not applicable — a pure navigation menu.
 
@@ -2334,8 +2399,8 @@ destinations have a live backend today (Section 10.3/10.4).
 
 **Error State:** Not applicable.
 
-**Success State:** All five rows are displayed and each reliably opens
-its destination.
+**Success State:** All rows are displayed and each reliably opens its
+destination.
 
 ### 10.2 Profile
 
@@ -2387,86 +2452,113 @@ message inline; the form remains editable.
 **Business Objective:** Let the Business Owner view their business's
 identifying information from within the mobile app.
 
-**Layout Description:** A dedicated screen, currently showing an honest
-"will appear here once this is connected" message rather than fabricated
-business data.
+**Layout Description:** An editable form pre-filled with the business's
+current details: a Logo picker, Company Name, Contact Email, Contact
+Phone, and Business Address, with a "Save Changes" button.
 
-**Components:** Empty-state panel.
+**Components:** Logo picker; Company Name field; Contact Email field;
+Contact Phone field; Business Address field; Save button.
 
-**User Actions:** None beyond navigating to and from this screen today.
+**User Actions:** Edit any field; pick a new logo image; save the changes.
 
-**Navigation:** Reached from the Account / Profile menu (10.1).
+**Navigation:** Reached from the Account / Profile menu (10.1). Saving
+remains on the screen and shows a success confirmation.
 
-**Validation Rules:** Not applicable.
+**Validation Rules:** Company Name is required. Contact Email, if
+entered, must be a valid email address. A picked logo must be a JPEG or
+PNG image no larger than 2 MB (enforced client-side before upload).
 
-**Business Rules:** The only company-profile endpoint that exists today
-(`GET/PUT /admin/settings/company-profile`) is Super Admin-only (the
-Deendoon Platform Administrator's web-panel capability), not reachable by
-the Business Owner's mobile account. TODO(Backend Required): a
-self-service, Business-Owner-reachable company-profile endpoint does not
-exist yet. The Flutter model (`BusinessProfile`) already mirrors the real
-`CompanyProfileResource` shape (`business_name`, `logo_path`, `address`,
-`contact_email`, `contact_phone`) so that wiring a future endpoint is a
-data-layer change only, not a UI redesign.
+**Business Rules:** The screen is wired to `GET / PUT /admin/settings/
+company-profile` and is reachable by the Business Owner, who holds the
+tenant admin role. Fields map to the `CompanyProfileResource` shape
+(`business_name`, `logo_path`, `address`, `contact_email`,
+`contact_phone`). The logo is the one file-upload field in the app; it is
+sent as multipart (`POST` with `_method=PUT`). A previously-saved logo is
+acknowledged with a neutral icon rather than an image preview, because
+`logo_path` is a private-disk storage path with no servable URL — only a
+logo just picked on the device is shown as an image preview.
 
-**Required APIs:** None today. Future: a Business-Owner-reachable
-equivalent of `GET /admin/settings/company-profile`.
+**Required APIs:** `GET /admin/settings/company-profile`;
+`PUT /admin/settings/company-profile` (sent as `POST` + `_method=PUT` to
+carry the multipart logo).
 
 **Required Database Tables:** Tenant records.
 
 **Permissions:** Visible to Business Owner.
 
-**Empty State:** "Your business details will appear here once this is
-connected." — an honest, non-fabricated placeholder, not an error.
+**Empty State:** Not applicable — the form always represents the tenant's
+current company profile.
 
-**Loading State:** Not applicable — no network call is made yet.
+**Loading State:** A loading indicator is shown while the profile is
+retrieved; the Save button shows a busy state while the update is in
+flight.
 
-**Error State:** Not applicable.
+**Error State:** A failed load shows a retry affordance; a failed save
+shows the server's error message and leaves the form editable.
 
-**Success State:** Not applicable until a real endpoint exists.
+**Success State:** On save, a "Business Profile updated successfully"
+confirmation is displayed.
 
 ### 10.4 Settings
 
-**Purpose:** Reserve a place for personal, per-user app settings.
+**Purpose:** Let the Business Owner view and change the app and
+tenant-level settings available in Version 1.
 
-**Business Objective:** Give the Business Owner a predictable place to
-find app settings once any are approved and built.
+**Business Objective:** Give the Business Owner one predictable place for
+language, notification, business-policy, and security preferences.
 
-**Layout Description:** A dedicated screen, currently showing an honest
-"will appear here once this is connected" message. No specific setting
-items are shown, since none are approved in any SRS module today —
-`Module 12` (FR-066–071) covers tenant-wide System Preferences, which is
-Super Admin-only, not a personal settings surface.
+**Layout Description:** A grouped settings screen with four sections:
+- **General** — Language selection (persisted locally on the device; no
+  backend).
+- **Notifications** — Push, Reminder, and Payment notification toggles,
+  plus the per-channel reminder-day schedules (WhatsApp / SMS / Call days).
+- **Business** — Default Credit Limit, Credit-Limit Reminder toggle, Soft
+  Limit Warning Threshold, and Professional Collection Threshold (days).
+- **Security** — Change Password (opens Section 10.2's Change Password
+  form) and a Biometric Login toggle.
 
-**Components:** Empty-state panel.
+Default Currency and Default Date Format are shown as an honest
+"unavailable — no backend endpoint" section, since no such field exists
+in the backend.
 
-**User Actions:** None beyond navigating to and from this screen today.
+**Components:** Section groups; toggles; numeric/day-list fields; a Save
+button; the honest unavailable section for currency/date-format.
 
-**Navigation:** Reached from the Account / Profile menu (10.1).
+**User Actions:** Change language; toggle notification and biometric
+settings; edit business-policy values; save; open Change Password.
 
-**Validation Rules:** Not applicable.
+**Navigation:** Reached from the Account / Profile menu (10.1). Change
+Password opens Section 10.2's form.
 
-**Business Rules:** TODO(Backend Required) and TODO(Requirements): no
-personal-settings endpoint, and no approved specification of what a
-personal setting would be, exists yet. Rather than inventing setting
-items with no approved specification behind them, this screen is real
-navigation to a real, honest empty destination.
+**Validation Rules:** Reminder-day lists must be whole numbers between 1
+and 365. Business-policy numeric fields follow the backend's own
+validation on save.
 
-**Required APIs:** None today.
+**Business Rules:** The Notifications and Business groups are wired to
+`GET / PUT /admin/settings/preferences` (System Preferences, FR-069) and
+are reachable by the Business Owner, who holds the tenant admin role.
+Language is device-local only. Biometric Login performs a real device
+capability check and a real biometric prompt and is persisted locally
+only; on a device without biometric hardware it is shown as unavailable.
 
-**Required Database Tables:** Not applicable today.
+**Required APIs:** `GET /admin/settings/preferences`;
+`PUT /admin/settings/preferences`.
+
+**Required Database Tables:** System Settings records.
 
 **Permissions:** Visible to Business Owner.
 
-**Empty State:** "App settings will appear here once this is connected."
-— an honest, non-fabricated placeholder, not an error.
+**Empty State:** Not applicable — the screen always represents the
+current settings.
 
-**Loading State:** Not applicable.
+**Loading State:** A loading indicator is shown while preferences are
+retrieved; the Save button shows a busy state while the update is in
+flight.
 
-**Error State:** Not applicable.
+**Error State:** A failed load shows a retry affordance; a failed save
+shows the server's error message and leaves the form editable.
 
-**Success State:** Not applicable until real settings are approved and
-built.
+**Success State:** On save, a success confirmation is displayed.
 
 ### 10.5 Logout
 
@@ -2504,6 +2596,114 @@ the network call succeeds.
 the server call fails.
 
 **Success State:** The session ends and the user is returned to Login.
+
+### 10.6 Bulk Import
+
+**Purpose:** Let the Business Owner import many customers at once from an
+Excel spreadsheet (the Customer Import module).
+
+**Business Objective:** Save the Business Owner from entering existing
+customers one by one when onboarding.
+
+**Layout Description:** A screen with a Sample Template section, an Upload
+File section (accepted formats: `.xlsx`, `.xls`) with a file picker and a
+selected-file card, a single "Import" button, and — after a run — an
+Import Summary card (Imported Successfully, Skipped (Duplicate), Failed)
+followed by a Failed Rows list showing each failed row's validation
+errors.
+
+**Components:** Sample Template section; file picker / selected-file card;
+Import button; Import Summary card; Failed Rows list.
+
+**User Actions:** Pick an Excel file; start the import; review the
+summary.
+
+**Navigation:** Reached from the Account / Profile menu (10.1).
+
+**Validation Rules:** Only `.xlsx` / `.xls` files are accepted. Per-row
+validation is performed server-side; invalid rows are reported back
+individually in the Failed Rows list.
+
+**Business Rules:** The screen wraps the real two-step backend flow —
+`POST /customers/import` (preview) then
+`POST /customers/import/{batch}/commit` — behind a single "Import"
+button. Version 1 has no per-row duplicate-resolution UI: every duplicate
+match defaults to `skip` server-side (the backend's documented safe
+default). Row outcomes map to the summary as: `created`/`updated` →
+Imported Successfully; `skipped` → Skipped (Duplicate); `skipped_invalid`
+→ Failed. The Sample Template download is shown as unavailable, since no
+backend endpoint provides a template file.
+
+**Required APIs:** `POST /customers/import`;
+`POST /customers/import/{batch}/commit`.
+
+**Required Database Tables:** Customer records, Import Batch records,
+Import Row records.
+
+**Permissions:** Visible to Business Owner.
+
+**Empty State:** Before a file is chosen, the upload prompt is shown; a
+run that finds no rows reports "No rows found in the uploaded file."
+
+**Loading State:** The Import button shows a busy state while the
+preview + commit run.
+
+**Error State:** A failed import shows the error with a retry affordance;
+individual invalid rows are listed under Failed Rows with their
+validation messages.
+
+**Success State:** The Import Summary displays the counts of imported,
+skipped-duplicate, and failed rows.
+
+### 10.7 About
+
+**Purpose:** Present the app's branding, description, version information,
+and legal/support links in one dedicated destination.
+
+**Business Objective:** Give the Business Owner a single place to learn
+what Deendoon is and to find the app's version and support/legal entries.
+
+**Layout Description:** A scrollable screen with: the Deendoon brand mark
+and tagline; an "About" description section (Hordhac Deendoon); a
+"what Deendoon helps you do" benefits list; a closing summary (Gunaanad);
+an information card (Macluumaad) showing Version, Build Number, and
+Copyright; and a "KUWA KALE" (Other) menu of four rows — Privacy Policy,
+Terms & Conditions, Contact Support, and Rate the App.
+
+**Components:** Brand mark; description/benefits/summary cards;
+information card; four-row Other menu.
+
+**User Actions:** Read the app description; view the version/build/
+copyright; tap any of the four Other rows.
+
+**Navigation:** Reached from the Account / Profile menu (10.1).
+
+**Validation Rules:** Not applicable.
+
+**Business Rules:** The descriptive copy is the Product Owner's approved
+text. Version and Build Number are read from the installed app bundle at
+runtime (never hardcoded), and Copyright shows the current year. The four
+Other rows (Privacy Policy, Terms & Conditions, Contact Support, Rate the
+App) have no live destination in Version 1 — each shows an honest
+"coming soon" acknowledgement rather than a fabricated screen or a dead
+link, since no content source or store listing exists for them yet.
+
+**Required APIs:** None — all content is static app copy or read from the
+local app bundle.
+
+**Required Database Tables:** Not applicable.
+
+**Permissions:** Visible to Business Owner.
+
+**Empty State:** Not applicable.
+
+**Loading State:** The Version/Build values render once the app bundle
+info resolves.
+
+**Error State:** Not applicable.
+
+**Success State:** The About content renders with the real installed
+version and build number.
 
 ---
 
@@ -2583,9 +2783,15 @@ The following business rules apply globally, across multiple screens:
 - **Document Immutability:** every generated document (Invoice, Receipt,
   Demand Letter, Statement) is fixed at the moment of generation and is
   never subsequently altered.
-- **Audit Trail:** every customer-facing communication (WhatsApp, SMS)
-  and every document download or share is recorded for audit purposes,
-  attributing the action to the user and time it occurred.
+- **Audit Trail:** every document download, every document share (which
+  is sent server-side via `POST /documents/{id}/share`, Section 8.8), and
+  every debt-related manual reminder-log action (FR-030 Call/WhatsApp/SMS
+  log) is recorded for audit purposes, attributing the action to the user
+  and the time it occurred. In Version 1, the manual WhatsApp and SMS
+  actions on Reminder Details (Sections 7.7 / 7.8) hand the message off to
+  the device's own messaging app and are **not** recorded — the app has
+  no confirmation the user actually sent the message, so it never fabricates
+  a send record.
 - **Tenant Isolation:** all data displayed on any screen is scoped to the
   authenticated user's own business; no screen displays data belonging to
   another business.
@@ -2598,6 +2804,7 @@ The following business rules apply globally, across multiple screens:
 |---|---|---|---|
 | 1.0 | 2026-07-27 | **FROZEN** | Initial approved UI specification, covering Home Dashboard, Analytics, Cases, Reminder Center, and Documents, and all screens reachable from them. |
 | 1.0 (amended) | 2026-08-02 | **FROZEN** | V1 Scope Expansion (Product Owner Decision): added Section 9 (Notifications, implementing already-approved/frozen SRS Module 10 against its already-built backend) and Section 10 (Account / Profile, new scope — Profile and Change Password real; Business Profile and Settings honestly empty pending backend). Home Dashboard header (Section 4) now leads with a Notification Bell (Section 4.6) in place of the prior Logout icon, which moved to Section 10.5. See the fifth amendment note at the top of this document. |
+| 1.0 (amended) | 2026-08-05 | **FROZEN** | V1 Implementation Alignment (Product Owner Decision): documentation synchronized to the shipped Version 1 Flutter implementation. §4.4 Quick Actions are Add Case, Record Payment, Add Reminder, Global Search (Scan Invoice / Send Message retired). §7.7 / §7.8 WhatsApp & SMS are sent by rendering the message and launching the device's own WhatsApp/SMS app (manual send, no WhatsApp Business API, no paid gateway, no send record, no delivery tracking). §7.4 Reminder Details actions split into Client Visit (Navigate, Check In, Log Visit Outcome, Mark as Completed) and Follow-up (Call, WhatsApp, SMS, Mark as Completed, Reschedule) groupings. §7.1 / §7.6 Calendar reached from the Reminder Center AppBar Calendar icon. §10 documents the real Business Profile and Settings screens and adds Bulk Import (§10.6) and About (§10.7). §13 audit-trail rule narrowed to exclude unrecorded manual WhatsApp/SMS sends. See the sixth amendment note at the top of this document. |
 
 ---
 

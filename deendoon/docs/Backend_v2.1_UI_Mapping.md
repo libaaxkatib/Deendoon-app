@@ -116,17 +116,20 @@ inventing one.
 
 ## 4.4 Quick Actions
 
-- **Required APIs:** Case Creation; Payment Recording; Invoice Capture;
-  Message Composition — each opening its own workflow, detailed under
-  the module that owns it (Cases §6, Documents §8, Reminder Center §7).
-- **Required Database Tables:** Case records, Payment records, Invoice
-  records, Reminder/Message records.
+- **Required APIs:** Case Creation; Payment Recording; Reminder Creation;
+  Search — each opening its own workflow, detailed under the module that
+  owns it (Cases §6, Payments/Cases, Reminder Center §7, Search). Per the
+  V1 Implementation Alignment (2026-08-05), the four approved Quick
+  Actions are Add Case, Record Payment, Add Reminder, and Global Search;
+  the earlier Scan Invoice / Send Message tiles are retired.
+- **Required Database Tables:** Case records, Payment records, Reminder
+  records, Customer records.
 - **Required Business Logic:** Each action is unconditionally available
   to a permitted user regardless of current data state, per §4.4's
   business rule.
-- **Required Services:** Case Service, Payment Service, Invoice Capture
-  Service, Message Composition Service (each owned by its destination
-  module, shared via Section 7).
+- **Required Services:** Case Service, Payment Service, Reminder Service,
+  Search Service (each owned by its destination module, shared via
+  Section 7).
 - **Required Background Jobs:** None directly.
 - **Required Notifications:** None directly (downstream workflows may
   trigger their own — Section 9).
@@ -452,6 +455,20 @@ backend mechanism behind requirements the frozen UI already specifies.*
 - **Required Permissions:** Business Owner.
 
 ## 7.7 WhatsApp (WhatsApp Preview)
+
+> **V1 Implementation Alignment (2026-08-05, Product Owner Decision).** In
+> the shipped Version 1 mobile app, the manual WhatsApp/SMS actions on the
+> Reminder Preview screen do **not** call a backend send API and do **not**
+> write a Sent Message record: after rendering (`POST /messages/render`),
+> the app launches the device's own WhatsApp/SMS app (native app intent,
+> `wa.me` browser fallback for WhatsApp) with the message pre-filled and
+> the user presses Send manually — no WhatsApp Business API, no paid
+> gateway, no delivery tracking (`Mobile_UI_V1_Frozen.md` §7.7/§7.8, sixth
+> amendment note). The "Send via WhatsApp/SMS" API, `Sent Message` records,
+> and Delivery Services described in the bullets below remain valid for the
+> **document Share** flow (§8.8, sent server-side) and for any scheduled
+> delivery; they are simply not exercised by the manual Reminder Preview
+> path in Version 1.
 
 - **Required APIs:** Message Template retrieval; Message Rendering
   (substitutes live data into a template); Send via WhatsApp.

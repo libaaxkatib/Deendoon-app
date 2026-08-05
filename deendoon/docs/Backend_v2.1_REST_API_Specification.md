@@ -247,9 +247,17 @@ each delegates directly to its owning module's creation endpoint, per
 | Quick Action | Delegates To |
 |---|---|
 | Add Case | Create Case — Section 5 |
-| Add Payment | Record Payment — Section 5 |
-| Scan Invoice | Invoice Scan Capture — Section 8 |
-| Send Message | Render Message / Send via WhatsApp / Send via SMS — Section 8 |
+| Record Payment | Record Payment — Section 5 |
+| Add Reminder | Create Reminder — Section 7 |
+| Global Search | Search (`GET /search`) |
+
+> **V1 Implementation Alignment (2026-08-05, Product Owner Decision).** The
+> approved Version 1 Quick Actions are Add Case, Record Payment, Add
+> Reminder, and Global Search. The earlier Scan Invoice and Send Message
+> Quick Actions are retired (`Mobile_UI_V1_Frozen.md` §4.4, sixth
+> amendment note). The invoice-upload and message render/send endpoints
+> themselves are unchanged and still exist; they are simply no longer
+> surfaced as Dashboard Quick Actions.
 
 ---
 
@@ -1037,9 +1045,11 @@ icon scoped to each screen's own list, not a unified search screen.
 - **Endpoint Name:** Invoice Scan Capture
 - **HTTP Method:** POST
 - **URL:** `/api/v1/documents/invoices/scan`
-- **Purpose:** Upload a captured invoice image or file, behind the Home
-  Dashboard's "Scan Invoice" Quick Action (§4.4) — the one file-upload
-  action required by the frozen UI.
+- **Purpose:** Upload a captured invoice image or file. *(Note: the Home
+  Dashboard's "Scan Invoice" Quick Action was retired in the 2026-08-05 V1
+  Implementation Alignment — see `Mobile_UI_V1_Frozen.md` §4.4. This
+  upload endpoint is unchanged and remains available; it is simply no
+  longer surfaced as a Dashboard Quick Action in Version 1.)*
 - **Request Fields:**
 
 | Field | Type | Required | Description |

@@ -143,8 +143,10 @@ the frozen UI, so none is included here.
   Documents module presents, previews, downloads, and shares.
 - **Owned By:** Documents module (Invoices and Demand Letters are also
   generated as a side effect of Cases actions).
-- **Used By:** Documents (all components), Cases (escalation), Home
-  (Scan Invoice).
+- **Used By:** Documents (all components), Cases (escalation). *(The
+  earlier "Home — Scan Invoice" Quick Action was retired in the
+  2026-08-05 V1 Implementation Alignment; see `Mobile_UI_V1_Frozen.md`
+  §4.4.)*
 
 ## Notifications
 
