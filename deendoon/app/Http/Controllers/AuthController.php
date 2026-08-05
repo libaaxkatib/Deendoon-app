@@ -12,6 +12,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\MessageTemplateService;
 use App\Services\PasswordResetService;
 use App\Services\SecurityEventLogger;
 use App\Traits\ApiResponse;
@@ -44,6 +45,7 @@ class AuthController extends Controller
         private readonly AuditLogService $auditLog,
         private readonly PasswordResetService $passwordReset,
         private readonly SecurityEventLogger $securityLog,
+        private readonly MessageTemplateService $messageTemplates,
     ) {}
 
     /**
@@ -51,7 +53,8 @@ class AuthController extends Controller
      * Product Owner Decision, 2026-07-30): registration creates a new
      * Tenant and its single Business Owner account (role `admin`)
      * together — the only account-creation path for the Customer Mobile
-     * App. Wrapped in a transaction since it writes two related rows.
+     * App. Wrapped in a transaction since it writes two related rows (now
+     * three, including default message template provisioning).
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -59,6 +62,11 @@ class AuthController extends Controller
             $tenant = Tenant::create([
                 'business_name' => $request->validated('business_name'),
             ]);
+
+            // Backend Completion Audit (Phase 1): provision the 7 approved
+            // default reminder templates for every new tenant, closing the
+            // gap where only tenants seeded before this fix had them.
+            $this->messageTemplates->provisionDefaults($tenant);
 
             $user = new User([
                 'name' => $request->validated('name'),

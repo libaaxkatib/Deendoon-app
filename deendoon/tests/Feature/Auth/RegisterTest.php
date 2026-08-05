@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\MessageTemplate;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,6 +46,33 @@ class RegisterTest extends TestCase
         $this->assertStringStartsWith('$argon2id$', $user->password);
         $this->assertTrue($user->hasRole('admin'));
         $this->assertSame(Tenant::where('business_name', 'Asad Trading Co.')->firstOrFail()->id, $user->tenant_id);
+    }
+
+    public function test_registration_provisions_default_message_templates(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'business_name' => 'Asad Trading Co.',
+            'name' => 'Asad Mohamed',
+            'email' => 'asad@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertStatus(201);
+
+        $tenant = Tenant::where('business_name', 'Asad Trading Co.')->firstOrFail();
+        // 7 approved default templates x 2 channels (whatsapp + sms).
+        $this->assertSame(14, MessageTemplate::where('tenant_id', $tenant->id)->count());
+        $this->assertDatabaseHas('message_templates', [
+            'tenant_id' => $tenant->id,
+            'name' => 'First Reminder',
+            'channel' => 'whatsapp',
+        ]);
+        $this->assertDatabaseHas('message_templates', [
+            'tenant_id' => $tenant->id,
+            'name' => 'Promise to Pay Confirmation',
+            'channel' => 'sms',
+        ]);
     }
 
     public function test_registration_normalizes_email_to_lowercase_and_trimmed(): void

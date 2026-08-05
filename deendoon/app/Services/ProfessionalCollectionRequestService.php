@@ -189,6 +189,15 @@ class ProfessionalCollectionRequestService
             'content' => $content,
         ])->refresh();
 
+        $this->auditLog->record(
+            AuditAction::Created,
+            'professional_collection_request',
+            $request->id,
+            $actor,
+            'Message posted',
+            $request->tenant_id,
+        );
+
         if ((string) $actor->id !== (string) $request->submitted_by_user_id) {
             $this->notifications->notify($request->tenant_id, $request->submitted_by_user_id, NotificationType::ProfessionalCollectionRequestUpdate, 'professional_collection_request', $request->id);
         }

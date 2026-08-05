@@ -310,6 +310,29 @@ class ProfessionalCollectionRequestTest extends TestCase
         $this->assertCount(2, $response->json('data'));
     }
 
+    public function test_posting_a_message_records_an_audit_log_entry(): void
+    {
+        // Backend Completion Audit (Phase 1): postMessage() previously
+        // never wrote to audit_log, unlike every other mutating action in
+        // this service (submit/transitionStatus/close).
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        [$caseId] = $this->makeOpenCase($tenant);
+        $tenantUser = $this->actingAsTenantUser($tenant);
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+
+        $this->postJson("/api/v1/professional-requests/{$pcrId}/messages", ['content' => 'Please review our case.'])
+            ->assertStatus(201);
+
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => $tenantUser->id,
+            'action' => 'created',
+            'entity_type' => 'professional_collection_request',
+            'entity_id' => $pcrId,
+            'reason' => 'Message posted',
+        ]);
+    }
+
     public function test_messaging_is_rejected_once_the_request_is_terminal(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
