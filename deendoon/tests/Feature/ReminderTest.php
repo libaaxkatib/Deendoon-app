@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CollectionCase;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\MessageTemplate;
@@ -359,7 +360,81 @@ class ReminderTest extends TestCase
             ->assertJsonPath('data.recipient_name', 'Hodan Store')
             ->assertJsonFragment(['recipient_phone' => '254712345678']);
         $this->assertStringContainsString('Hodan Store', $response->json('data.rendered_text'));
-        $this->assertStringContainsString('2150.00', $response->json('data.rendered_text'));
+        // Reminder Module Final Polish: {amount_due} now renders with a
+        // thousand separator via number_format(), matching how monetary
+        // values should display everywhere in the Reminder module.
+        $this->assertStringContainsString('2,150.00', $response->json('data.rendered_text'));
+    }
+
+    public function test_rendered_message_falls_back_to_debt_remaining_balance_for_follow_up_call(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Hodan Store']);
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')
+            ->create(['amount' => 1750.25, 'remaining_balance' => 1750.25]);
+        // Follow-up Call reminders never carry their own amount_due — the
+        // Business Decision approved for this fix is that {amount_due}
+        // should still resolve, from the related Debt's remaining_balance.
+        $reminder = Reminder::factory()->for($tenant, 'tenant')
+            ->create(['type' => 'follow_up_call', 'related_entity_type' => 'debt', 'related_entity_id' => $debt->id, 'amount_due' => null]);
+        $template = MessageTemplate::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->postJson('/api/v1/messages/render', [
+            'template_id' => $template->id,
+            'reminder_id' => $reminder->id,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('1,750.25', $response->json('data.rendered_text'));
+    }
+
+    public function test_rendered_message_falls_back_to_collection_case_debt_balance_for_client_visit(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Hodan Store']);
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')
+            ->create(['amount' => 980, 'remaining_balance' => 980]);
+        $case = CollectionCase::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create();
+        // Client Visit reminders never carry their own amount_due either —
+        // resolved here via the related Collection Case's Debt.
+        $reminder = Reminder::factory()->for($tenant, 'tenant')
+            ->create(['type' => 'client_visit', 'related_entity_type' => 'collection_case', 'related_entity_id' => $case->id, 'amount_due' => null]);
+        $template = MessageTemplate::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->postJson('/api/v1/messages/render', [
+            'template_id' => $template->id,
+            'reminder_id' => $reminder->id,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('980.00', $response->json('data.rendered_text'));
+    }
+
+    public function test_rendered_message_leaves_amount_empty_when_no_balance_can_be_resolved(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Hodan Store']);
+        // No amount_due on the reminder and no related Debt to fall back
+        // to — the priority chain's final step returns an empty value
+        // rather than fabricating one.
+        $reminder = Reminder::factory()->for($tenant, 'tenant')
+            ->create(['type' => 'follow_up_call', 'related_entity_type' => 'customer', 'related_entity_id' => $customer->id, 'amount_due' => null]);
+        $template = MessageTemplate::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->postJson('/api/v1/messages/render', [
+            'template_id' => $template->id,
+            'reminder_id' => $reminder->id,
+        ]);
+
+        $response->assertStatus(200);
+        // CustomerFactory defaults outstanding_balance to 0, so this
+        // exercises the same "no balance" path a Customer with no open
+        // debts (a real 0) would hit — the placeholder resolves cleanly to
+        // "0.00" rather than being left as a literal unresolved brace.
+        $this->assertStringNotContainsString('{amount_due}', $response->json('data.rendered_text'));
     }
 
     public function test_admin_can_list_message_templates_filtered_by_channel(): void

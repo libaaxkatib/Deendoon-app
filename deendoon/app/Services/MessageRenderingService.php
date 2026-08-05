@@ -27,10 +27,11 @@ class MessageRenderingService
     public function renderForReminder(MessageTemplate $template, Reminder $reminder): array
     {
         $customer = $this->resolveCustomer($reminder);
+        $amountDue = $reminder->amount_due ?? $this->resolveOutstandingAmount($reminder);
 
         $replacements = [
             '{customer_name}' => $customer?->name ?? '',
-            '{amount_due}' => $reminder->amount_due !== null ? (string) $reminder->amount_due : '',
+            '{amount_due}' => $amountDue !== null ? number_format((float) $amountDue, 2) : '',
             '{due_date}' => $reminder->due_date->format('M j, Y'),
             '{company_name}' => $reminder->tenant?->business_name ?? '',
         ];
@@ -80,6 +81,28 @@ class MessageRenderingService
             'debt' => Debt::find($reminder->related_entity_id)?->customer,
             'collection_case' => CollectionCase::find($reminder->related_entity_id)?->debt?->customer,
             'promise_to_pay' => PromiseToPay::find($reminder->related_entity_id)?->debt?->customer,
+            default => throw new RuntimeException("Unknown reminder related_entity_type: {$reminder->related_entity_type}"),
+        };
+    }
+
+    /**
+     * Fallback for reminder types that never carry their own `amount_due`
+     * (e.g. Follow-up Call, Client Visit): resolve the outstanding balance
+     * from the related Debt/Collection Case instead, mirroring
+     * resolveCustomer()'s entity routing. `Debt::remaining_balance` is this
+     * app's canonical outstanding-amount column (maintained by
+     * PaymentService on every payment); `Customer::outstanding_balance` is
+     * the equivalent customer-level rollup (CustomerBalanceService, BRL-022)
+     * used when the reminder is tied directly to a Customer rather than one
+     * specific Debt.
+     */
+    private function resolveOutstandingAmount(Reminder $reminder): ?string
+    {
+        return match ($reminder->related_entity_type) {
+            'customer' => Customer::find($reminder->related_entity_id)?->outstanding_balance,
+            'debt' => Debt::find($reminder->related_entity_id)?->remaining_balance,
+            'collection_case' => CollectionCase::find($reminder->related_entity_id)?->debt?->remaining_balance,
+            'promise_to_pay' => PromiseToPay::find($reminder->related_entity_id)?->debt?->remaining_balance,
             default => throw new RuntimeException("Unknown reminder related_entity_type: {$reminder->related_entity_type}"),
         };
     }
