@@ -89,6 +89,32 @@ class SubscriptionService
     }
 
     /**
+     * Same underlying resolution as {@see customerLimit()}, but fails
+     * closed. Product Owner Decision, Phase 4.1 review (2026-08-06): "No
+     * subscription record must NEVER be treated as Unlimited. Fail
+     * Closed." `customerLimit()` cannot distinguish "a real plan was
+     * found and its customer_limit column is null by design" (Trial,
+     * Corporate — genuinely unlimited) from "no plan could be resolved at
+     * all, not even the Free Plan fallback" (e.g. the Free Plan row
+     * hasn't been seeded in this environment) — both return null from
+     * that method. This method resolves the ambiguity by inspecting
+     * {@see currentPlan()} directly: only a plan that was actually found
+     * and explicitly carries a null `customer_limit` is unlimited. If no
+     * plan can be resolved at all, this returns 0 — the most restrictive
+     * value, blocking new customer creation and marking every existing
+     * customer read-only until the environment's Free Plan is (re)seeded
+     * — never failing open to "no limit." Used only by the Customer
+     * Limit Enforcement call sites; {@see customerLimit()} keeps its
+     * original "raw plan value" semantics for reporting endpoints.
+     */
+    public function effectiveCustomerLimit(Tenant $tenant): ?int
+    {
+        $plan = $this->currentPlan($tenant);
+
+        return $plan === null ? 0 : $plan->customer_limit;
+    }
+
+    /**
      * Approved base storage limits: Trial 10GB, Free 10GB, Small Business
      * 25GB, Medium Business 50GB, Corporate 100GB — never null at the
      * schema level (Phase 3.1 migration), so a null return here means the

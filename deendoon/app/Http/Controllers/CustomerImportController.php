@@ -12,6 +12,7 @@ use App\Models\ImportRow;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\CustomerDuplicateDetectionService;
+use App\Services\CustomerReadOnlyService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
@@ -26,6 +27,7 @@ class CustomerImportController extends Controller
     public function __construct(
         private readonly CustomerDuplicateDetectionService $duplicateDetection,
         private readonly AuditLogService $auditLog,
+        private readonly CustomerReadOnlyService $customerReadOnly,
     ) {}
 
     /**
@@ -115,12 +117,29 @@ class CustomerImportController extends Controller
         $results = [];
 
         DB::transaction(function () use ($batch, $resolutionsByRow, $user, &$results) {
+            $tenant = $user->tenant;
+
+            // Backend Completion Roadmap (Phase 4.1, Product Owner
+            // review 2026-08-06): "Bulk Import cannot bypass plan
+            // limits." Locked once for the whole batch (closes the same
+            // concurrent-request race CustomerReadOnlyService::
+            // assertCanCreateCustomer() closes for a single create);
+            // remaining capacity is then tracked locally per row so this
+            // doesn't re-query the count for every row in the batch.
+            $limit = $this->customerReadOnly->lockAndGetEffectiveLimit($tenant);
+            $customerCount = $limit === null ? null : Customer::where('tenant_id', $tenant->id)->count();
+
             foreach ($batch->rows as $row) {
-                $results[] = $this->processRow($row, $resolutionsByRow, $user);
+                $results[] = $this->processRow($row, $resolutionsByRow, $user, $limit, $customerCount);
             }
 
             $batch->update(['status' => 'committed']);
         });
+
+        // A "new" row may have changed the tenant's customer count, which
+        // can change who is read-only — same trigger as a single Customer
+        // creation.
+        $this->customerReadOnly->recalculate($user->tenant);
 
         return $this->successResponse([
             'batch_id' => $batch->id,
@@ -132,7 +151,7 @@ class CustomerImportController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function processRow(ImportRow $row, Collection $resolutionsByRow, User $user): array
+    private function processRow(ImportRow $row, Collection $resolutionsByRow, User $user, ?int $limit, ?int &$customerCount): array
     {
         if ($row->validation_status === 'invalid') {
             return ['row_number' => $row->row_number, 'outcome' => 'skipped_invalid'];
@@ -163,12 +182,27 @@ class CustomerImportController extends Controller
             return ['row_number' => $row->row_number, 'outcome' => 'updated', 'customer_id' => $customer->id];
         }
 
+        // Backend Completion Roadmap (Phase 4.1, Product Owner review
+        // 2026-08-06): "Bulk Import cannot bypass plan limits." Only
+        // this branch (a genuinely new Customer row) counts against the
+        // limit — an "update" resolution above never changes the
+        // tenant's customer count.
+        if ($limit !== null && $customerCount >= $limit) {
+            $row->update(['resolution' => 'skip']);
+
+            return ['row_number' => $row->row_number, 'outcome' => 'skipped_limit_reached'];
+        }
+
         $customer = Customer::create([
             'name' => $data['name'],
             'phone' => $data['phone'],
             'customer_status' => 'active',
             'credit_limit' => $data['credit_limit'],
         ]);
+
+        if ($customerCount !== null) {
+            $customerCount++;
+        }
 
         $this->auditLog->record(AuditAction::Created, 'customer', $customer->id, $user);
         $row->update(['resolution' => 'new', 'resulting_customer_id' => $customer->id]);

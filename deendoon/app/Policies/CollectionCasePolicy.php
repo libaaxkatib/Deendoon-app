@@ -13,6 +13,14 @@ use App\Models\User;
  * operational responsibility exercised only after a Professional
  * Collection Request has been accepted (see
  * ProfessionalCollectionRequestPolicy), never a tenant-side role.
+ *
+ * Backend Completion Roadmap, Phase 4.1 — Customer Limit Enforcement:
+ * Collection Case *creation* is authorized via `DebtPolicy::escalate()`
+ * (CollectionCaseController::store() calls
+ * `$this->authorize('escalate', $debt)`, not this policy), already
+ * gated there. `manage` (activities, closing, and every other mutation
+ * on an existing case) additionally blocks when the case's Customer,
+ * via its Debt, is read-only. `viewAny`/`view` are untouched.
  */
 class CollectionCasePolicy
 {
@@ -28,7 +36,7 @@ class CollectionCasePolicy
 
     public function manage(User $user, CollectionCase $case): bool
     {
-        return $this->isAuthorized($user);
+        return $this->isAuthorized($user) && ! $case->debt->customer->is_read_only;
     }
 
     private function isAuthorized(User $user): bool

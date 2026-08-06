@@ -20,6 +20,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * assignment + save() — the same pattern already used for
  * `outstanding_balance` (CustomerBalanceService) — never via mass
  * assignment, so no manual-override path can ever reappear accidentally.
+ *
+ * `is_read_only` (Backend Completion Roadmap, Phase 4.1) follows the
+ * identical pattern: exclusively system-calculated by
+ * CustomerReadOnlyService via bulk query-builder UPDATE statements (which
+ * bypass mass-assignment guarding entirely, unlike `Model::update()`) —
+ * also deliberately excluded from Fillable so no other write path can
+ * ever set it directly.
  */
 #[Fillable(['name', 'phone', 'credit_limit', 'customer_status'])]
 class Customer extends Model
@@ -35,6 +42,7 @@ class Customer extends Model
             'credit_limit' => 'decimal:2',
             'outstanding_balance' => 'decimal:2',
             'credit_score' => 'integer',
+            'is_read_only' => 'boolean',
         ];
     }
 

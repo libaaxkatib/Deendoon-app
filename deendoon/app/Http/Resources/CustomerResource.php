@@ -23,6 +23,7 @@ class CustomerResource extends JsonResource
             'risk_level' => $this->risk_level,
             'credit_score' => $this->credit_score,
             'credit_score_band' => $this->credit_score_band,
+            'is_read_only' => $this->is_read_only,
             'archived_at' => $this->archived_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

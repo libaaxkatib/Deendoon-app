@@ -103,7 +103,11 @@ class DebtController extends Controller
 
     public function store(StoreDebtRequest $request, Customer $customer): JsonResponse
     {
-        $this->authorize('create', Debt::class);
+        // Backend Completion Roadmap (Phase 4.1): passes $customer so
+        // DebtPolicy::create() can block creating a Debt for an already
+        // read-only Customer — a class-level `Debt::class` check alone
+        // has no Customer to inspect.
+        $this->authorize('create', [Debt::class, $customer]);
 
         // BRL-023: evaluated against the balance *before* this Debt is added.
         $prospectiveOutstanding = bcadd((string) $customer->outstanding_balance, (string) $request->validated('amount'), 2);

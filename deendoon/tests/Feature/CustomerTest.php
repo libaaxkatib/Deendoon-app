@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,6 +19,12 @@ class CustomerTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        // Backend Completion Roadmap (Phase 4.1, Product Owner review
+        // 2026-08-06): customer creation now fails closed to a limit of
+        // 0 when no plan can be resolved at all — every tenant in this
+        // file needs the Free Plan (limit 2) resolvable, matching how a
+        // real tenant with no subscription behaves in production.
+        $this->seed(SubscriptionPlanSeeder::class);
     }
 
     private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User

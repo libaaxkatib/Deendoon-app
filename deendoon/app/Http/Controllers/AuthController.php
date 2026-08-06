@@ -12,6 +12,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\CustomerReadOnlyService;
 use App\Services\MessageTemplateService;
 use App\Services\PasswordResetService;
 use App\Services\SecurityEventLogger;
@@ -48,6 +49,7 @@ class AuthController extends Controller
         private readonly SecurityEventLogger $securityLog,
         private readonly MessageTemplateService $messageTemplates,
         private readonly SubscriptionService $subscriptions,
+        private readonly CustomerReadOnlyService $customerReadOnly,
     ) {}
 
     /**
@@ -76,6 +78,12 @@ class AuthController extends Controller
             // fallback is only for tenants that genuinely have no
             // subscription record, not the normal path for a new one.
             $this->subscriptions->provisionTrial($tenant);
+
+            // Backend Completion Roadmap (Phase 4.1): every subscription
+            // change must trigger recalculation — a no-op here (0
+            // customers yet) but keeps the rule uniformly true rather
+            // than special-cased for "brand new tenant."
+            $this->customerReadOnly->recalculate($tenant);
 
             $user = new User([
                 'name' => $request->validated('name'),

@@ -11,6 +11,18 @@ use App\Models\User;
  * capability (role `admin`) — the only tenant-side account type. The
  * distinct Sales & Finance Staff / Collections Staff roles this policy
  * previously mapped to no longer exist as authentication roles.
+ *
+ * Backend Completion Roadmap, Phase 4.1 — Customer Limit Enforcement:
+ * `update`/`delete`/`complete`/`send` additionally block when the
+ * Reminder's related Customer ({@see Reminder::relatedCustomer()}) is
+ * read-only. `create` is deliberately NOT gated here — at creation time
+ * there is no Reminder instance yet to resolve a related Customer from;
+ * ReminderService::create() checks the same condition on the
+ * not-yet-saved instance instead (`implement enforcement inside the
+ * proper Service layer`, per this phase's own instruction), throwing
+ * AuthorizationException directly rather than forcing this policy's
+ * `create(User $user)` signature to accept ad hoc extra parameters the
+ * way DebtPolicy::create() does. `view`/`viewAny` are untouched.
  */
 class ReminderPolicy
 {
@@ -38,7 +50,7 @@ class ReminderPolicy
      */
     public function update(User $user, Reminder $reminder): bool
     {
-        return $this->isAuthorized($user);
+        return $this->isAuthorized($user) && ! $reminder->relatedCustomer()?->is_read_only;
     }
 
     public function delete(User $user, Reminder $reminder): bool
@@ -48,12 +60,12 @@ class ReminderPolicy
 
     public function complete(User $user, Reminder $reminder): bool
     {
-        return $this->isAuthorized($user);
+        return $this->isAuthorized($user) && ! $reminder->relatedCustomer()?->is_read_only;
     }
 
     public function send(User $user, Reminder $reminder): bool
     {
-        return $this->isAuthorized($user);
+        return $this->isAuthorized($user) && ! $reminder->relatedCustomer()?->is_read_only;
     }
 
     private function isAuthorized(User $user): bool

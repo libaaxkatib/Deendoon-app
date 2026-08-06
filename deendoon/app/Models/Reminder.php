@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use RuntimeException;
 
 /**
  * Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §7). `related_entity_type`/
@@ -64,5 +65,24 @@ class Reminder extends Model
     public function sentMessages(): HasMany
     {
         return $this->hasMany(SentMessage::class);
+    }
+
+    /**
+     * Backend Completion Roadmap, Phase 4.1 — Customer Limit Enforcement.
+     * Extracted from MessageRenderingService::resolveCustomer() (moved
+     * here verbatim, that class now delegates to this instead of
+     * duplicating it) so ReminderPolicy/ReminderService can resolve the
+     * same "which Customer does this Reminder belong to" routing without
+     * a second copy of this match expression.
+     */
+    public function relatedCustomer(): ?Customer
+    {
+        return match ($this->related_entity_type) {
+            'customer' => Customer::find($this->related_entity_id),
+            'debt' => Debt::find($this->related_entity_id)?->customer,
+            'collection_case' => CollectionCase::find($this->related_entity_id)?->debt?->customer,
+            'promise_to_pay' => PromiseToPay::find($this->related_entity_id)?->debt?->customer,
+            default => throw new RuntimeException("Unknown reminder related_entity_type: {$this->related_entity_type}"),
+        };
     }
 }

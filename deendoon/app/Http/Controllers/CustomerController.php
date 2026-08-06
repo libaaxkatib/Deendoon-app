@@ -12,6 +12,7 @@ use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use App\Services\AuditLogService;
 use App\Services\CustomerDuplicateDetectionService;
+use App\Services\CustomerReadOnlyService;
 use App\Services\RiskLevelService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +27,7 @@ class CustomerController extends Controller
         private readonly CustomerDuplicateDetectionService $duplicateDetection,
         private readonly AuditLogService $auditLog,
         private readonly RiskLevelService $riskLevel,
+        private readonly CustomerReadOnlyService $customerReadOnly,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -95,6 +97,13 @@ class CustomerController extends Controller
         );
 
         $customer = DB::transaction(function () use ($request) {
+            // Backend Completion Roadmap (Phase 4.1, Product Owner
+            // review 2026-08-06): the authoritative, lock-protected
+            // recheck — CustomerPolicy::create()'s check above is only a
+            // fast, non-atomic pre-check and cannot by itself prevent
+            // two concurrent requests both slipping past it.
+            $this->customerReadOnly->assertCanCreateCustomer($request->user()->tenant);
+
             $customer = Customer::create([
                 'name' => $request->validated('name'),
                 'phone' => $request->validated('phone'),
@@ -115,8 +124,12 @@ class CustomerController extends Controller
             return $customer->refresh();
         });
 
+        // Backend Completion Roadmap (Phase 4.1): a new customer changes
+        // the tenant's customer count, which can change who is read-only.
+        $this->customerReadOnly->recalculate($request->user()->tenant);
+
         return $this->successResponse([
-            'customer' => new CustomerResource($customer),
+            'customer' => new CustomerResource($customer->fresh()),
             'warning' => $duplicate ? $this->duplicateWarning($duplicate) : null,
         ], 'Customer created successfully', 201);
     }
@@ -184,6 +197,13 @@ class CustomerController extends Controller
             );
         });
 
+        // Backend Completion Roadmap (Phase 4.1): archiving an editable
+        // customer must promote the next-oldest read-only customer — an
+        // emergent property of full recalculation (the archived customer
+        // is now excluded from the ordered query by its own soft-delete
+        // scope), not a separate "find and promote" mechanism.
+        $this->customerReadOnly->recalculate($request->user()->tenant);
+
         return $this->successResponse(null, 'Customer archived successfully');
     }
 
@@ -201,6 +221,12 @@ class CustomerController extends Controller
                 actor: $request->user(),
             );
         });
+
+        // Backend Completion Roadmap (Phase 4.1): a restored customer
+        // re-enters the active count and may itself become read-only
+        // (or push another customer into read-only) depending on where
+        // it lands in created_at order relative to the current limit.
+        $this->customerReadOnly->recalculate($request->user()->tenant);
 
         return $this->successResponse(new CustomerResource($customer->fresh()), 'Customer restored successfully');
     }

@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
+use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
+use App\Models\TenantSubscription;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -21,6 +24,11 @@ class CustomerImportTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        // Backend Completion Roadmap (Phase 4.1, Product Owner review
+        // 2026-08-06): import commit now enforces the same fail-closed
+        // customer limit as direct creation — every tenant here needs
+        // the Free Plan (limit 2) resolvable.
+        $this->seed(SubscriptionPlanSeeder::class);
     }
 
     private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
@@ -244,6 +252,75 @@ class CustomerImportTest extends TestCase
 
         $response->assertStatus(200)->assertJsonPath('data.results.0.outcome', 'skipped');
         $this->assertSame(1, Customer::count());
+    }
+
+    // --- Customer limit enforcement (Product Owner Decision, 2026-08-06) ---
+
+    public function test_commit_skips_a_new_row_that_would_exceed_the_customer_limit(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        // Free Plan limit is 2 (seeded in setUp()).
+        Customer::factory()->for($tenant, 'tenant')->count(2)->create();
+        $this->actingAsTenantUser($tenant);
+
+        $file = $this->makeExcelFile([['Overflow Person', '254711111111', 1000]]);
+        $batchId = $this->postJson('/api/v1/customers/import', ['file' => $file])->json('data.batch_id');
+
+        $response = $this->postJson("/api/v1/customers/import/{$batchId}/commit", ['resolutions' => []]);
+
+        $response->assertStatus(200)->assertJsonPath('data.results.0.outcome', 'skipped_limit_reached');
+        $this->assertSame(2, Customer::count());
+    }
+
+    public function test_commit_creates_rows_up_to_the_limit_then_skips_the_rest(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $file = $this->makeExcelFile([
+            ['Person One', '254711111111', 1000],
+            ['Person Two', '254722222222', 1000],
+        ]);
+        $batchId = $this->postJson('/api/v1/customers/import', ['file' => $file])->json('data.batch_id');
+
+        $response = $this->postJson("/api/v1/customers/import/{$batchId}/commit", ['resolutions' => []]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.results.0.outcome', 'created')
+            ->assertJsonPath('data.results.1.outcome', 'skipped_limit_reached');
+        $this->assertSame(2, Customer::count());
+    }
+
+    public function test_commit_triggers_recalculation_so_the_created_row_is_correctly_editable(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $file = $this->makeExcelFile([['New Person', '254711111111', 1000]]);
+        $batchId = $this->postJson('/api/v1/customers/import', ['file' => $file])->json('data.batch_id');
+        $response = $this->postJson("/api/v1/customers/import/{$batchId}/commit", ['resolutions' => []]);
+
+        $customerId = $response->json('data.results.0.customer_id');
+        $this->assertFalse(Customer::find($customerId)->is_read_only);
+    }
+
+    public function test_commit_is_unrestricted_on_an_unlimited_plan(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $unlimited = SubscriptionPlan::factory()->create(['name' => 'Unlimited Test Plan', 'customer_limit' => null]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($unlimited, 'plan')->active()->create();
+        Customer::factory()->for($tenant, 'tenant')->count(5)->create();
+        $this->actingAsTenantUser($tenant);
+
+        $file = $this->makeExcelFile([['Sixth Person', '254711111111', 1000]]);
+        $batchId = $this->postJson('/api/v1/customers/import', ['file' => $file])->json('data.batch_id');
+
+        $response = $this->postJson("/api/v1/customers/import/{$batchId}/commit", ['resolutions' => []]);
+
+        $response->assertStatus(200)->assertJsonPath('data.results.0.outcome', 'created');
+        $this->assertSame(6, Customer::count());
     }
 
     public function test_commit_records_audit_events(): void

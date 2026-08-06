@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\ReminderType;
 use App\Models\Reminder;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +30,17 @@ class ReminderService
 
             $reminder = new Reminder($data);
             $reminder->created_by_user_id = (string) $actor->id;
+
+            // Backend Completion Roadmap (Phase 4.1): no Reminder instance
+            // exists yet at the controller's normal authorize() point, so
+            // this check lives here instead of ReminderPolicy::create() —
+            // throwing AuthorizationException directly renders through
+            // this app's existing AccessDeniedHttpException handler
+            // (bootstrap/app.php), the same 403 shape a Policy denial
+            // produces.
+            if ($reminder->relatedCustomer()?->is_read_only) {
+                throw new AuthorizationException('This action is unauthorized.');
+            }
 
             // §7.4: Amount Due is omitted for types that don't carry one,
             // regardless of what the caller sent.

@@ -18,6 +18,12 @@ use RuntimeException;
  * docs/Mobile_UI_V1_Frozen.md §7.7, §7.8: "The message body is generated
  * by substituting live data — customer name, amount due, due date, and
  * sender/company name — into the selected template."
+ *
+ * Backend Completion Roadmap, Phase 4.1: `resolveCustomer()`'s match
+ * expression moved to `Reminder::relatedCustomer()` — ReminderPolicy
+ * needs the identical "which Customer does this Reminder belong to"
+ * resolution for the Customer Limit Enforcement read-only cascade, so
+ * this now delegates there instead of keeping its own copy.
  */
 class MessageRenderingService
 {
@@ -26,7 +32,7 @@ class MessageRenderingService
      */
     public function renderForReminder(MessageTemplate $template, Reminder $reminder): array
     {
-        $customer = $this->resolveCustomer($reminder);
+        $customer = $reminder->relatedCustomer();
         $amountDue = $reminder->amount_due ?? $this->resolveOutstandingAmount($reminder);
 
         $replacements = [
@@ -72,17 +78,6 @@ class MessageRenderingService
             'recipient_name' => $customer?->name,
             'recipient_phone' => $customer?->phone,
         ];
-    }
-
-    private function resolveCustomer(Reminder $reminder): ?Customer
-    {
-        return match ($reminder->related_entity_type) {
-            'customer' => Customer::find($reminder->related_entity_id),
-            'debt' => Debt::find($reminder->related_entity_id)?->customer,
-            'collection_case' => CollectionCase::find($reminder->related_entity_id)?->debt?->customer,
-            'promise_to_pay' => PromiseToPay::find($reminder->related_entity_id)?->debt?->customer,
-            default => throw new RuntimeException("Unknown reminder related_entity_type: {$reminder->related_entity_type}"),
-        };
     }
 
     /**
