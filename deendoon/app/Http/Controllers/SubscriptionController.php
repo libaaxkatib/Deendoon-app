@@ -52,7 +52,7 @@ class SubscriptionController extends Controller
 
         $subscription = $this->subscriptions->currentSubscription($tenant);
         $plan = $this->subscriptions->currentPlan($tenant);
-        $usage = $this->documents->storageUsage($tenant->id);
+        $usage = $this->documents->storageUsage($tenant);
 
         return $this->successResponse([
             'plan' => $plan ? new SubscriptionPlanResource($plan) : null,
@@ -132,7 +132,7 @@ class SubscriptionController extends Controller
         Gate::authorize('admin-only');
         $tenant = $request->user()->tenant;
 
-        $usage = $this->documents->storageUsage($tenant->id);
+        $usage = $this->documents->storageUsage($tenant);
         $usageGb = $usage['used_bytes'] / (1024 ** 3);
         $limitGb = $this->storageAddons->totalStorageAllowance($tenant);
 

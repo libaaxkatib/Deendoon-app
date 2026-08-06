@@ -9,6 +9,7 @@ use App\Models\PromiseToPay;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
@@ -23,6 +24,10 @@ class NotificationTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        // Backend Completion Roadmap (Phase 4.2): document generation
+        // (which several "document_available" notification tests trigger)
+        // now fails closed without a resolvable plan.
+        $this->seed(SubscriptionPlanSeeder::class);
         Storage::fake('local');
     }
 

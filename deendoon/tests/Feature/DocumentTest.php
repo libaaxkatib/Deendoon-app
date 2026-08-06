@@ -13,6 +13,7 @@ use App\Models\Receipt;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -26,6 +27,12 @@ class DocumentTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        // Backend Completion Roadmap (Phase 4.2): document generation now
+        // fails closed to a storage allowance of 0 bytes when no plan can
+        // be resolved at all — every tenant here needs the Free Plan
+        // (10GB) resolvable, matching how a real tenant with no
+        // subscription behaves in production.
+        $this->seed(SubscriptionPlanSeeder::class);
         Storage::fake('local');
     }
 

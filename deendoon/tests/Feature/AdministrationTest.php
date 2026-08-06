@@ -7,6 +7,7 @@ use App\Models\ReferenceData;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -29,6 +30,9 @@ class AdministrationTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        // Backend Completion Roadmap (Phase 4.2): logo upload now fails
+        // closed without a resolvable plan.
+        $this->seed(SubscriptionPlanSeeder::class);
         Storage::fake('local');
     }
 

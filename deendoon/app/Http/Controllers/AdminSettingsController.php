@@ -8,9 +8,11 @@ use App\Http\Resources\CompanyProfileResource;
 use App\Http\Resources\DocumentTemplateResource;
 use App\Http\Resources\SystemSettingResource;
 use App\Services\AdminSettingsService;
+use App\Services\DocumentService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -24,7 +26,10 @@ class AdminSettingsController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly AdminSettingsService $settings) {}
+    public function __construct(
+        private readonly AdminSettingsService $settings,
+        private readonly DocumentService $documents,
+    ) {}
 
     public function companyProfile(Request $request): JsonResponse
     {
@@ -37,12 +42,34 @@ class AdminSettingsController extends Controller
     {
         Gate::authorize('admin-only');
 
-        $tenant = $this->settings->updateCompanyProfile(
-            $request->user()->tenant,
-            $request->validated(),
-            $request->file('logo'),
-            $request->user(),
-        );
+        // Backend Completion Roadmap (Phase 4.2, Storage Limit
+        // Enforcement): only gated when a logo is actually being
+        // uploaded — a text-only Company Profile edit (business_name,
+        // address, etc.) is not itself an upload and must keep working
+        // even for a tenant already at their storage limit ("Only NEW
+        // uploads are blocked"). Reuses DocumentService::assertCanUpload()
+        // — the same check the four document-generation endpoints use —
+        // rather than a second copy of the usage/allowance comparison.
+        //
+        // Product Owner-directed race fix: the check and the actual
+        // write must share one transaction, otherwise assertCanUpload()'s
+        // lockForUpdate() is acquired and released with nothing left to
+        // protect (see DocumentService::assertCanUpload()'s docblock) —
+        // wrapping both calls here is what actually holds the lock
+        // through the write, the same way DocumentService::
+        // renderAndSave() does for document generation.
+        $tenant = DB::transaction(function () use ($request) {
+            if ($request->hasFile('logo')) {
+                $this->documents->assertCanUpload($request->user()->tenant);
+            }
+
+            return $this->settings->updateCompanyProfile(
+                $request->user()->tenant,
+                $request->validated(),
+                $request->file('logo'),
+                $request->user(),
+            );
+        });
 
         return $this->successResponse(new CompanyProfileResource($tenant), 'Company Profile updated successfully');
     }

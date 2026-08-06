@@ -9,6 +9,7 @@ use App\Models\PromiseToPay;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,6 +22,10 @@ class PaymentTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        // Backend Completion Roadmap (Phase 4.2): payment recording
+        // triggers automatic receipt generation, which now fails closed
+        // without a resolvable plan.
+        $this->seed(SubscriptionPlanSeeder::class);
     }
 
     private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User

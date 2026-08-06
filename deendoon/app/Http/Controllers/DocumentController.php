@@ -129,7 +129,7 @@ class DocumentController extends Controller
     {
         Gate::authorize('view-reports');
 
-        return $this->successResponse($this->documents->storageUsage(request()->user()->tenant_id));
+        return $this->successResponse($this->documents->storageUsage(request()->user()->tenant));
     }
 
     /**
