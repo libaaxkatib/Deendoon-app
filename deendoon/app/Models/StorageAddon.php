@@ -19,8 +19,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * cross-tenant review reason documented on {@see TenantSubscription}.
  * `tenant_id`/`approved_by` are excluded from Fillable and must be set
  * via direct property assignment.
+ *
+ * `payment_reference` added Phase 3.3 (Product Owner correction):
+ * required on every Storage Add-on Request, matching
+ * SubscriptionChangeRequest's existing column.
  */
-#[Fillable(['storage_package', 'storage_size', 'monthly_price', 'started_at', 'expires_at', 'approved_by', 'approved_at', 'status'])]
+#[Fillable(['storage_package', 'storage_size', 'monthly_price', 'payment_reference', 'started_at', 'expires_at', 'approved_by', 'approved_at', 'status'])]
 class StorageAddon extends Model
 {
     /** @use HasFactory<StorageAddonFactory> */

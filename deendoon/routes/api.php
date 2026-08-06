@@ -27,6 +27,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatementController;
+use App\Http\Controllers\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -107,6 +108,13 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/kpis', [DashboardController::class, 'kpis']);
         Route::get('dashboard/todays-overview', [DashboardController::class, 'todaysOverview']);
         Route::get('dashboard/recent-cases', [DashboardController::class, 'recentCases']);
+
+        Route::get('subscription', [SubscriptionController::class, 'show']);
+        Route::get('subscription/plans', [SubscriptionController::class, 'plans']);
+        Route::get('subscription/change-requests', [SubscriptionController::class, 'changeRequests']);
+        Route::post('subscription/upgrade-request', [SubscriptionController::class, 'upgradeRequest']);
+        Route::get('subscription/storage', [SubscriptionController::class, 'storage']);
+        Route::post('subscription/storage-addon-request', [SubscriptionController::class, 'storageAddonRequest']);
         Route::get('reports/aging-analysis', [ReportController::class, 'agingAnalysis']);
         Route::get('reports/customers', [ReportController::class, 'customers']);
         Route::get('reports/debts', [ReportController::class, 'debts']);
