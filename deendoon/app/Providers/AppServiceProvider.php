@@ -24,6 +24,7 @@ use App\Policies\ReceiptPolicy;
 use App\Policies\ReminderPolicy;
 use App\Policies\StatementPolicy;
 use App\Policies\UserPolicy;
+use App\Services\SubscriptionService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -57,7 +58,32 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin-only', fn (User $user): bool => $user->hasRole('admin'));
 
         // Module 9 — Reporting. Reports are a Business Owner capability.
+        // Also reused, unmodified, by CalendarController and two
+        // DocumentController endpoints (list/storage-usage) that are not
+        // part of the Reporting module — deliberately NOT extended with
+        // the analytics_enabled check below, see 'view-analytics'.
         Gate::define('view-reports', fn (User $user): bool => $user->hasRole('admin'));
+
+        // Backend Completion Roadmap, Phase 4.4 — Feature & Read-Only
+        // Enforcement, Product Owner Decision (2026-08-06): "analytics_enabled
+        // represents access to reporting and analytics as a whole... Apply
+        // Feature Enforcement to the Reporting module (all reports/*
+        // endpoints and their exports). Do not gate unrelated dashboard or
+        // operational endpoints." A dedicated Gate, not an extension of
+        // 'view-reports' above — 'view-reports' is also reused by
+        // CalendarController and two DocumentController endpoints that are
+        // NOT part of the Reporting module and must stay unrestricted by
+        // plan; extending 'view-reports' itself would have collaterally
+        // gated those too. app(SubscriptionService::class) resolves lazily
+        // at Gate-check time (this closure runs long after boot()),
+        // matching the existing pattern of every other Gate defined here.
+        // Used only by ReportController's endpoints — Product Owner
+        // clarification (2026-08-06): Business Health, dashboard KPIs,
+        // Today's Overview, and Recent Cases are explicitly NOT gated by
+        // this (they remain available on every plan, including Free) —
+        // see DashboardController's methods, none of which use this Gate.
+        Gate::define('view-analytics', fn (User $user): bool => $user->hasRole('admin')
+            && app(SubscriptionService::class)->analyticsEnabled($user->tenant));
 
         // FR-053 explicitly names "system-wide" as a role-dependent
         // Dashboard variant — the only report in this module with that

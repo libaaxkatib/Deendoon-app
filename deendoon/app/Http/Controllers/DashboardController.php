@@ -39,6 +39,16 @@ class DashboardController extends Controller
      * no system-wide equivalent (it measures one tenant's portfolio), so
      * this reuses the existing `admin-only` gate (Business Owner only)
      * rather than defining a new, narrower gate that would duplicate it.
+     *
+     * Backend Completion Roadmap, Phase 4.4 — Feature & Read-Only
+     * Enforcement, Product Owner Decision (2026-08-06, clarification):
+     * "Business Health must remain available for all subscription plans,
+     * including the Free Plan. Do NOT gate Business Health behind
+     * analytics_enabled." `analytics_enabled` gates the Reporting module
+     * (`view-analytics`) only — Business Health, `kpis()`,
+     * `todaysOverview()`, and `recentCases()` are all explicitly plan-
+     * independent. An earlier draft of this method briefly gated this
+     * behind `view-analytics`; reverted per this clarification.
      */
     public function businessHealth(): JsonResponse
     {

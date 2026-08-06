@@ -8,6 +8,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
+use App\Policies\CustomerPolicy;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
@@ -107,10 +108,35 @@ class SubscriptionService
      * — never failing open to "no limit." Used only by the Customer
      * Limit Enforcement call sites; {@see customerLimit()} keeps its
      * original "raw plan value" semantics for reporting endpoints.
+     *
+     * Backend Completion Roadmap, Phase 4.4 — Feature & Read-Only
+     * Enforcement, Product Owner Decision: an `expired` paid subscription
+     * also forces this to 0, reusing this exact method (and therefore
+     * every downstream consumer — {@see CustomerReadOnlyService::recalculate()},
+     * {@see CustomerReadOnlyService::assertCanCreateCustomer()},
+     * {@see CustomerPolicy::create()}) with zero changes to
+     * any of them — a single source of truth for "how many customers can
+     * this tenant edit right now," not a second, parallel enforcement
+     * path. Checked ahead of the plan lookup: an expired tenant's
+     * `plan_id` is deliberately left untouched by
+     * {@see expireSubscriptions()} (no downgrade), so `currentPlan()`
+     * would otherwise still report that plan's ordinary limit. A `Free`
+     * Plan subscription produced by {@see expireTrials()} is unaffected
+     * — its status is `active`, never `expired`.
      */
     public function effectiveCustomerLimit(Tenant $tenant): ?int
     {
-        $plan = $this->currentPlan($tenant);
+        $subscription = $this->currentSubscription($tenant);
+
+        if ($subscription !== null && $subscription->status === 'expired') {
+            return 0;
+        }
+
+        // Reuses the already-fetched $subscription instead of calling
+        // currentPlan($tenant) (which would re-run currentSubscription()
+        // a second time) — same Free Plan fallback currentPlan() itself
+        // performs, just without the redundant query.
+        $plan = $subscription !== null ? $subscription->plan : SubscriptionPlan::where('name', 'Free')->first();
 
         return $plan === null ? 0 : $plan->customer_limit;
     }
@@ -364,10 +390,8 @@ class SubscriptionService
      * renewal has NOT been approved: Status becomes expired. No
      * automatic renewal. No automatic payment. No automatic
      * activation." Only `status` changes — `plan_id` is left exactly as
-     * it was (no plan downgrade is specified), so this never needs
-     * {@see CustomerReadOnlyService::recalculate()} the way
-     * {@see expireTrials()} does. Invoked from the `subscriptions:expire`
-     * Artisan command.
+     * it was (no plan downgrade is specified). Invoked from the
+     * `subscriptions:expire` Artisan command.
      *
      * `whereNotNull('expires_at')` is a deliberate, explicit guard, not
      * strictly required by SQL NULL comparison semantics alone (a NULL
@@ -379,24 +403,41 @@ class SubscriptionService
      * Same race-safety/idempotency shape as {@see expireTrials()}: one
      * short transaction with a re-verified `lockForUpdate()` per
      * candidate row, not one transaction for the whole batch.
+     *
+     * Backend Completion Roadmap, Phase 4.4 (Product Owner Decision):
+     * now returns the affected Tenants, not a count — {@see effectiveCustomerLimit()}
+     * treats an `expired` subscription as a 0 customer limit, so this
+     * DOES now need {@see CustomerReadOnlyService::recalculate()} per
+     * tenant the way {@see expireTrials()} always has (this method's
+     * original Phase 4.3 docblock said otherwise; that was correct only
+     * until this phase's enforcement design made subscription status
+     * itself affect the effective limit). Mirrors expireTrials()'s exact
+     * shape for the same reason: this service cannot depend on
+     * CustomerReadOnlyService directly (circular — it already depends on
+     * this service), so the calling command orchestrates the trigger.
+     *
+     * @return Collection<int, Tenant>
      */
-    public function expireSubscriptions(): int
+    public function expireSubscriptions(): Collection
     {
         $candidateIds = TenantSubscription::where('status', 'active')
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now())
             ->pluck('id');
 
-        return $candidateIds->filter(fn (string $id) => $this->expireOneSubscription($id))->count();
+        return $candidateIds
+            ->map(fn (string $id) => $this->expireOneSubscription($id))
+            ->filter()
+            ->values();
     }
 
-    private function expireOneSubscription(string $subscriptionId): bool
+    private function expireOneSubscription(string $subscriptionId): ?Tenant
     {
         return DB::transaction(function () use ($subscriptionId) {
             $subscription = TenantSubscription::where('id', $subscriptionId)->lockForUpdate()->first();
 
             if ($subscription === null || $subscription->status !== 'active' || $subscription->expires_at === null || $subscription->expires_at->isFuture()) {
-                return false;
+                return null;
             }
 
             $subscription->update(['status' => 'expired']);
@@ -410,7 +451,7 @@ class SubscriptionService
                 $subscription->tenant_id,
             );
 
-            return true;
+            return $subscription->tenant;
         });
     }
 

@@ -49,7 +49,7 @@ class ReportController extends Controller
      */
     public function agingAnalysis(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         $query = $this->agingAnalysisQuery($request);
 
@@ -73,7 +73,7 @@ class ReportController extends Controller
 
     public function customers(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         $customers = $this->customersQuery($request)->orderBy('name')->paginate(perPage: $this->perPage($request));
 
@@ -85,7 +85,7 @@ class ReportController extends Controller
 
     public function debts(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         $debts = $this->debtsQuery($request)->orderBy('due_date')->paginate(perPage: $this->perPage($request));
 
@@ -97,7 +97,7 @@ class ReportController extends Controller
 
     public function collectionCases(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         $cases = $this->collectionCasesQuery($request)->orderBy('created_at', 'desc')->paginate(perPage: $this->perPage($request));
 
@@ -109,7 +109,7 @@ class ReportController extends Controller
 
     public function payments(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         $payments = $this->paymentsQuery($request)->orderBy('payment_date', 'desc')->paginate(perPage: $this->perPage($request));
 
@@ -126,7 +126,7 @@ class ReportController extends Controller
      */
     public function creditRisk(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         $customers = $this->customersQuery($request)->orderByDesc('credit_score')->paginate(perPage: $this->perPage($request));
 
@@ -142,7 +142,7 @@ class ReportController extends Controller
      */
     public function collectionAnalytics(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         [$dateFrom, $dateTo] = $this->dateRangeOrDefault($request);
 
@@ -154,7 +154,7 @@ class ReportController extends Controller
      */
     public function riskDistribution(): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         return $this->successResponse($this->reporting->riskDistribution());
     }
@@ -166,7 +166,7 @@ class ReportController extends Controller
      */
     public function collectionsTrend(Request $request): JsonResponse
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         $request->validate([
             'dateFrom' => ['required', 'date'],
@@ -198,7 +198,7 @@ class ReportController extends Controller
      */
     public function export(ExportReportRequest $request, string $reportType): BinaryFileResponse|Response
     {
-        Gate::authorize('view-reports');
+        Gate::authorize('view-analytics');
 
         [$headings, $rows] = match ($reportType) {
             'aging-analysis' => $this->exportRows(

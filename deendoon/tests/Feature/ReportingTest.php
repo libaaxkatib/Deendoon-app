@@ -7,7 +7,9 @@ use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\Payment;
 use App\Models\Reminder;
+use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
+use App\Models\TenantSubscription;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,6 +35,15 @@ class ReportingTest extends TestCase
 
         if ($role !== null) {
             $user->assignRole($role);
+        }
+
+        // Backend Completion Roadmap (Phase 4.4): reporting endpoints now
+        // require analytics_enabled (the Free Plan explicitly excludes
+        // it) — give every tenant in this file a plan that includes it,
+        // centralized here rather than in each of the ~30 test methods.
+        if (! TenantSubscription::where('tenant_id', $tenant->id)->exists()) {
+            $plan = SubscriptionPlan::factory()->create(['analytics_enabled' => true]);
+            TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->active()->create();
         }
 
         $token = $user->createToken('test')->plainTextToken;

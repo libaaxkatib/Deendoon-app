@@ -147,6 +147,64 @@ class SubscriptionServiceTest extends TestCase
         $this->assertNull($this->service()->customerLimit($tenant));
     }
 
+    // --- Effective customer limit: expired subscription (Phase 4.4) ---
+
+    public function test_effective_customer_limit_is_zero_for_an_expired_subscription(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create(['customer_limit' => 250]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->expired()->create();
+
+        $this->assertSame(0, $this->service()->effectiveCustomerLimit($tenant));
+    }
+
+    public function test_effective_customer_limit_is_zero_for_an_expired_subscription_even_on_an_unlimited_plan(): void
+    {
+        // An expired Corporate subscription must not fall back to
+        // "unlimited" just because the plan's own customer_limit is null.
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->unlimited()->create(['name' => 'Corporate']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->expired()->create();
+
+        $this->assertSame(0, $this->service()->effectiveCustomerLimit($tenant));
+    }
+
+    public function test_effective_customer_limit_is_unaffected_by_expired_status_for_an_active_subscription(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create(['customer_limit' => 110]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->active()->create();
+
+        $this->assertSame(110, $this->service()->effectiveCustomerLimit($tenant));
+    }
+
+    public function test_effective_customer_limit_is_unaffected_by_expired_status_while_trialing(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->unlimited()->create(['name' => 'Trial']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'trialing',
+            'trial_ends_at' => now()->addDays(7),
+        ]);
+
+        $this->assertNull($this->service()->effectiveCustomerLimit($tenant));
+    }
+
+    public function test_effective_customer_limit_does_not_treat_a_free_plan_subscription_as_expired(): void
+    {
+        // The exact state expireTrials() produces: status 'active',
+        // expires_at null — must resolve to the Free plan's own limit,
+        // not 0.
+        $tenant = $this->tenant();
+        $freePlan = SubscriptionPlan::factory()->create(['name' => 'Free', 'customer_limit' => 2]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($freePlan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => null,
+        ]);
+
+        $this->assertSame(2, $this->service()->effectiveCustomerLimit($tenant));
+    }
+
     // --- Storage limit ---
 
     public function test_storage_limit_reflects_the_current_plans_limit(): void
@@ -438,9 +496,10 @@ class SubscriptionServiceTest extends TestCase
             'expires_at' => now()->subMinute(),
         ]);
 
-        $count = $this->service()->expireSubscriptions();
+        $affected = $this->service()->expireSubscriptions();
 
-        $this->assertSame(1, $count);
+        $this->assertCount(1, $affected);
+        $this->assertTrue($affected->first()->is($tenant));
         $this->assertSame('expired', $subscription->fresh()->status);
     }
 
@@ -467,9 +526,9 @@ class SubscriptionServiceTest extends TestCase
             'expires_at' => now()->addDay(),
         ]);
 
-        $count = $this->service()->expireSubscriptions();
+        $affected = $this->service()->expireSubscriptions();
 
-        $this->assertSame(0, $count);
+        $this->assertCount(0, $affected);
         $this->assertSame('active', $subscription->fresh()->status);
     }
 
@@ -479,9 +538,9 @@ class SubscriptionServiceTest extends TestCase
         $plan = SubscriptionPlan::factory()->create();
         TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->expired()->create();
 
-        $count = $this->service()->expireSubscriptions();
+        $affected = $this->service()->expireSubscriptions();
 
-        $this->assertSame(0, $count);
+        $this->assertCount(0, $affected);
     }
 
     public function test_expire_subscriptions_never_sweeps_a_free_plan_subscription_with_no_expiry(): void
@@ -495,9 +554,9 @@ class SubscriptionServiceTest extends TestCase
             'expires_at' => null,
         ]);
 
-        $count = $this->service()->expireSubscriptions();
+        $affected = $this->service()->expireSubscriptions();
 
-        $this->assertSame(0, $count);
+        $this->assertCount(0, $affected);
         $this->assertSame('active', $subscription->fresh()->status);
     }
 
@@ -533,8 +592,8 @@ class SubscriptionServiceTest extends TestCase
         $first = $this->service()->expireSubscriptions();
         $second = $this->service()->expireSubscriptions();
 
-        $this->assertSame(1, $first);
-        $this->assertSame(0, $second);
+        $this->assertCount(1, $first);
+        $this->assertCount(0, $second);
         $this->assertSame(1, AuditLog::where('action', 'subscription_expired')->count());
     }
 
