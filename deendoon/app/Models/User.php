@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\BelongsToTenantOrPlatformAdmin;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -45,6 +46,27 @@ class User extends Authenticatable
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * Backend Completion Roadmap, Phase 3.2. The canonical "is this user
+     * the Deendoon Platform Administrator" check — tenant_id null plus
+     * the dedicated role, per the Version 1 authentication model (RBAC
+     * Architecture Amendment, Product Owner Decision, 2026-07-30).
+     *
+     * This exact boolean expression already exists, duplicated, in
+     * ProfessionalCollectionRequestPolicy::isPlatformAdmin(),
+     * AppServiceProvider::boot(), and ReportingService::dashboardKpis() —
+     * a pre-existing inconsistency, not introduced here. This method is
+     * added because {@see BelongsToTenantOrPlatformAdmin}
+     * needs it and duplicating the check a fifth time would make that
+     * worse; the 3 existing call sites are unrelated, already-working
+     * code and are deliberately left untouched (out of scope for this
+     * phase).
+     */
+    public function isPlatformAdmin(): bool
+    {
+        return $this->tenant_id === null && $this->hasRole('deendoon_platform_administrator');
     }
 
     /**
