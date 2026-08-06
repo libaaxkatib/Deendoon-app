@@ -78,11 +78,6 @@ class StorageAddonService
         return $planLimit + $this->activeAddons($tenant)->sum('storage_size');
     }
 
-    public function addonStatus(StorageAddon $addon): string
-    {
-        return $addon->status;
-    }
-
     /**
      * Manual Payment Workflow, step 3-4: Business Owner submits
      * storage_package + payment_reference; system creates a pending

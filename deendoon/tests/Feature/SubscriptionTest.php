@@ -122,14 +122,50 @@ class SubscriptionTest extends TestCase
             ->assertJsonPath('data.read_only', false);
     }
 
-    public function test_show_reports_read_only_true_when_the_subscription_has_expired(): void
+    public function test_show_reports_read_only_true_once_an_expired_subscription_has_actually_recalculated(): void
     {
+        // Backend Completion Roadmap (Phase 4.5 — Final Verification
+        // fix): `read_only` now reflects the real, persisted
+        // is_read_only state (the same one every Policy checks), not a
+        // second, parallel `status === 'expired'` check — so this
+        // requires the customer to have actually gone through
+        // CustomerReadOnlyService::recalculate() (via `subscriptions:expire`),
+        // exactly like every other consumer of is_read_only.
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $this->actingAsTenantUser($tenant);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
         $plan = SubscriptionPlan::factory()->create();
-        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->expired()->create();
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => now()->subMinute(),
+        ]);
+        $this->artisan('subscriptions:expire');
+        $this->actingAsTenantUser($tenant);
 
         $this->getJson('/api/v1/subscription')->assertJsonPath('data.read_only', true);
+        $this->assertTrue($customer->fresh()->is_read_only);
+    }
+
+    public function test_show_reports_read_only_true_for_an_over_limit_tenant_even_while_the_subscription_is_active(): void
+    {
+        // The exact bug this fix closes: after a Trial expires to the
+        // Free Plan (status becomes 'active', never 'expired'), a
+        // tenant who had more customers than Free's limit is read-only
+        // right now — the old `status === 'expired'` check would have
+        // reported false here, since this subscription is not expired.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $trialPlan = SubscriptionPlan::factory()->unlimited()->create(['name' => 'Trial']);
+        SubscriptionPlan::factory()->create(['name' => 'Free', 'customer_limit' => 2]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing',
+            'trial_ends_at' => now()->subMinute(),
+        ]);
+        Customer::factory()->for($tenant, 'tenant')->count(3)->create();
+        $this->artisan('subscriptions:expire-trials');
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/subscription')
+            ->assertJsonPath('data.subscription_status', 'active')
+            ->assertJsonPath('data.read_only', true);
     }
 
     public function test_show_falls_back_to_the_free_plan_when_the_tenant_has_no_subscription(): void

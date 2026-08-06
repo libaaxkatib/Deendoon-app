@@ -74,7 +74,17 @@ class SubscriptionController extends Controller
             'storage_usage_bytes' => $usage['used_bytes'],
             'storage_limit' => $this->storageAddons->totalStorageAllowance($tenant),
             'analytics_enabled' => $this->subscriptions->analyticsEnabled($tenant),
-            'read_only' => $this->subscriptions->status($tenant) === 'expired',
+            // Backend Completion Roadmap (Phase 4.5 — Final Verification
+            // fix): previously `status($tenant) === 'expired'` — checked
+            // only subscription status, completely missing the
+            // customer-count-driven read-only case (Phase 4.1), which can
+            // be true on a perfectly `active` subscription (e.g. a Free
+            // Plan tenant over its 2-customer limit after ExpireTrials
+            // ran). Reuses the exact enforcement mechanism directly — the
+            // real, persisted `is_read_only` flag every Policy already
+            // checks — rather than recomputing a second, parallel
+            // definition of "read only."
+            'read_only' => Customer::where('tenant_id', $tenant->id)->where('is_read_only', true)->exists(),
         ]);
     }
 

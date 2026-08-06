@@ -73,18 +73,6 @@ class AuthController extends Controller
             // gap where only tenants seeded before this fix had them.
             $this->messageTemplates->provisionDefaults($tenant);
 
-            // Backend Completion Roadmap (Phase 3.5): every new tenant
-            // automatically starts on the Trial plan — the Free Plan
-            // fallback is only for tenants that genuinely have no
-            // subscription record, not the normal path for a new one.
-            $this->subscriptions->provisionTrial($tenant);
-
-            // Backend Completion Roadmap (Phase 4.1): every subscription
-            // change must trigger recalculation — a no-op here (0
-            // customers yet) but keeps the rule uniformly true rather
-            // than special-cased for "brand new tenant."
-            $this->customerReadOnly->recalculate($tenant);
-
             $user = new User([
                 'name' => $request->validated('name'),
                 'email' => $request->validated('email'),
@@ -93,6 +81,20 @@ class AuthController extends Controller
             $user->tenant_id = $tenant->id;
             $user->save();
             $user->assignRole('admin');
+
+            // Backend Completion Roadmap (Phase 3.5): every new tenant
+            // automatically starts on the Trial plan — the Free Plan
+            // fallback is only for tenants that genuinely have no
+            // subscription record, not the normal path for a new one.
+            // $user must exist first (Phase 4.5: provisionTrial() now
+            // requires an actor to audit against).
+            $this->subscriptions->provisionTrial($tenant, $user);
+
+            // Backend Completion Roadmap (Phase 4.1): every subscription
+            // change must trigger recalculation — a no-op here (0
+            // customers yet) but keeps the rule uniformly true rather
+            // than special-cased for "brand new tenant."
+            $this->customerReadOnly->recalculate($tenant, $user);
 
             $this->auditLog->record(AuditAction::Created, 'user', (string) $user->id, $user);
 

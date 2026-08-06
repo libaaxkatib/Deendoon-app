@@ -2,9 +2,14 @@
 
 namespace App\Services;
 
+use App\Console\Commands\ExpireSubscriptions;
+use App\Console\Commands\ExpireTrials;
+use App\Enums\AuditAction;
 use App\Models\Customer;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Backend Completion Roadmap, Phase 4.1 — Customer Limit Enforcement.
@@ -45,6 +50,7 @@ class CustomerReadOnlyService
 {
     public function __construct(
         private readonly SubscriptionService $subscriptions,
+        private readonly AuditLogService $auditLog,
     ) {}
 
     /**
@@ -92,29 +98,86 @@ class CustomerReadOnlyService
         return $this->subscriptions->effectiveCustomerLimit($tenant);
     }
 
-    public function recalculate(Tenant $tenant): void
+    /**
+     * Backend Completion Roadmap, Phase 4.5 — Final Verification fixes:
+     * (1) wrapped in {@see DB::transaction()} — previously 2-3 separate
+     * UPDATE statements with no enclosing transaction, a genuine race
+     * window (a concurrent Policy check could observe a transient,
+     * neither-old-nor-new state between them) and partial-failure risk
+     * (a mid-sequence error left the tenant permanently inconsistent,
+     * with no rollback). (2) now audited — previously this could flip
+     * many customers between editable/read-only with zero audit_log
+     * trail. Only writes an entry when something actually changed (this
+     * runs on every customer create/archive/restore, most of which
+     * don't cross the limit boundary — an entry every single call would
+     * flood audit_log with no-op noise).
+     *
+     * `$actor` is optional and defaults to null (system-initiated) for
+     * the two call sites with no human actor —
+     * {@see ExpireTrials}/
+     * {@see ExpireSubscriptions} — matching
+     * {@see AuditLogService::record()}'s own existing optional-actor
+     * signature; every HTTP-triggered call site passes the acting user.
+     */
+    public function recalculate(Tenant $tenant, ?User $actor = null): void
     {
-        $limit = $this->subscriptions->effectiveCustomerLimit($tenant);
+        DB::transaction(function () use ($tenant, $actor) {
+            $limit = $this->subscriptions->effectiveCustomerLimit($tenant);
 
-        if ($limit === null) {
-            Customer::where('tenant_id', $tenant->id)
+            if ($limit === null) {
+                $restoredCount = Customer::where('tenant_id', $tenant->id)->where('is_read_only', true)->count();
+
+                Customer::where('tenant_id', $tenant->id)
+                    ->where('is_read_only', true)
+                    ->update(['is_read_only' => false]);
+
+                if ($restoredCount > 0) {
+                    $this->auditLog->record(
+                        AuditAction::CustomerReadOnlyRecalculated,
+                        'tenant',
+                        $tenant->id,
+                        $actor,
+                        "effective_limit=unlimited; {$restoredCount} customer(s) restored to editable",
+                        $tenant->id,
+                    );
+                }
+
+                return;
+            }
+
+            $editableIds = Customer::where('tenant_id', $tenant->id)
+                ->orderBy('created_at')
+                ->limit($limit)
+                ->pluck('id');
+
+            $newlyReadOnly = Customer::where('tenant_id', $tenant->id)
+                ->whereNotIn('id', $editableIds)
+                ->where('is_read_only', false)
+                ->count();
+
+            $newlyEditable = Customer::where('tenant_id', $tenant->id)
+                ->whereIn('id', $editableIds)
                 ->where('is_read_only', true)
+                ->count();
+
+            Customer::where('tenant_id', $tenant->id)
+                ->whereIn('id', $editableIds)
                 ->update(['is_read_only' => false]);
 
-            return;
-        }
+            Customer::where('tenant_id', $tenant->id)
+                ->whereNotIn('id', $editableIds)
+                ->update(['is_read_only' => true]);
 
-        $editableIds = Customer::where('tenant_id', $tenant->id)
-            ->orderBy('created_at')
-            ->limit($limit)
-            ->pluck('id');
-
-        Customer::where('tenant_id', $tenant->id)
-            ->whereIn('id', $editableIds)
-            ->update(['is_read_only' => false]);
-
-        Customer::where('tenant_id', $tenant->id)
-            ->whereNotIn('id', $editableIds)
-            ->update(['is_read_only' => true]);
+            if ($newlyReadOnly > 0 || $newlyEditable > 0) {
+                $this->auditLog->record(
+                    AuditAction::CustomerReadOnlyRecalculated,
+                    'tenant',
+                    $tenant->id,
+                    $actor,
+                    "effective_limit={$limit}; {$newlyReadOnly} customer(s) newly read-only; {$newlyEditable} customer(s) newly editable",
+                    $tenant->id,
+                );
+            }
+        });
     }
 }

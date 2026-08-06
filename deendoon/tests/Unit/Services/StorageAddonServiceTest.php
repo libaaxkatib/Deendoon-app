@@ -121,16 +121,6 @@ class StorageAddonServiceTest extends TestCase
         $this->assertSame(35, $this->service()->totalStorageAllowance($tenant));
     }
 
-    // --- Add-on status ---
-
-    public function test_addon_status_returns_the_stored_status(): void
-    {
-        $tenant = $this->tenant();
-        $addon = StorageAddon::factory()->for($tenant, 'tenant')->create(['status' => 'pending']);
-
-        $this->assertSame('pending', $this->service()->addonStatus($addon));
-    }
-
     // --- Tenant isolation ---
 
     public function test_active_addons_is_tenant_isolated(): void

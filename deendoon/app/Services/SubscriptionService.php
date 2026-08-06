@@ -281,8 +281,19 @@ class SubscriptionService
      * `$user->assignRole('admin')` a few lines above this call site in
      * AuthController::register(), which has an identical hard dependency
      * on seeded data and no defensive fallback either.
+     *
+     * Backend Completion Roadmap, Phase 4.5 — Final Verification fix:
+     * `$actor` is now required and the creation is audited
+     * ({@see AuditAction::TrialProvisioned}) — this previously wrote no
+     * audit entry at all, unlike {@see requestUpgrade()}/
+     * {@see StorageAddonService::requestAddon()}, both of which already
+     * audit. `$actor` is required, not optional, because the only call
+     * site (`AuthController::register()`) always has the newly-created
+     * user in scope — matching `requestUpgrade()`'s identical
+     * required-actor signature rather than introducing an inconsistent
+     * optional one.
      */
-    public function provisionTrial(Tenant $tenant): TenantSubscription
+    public function provisionTrial(Tenant $tenant, User $actor): TenantSubscription
     {
         $trialPlan = SubscriptionPlan::where('name', 'Trial')->firstOrFail();
 
@@ -296,6 +307,15 @@ class SubscriptionService
         ]);
         $subscription->tenant_id = $tenant->id;
         $subscription->save();
+
+        $this->auditLog->record(
+            AuditAction::TrialProvisioned,
+            'tenant_subscription',
+            $subscription->id,
+            $actor,
+            "plan_id={$trialPlan->id} (Trial); status=trialing",
+            $tenant->id,
+        );
 
         return $subscription;
     }

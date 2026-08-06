@@ -139,7 +139,7 @@ class CustomerImportController extends Controller
         // A "new" row may have changed the tenant's customer count, which
         // can change who is read-only — same trigger as a single Customer
         // creation.
-        $this->customerReadOnly->recalculate($user->tenant);
+        $this->customerReadOnly->recalculate($user->tenant, $user);
 
         return $this->successResponse([
             'batch_id' => $batch->id,
@@ -170,6 +170,20 @@ class CustomerImportController extends Controller
 
         if ($resolution === 'update' && $row->duplicate_match_customer_id) {
             $customer = Customer::findOrFail($row->duplicate_match_customer_id);
+
+            // Backend Completion Roadmap (Phase 4.5 — Final Verification
+            // fix): this "update" resolution previously bypassed
+            // is_read_only entirely — a write path CustomerPolicy::update()
+            // would reject for a direct edit, reachable here because
+            // commit() is authorized only via the aggregate 'import'
+            // ability, never CustomerPolicy::update() itself. Reuses the
+            // exact same check, not a new implementation.
+            if ($customer->is_read_only) {
+                $row->update(['resolution' => 'skip']);
+
+                return ['row_number' => $row->row_number, 'outcome' => 'skipped_read_only'];
+            }
+
             $customer->update([
                 'name' => $data['name'],
                 'phone' => $data['phone'],

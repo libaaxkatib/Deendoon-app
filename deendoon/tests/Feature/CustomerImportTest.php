@@ -223,6 +223,31 @@ class CustomerImportTest extends TestCase
         $this->assertSame(1, Customer::count());
     }
 
+    public function test_commit_skips_the_update_resolution_when_the_matched_customer_is_read_only(): void
+    {
+        // Backend Completion Roadmap (Phase 4.5 — Final Verification
+        // fix): this "update" resolution previously bypassed
+        // is_read_only entirely, a write path CustomerPolicy::update()
+        // would have rejected for a direct edit.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $existing = Customer::factory()->for($tenant, 'tenant')->create([
+            'name' => 'Old Name', 'phone' => '254711111111', 'credit_limit' => 500,
+        ]);
+        Customer::where('id', $existing->id)->update(['is_read_only' => true]);
+        $this->actingAsTenantUser($tenant);
+
+        $file = $this->makeExcelFile([['New Name', '254711111111', 900]]);
+        $batchId = $this->postJson('/api/v1/customers/import', ['file' => $file])->json('data.batch_id');
+
+        $response = $this->postJson("/api/v1/customers/import/{$batchId}/commit", [
+            'resolutions' => [['row_number' => 1, 'resolution' => 'update']],
+        ]);
+
+        $response->assertStatus(200)->assertJsonPath('data.results.0.outcome', 'skipped_read_only');
+        $this->assertSame('Old Name', $existing->fresh()->name);
+        $this->assertSame('500.00', $existing->fresh()->credit_limit);
+    }
+
     public function test_commit_creates_a_new_customer_when_resolution_is_new_despite_a_duplicate_match(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);

@@ -35,4 +35,6 @@ enum AuditAction: string
     case StorageAddonRequested = 'storage_addon_requested';
     case TrialExpired = 'trial_expired';
     case SubscriptionExpired = 'subscription_expired';
+    case TrialProvisioned = 'trial_provisioned';
+    case CustomerReadOnlyRecalculated = 'customer_read_only_recalculated';
 }

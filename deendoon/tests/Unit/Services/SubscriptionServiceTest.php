@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
+use App\Models\User;
 use App\Services\SubscriptionService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -313,12 +314,21 @@ class SubscriptionServiceTest extends TestCase
 
     // --- Trial provisioning (Phase 3.5) ---
 
+    private function actor(Tenant $tenant): User
+    {
+        $user = User::factory()->create();
+        $user->tenant()->associate($tenant);
+        $user->save();
+
+        return $user;
+    }
+
     public function test_provision_trial_creates_a_trialing_subscription_on_the_trial_plan(): void
     {
         $tenant = $this->tenant();
         $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
 
-        $subscription = $this->service()->provisionTrial($tenant);
+        $subscription = $this->service()->provisionTrial($tenant, $this->actor($tenant));
 
         $this->assertSame($trialPlan->id, $subscription->plan_id);
         $this->assertSame('trialing', $subscription->status);
@@ -331,13 +341,30 @@ class SubscriptionServiceTest extends TestCase
         );
     }
 
+    public function test_provision_trial_records_an_audit_entry(): void
+    {
+        $tenant = $this->tenant();
+        SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        $actor = $this->actor($tenant);
+
+        $subscription = $this->service()->provisionTrial($tenant, $actor);
+
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => (string) $actor->id,
+            'action' => 'trial_provisioned',
+            'entity_type' => 'tenant_subscription',
+            'entity_id' => $subscription->id,
+        ]);
+    }
+
     public function test_provision_trial_fails_when_no_trial_plan_is_seeded(): void
     {
         $tenant = $this->tenant();
 
         $this->expectException(ModelNotFoundException::class);
 
-        $this->service()->provisionTrial($tenant);
+        $this->service()->provisionTrial($tenant, $this->actor($tenant));
     }
 
     // --- Trial expiration (Phase 4.3) ---

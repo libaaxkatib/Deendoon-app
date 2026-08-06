@@ -126,7 +126,7 @@ class CustomerController extends Controller
 
         // Backend Completion Roadmap (Phase 4.1): a new customer changes
         // the tenant's customer count, which can change who is read-only.
-        $this->customerReadOnly->recalculate($request->user()->tenant);
+        $this->customerReadOnly->recalculate($request->user()->tenant, $request->user());
 
         return $this->successResponse([
             'customer' => new CustomerResource($customer->fresh()),
@@ -202,7 +202,7 @@ class CustomerController extends Controller
         // emergent property of full recalculation (the archived customer
         // is now excluded from the ordered query by its own soft-delete
         // scope), not a separate "find and promote" mechanism.
-        $this->customerReadOnly->recalculate($request->user()->tenant);
+        $this->customerReadOnly->recalculate($request->user()->tenant, $request->user());
 
         return $this->successResponse(null, 'Customer archived successfully');
     }
@@ -226,7 +226,7 @@ class CustomerController extends Controller
         // re-enters the active count and may itself become read-only
         // (or push another customer into read-only) depending on where
         // it lands in created_at order relative to the current limit.
-        $this->customerReadOnly->recalculate($request->user()->tenant);
+        $this->customerReadOnly->recalculate($request->user()->tenant, $request->user());
 
         return $this->successResponse(new CustomerResource($customer->fresh()), 'Customer restored successfully');
     }

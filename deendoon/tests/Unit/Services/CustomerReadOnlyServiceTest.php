@@ -2,10 +2,12 @@
 
 namespace Tests\Unit\Services;
 
+use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
+use App\Models\User;
 use App\Services\CustomerReadOnlyService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -299,5 +301,76 @@ class CustomerReadOnlyServiceTest extends TestCase
         $tenant = $this->tenant();
 
         $this->assertSame(0, $this->service()->lockAndGetEffectiveLimit($tenant));
+    }
+
+    // --- Audit logging (Phase 4.5 — Final Verification fix) ---
+
+    public function test_recalculate_records_an_audit_entry_when_a_customer_newly_becomes_read_only(): void
+    {
+        $tenant = $this->tenant();
+        $this->subscribe($tenant, 1);
+        $this->customerAt($tenant, '2026-01-01');
+        $this->customerAt($tenant, '2026-01-02');
+
+        $this->service()->recalculate($tenant);
+
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => null,
+            'action' => 'customer_read_only_recalculated',
+            'entity_type' => 'tenant',
+            'entity_id' => $tenant->id,
+        ]);
+        $this->assertSame(1, AuditLog::where('action', 'customer_read_only_recalculated')->count());
+    }
+
+    public function test_recalculate_records_the_acting_user_when_one_is_passed(): void
+    {
+        $tenant = $this->tenant();
+        $this->subscribe($tenant, 1);
+        $this->customerAt($tenant, '2026-01-01');
+        $this->customerAt($tenant, '2026-01-02');
+        $actor = User::factory()->create();
+        $actor->tenant()->associate($tenant);
+        $actor->save();
+
+        $this->service()->recalculate($tenant, $actor);
+
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => (string) $actor->id,
+            'action' => 'customer_read_only_recalculated',
+        ]);
+    }
+
+    public function test_recalculate_records_an_audit_entry_when_customers_are_restored_to_editable_on_an_unlimited_plan(): void
+    {
+        $tenant = $this->tenant();
+        $this->subscribe($tenant, 1);
+        $this->customerAt($tenant, '2026-01-01');
+        $this->customerAt($tenant, '2026-01-02');
+        $this->service()->recalculate($tenant);
+
+        // Upgrade to unlimited.
+        TenantSubscription::where('tenant_id', $tenant->id)->delete();
+        $this->subscribe($tenant, null);
+        $this->service()->recalculate($tenant);
+
+        $this->assertSame(2, AuditLog::where('action', 'customer_read_only_recalculated')->count());
+    }
+
+    public function test_recalculate_does_not_record_an_audit_entry_when_nothing_changes(): void
+    {
+        $tenant = $this->tenant();
+        $this->subscribe($tenant, 10);
+        $this->customerAt($tenant, '2026-01-01');
+
+        // Already well under the limit — calling this repeatedly must
+        // not flood audit_log with no-op entries.
+        $this->service()->recalculate($tenant);
+        $this->service()->recalculate($tenant);
+        $this->service()->recalculate($tenant);
+
+        $this->assertSame(0, AuditLog::where('action', 'customer_read_only_recalculated')->count());
     }
 }
