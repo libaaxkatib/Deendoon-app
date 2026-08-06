@@ -33,4 +33,6 @@ enum AuditAction: string
     case RiskLevelRecalculated = 'risk_level_recalculated';
     case SubscriptionUpgradeRequested = 'subscription_upgrade_requested';
     case StorageAddonRequested = 'storage_addon_requested';
+    case TrialExpired = 'trial_expired';
+    case SubscriptionExpired = 'subscription_expired';
 }

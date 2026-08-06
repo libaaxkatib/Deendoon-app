@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Models\AuditLog;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
@@ -279,5 +280,279 @@ class SubscriptionServiceTest extends TestCase
         $this->expectException(ModelNotFoundException::class);
 
         $this->service()->provisionTrial($tenant);
+    }
+
+    // --- Trial expiration (Phase 4.3) ---
+
+    public function test_expire_trials_moves_an_expired_trial_to_the_free_plan(): void
+    {
+        $tenant = $this->tenant();
+        $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        $freePlan = SubscriptionPlan::factory()->create(['name' => 'Free']);
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing',
+            'trial_ends_at' => now()->subMinute(),
+        ]);
+
+        $affected = $this->service()->expireTrials();
+
+        $subscription->refresh();
+        $this->assertSame($freePlan->id, $subscription->plan_id);
+        $this->assertSame('active', $subscription->status);
+        $this->assertNull($subscription->expires_at);
+        $this->assertCount(1, $affected);
+        $this->assertTrue($affected->first()->is($tenant));
+    }
+
+    public function test_expire_trials_preserves_the_original_trial_dates(): void
+    {
+        $tenant = $this->tenant();
+        SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        SubscriptionPlan::factory()->create(['name' => 'Free']);
+        $trialStarted = now()->subDays(8);
+        $trialEnded = now()->subDay();
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for(SubscriptionPlan::where('name', 'Trial')->first(), 'plan')->create([
+            'status' => 'trialing',
+            'trial_started_at' => $trialStarted,
+            'trial_ends_at' => $trialEnded,
+        ]);
+
+        $this->service()->expireTrials();
+
+        $subscription->refresh();
+        $this->assertSame($trialStarted->toDateTimeString(), $subscription->trial_started_at->toDateTimeString());
+        $this->assertSame($trialEnded->toDateTimeString(), $subscription->trial_ends_at->toDateTimeString());
+    }
+
+    public function test_expire_trials_does_not_touch_a_trial_still_within_its_window(): void
+    {
+        $tenant = $this->tenant();
+        $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        SubscriptionPlan::factory()->create(['name' => 'Free']);
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing',
+            'trial_ends_at' => now()->addDay(),
+        ]);
+
+        $affected = $this->service()->expireTrials();
+
+        $this->assertCount(0, $affected);
+        $this->assertSame('trialing', $subscription->fresh()->status);
+    }
+
+    public function test_expire_trials_ignores_a_non_trialing_subscription_regardless_of_its_trial_ends_at(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionPlan::factory()->create(['name' => 'Free']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->active()->create([
+            'trial_ends_at' => now()->subMonth(),
+        ]);
+
+        $affected = $this->service()->expireTrials();
+
+        $this->assertCount(0, $affected);
+    }
+
+    public function test_expire_trials_records_a_trial_expired_audit_entry(): void
+    {
+        $tenant = $this->tenant();
+        $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        SubscriptionPlan::factory()->create(['name' => 'Free']);
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing',
+            'trial_ends_at' => now()->subMinute(),
+        ]);
+
+        $this->service()->expireTrials();
+
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => null,
+            'action' => 'trial_expired',
+            'entity_type' => 'tenant_subscription',
+            'entity_id' => $subscription->id,
+        ]);
+    }
+
+    public function test_expire_trials_run_twice_is_idempotent(): void
+    {
+        $tenant = $this->tenant();
+        $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        SubscriptionPlan::factory()->create(['name' => 'Free']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing',
+            'trial_ends_at' => now()->subMinute(),
+        ]);
+
+        $first = $this->service()->expireTrials();
+        $second = $this->service()->expireTrials();
+
+        $this->assertCount(1, $first);
+        $this->assertCount(0, $second);
+        $this->assertSame(1, AuditLog::where('action', 'trial_expired')->count());
+    }
+
+    public function test_expire_trials_fails_when_no_free_plan_is_seeded(): void
+    {
+        $tenant = $this->tenant();
+        $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing',
+            'trial_ends_at' => now()->subMinute(),
+        ]);
+
+        $this->expectException(ModelNotFoundException::class);
+
+        $this->service()->expireTrials();
+    }
+
+    public function test_expire_trials_only_affects_tenants_with_an_actually_expired_trial(): void
+    {
+        $tenantA = $this->tenant();
+        $tenantB = Tenant::create(['business_name' => 'Other Co']);
+        $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
+        SubscriptionPlan::factory()->create(['name' => 'Free']);
+        TenantSubscription::factory()->for($tenantA, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing', 'trial_ends_at' => now()->subMinute(),
+        ]);
+        $subscriptionB = TenantSubscription::factory()->for($tenantB, 'tenant')->for($trialPlan, 'plan')->create([
+            'status' => 'trialing', 'trial_ends_at' => now()->addDay(),
+        ]);
+
+        $affected = $this->service()->expireTrials();
+
+        $this->assertCount(1, $affected);
+        $this->assertTrue($affected->first()->is($tenantA));
+        $this->assertSame('trialing', $subscriptionB->fresh()->status);
+    }
+
+    // --- Subscription expiration (Phase 4.3) ---
+
+    public function test_expire_subscriptions_marks_an_expired_paid_subscription_as_expired(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create(['name' => 'Small Business']);
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => now()->subMinute(),
+        ]);
+
+        $count = $this->service()->expireSubscriptions();
+
+        $this->assertSame(1, $count);
+        $this->assertSame('expired', $subscription->fresh()->status);
+    }
+
+    public function test_expire_subscriptions_does_not_change_the_plan(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create(['name' => 'Small Business']);
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => now()->subMinute(),
+        ]);
+
+        $this->service()->expireSubscriptions();
+
+        $this->assertSame($plan->id, $subscription->fresh()->plan_id);
+    }
+
+    public function test_expire_subscriptions_ignores_a_subscription_expiring_in_the_future(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create();
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $count = $this->service()->expireSubscriptions();
+
+        $this->assertSame(0, $count);
+        $this->assertSame('active', $subscription->fresh()->status);
+    }
+
+    public function test_expire_subscriptions_ignores_an_already_expired_subscription(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create();
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->expired()->create();
+
+        $count = $this->service()->expireSubscriptions();
+
+        $this->assertSame(0, $count);
+    }
+
+    public function test_expire_subscriptions_never_sweeps_a_free_plan_subscription_with_no_expiry(): void
+    {
+        // The exact scenario expireTrials() produces: status 'active',
+        // expires_at null. Must never be treated as expired.
+        $tenant = $this->tenant();
+        $freePlan = SubscriptionPlan::factory()->create(['name' => 'Free']);
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($freePlan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => null,
+        ]);
+
+        $count = $this->service()->expireSubscriptions();
+
+        $this->assertSame(0, $count);
+        $this->assertSame('active', $subscription->fresh()->status);
+    }
+
+    public function test_expire_subscriptions_records_a_subscription_expired_audit_entry(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create();
+        $subscription = TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => now()->subMinute(),
+        ]);
+
+        $this->service()->expireSubscriptions();
+
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => null,
+            'action' => 'subscription_expired',
+            'entity_type' => 'tenant_subscription',
+            'entity_id' => $subscription->id,
+        ]);
+    }
+
+    public function test_expire_subscriptions_run_twice_is_idempotent(): void
+    {
+        $tenant = $this->tenant();
+        $plan = SubscriptionPlan::factory()->create();
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active',
+            'expires_at' => now()->subMinute(),
+        ]);
+
+        $first = $this->service()->expireSubscriptions();
+        $second = $this->service()->expireSubscriptions();
+
+        $this->assertSame(1, $first);
+        $this->assertSame(0, $second);
+        $this->assertSame(1, AuditLog::where('action', 'subscription_expired')->count());
+    }
+
+    public function test_expire_subscriptions_only_affects_tenants_with_an_actually_expired_subscription(): void
+    {
+        $tenantA = $this->tenant();
+        $tenantB = Tenant::create(['business_name' => 'Other Co']);
+        $plan = SubscriptionPlan::factory()->create();
+        $subscriptionA = TenantSubscription::factory()->for($tenantA, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active', 'expires_at' => now()->subMinute(),
+        ]);
+        $subscriptionB = TenantSubscription::factory()->for($tenantB, 'tenant')->for($plan, 'plan')->create([
+            'status' => 'active', 'expires_at' => now()->addDay(),
+        ]);
+
+        $this->service()->expireSubscriptions();
+
+        $this->assertSame('expired', $subscriptionA->fresh()->status);
+        $this->assertSame('active', $subscriptionB->fresh()->status);
     }
 }

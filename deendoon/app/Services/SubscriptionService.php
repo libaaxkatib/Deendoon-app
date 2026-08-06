@@ -10,6 +10,7 @@ use App\Models\TenantSubscription;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -153,9 +154,10 @@ class SubscriptionService
      * True only when the subscription is both marked 'trialing' AND its
      * trial window hasn't elapsed yet. Deliberately does not reconcile a
      * 'trialing' status whose `trial_ends_at` has already passed into any
-     * other state — the trial-expiration transition itself (auto-
-     * downgrade to Free) is scheduled-job business logic, explicitly out
-     * of scope for this phase (read-only only).
+     * other state itself — that transition is {@see expireTrials()}'s
+     * job (Backend Completion Roadmap, Phase 4.3), invoked via the
+     * `subscriptions:expire-trials` Artisan command, not something this
+     * read-only method performs as a side effect of being called.
      */
     public function isOnTrial(Tenant $tenant): bool
     {
@@ -270,6 +272,146 @@ class SubscriptionService
         $subscription->save();
 
         return $subscription;
+    }
+
+    /**
+     * Backend Completion Roadmap, Phase 4.3 — Subscription Lifecycle.
+     * Trial → Free Plan: "When Trial expires: Automatically move tenant
+     * to Free Plan, Status becomes active, Free Plan becomes current
+     * subscription." Invoked from the `subscriptions:expire-trials`
+     * Artisan command (Product Owner Decision, 2026-08-06: plain
+     * command, no scheduler infrastructure — this codebase has a
+     * standing decision against introducing one).
+     *
+     * "Update subscription dates" (Product Owner Decision, 2026-08-06):
+     * `started_at` resets to now, simply recording the date the tenant
+     * entered the Free Plan — it is NOT the start of a billing cycle,
+     * since the Free Plan has none. `expires_at` is set to null: the
+     * Free Plan never expires, so leaving a stale date here would
+     * incorrectly make it eligible for {@see expireSubscriptions()} on
+     * its next run. `trial_started_at`/`trial_ends_at` are left
+     * untouched — historical record of when the trial actually ran, not
+     * something this transition should erase.
+     *
+     * Race-safe and self-idempotent under both sequential and concurrent
+     * re-runs, matching Phase 4.1/4.2's `lockForUpdate()` pattern: each
+     * candidate row is locked and re-verified inside its own short
+     * transaction (bounded lock duration regardless of how many trials
+     * expire in one run — deliberately not one giant transaction over
+     * every candidate, so a large tenant count doesn't hold one lock for
+     * an unbounded time) before being transitioned. A row that fails the
+     * re-check (already processed by a concurrent run, or no longer
+     * actually expired) is silently skipped, not an error — this is what
+     * makes running the command twice a safe no-op the second time.
+     *
+     * Returns the affected Tenants (not a count) so the calling command
+     * can trigger {@see CustomerReadOnlyService::recalculate()} per
+     * tenant — "Customer/Storage limits immediately become Free
+     * limits" requires it, but this service cannot depend on
+     * CustomerReadOnlyService directly (it already depends on
+     * SubscriptionService, which would be circular) — same resolution
+     * Phase 4.1 used for AuthController::register().
+     *
+     * @return Collection<int, Tenant>
+     */
+    public function expireTrials(): Collection
+    {
+        $freePlan = SubscriptionPlan::where('name', 'Free')->firstOrFail();
+
+        $candidateIds = TenantSubscription::where('status', 'trialing')
+            ->where('trial_ends_at', '<=', now())
+            ->pluck('id');
+
+        return $candidateIds
+            ->map(fn (string $id) => $this->expireOneTrial($id, $freePlan))
+            ->filter()
+            ->values();
+    }
+
+    private function expireOneTrial(string $subscriptionId, SubscriptionPlan $freePlan): ?Tenant
+    {
+        return DB::transaction(function () use ($subscriptionId, $freePlan) {
+            $subscription = TenantSubscription::where('id', $subscriptionId)->lockForUpdate()->first();
+
+            if ($subscription === null || $subscription->status !== 'trialing' || $subscription->trial_ends_at === null || $subscription->trial_ends_at->isFuture()) {
+                return null;
+            }
+
+            $oldPlanId = $subscription->plan_id;
+            $subscription->update([
+                'plan_id' => $freePlan->id,
+                'status' => 'active',
+                'started_at' => now(),
+                'expires_at' => null,
+            ]);
+
+            $this->auditLog->record(
+                AuditAction::TrialExpired,
+                'tenant_subscription',
+                $subscription->id,
+                null,
+                "plan_id changed from {$oldPlanId} to {$freePlan->id} (Free Plan); status changed from trialing to active",
+                $subscription->tenant_id,
+            );
+
+            return $subscription->tenant;
+        });
+    }
+
+    /**
+     * Backend Completion Roadmap, Phase 4.3 — Subscription Lifecycle.
+     * Paid subscription → expired: "When subscription expires and
+     * renewal has NOT been approved: Status becomes expired. No
+     * automatic renewal. No automatic payment. No automatic
+     * activation." Only `status` changes — `plan_id` is left exactly as
+     * it was (no plan downgrade is specified), so this never needs
+     * {@see CustomerReadOnlyService::recalculate()} the way
+     * {@see expireTrials()} does. Invoked from the `subscriptions:expire`
+     * Artisan command.
+     *
+     * `whereNotNull('expires_at')` is a deliberate, explicit guard, not
+     * strictly required by SQL NULL comparison semantics alone (a NULL
+     * `expires_at` already never satisfies `<= now()`): it documents the
+     * specific thing this must never do — a Free Plan subscription
+     * (status 'active', `expires_at` null, per {@see expireTrials()})
+     * must never be swept into 'expired' by this method.
+     *
+     * Same race-safety/idempotency shape as {@see expireTrials()}: one
+     * short transaction with a re-verified `lockForUpdate()` per
+     * candidate row, not one transaction for the whole batch.
+     */
+    public function expireSubscriptions(): int
+    {
+        $candidateIds = TenantSubscription::where('status', 'active')
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->pluck('id');
+
+        return $candidateIds->filter(fn (string $id) => $this->expireOneSubscription($id))->count();
+    }
+
+    private function expireOneSubscription(string $subscriptionId): bool
+    {
+        return DB::transaction(function () use ($subscriptionId) {
+            $subscription = TenantSubscription::where('id', $subscriptionId)->lockForUpdate()->first();
+
+            if ($subscription === null || $subscription->status !== 'active' || $subscription->expires_at === null || $subscription->expires_at->isFuture()) {
+                return false;
+            }
+
+            $subscription->update(['status' => 'expired']);
+
+            $this->auditLog->record(
+                AuditAction::SubscriptionExpired,
+                'tenant_subscription',
+                $subscription->id,
+                null,
+                'status changed from active to expired',
+                $subscription->tenant_id,
+            );
+
+            return true;
+        });
     }
 
     private function conflict(string $message): never
