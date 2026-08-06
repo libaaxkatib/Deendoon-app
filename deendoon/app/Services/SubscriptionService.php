@@ -2,9 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
+use App\Models\SubscriptionChangeRequest;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
+use App\Models\User;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Backend Completion Roadmap, Phase 3.2. Read-only Subscription domain
@@ -12,6 +17,11 @@ use App\Models\TenantSubscription;
  * method here mirrors what Phase 4 (Subscription Enforcement) will
  * eventually gate against, but this service only reports current state;
  * it never changes it.
+ *
+ * Phase 3.4 adds exactly one write: {@see requestUpgrade()}, the Manual
+ * Payment Workflow's request-creation step. It creates a pending
+ * SubscriptionChangeRequest only — no approval, activation, or plan
+ * change, which remain explicitly out of scope until a later phase.
  *
  * Every method here still filters by `tenant_id` explicitly, even though
  * {@see TenantSubscription} now also carries the automatic
@@ -30,6 +40,10 @@ use App\Models\TenantSubscription;
  */
 class SubscriptionService
 {
+    public function __construct(
+        private readonly AuditLogService $auditLog,
+    ) {}
+
     public function currentSubscription(Tenant $tenant): ?TenantSubscription
     {
         return TenantSubscription::where('tenant_id', $tenant->id)->first();
@@ -121,5 +135,67 @@ class SubscriptionService
             && $subscription->status === 'trialing'
             && $subscription->trial_ends_at !== null
             && $subscription->trial_ends_at->isFuture();
+    }
+
+    /**
+     * Manual Payment Workflow, step 3-4: Business Owner submits
+     * requested_plan_id + payment_reference; system creates a pending
+     * SubscriptionChangeRequest. No approval, no activation, no plan
+     * change — those remain a later phase's responsibility.
+     *
+     * Rejects (409) only when a *pending* request already exists for this
+     * tenant (Product Owner confirmation: approved and rejected requests
+     * never block a new one) — mirroring
+     * ProfessionalCollectionRequestService::submit()'s identical "no
+     * other active Request already pending" pattern (BRL-078).
+     * `current_plan_id` is a server-derived snapshot via
+     * {@see currentPlan()}, never client-supplied.
+     *
+     * The audit entry's `reason` carries `requested_plan_id` and
+     * `payment_reference` (tenant_id is already the audit_log row's own
+     * dedicated column) — audit_log has no separate metadata/JSON column,
+     * so this reuses the existing `reason` field, matching how other
+     * services already pack contextual detail into it (e.g.
+     * RiskLevelService's recalculation reason), per the Product Owner's
+     * requirement that this be sufficient for future Super Admin
+     * auditing.
+     */
+    public function requestUpgrade(Tenant $tenant, string $requestedPlanId, string $paymentReference, User $actor): SubscriptionChangeRequest
+    {
+        return DB::transaction(function () use ($tenant, $requestedPlanId, $paymentReference, $actor) {
+            if (SubscriptionChangeRequest::where('tenant_id', $tenant->id)->where('status', 'pending')->exists()) {
+                $this->conflict('A pending Subscription Change Request already exists for this tenant.');
+            }
+
+            $changeRequest = new SubscriptionChangeRequest([
+                'requested_plan_id' => $requestedPlanId,
+                'payment_reference' => $paymentReference,
+                'status' => 'pending',
+            ]);
+            $changeRequest->tenant_id = $tenant->id;
+            $changeRequest->current_plan_id = $this->currentPlan($tenant)?->id;
+            $changeRequest->save();
+
+            $this->auditLog->record(
+                AuditAction::SubscriptionUpgradeRequested,
+                'subscription_change_request',
+                $changeRequest->id,
+                $actor,
+                "requested_plan_id={$requestedPlanId}; payment_reference={$paymentReference}",
+                $tenant->id,
+            );
+
+            return $changeRequest->refresh();
+        });
+    }
+
+    private function conflict(string $message): never
+    {
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'message' => $message,
+            'data' => null,
+            'errors' => null,
+        ], 409));
     }
 }

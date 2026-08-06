@@ -445,4 +445,163 @@ class SubscriptionTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors(['storage_package']);
     }
+
+    // --- Phase 3.4: duplicate pending request prevention ---
+
+    public function test_upgrade_request_rejects_a_duplicate_pending_request(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $response = $this->postJson('/api/v1/subscription/upgrade-request', [
+            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-2',
+        ]);
+
+        $response->assertStatus(409)->assertJson(['success' => false]);
+        $this->assertSame(1, SubscriptionChangeRequest::where('tenant_id', $tenant->id)->count());
+    }
+
+    public function test_upgrade_request_duplicate_check_is_tenant_isolated(): void
+    {
+        // Another tenant's pending request must never block this one.
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenantB->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsTenantUser($tenantA);
+        $this->postJson('/api/v1/subscription/upgrade-request', [
+            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1',
+        ])->assertStatus(201);
+    }
+
+    // Product Owner confirmation: ONLY status='pending' blocks a new
+    // request. Approved and rejected requests never block — both
+    // terminal states are exercised explicitly below, for both flows,
+    // rather than assuming rejected behaves like approved.
+
+    public function test_upgrade_request_allows_a_new_request_once_the_prior_one_was_approved(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'approved',
+        ]);
+
+        $this->postJson('/api/v1/subscription/upgrade-request', [
+            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-2',
+        ])->assertStatus(201);
+    }
+
+    public function test_upgrade_request_allows_a_new_request_once_the_prior_one_was_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'rejected',
+        ]);
+
+        $this->postJson('/api/v1/subscription/upgrade-request', [
+            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-2',
+        ])->assertStatus(201);
+    }
+
+    public function test_storage_addon_request_rejects_a_duplicate_pending_request(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'pending']);
+
+        $response = $this->postJson('/api/v1/subscription/storage-addon-request', [
+            'storage_package' => '25gb', 'payment_reference' => 'REF-2',
+        ]);
+
+        $response->assertStatus(409)->assertJson(['success' => false]);
+        $this->assertSame(1, StorageAddon::where('tenant_id', $tenant->id)->count());
+    }
+
+    public function test_storage_addon_request_allows_a_new_request_once_the_prior_one_was_approved(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'approved']);
+
+        $this->postJson('/api/v1/subscription/storage-addon-request', [
+            'storage_package' => '10gb', 'payment_reference' => 'REF-2',
+        ])->assertStatus(201);
+    }
+
+    public function test_storage_addon_request_allows_a_new_request_once_the_prior_one_was_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'rejected']);
+
+        $this->postJson('/api/v1/subscription/storage-addon-request', [
+            'storage_package' => '10gb', 'payment_reference' => 'REF-2',
+        ])->assertStatus(201);
+    }
+
+    public function test_storage_addon_request_duplicate_check_is_tenant_isolated(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        StorageAddon::factory()->create(['tenant_id' => $tenantB->id, 'status' => 'pending']);
+
+        $this->actingAsTenantUser($tenantA);
+        $this->postJson('/api/v1/subscription/storage-addon-request', [
+            'storage_package' => '10gb', 'payment_reference' => 'REF-1',
+        ])->assertStatus(201);
+    }
+
+    // --- Phase 3.4: audit trail ---
+
+    public function test_upgrade_request_records_an_audit_log_entry_with_sufficient_metadata(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $user = $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create();
+
+        $response = $this->postJson('/api/v1/subscription/upgrade-request', [
+            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1',
+        ]);
+
+        $changeRequestId = $response->json('data.id');
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'action' => 'subscription_upgrade_requested',
+            'entity_type' => 'subscription_change_request',
+            'entity_id' => $changeRequestId,
+            'reason' => "requested_plan_id={$plan->id}; payment_reference=REF-1",
+        ]);
+    }
+
+    public function test_storage_addon_request_records_an_audit_log_entry_with_sufficient_metadata(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $user = $this->actingAsTenantUser($tenant);
+
+        $response = $this->postJson('/api/v1/subscription/storage-addon-request', [
+            'storage_package' => '10gb', 'payment_reference' => 'REF-1',
+        ]);
+
+        $addonId = $response->json('data.id');
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'action' => 'storage_addon_requested',
+            'entity_type' => 'storage_addon',
+            'entity_id' => $addonId,
+            'reason' => 'storage_package=10gb; payment_reference=REF-1',
+        ]);
+    }
 }

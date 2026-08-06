@@ -8,7 +8,6 @@ use App\Http\Resources\StorageAddonResource;
 use App\Http\Resources\SubscriptionChangeRequestResource;
 use App\Http\Resources\SubscriptionPlanResource;
 use App\Models\Customer;
-use App\Models\StorageAddon;
 use App\Models\SubscriptionChangeRequest;
 use App\Models\SubscriptionPlan;
 use App\Services\DocumentService;
@@ -20,9 +19,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Backend Completion Roadmap, Phase 3.3 — Business Owner Subscription
- * APIs only. No Super Admin / Platform endpoints (Manual Payment
- * approval/rejection, Storage approval — Phase 3.4). Every method reads
+ * Backend Completion Roadmap, Phase 3.3/3.4 — Business Owner Subscription
+ * APIs + Manual Payment Workflow. No Super Admin / Platform endpoints
+ * (approval, rejection, activation — a later phase). Every method reads
  * or writes only the authenticated Business Owner's own tenant, never a
  * client-supplied tenant identifier — combined with the Conditional
  * Global Scope on TenantSubscription/SubscriptionChangeRequest/
@@ -31,30 +30,14 @@ use Illuminate\Support\Facades\Gate;
  * filters by the resolved tenant, matching SubscriptionService's own
  * documented defense-in-depth reasoning).
  *
- * No new Service is added in this phase (Phase 3.3's explicit scope is
- * Controllers/Routes/Form Requests/API Resources/Feature Tests only) —
- * the one piece of derived logic this controller needs
- * (Read Only Status = subscription status is 'expired') is computed
- * inline from SubscriptionService::status(), which already exists.
+ * Phase 3.4 moved request-creation (duplicate-pending check, transaction,
+ * audit logging) into SubscriptionService::requestUpgrade()/
+ * StorageAddonService::requestAddon() — this controller now only
+ * validates the HTTP request and delegates.
  */
 class SubscriptionController extends Controller
 {
     use ApiResponse;
-
-    /**
-     * Approved Storage Add-on pricing (Product Owner decision) — the
-     * server-side source of truth for storage_size/monthly_price;
-     * storage_package is the only client-supplied value, validated
-     * against these exact 4 keys in StorageAddonRequestRequest.
-     *
-     * @var array<string, array{size: int, price: float}>
-     */
-    private const PACKAGES = [
-        '10gb' => ['size' => 10, 'price' => 2],
-        '25gb' => ['size' => 25, 'price' => 4],
-        '50gb' => ['size' => 50, 'price' => 7],
-        '100gb' => ['size' => 100, 'price' => 12],
-    ];
 
     public function __construct(
         private readonly SubscriptionService $subscriptions,
@@ -130,14 +113,12 @@ class SubscriptionController extends Controller
         Gate::authorize('admin-only');
         $tenant = $request->user()->tenant;
 
-        $changeRequest = new SubscriptionChangeRequest([
-            'requested_plan_id' => $request->validated('requested_plan_id'),
-            'payment_reference' => $request->validated('payment_reference'),
-            'status' => 'pending',
-        ]);
-        $changeRequest->tenant_id = $tenant->id;
-        $changeRequest->current_plan_id = $this->subscriptions->currentPlan($tenant)?->id;
-        $changeRequest->save();
+        $changeRequest = $this->subscriptions->requestUpgrade(
+            $tenant,
+            $request->validated('requested_plan_id'),
+            $request->validated('payment_reference'),
+            $request->user(),
+        );
 
         return $this->successResponse(
             new SubscriptionChangeRequestResource($changeRequest->load(['requestedPlan', 'currentPlan'])),
@@ -169,17 +150,12 @@ class SubscriptionController extends Controller
         Gate::authorize('admin-only');
         $tenant = $request->user()->tenant;
 
-        $package = self::PACKAGES[$request->validated('storage_package')];
-
-        $addon = new StorageAddon([
-            'storage_package' => $request->validated('storage_package'),
-            'storage_size' => $package['size'],
-            'monthly_price' => $package['price'],
-            'payment_reference' => $request->validated('payment_reference'),
-            'status' => 'pending',
-        ]);
-        $addon->tenant_id = $tenant->id;
-        $addon->save();
+        $addon = $this->storageAddons->requestAddon(
+            $tenant,
+            $request->validated('storage_package'),
+            $request->validated('payment_reference'),
+            $request->user(),
+        );
 
         return $this->successResponse(new StorageAddonResource($addon), 'Storage add-on request submitted successfully', 201);
     }
