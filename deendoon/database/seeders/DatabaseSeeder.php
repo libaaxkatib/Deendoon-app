@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
+        $this->call(SubscriptionPlanSeeder::class);
         $this->call(MessageTemplateSeeder::class);
 
         // Phase 14 — Production Readiness (seeder safety): this account has

@@ -3,8 +3,11 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\MessageTemplate;
+use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
+use App\Models\TenantSubscription;
 use App\Models\User;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,6 +19,18 @@ use Tests\TestCase;
 class RegisterTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Backend Completion Roadmap (Phase 3.5): registration now
+        // provisions a Trial TenantSubscription, which requires the
+        // Trial SubscriptionPlan row to exist — every test in this class
+        // goes through /register, so this is needed unconditionally, not
+        // just for the tests that assert on it directly.
+        $this->seed(SubscriptionPlanSeeder::class);
+    }
 
     public function test_user_can_register_with_valid_data(): void
     {
@@ -46,6 +61,32 @@ class RegisterTest extends TestCase
         $this->assertStringStartsWith('$argon2id$', $user->password);
         $this->assertTrue($user->hasRole('admin'));
         $this->assertSame(Tenant::where('business_name', 'Asad Trading Co.')->firstOrFail()->id, $user->tenant_id);
+    }
+
+    public function test_registration_provisions_a_trial_subscription(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'business_name' => 'Asad Trading Co.',
+            'name' => 'Asad Mohamed',
+            'email' => 'asad@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertStatus(201);
+
+        $tenant = Tenant::where('business_name', 'Asad Trading Co.')->firstOrFail();
+        $trialPlan = SubscriptionPlan::where('name', 'Trial')->firstOrFail();
+        $subscription = TenantSubscription::where('tenant_id', $tenant->id)->firstOrFail();
+
+        $this->assertSame($trialPlan->id, $subscription->plan_id);
+        $this->assertSame('trialing', $subscription->status);
+        $this->assertNotNull($subscription->started_at);
+        $this->assertNotNull($subscription->trial_started_at);
+        $this->assertNotNull($subscription->trial_ends_at);
+        $this->assertNotNull($subscription->expires_at);
+        $this->assertTrue($subscription->trial_ends_at->isFuture());
+        $this->assertTrue($subscription->trial_ends_at->diffInDays(now()) <= 7);
     }
 
     public function test_registration_provisions_default_message_templates(): void

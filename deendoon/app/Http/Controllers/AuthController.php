@@ -15,6 +15,7 @@ use App\Services\AuditLogService;
 use App\Services\MessageTemplateService;
 use App\Services\PasswordResetService;
 use App\Services\SecurityEventLogger;
+use App\Services\SubscriptionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,6 +47,7 @@ class AuthController extends Controller
         private readonly PasswordResetService $passwordReset,
         private readonly SecurityEventLogger $securityLog,
         private readonly MessageTemplateService $messageTemplates,
+        private readonly SubscriptionService $subscriptions,
     ) {}
 
     /**
@@ -53,8 +55,9 @@ class AuthController extends Controller
      * Product Owner Decision, 2026-07-30): registration creates a new
      * Tenant and its single Business Owner account (role `admin`)
      * together — the only account-creation path for the Customer Mobile
-     * App. Wrapped in a transaction since it writes two related rows (now
-     * three, including default message template provisioning).
+     * App. Wrapped in a transaction since it writes several related rows
+     * (default message templates, automatic Trial provisioning — Phase
+     * 3.5 — plus the tenant and user themselves).
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -67,6 +70,12 @@ class AuthController extends Controller
             // default reminder templates for every new tenant, closing the
             // gap where only tenants seeded before this fix had them.
             $this->messageTemplates->provisionDefaults($tenant);
+
+            // Backend Completion Roadmap (Phase 3.5): every new tenant
+            // automatically starts on the Trial plan — the Free Plan
+            // fallback is only for tenants that genuinely have no
+            // subscription record, not the normal path for a new one.
+            $this->subscriptions->provisionTrial($tenant);
 
             $user = new User([
                 'name' => $request->validated('name'),

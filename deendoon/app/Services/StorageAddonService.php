@@ -7,6 +7,7 @@ use App\Models\StorageAddon;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 
@@ -100,6 +101,13 @@ class StorageAddonService
      * `payment_reference` (tenant_id is already the audit_log row's own
      * dedicated column) — same reasoning as
      * SubscriptionService::requestUpgrade()'s identical choice.
+     *
+     * The `exists()` check alone cannot prevent a concurrent-request race
+     * (see SubscriptionService::requestUpgrade()'s identical note) — the
+     * database-level partial unique index
+     * `storage_addons_one_pending_per_tenant` (Phase 3.5 mandatory fix)
+     * is the actual safety net; a race that slips past the check is
+     * caught here and converted to the identical 409 response.
      */
     public function requestAddon(Tenant $tenant, string $storagePackage, string $paymentReference, User $actor): StorageAddon
     {
@@ -118,7 +126,12 @@ class StorageAddonService
                 'status' => 'pending',
             ]);
             $addon->tenant_id = $tenant->id;
-            $addon->save();
+
+            try {
+                $addon->save();
+            } catch (UniqueConstraintViolationException) {
+                $this->conflict('A pending Storage Add-on Request already exists for this tenant.');
+            }
 
             $this->auditLog->record(
                 AuditAction::StorageAddonRequested,

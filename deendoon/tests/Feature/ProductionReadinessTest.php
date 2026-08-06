@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -26,6 +27,10 @@ class ProductionReadinessTest extends TestCase
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+        // Backend Completion Roadmap (Phase 3.5): registration now
+        // provisions a Trial TenantSubscription, which requires the
+        // Trial SubscriptionPlan row to exist.
+        $this->seed(SubscriptionPlanSeeder::class);
     }
 
     // --- Password policy (08 §10: minimum 12 characters) ---

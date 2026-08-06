@@ -8,6 +8,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 
@@ -18,10 +19,13 @@ use Illuminate\Support\Facades\DB;
  * eventually gate against, but this service only reports current state;
  * it never changes it.
  *
- * Phase 3.4 adds exactly one write: {@see requestUpgrade()}, the Manual
- * Payment Workflow's request-creation step. It creates a pending
+ * Phase 3.4 adds one write, {@see requestUpgrade()} — the Manual Payment
+ * Workflow's request-creation step. It creates a pending
  * SubscriptionChangeRequest only — no approval, activation, or plan
  * change, which remain explicitly out of scope until a later phase.
+ * Phase 3.5 adds a second, {@see provisionTrial()} — automatic Trial
+ * provisioning at registration. Both are still narrowly scoped writes,
+ * not the beginning of a general write API on this service.
  *
  * Every method here still filters by `tenant_id` explicitly, even though
  * {@see TenantSubscription} now also carries the automatic
@@ -151,6 +155,15 @@ class SubscriptionService
      * `current_plan_id` is a server-derived snapshot via
      * {@see currentPlan()}, never client-supplied.
      *
+     * The `exists()` check alone cannot prevent two concurrent requests
+     * from both passing it before either commits (Postgres READ COMMITTED
+     * doesn't serialize this) — the database-level partial unique index
+     * `subscription_change_requests_one_pending_per_tenant` (Phase 3.5
+     * mandatory fix) is the actual safety net; a race that slips past the
+     * check is caught here as a UniqueConstraintViolationException and
+     * converted to the identical 409 response, so the API behaves the
+     * same regardless of which layer caught it.
+     *
      * The audit entry's `reason` carries `requested_plan_id` and
      * `payment_reference` (tenant_id is already the audit_log row's own
      * dedicated column) — audit_log has no separate metadata/JSON column,
@@ -174,7 +187,12 @@ class SubscriptionService
             ]);
             $changeRequest->tenant_id = $tenant->id;
             $changeRequest->current_plan_id = $this->currentPlan($tenant)?->id;
-            $changeRequest->save();
+
+            try {
+                $changeRequest->save();
+            } catch (UniqueConstraintViolationException) {
+                $this->conflict('A pending Subscription Change Request already exists for this tenant.');
+            }
 
             $this->auditLog->record(
                 AuditAction::SubscriptionUpgradeRequested,
@@ -187,6 +205,45 @@ class SubscriptionService
 
             return $changeRequest->refresh();
         });
+    }
+
+    /**
+     * Phase 3.5 (Product Owner decision): every newly-registered tenant
+     * automatically receives a Trial TenantSubscription — the Free Plan
+     * fallback in {@see currentPlan()} is only for tenants that genuinely
+     * have no subscription record, not the normal path for a new tenant.
+     * Called from AuthController::register(), inside the same
+     * transaction as tenant/user creation.
+     *
+     * `expires_at` is set equal to `trial_ends_at`: for a trialing
+     * subscription the "current period" *is* the trial, so its own
+     * expiry and the trial's expiry are the same date — not separately
+     * specified by the approved decision, but the only coherent reading
+     * once all 4 requested fields are populated together.
+     *
+     * `firstOrFail()` deliberately does not fall back or degrade
+     * gracefully if the Trial plan row is missing (e.g. the seeder never
+     * ran) — matching this exact codebase's existing precedent for
+     * `$user->assignRole('admin')` a few lines above this call site in
+     * AuthController::register(), which has an identical hard dependency
+     * on seeded data and no defensive fallback either.
+     */
+    public function provisionTrial(Tenant $tenant): TenantSubscription
+    {
+        $trialPlan = SubscriptionPlan::where('name', 'Trial')->firstOrFail();
+
+        $subscription = new TenantSubscription([
+            'plan_id' => $trialPlan->id,
+            'status' => 'trialing',
+            'started_at' => now(),
+            'trial_started_at' => now(),
+            'trial_ends_at' => now()->addDays(7),
+            'expires_at' => now()->addDays(7),
+        ]);
+        $subscription->tenant_id = $tenant->id;
+        $subscription->save();
+
+        return $subscription;
     }
 
     private function conflict(string $message): never

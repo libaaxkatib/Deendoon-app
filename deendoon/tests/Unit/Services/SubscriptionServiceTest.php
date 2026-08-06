@@ -6,13 +6,17 @@ use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Services\SubscriptionService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
  * Backend Completion Roadmap, Phase 3.2 — direct coverage of
- * SubscriptionService. Read-only only: no test here writes subscription
- * state through the service, matching its own read-only contract.
+ * SubscriptionService. Mostly read-only queries; {@see requestUpgrade()}
+ * (Phase 3.4) is covered end-to-end via tests/Feature/SubscriptionTest.php
+ * instead (that phase's explicit ask was Feature Tests), while
+ * {@see SubscriptionServiceTest::test_provision_trial_creates_a_trialing_subscription_on_the_trial_plan()}
+ * below adds direct Unit coverage for {@see provisionTrial()} (Phase 3.5).
  */
 class SubscriptionServiceTest extends TestCase
 {
@@ -246,5 +250,34 @@ class SubscriptionServiceTest extends TestCase
 
         $this->assertSame(2, $this->service()->customerLimit($tenantA));
         $this->assertSame(250, $this->service()->customerLimit($tenantB));
+    }
+
+    // --- Trial provisioning (Phase 3.5) ---
+
+    public function test_provision_trial_creates_a_trialing_subscription_on_the_trial_plan(): void
+    {
+        $tenant = $this->tenant();
+        $trialPlan = SubscriptionPlan::factory()->create(['name' => 'Trial']);
+
+        $subscription = $this->service()->provisionTrial($tenant);
+
+        $this->assertSame($trialPlan->id, $subscription->plan_id);
+        $this->assertSame('trialing', $subscription->status);
+        $this->assertNotNull($subscription->started_at);
+        $this->assertNotNull($subscription->trial_started_at);
+        $this->assertTrue($subscription->trial_ends_at->isFuture());
+        $this->assertSame(
+            $subscription->trial_ends_at->toDateTimeString(),
+            $subscription->expires_at->toDateTimeString(),
+        );
+    }
+
+    public function test_provision_trial_fails_when_no_trial_plan_is_seeded(): void
+    {
+        $tenant = $this->tenant();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        $this->service()->provisionTrial($tenant);
     }
 }
