@@ -2517,12 +2517,17 @@ language, notification, business-policy, and security preferences.
 - **Security** — Change Password (opens Section 10.2's Change Password
   form) and a Biometric Login toggle.
 
-Default Currency and Default Date Format are shown as an honest
-"unavailable — no backend endpoint" section, since no such field exists
-in the backend.
+Default Currency and Default Date Format are not shown at all: BC-005
+fixes Version 1 to a single, non-configurable currency per tenant, and
+no configurable date-format requirement exists anywhere in the approved
+SRS (FR-069's System Preferences categories are Credit Policy, Recovery
+Policy, Notification Settings, and Document Templates only). Surfacing
+either as a setting — even as an honest "unavailable" placeholder — would
+misrepresent them as pending backend work rather than out-of-scope by
+design.
 
 **Components:** Section groups; toggles; numeric/day-list fields; a Save
-button; the honest unavailable section for currency/date-format.
+button.
 
 **User Actions:** Change language; toggle notification and biometric
 settings; edit business-policy values; save; open Change Password.

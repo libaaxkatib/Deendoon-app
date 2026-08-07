@@ -242,24 +242,6 @@ abstract class AppLocalizations {
   /// **'Professional Collection Threshold (Days)'**
   String get professionalCollectionThresholdDays;
 
-  /// No description provided for @defaultCurrency.
-  ///
-  /// In en, this message translates to:
-  /// **'Default Currency'**
-  String get defaultCurrency;
-
-  /// No description provided for @defaultDateFormat.
-  ///
-  /// In en, this message translates to:
-  /// **'Default Date Format'**
-  String get defaultDateFormat;
-
-  /// No description provided for @noBackendEndpoint.
-  ///
-  /// In en, this message translates to:
-  /// **'No backend endpoint yet'**
-  String get noBackendEndpoint;
-
   /// No description provided for @saveChanges.
   ///
   /// In en, this message translates to:

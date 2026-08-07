@@ -10,7 +10,6 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
-import '../../../../core/widgets/unavailable_section.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/settings_repository.dart';
 import '../../domain/system_settings.dart';
@@ -23,9 +22,10 @@ import '../providers/settings_providers.dart';
 /// `/account/change-password` route; Biometric Login is a real device
 /// capability check + real biometric prompt, persisted locally only (see
 /// `BiometricAuthService`'s doc comment for the app-launch-enforcement
-/// scope boundary). Default Currency/Default Date Format have no backend
-/// field anywhere in this codebase — shown as an honest unavailable
-/// section rather than invented.
+/// scope boundary). Default Currency/Default Date Format are intentionally
+/// absent: BC-005 fixes V1 to a single currency per tenant (not
+/// configurable) and no configurable date-format requirement exists
+/// anywhere in the approved SRS — see FR-069's exhaustive preference list.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -301,10 +301,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    UnavailableSection(reason: '${l10n.defaultCurrency} — ${l10n.noBackendEndpoint}'),
-                    const SizedBox(height: 8),
-                    UnavailableSection(reason: '${l10n.defaultDateFormat} — ${l10n.noBackendEndpoint}'),
                     if (_error != null) ...[
                       const SizedBox(height: 16),
                       Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),

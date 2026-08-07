@@ -31,9 +31,6 @@
   "callReminderDays": "Call Reminder Days",
   "reminderDaysHint": "Comma-separated days, e.g. 1, 3, 7",
   "professionalCollectionThresholdDays": "Professional Collection Threshold (Days)",
-  "defaultCurrency": "Default Currency",
-  "defaultDateFormat": "Default Date Format",
-  "noBackendEndpoint": "No backend endpoint yet",
 
   "saveChanges": "Save Changes",
   "settingsSavedSuccessfully": "Settings updated successfully",

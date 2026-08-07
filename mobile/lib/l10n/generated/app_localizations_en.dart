@@ -82,15 +82,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Professional Collection Threshold (Days)';
 
   @override
-  String get defaultCurrency => 'Default Currency';
-
-  @override
-  String get defaultDateFormat => 'Default Date Format';
-
-  @override
-  String get noBackendEndpoint => 'No backend endpoint yet';
-
-  @override
   String get saveChanges => 'Save Changes';
 
   @override

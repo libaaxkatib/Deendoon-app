@@ -99,17 +99,6 @@ void main() {
     expect(find.text('30'), findsOneWidget);
   });
 
-  testWidgets('shows the honest unavailable section for currency and date format', (tester) async {
-    when(() => mockRepository.fetchSettings()).thenAnswer((_) async => _settings);
-
-    await _pumpScreen(tester, repository: mockRepository, biometricAuthService: mockBiometricAuthService);
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('Default Currency'), findsOneWidget);
-    expect(find.textContaining('Default Date Format'), findsOneWidget);
-    expect(find.textContaining('No backend endpoint yet'), findsNWidgets(2));
-  });
-
   testWidgets('shows Coming soon for biometric login when the device does not support it', (tester) async {
     when(() => mockRepository.fetchSettings()).thenAnswer((_) async => _settings);
 

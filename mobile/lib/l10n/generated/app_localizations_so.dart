@@ -84,15 +84,6 @@ class AppLocalizationsSo extends AppLocalizations {
       'Maalmaha Xadka Ururinta Xirfadeed';
 
   @override
-  String get defaultCurrency => 'Lacagta Caadiga ah';
-
-  @override
-  String get defaultDateFormat => 'Qaabka Taariikhda ee Caadiga ah';
-
-  @override
-  String get noBackendEndpoint => 'Weli lama helin endpoint backend ah';
-
-  @override
   String get saveChanges => 'Kaydi Isbeddellada';
 
   @override

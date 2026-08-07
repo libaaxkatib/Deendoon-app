@@ -30,9 +30,6 @@
   "callReminderDays": "Maalmaha Xasuusinta Wicitaanka",
   "reminderDaysHint": "Maalmo kala saxeexan comma, tusaale 1, 3, 7",
   "professionalCollectionThresholdDays": "Maalmaha Xadka Ururinta Xirfadeed",
-  "defaultCurrency": "Lacagta Caadiga ah",
-  "defaultDateFormat": "Qaabka Taariikhda ee Caadiga ah",
-  "noBackendEndpoint": "Weli lama helin endpoint backend ah",
 
   "saveChanges": "Kaydi Isbeddellada",
   "settingsSavedSuccessfully": "Dejinta si guul leh ayaa loo cusboonaysiiyay",
