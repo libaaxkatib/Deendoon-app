@@ -7,7 +7,9 @@ use App\Enums\ReferenceDataCategory;
 use App\Models\CollectionCase;
 use App\Models\Customer;
 use App\Models\Payment;
+use App\Models\ProfessionalCollectionRequestReason;
 use App\Models\ReferenceData;
+use App\Models\RequestedServiceItem;
 use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
@@ -80,6 +82,18 @@ class ReferenceDataService
                 ->where('payment_method', $valueLabel)->exists(),
             ReferenceDataCategory::CollectionOutcome => CollectionCase::where('tenant_id', $tenantId)
                 ->where('closure_outcome', $valueLabel)->exists(),
+            // professional_collection_request_reasons/services carry no
+            // tenant_id of their own (child of ProfessionalCollectionRequest,
+            // which is deliberately bimodal/unscoped — see that model's
+            // docblock), so tenant scoping is joined through the parent.
+            ReferenceDataCategory::TransferReason => ProfessionalCollectionRequestReason::whereHas(
+                'request',
+                fn ($q) => $q->where('tenant_id', $tenantId),
+            )->where('reason_label', $valueLabel)->exists(),
+            ReferenceDataCategory::RequestedService => RequestedServiceItem::whereHas(
+                'request',
+                fn ($q) => $q->where('tenant_id', $tenantId),
+            )->where('service_label', $valueLabel)->exists(),
         };
     }
 }

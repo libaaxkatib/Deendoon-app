@@ -104,12 +104,12 @@ class CustomerBalanceServiceTest extends TestCase
     }
 
     /**
-     * Models what PaymentService::recalculateDebt() actually produces on
-     * overpayment: `remaining_balance = amount - totalPaid` is uncapped
-     * (DD-016 unresolved, "succeeds unconditionally"), but `debt_status`
-     * becomes 'paid' the moment totalPaid >= amount — in the same write.
-     * So an overpaid Debt is always excluded by status before its
-     * (possibly negative) remaining_balance value could ever be summed.
+     * A negative remaining_balance can no longer occur via the real
+     * payment flow (DD-016, Business Owner Backend Completion:
+     * PaymentService::record() now rejects overpayment outright), but
+     * this defensively proves CustomerBalanceService's own exclusion-by-
+     * status logic holds regardless of whatever value remaining_balance
+     * carries on a Paid Debt.
      */
     public function test_an_overpaid_debt_is_excluded_despite_its_negative_remaining_balance(): void
     {
@@ -212,6 +212,51 @@ class CustomerBalanceServiceTest extends TestCase
         $this->service()->recalculate($customer);
 
         Event::assertNotDispatched(CreditLimitReached::class);
+    }
+
+    public function test_credit_limit_reached_is_not_re_dispatched_while_the_customer_remains_over_limit(): void
+    {
+        // Business Owner Backend Completion (pre-Phase 5): regression test
+        // for the confirmed duplicate-notification bug — recalculate() must
+        // only dispatch on the transition into over-limit, not on every
+        // subsequent call while the customer is still over-limit.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->customer($tenant, ['credit_limit' => 400]);
+        $debt = $this->debt($tenant, $customer, ['debt_status' => 'pending', 'amount' => 500, 'remaining_balance' => 500]);
+
+        Event::fake([CreditLimitReached::class]);
+
+        // First recalculation: crosses the limit, should dispatch once.
+        $this->service()->recalculate($customer->fresh());
+        Event::assertDispatchedTimes(CreditLimitReached::class, 1);
+
+        // A second recalculation (e.g. a further partial payment leaving
+        // the customer still over-limit) must not dispatch again.
+        $debt->update(['remaining_balance' => 450]);
+        $this->service()->recalculate($customer->fresh());
+        Event::assertDispatchedTimes(CreditLimitReached::class, 1);
+    }
+
+    public function test_credit_limit_reached_is_dispatched_again_after_dropping_below_and_crossing_the_limit_again(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->customer($tenant, ['credit_limit' => 400]);
+        $debt = $this->debt($tenant, $customer, ['debt_status' => 'pending', 'amount' => 500, 'remaining_balance' => 500]);
+
+        Event::fake([CreditLimitReached::class]);
+
+        $this->service()->recalculate($customer->fresh());
+        Event::assertDispatchedTimes(CreditLimitReached::class, 1);
+
+        // Drops back below the limit — a genuinely new qualifying event
+        // should fire once the customer crosses over-limit again.
+        $debt->update(['debt_status' => 'partial_paid', 'remaining_balance' => 100]);
+        $this->service()->recalculate($customer->fresh());
+        Event::assertDispatchedTimes(CreditLimitReached::class, 1);
+
+        $debt->update(['remaining_balance' => 500]);
+        $this->service()->recalculate($customer->fresh());
+        Event::assertDispatchedTimes(CreditLimitReached::class, 2);
     }
 
     // --- Recompute-from-source: overwrites stale stored state ---

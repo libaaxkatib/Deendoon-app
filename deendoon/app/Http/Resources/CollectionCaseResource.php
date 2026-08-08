@@ -33,6 +33,7 @@ class CollectionCaseResource extends JsonResource
             'assigned_officer_user_id' => $this->assigned_officer_user_id,
             'case_status' => $this->case_status,
             'closure_outcome' => $this->closure_outcome,
+            'notes' => $this->notes,
             // Reflects the most recent recorded activity against the case
             // (escalation, assignment, activity, closure all update this
             // timestamp) — see CollectionCaseService, which now touches the

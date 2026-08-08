@@ -57,7 +57,16 @@ class PerformanceTest extends TestCase
      */
     private function makeDebt(Tenant $tenant, array $attributes = []): Debt
     {
-        $customer = Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 5000, 'risk_level' => 'low']);
+        // Business Owner Backend Completion (pre-Phase 5): credit_score/
+        // credit_score_band pre-seeded at CreditScoreService's baseline
+        // (70/'fair', the exact value a Debt with no promises/cases/
+        // requests and a future due date computes to) for the same reason
+        // risk_level is pre-seeded to 'low' — keeps CreditScoreService's
+        // write a no-op here too, so this file's query-count guards test
+        // genuine N+1 SELECT prevention, not legitimate first-time-write cost.
+        $customer = Customer::factory()->for($tenant, 'tenant')->create([
+            'credit_limit' => 5000, 'risk_level' => 'low', 'credit_score' => 70, 'credit_score_band' => 'fair',
+        ]);
 
         return Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create($attributes);
     }

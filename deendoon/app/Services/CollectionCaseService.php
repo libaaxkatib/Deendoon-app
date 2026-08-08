@@ -34,6 +34,7 @@ class CollectionCaseService
         private readonly FollowUpHistoryService $followUpHistory,
         private readonly RecoveryStageService $recoveryStage,
         private readonly RiskLevelService $riskLevel,
+        private readonly CreditScoreService $creditScore,
     ) {}
 
     /**
@@ -76,8 +77,29 @@ class CollectionCaseService
             // deliberately NOT wired — Formula Spec §2.2 gives it no
             // scoring effect until DD-024 is resolved.)
             $this->riskLevel->recalculate($debt->customer);
+            // Credit Score (FR-026, Business Owner Backend Completion):
+            // always recalculated at the exact same trigger points as Risk
+            // Level.
+            $this->creditScore->recalculate($debt->customer);
 
             return $case->refresh();
+        });
+    }
+
+    /**
+     * FR-043 (Business Owner Backend Completion): `notes` is the one
+     * editable field the approved schema now has — a free-text case
+     * annotation distinct from recordActivity()'s chronological
+     * follow_up_history log.
+     */
+    public function updateDetails(CollectionCase $case, ?string $notes, User $actor): void
+    {
+        $this->assertOpen($case);
+
+        DB::transaction(function () use ($case, $notes, $actor) {
+            $case->update(['notes' => $notes]);
+
+            $this->auditLog->record(AuditAction::Edited, 'collection_case', $case->id, $actor, 'Collection Case notes updated');
         });
     }
 
@@ -85,15 +107,18 @@ class CollectionCaseService
     {
         $this->assertOpen($case);
 
-        $this->followUpHistory->record($case->debt, FollowUpActionType::CollectionActivity, $actor, $details, $case->id);
-        $this->auditLog->record(AuditAction::Edited, 'collection_case', $case->id, $actor, 'Collection activity recorded');
+        DB::transaction(function () use ($case, $details, $actor) {
+            $this->followUpHistory->record($case->debt, FollowUpActionType::CollectionActivity, $actor, $details, $case->id);
+            $this->auditLog->record(AuditAction::Edited, 'collection_case', $case->id, $actor, 'Collection activity recorded');
 
-        // Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §6.1): "Last activity"
-        // must reflect this action. Every other case-mutating method here
-        // already bumps updated_at via ->update(); this is the one that
-        // previously didn't, since it writes only to follow_up_history/
-        // audit_log without touching the case row itself.
-        $case->touch();
+            // Backend v2.1 (docs/Mobile_UI_V1_Frozen.md §6.1): "Last
+            // activity" must reflect this action. Every other case-mutating
+            // method here already bumps updated_at via ->update(); this is
+            // the one that previously didn't, since it writes only to
+            // follow_up_history/audit_log without touching the case row
+            // itself.
+            $case->touch();
+        });
     }
 
     public function close(CollectionCase $case, string $closureOutcome, User $actor): void
@@ -102,13 +127,15 @@ class CollectionCaseService
             $this->conflict('This Collection Case is already closed.');
         }
 
-        $case->update([
-            'case_status' => 'closed',
-            'closure_outcome' => $closureOutcome,
-            'closed_at' => now(),
-        ]);
+        DB::transaction(function () use ($case, $closureOutcome, $actor) {
+            $case->update([
+                'case_status' => 'closed',
+                'closure_outcome' => $closureOutcome,
+                'closed_at' => now(),
+            ]);
 
-        $this->auditLog->record(AuditAction::StatusChanged, 'collection_case', $case->id, $actor, 'Collection Case closed');
+            $this->auditLog->record(AuditAction::StatusChanged, 'collection_case', $case->id, $actor, 'Collection Case closed');
+        });
     }
 
     private function assertOpen(CollectionCase $case): void

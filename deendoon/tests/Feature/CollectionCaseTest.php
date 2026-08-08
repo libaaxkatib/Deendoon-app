@@ -346,7 +346,7 @@ class CollectionCaseTest extends TestCase
         $this->assertSame('500.00', $debt->remaining_balance);
     }
 
-    // --- Update (FR-043, genuine schema gap) ---
+    // --- Update (FR-043) ---
 
     public function test_update_is_rejected_on_a_closed_case(): void
     {
@@ -356,7 +356,7 @@ class CollectionCaseTest extends TestCase
         $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
         $this->postJson("/api/v1/collection-cases/{$caseId}/close", ['closure_outcome' => 'recovered'])->assertStatus(200);
 
-        $this->putJson("/api/v1/collection-cases/{$caseId}", [])->assertStatus(409);
+        $this->putJson("/api/v1/collection-cases/{$caseId}", ['notes' => 'Too late'])->assertStatus(409);
     }
 
     public function test_update_succeeds_as_a_no_op_on_an_open_case(): void
@@ -367,6 +367,36 @@ class CollectionCaseTest extends TestCase
         $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
 
         $this->putJson("/api/v1/collection-cases/{$caseId}", [])->assertStatus(200);
+    }
+
+    public function test_update_sets_the_case_notes_and_records_an_edited_audit_event(): void
+    {
+        // Business Owner Backend Completion (pre-Phase 5): FR-043's
+        // previously unresolved schema gap — `notes` is now the editable
+        // field, distinct from the chronological activity log.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+
+        $response = $this->putJson("/api/v1/collection-cases/{$caseId}", ['notes' => 'Customer requested a payment plan.']);
+
+        $response->assertStatus(200)->assertJsonPath('data.notes', 'Customer requested a payment plan.');
+        $this->assertDatabaseHas('collection_cases', ['id' => $caseId, 'notes' => 'Customer requested a payment plan.']);
+        $this->assertDatabaseHas('audit_log', ['entity_id' => $caseId, 'action' => 'edited']);
+    }
+
+    public function test_update_notes_does_not_affect_the_follow_up_activity_log(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+
+        $this->putJson("/api/v1/collection-cases/{$caseId}", ['notes' => 'Internal note only'])->assertStatus(200);
+
+        $history = $this->getJson("/api/v1/collection-cases/{$caseId}/history")->json('data.history');
+        $this->assertFalse(collect($history)->contains(fn (array $entry) => $entry['details'] === 'Internal note only'));
     }
 
     // --- History (FR-046) ---

@@ -379,6 +379,50 @@ class DebtTest extends TestCase
         $this->assertDatabaseHas('audit_log', ['entity_id' => $debt->id, 'action' => 'restored']);
     }
 
+    public function test_archived_debt_is_viewable_in_a_restore_eligible_state(): void
+    {
+        // FR-019 (Business Owner Backend Completion): archived Debts are
+        // now viewable via show() so a Business Owner can review one
+        // before deciding to restore it.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->archived()->create();
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson("/api/v1/debts/{$debt->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.id', $debt->id)
+            ->assertJsonPath('data.archived_at', fn (?string $value): bool => $value !== null);
+    }
+
+    public function test_show_returns_404_for_another_tenants_archived_debt(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $customer = Customer::factory()->for($tenantB, 'tenant')->create();
+        $otherDebt = Debt::factory()->for($tenantB, 'tenant')->for($customer, 'customer')->archived()->create();
+        $this->actingAsTenantUser($tenantA);
+
+        $this->getJson("/api/v1/debts/{$otherDebt->id}")->assertStatus(404);
+    }
+
+    public function test_viewing_an_archived_debt_does_not_advance_its_overdue_status(): void
+    {
+        // Reviewing an archived record for a restore decision must not
+        // silently mutate it via the same on-view side effects show()
+        // applies to live Debts.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')
+            ->archived()->create(['debt_status' => 'pending', 'due_date' => now()->subDays(5)]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson("/api/v1/debts/{$debt->id}")->assertStatus(200)->assertJsonPath('data.debt_status', 'pending');
+
+        $this->assertSame('pending', $debt->fresh()->debt_status);
+    }
+
     // --- Timeline ---
 
     public function test_timeline_shows_debt_created_as_completed_and_the_rest_as_pending(): void

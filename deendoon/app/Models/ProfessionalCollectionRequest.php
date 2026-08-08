@@ -18,7 +18,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * or-never-scope trait, so every query against this model is scoped
  * explicitly in ProfessionalCollectionRequestController/Policy instead.
  */
-#[Fillable(['collection_case_id', 'reference_number', 'status', 'submitted_by_user_id', 'actioned_by_user_id'])]
+#[Fillable([
+    'collection_case_id', 'reference_number', 'status', 'submitted_by_user_id', 'actioned_by_user_id',
+    'transfer_notes', 'declaration_accepted_at', 'declaration_accepted_by_user_id',
+])]
 class ProfessionalCollectionRequest extends Model
 {
     /** @use HasFactory<ProfessionalCollectionRequestFactory> */
@@ -30,6 +33,7 @@ class ProfessionalCollectionRequest extends Model
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'closed_at' => 'datetime',
+            'declaration_accepted_at' => 'datetime',
         ];
     }
 
@@ -46,5 +50,30 @@ class ProfessionalCollectionRequest extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(RequestMessage::class);
+    }
+
+    public function reasons(): HasMany
+    {
+        return $this->hasMany(ProfessionalCollectionRequestReason::class);
+    }
+
+    public function requestedServices(): HasMany
+    {
+        return $this->hasMany(RequestedServiceItem::class);
+    }
+
+    public function linkedDocuments(): HasMany
+    {
+        return $this->hasMany(ProfessionalCollectionRequestDocument::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ProfessionalCollectionRequestAttachment::class);
+    }
+
+    public function timelineEvents(): HasMany
+    {
+        return $this->hasMany(ProfessionalCollectionTimelineEvent::class);
     }
 }

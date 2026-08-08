@@ -24,13 +24,15 @@ class ReportingService
 
     public function __construct(
         private readonly BusinessHealthService $businessHealth,
+        private readonly CollectionRateService $collectionRate,
     ) {}
 
     /**
-     * BRL-059: the five resolved KPIs. Recovery Rate is explicitly
-     * unresolved (DD-032, at least two valid formulas were never narrowed
-     * to one) — returned as `null` rather than an invented value, keeping
-     * the fixed six-card set (05_UI_UX_Specification.md §8) stable.
+     * BRL-059: the six resolved KPIs. Recovery Rate (DD-032, Business
+     * Owner Backend Completion, Product Owner-approved formula) reuses the
+     * exact same Collected ÷ Became Due calculation already implemented
+     * for collectionAnalytics()'s Collection Rate — see
+     * collectionRateFor(), the one shared implementation both call.
      *
      * FR-053: scoped to the user's own tenant, or system-wide for the
      * Deendoon Platform Administrator — the only actor FR-053 itself
@@ -59,8 +61,14 @@ class ReportingService
             ->whereDate('payment_date', '>=', $periodStart)
             ->whereDate('payment_date', '<=', $periodEnd)
             ->sum('amount');
-        $overdueCount = (clone $debts)->where('debt_status', 'overdue')->count();
-        $overdueValue = (clone $debts)->where('debt_status', 'overdue')->sum('remaining_balance');
+        $recoveryRate = $this->collectionRate->rateFor(clone $payments, clone $debts, $periodStart, $periodEnd);
+        // FR-021 (Business Owner Backend Completion): computed via the
+        // effective condition, not the raw stored debt_status column, so a
+        // Debt that has never been individually viewed (and therefore
+        // never had its status lazily flipped to 'overdue') still counts
+        // here — see Debt::scopeEffectivelyOverdue().
+        $overdueCount = (clone $debts)->effectivelyOverdue()->count();
+        $overdueValue = (clone $debts)->effectivelyOverdue()->sum('remaining_balance');
         $customersOverLimit = (clone $customers)->whereColumn('outstanding_balance', '>', 'credit_limit')->count();
         $activeCases = (clone $cases)->where('case_status', '!=', 'closed')->count();
 
@@ -78,7 +86,7 @@ class ReportingService
             'period' => $period,
             'total_outstanding_amount' => $this->money($totalOutstanding),
             'total_collected_period' => $this->money($totalCollected),
-            'recovery_rate' => null,
+            'recovery_rate' => $recoveryRate,
             // `Mobile_UI_V1_Frozen.md` §4.1: "Visible to Business Owner"
             // only — Business Health has no system-wide definition (it
             // measures one tenant's portfolio), so the Deendoon Platform
@@ -148,11 +156,15 @@ class ReportingService
     /**
      * docs/Mobile_UI_V1_Frozen.md §5.4 — the three explicitly-defined
      * formulas: Collection Rate = collected ÷ amount that became due in
-     * the period; Total Collected = sum of period payments (identical
-     * computation to dashboardKpis()'s total_collected_period — reused,
-     * not recomputed independently); Average Days = mean days between a
-     * debt's due date and the date it was fully paid, for debts paid
-     * within the period.
+     * the period (CollectionRateService::rateFor(), the same
+     * implementation dashboardKpis()'s Recovery Rate KPI and
+     * BusinessHealthService's Collection Performance input now reuse
+     * under DD-032's Product Owner-approved decision — one formula, not
+     * three competing ones); Total Collected = sum of period payments
+     * (identical computation to dashboardKpis()'s total_collected_period —
+     * reused, not recomputed independently); Average Days = mean days
+     * between a debt's due date and the date it was fully paid, for debts
+     * paid within the period.
      *
      * @return array{collection_rate: float, total_collected: string, average_days: float|null}
      */
@@ -162,16 +174,8 @@ class ReportingService
             ->whereDate('payment_date', '<=', $dateTo)
             ->sum('amount');
 
-        $totalBecameDue = Debt::whereDate('due_date', '>=', $dateFrom)
-            ->whereDate('due_date', '<=', $dateTo)
-            ->sum('amount');
-
-        $collectionRate = bccomp((string) $totalBecameDue, '0.00', 2) > 0
-            ? round(((float) $totalCollected / (float) $totalBecameDue) * 100, 2)
-            : 0.0;
-
         return [
-            'collection_rate' => $collectionRate,
+            'collection_rate' => $this->collectionRate->rateFor(Payment::query(), Debt::query(), $dateFrom, $dateTo),
             'total_collected' => $this->money($totalCollected),
             'average_days' => $this->averageDaysToPay($dateFrom, $dateTo),
         ];

@@ -27,7 +27,10 @@ class StoreCustomerRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
-            'credit_limit' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
+            // FR-007/BR-034 (Business Owner Backend Completion): when
+            // omitted, CustomerController::store() applies the tenant's
+            // configured SystemSetting::default_credit_limit instead.
+            'credit_limit' => ['sometimes', 'numeric', 'min:0', 'max:9999999999.99'],
         ];
     }
 }

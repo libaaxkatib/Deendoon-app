@@ -13,6 +13,7 @@ use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Services\AuditLogService;
+use App\Services\CreditScoreService;
 use App\Services\CustomerBalanceService;
 use App\Services\PromiseToPayService;
 use App\Services\ReferenceNumberService;
@@ -43,6 +44,7 @@ class DebtController extends Controller
         private readonly AuditLogService $auditLog,
         private readonly PromiseToPayService $promiseToPay,
         private readonly RiskLevelService $riskLevel,
+        private readonly CreditScoreService $creditScore,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -89,6 +91,9 @@ class DebtController extends Controller
         // would reintroduce exactly the N+1 that batching exists to avoid.
         $pageCustomers = Customer::whereIn('id', $pageDebts->pluck('customer_id')->unique())->get();
         $this->riskLevel->recalculateForMany($pageCustomers);
+        // Credit Score (FR-026, Business Owner Backend Completion): always
+        // recalculated at the exact same trigger points as Risk Level.
+        $this->creditScore->recalculateForMany($pageCustomers);
 
         return $this->successResponse([
             'debts' => DebtResource::collection($debts->items()),
@@ -150,10 +155,19 @@ class DebtController extends Controller
     {
         $this->authorize('view', $debt);
 
-        $this->refreshOverdueStatus($debt);
-        $this->promiseToPay->refreshBrokenPromises($debt);
-        $this->promiseToPay->refreshDuePromises($debt);
-        $this->riskLevel->recalculate($debt->customer);
+        // FR-019 (Business Owner Backend Completion): archived Debts are
+        // now viewable here too (route uses withTrashed()), so a Business
+        // Owner can review the full record before deciding to restore it.
+        // Skip every on-view mutation side effect for an archived record —
+        // reviewing it for a restore decision should not silently advance
+        // its status, break/fulfill its promises, or recompute risk level.
+        if (! $debt->trashed()) {
+            $this->refreshOverdueStatus($debt);
+            $this->promiseToPay->refreshBrokenPromises($debt);
+            $this->promiseToPay->refreshDuePromises($debt);
+            $this->riskLevel->recalculate($debt->customer);
+            $this->creditScore->recalculate($debt->customer);
+        }
 
         return $this->successResponse(new DebtResource($debt->fresh()));
     }
@@ -220,11 +234,17 @@ class DebtController extends Controller
     }
 
     /**
-     * FR-024: now sourced from follow_up_history for the stages Module 5
-     * actually populates (whatsapp/sms/call/promise). "payment" and
-     * "professional_collection" remain genuinely pending — Modules 6/7
-     * don't exist, so nothing can ever write those action_type values yet.
-     * "recovered" has no source at all until Module 6 exists.
+     * FR-024: sourced from follow_up_history for the stages Module 5
+     * populates (whatsapp/sms/call/promise), plus "payment" and
+     * "professional_collection" (Modules 6/7, both implemented). "recovered"
+     * is sourced from the Debt's own status plus the Audit Trail (bug fix,
+     * Transfer Case to Deendoon Recovery Team review — this previously
+     * hardcoded "pending" unconditionally, so a fully recovered/Paid Debt
+     * never reflected it here). A "Paid" Debt can never transition again
+     * (PaymentService::record()/DebtController::updateStatus() both reject
+     * any further status change once terminal), so its most recent
+     * `status_changed` Audit Trail entry unambiguously marks the moment it
+     * became Paid.
      */
     public function timeline(Debt $debt): JsonResponse
     {
@@ -249,7 +269,7 @@ class DebtController extends Controller
             'professional_collection' => FollowUpActionType::Escalated->value,
         ];
 
-        $stages = array_map(function (string $event) use ($createdEvent, $followUpEventsByType, $stageActionMap) {
+        $stages = array_map(function (string $event) use ($debt, $createdEvent, $followUpEventsByType, $stageActionMap) {
             if ($event === 'debt_created') {
                 return [
                     'event' => $event,
@@ -259,7 +279,15 @@ class DebtController extends Controller
             }
 
             if ($event === 'recovered') {
-                return ['event' => $event, 'status' => 'pending', 'occurred_at' => null];
+                $recoveredAt = $debt->debt_status === 'paid'
+                    ? AuditLog::where('entity_type', 'debt')
+                        ->where('entity_id', $debt->id)
+                        ->where('action', AuditAction::StatusChanged->value)
+                        ->orderByDesc('occurred_at')
+                        ->value('occurred_at')
+                    : null;
+
+                return ['event' => $event, 'status' => $recoveredAt ? 'completed' : 'pending', 'occurred_at' => $recoveredAt];
             }
 
             $actionType = $stageActionMap[$event] ?? null;

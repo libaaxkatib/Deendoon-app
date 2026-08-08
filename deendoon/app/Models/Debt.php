@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\DebtFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -73,5 +74,25 @@ class Debt extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * FR-021 (Business Owner Backend Completion): the query-level mirror of
+     * DebtController::refreshOverdueStatus()'s exact condition
+     * (debt_status IN [draft, pending] AND due_date has passed) — used by
+     * Reporting/Dashboard so they reflect the true overdue state even for
+     * a Debt that has never been individually viewed and therefore never
+     * had its stored debt_status lazily flipped to 'overdue'. Read-only:
+     * this never writes debt_status itself.
+     */
+    public function scopeEffectivelyOverdue(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->where('debt_status', 'overdue')
+                ->orWhere(function (Builder $q2) {
+                    $q2->whereIn('debt_status', ['draft', 'pending'])
+                        ->whereDate('due_date', '<=', now());
+                });
+        });
     }
 }

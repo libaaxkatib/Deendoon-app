@@ -450,6 +450,37 @@ class ReminderTest extends TestCase
         $this->assertEquals(['sms'], $channels->unique()->all());
     }
 
+    // Business Owner Backend Completion (pre-Phase 5): regression coverage
+    // for the confirmed authorization gap — templates() and render() had no
+    // authorize()/Gate check at all, unlike every other endpoint in this
+    // controller cluster.
+    public function test_message_templates_is_forbidden_without_the_admin_role(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant, role: null);
+
+        $response = $this->getJson('/api/v1/message-templates');
+
+        $response->assertStatus(403);
+    }
+
+    public function test_render_message_is_forbidden_without_the_admin_role(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $reminder = Reminder::factory()->for($tenant, 'tenant')->paymentDue()
+            ->create(['related_entity_type' => 'debt', 'related_entity_id' => $debt->id]);
+        $template = MessageTemplate::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant, role: null);
+
+        $response = $this->postJson('/api/v1/messages/render', [
+            'template_id' => $template->id,
+            'reminder_id' => $reminder->id,
+        ]);
+
+        $response->assertStatus(403);
+    }
+
     // --- Authentication / Authorization ---
 
     public function test_unauthenticated_requests_are_rejected(): void

@@ -9,10 +9,10 @@ use Illuminate\Http\JsonResponse;
 /**
  * Module 4 — Credit & Risk Intelligence (FR-026-028).
  *
- * FR-026's scoring engine and FR-028's notification trigger are not
- * implemented here — see the Credit & Risk Module report's "Deferred
- * calculations" section for why. This controller implements only Credit
- * Score's read-only display aspect (FR-026).
+ * FR-026's scoring engine is CreditScoreService (Business Owner Backend
+ * Completion, pre-Phase 5, Product Owner-approved formula) — recalculated
+ * at the same event triggers as Risk Level, never here. This controller
+ * implements only Credit Score's read-only display aspect.
  *
  * Risk Level (FR-027) has no controller of its own since Sprint 2B: it is
  * fully system-calculated by RiskLevelService and exposed only for reading

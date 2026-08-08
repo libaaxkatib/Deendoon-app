@@ -10,7 +10,9 @@ use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Requests\UpdateCustomerStatusRequest;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
+use App\Services\AdminSettingsService;
 use App\Services\AuditLogService;
+use App\Services\CreditScoreService;
 use App\Services\CustomerDuplicateDetectionService;
 use App\Services\CustomerReadOnlyService;
 use App\Services\RiskLevelService;
@@ -27,7 +29,9 @@ class CustomerController extends Controller
         private readonly CustomerDuplicateDetectionService $duplicateDetection,
         private readonly AuditLogService $auditLog,
         private readonly RiskLevelService $riskLevel,
+        private readonly CreditScoreService $creditScore,
         private readonly CustomerReadOnlyService $customerReadOnly,
+        private readonly AdminSettingsService $adminSettings,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -74,6 +78,10 @@ class CustomerController extends Controller
         // Batched (fixed query count regardless of page size) — see
         // RiskLevelService::recalculateForMany()'s docblock.
         $this->riskLevel->recalculateForMany(collect($customers->items()));
+        // Credit Score (FR-026, Business Owner Backend Completion): always
+        // recalculated at the exact same trigger points as Risk Level —
+        // both are derived from the same underlying customer behavior.
+        $this->creditScore->recalculateForMany(collect($customers->items()));
 
         return $this->successResponse([
             'customers' => CustomerResource::collection($customers->items()),
@@ -104,11 +112,18 @@ class CustomerController extends Controller
             // two concurrent requests both slipping past it.
             $this->customerReadOnly->assertCanCreateCustomer($request->user()->tenant);
 
+            // FR-007/BR-034 (Business Owner Backend Completion): when the
+            // client omits credit_limit, apply the tenant's configured
+            // Default Credit Limit rather than requiring it on every call.
+            $creditLimit = $request->has('credit_limit')
+                ? $request->validated('credit_limit')
+                : $this->adminSettings->systemSettingsFor($request->user()->tenant_id)->default_credit_limit;
+
             $customer = Customer::create([
                 'name' => $request->validated('name'),
                 'phone' => $request->validated('phone'),
                 'customer_status' => 'active',
-                'credit_limit' => $request->validated('credit_limit'),
+                'credit_limit' => $creditLimit,
             ]);
 
             $this->auditLog->record(
@@ -138,7 +153,16 @@ class CustomerController extends Controller
     {
         $this->authorize('view', $customer);
 
-        $this->riskLevel->recalculate($customer);
+        // FR-008 (Business Owner Backend Completion): archived Customers
+        // are now viewable here too (route uses withTrashed()), so a
+        // Business Owner can review the full record before deciding to
+        // restore it. Skip the recalculation side effect for an archived
+        // record — reviewing it for a restore decision should not silently
+        // mutate its stored state.
+        if (! $customer->trashed()) {
+            $this->riskLevel->recalculate($customer);
+            $this->creditScore->recalculate($customer);
+        }
 
         return $this->successResponse(new CustomerResource($customer));
     }

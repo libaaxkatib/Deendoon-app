@@ -85,11 +85,9 @@ class CollectionCaseController extends Controller
     {
         $this->authorize('manage', $case);
 
-        if ($case->case_status !== 'open') {
-            return $this->errorResponse('This action is not permitted on a Closed Collection Case.', null, 409);
-        }
+        $this->collectionCases->updateDetails($case, $request->validated('notes'), $request->user());
 
-        return $this->successResponse(new CollectionCaseResource($case), 'Collection Case updated successfully');
+        return $this->successResponse(new CollectionCaseResource($case->fresh()), 'Collection Case updated successfully');
     }
 
     public function recordActivity(RecordCollectionActivityRequest $request, CollectionCase $case): JsonResponse

@@ -126,6 +126,23 @@ class ReportingTest extends TestCase
             ->assertJsonPath('data.total_overdue_debts.value', '400.00');
     }
 
+    public function test_total_overdue_debts_includes_a_debt_whose_stored_status_has_not_been_lazily_refreshed(): void
+    {
+        // FR-021 (Business Owner Backend Completion): a Debt past its due
+        // date but never individually viewed via DebtController::show()
+        // still has stored debt_status = 'pending' — the Dashboard KPI
+        // must still count it as overdue (Debt::scopeEffectivelyOverdue()).
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['debt_status' => 'pending', 'due_date' => now()->subDays(5)->toDateString(), 'remaining_balance' => 300]);
+        $this->makeDebt($tenant, ['debt_status' => 'pending', 'due_date' => now()->addDays(10)->toDateString(), 'remaining_balance' => 999]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis');
+
+        $response->assertJsonPath('data.total_overdue_debts.count', 1)
+            ->assertJsonPath('data.total_overdue_debts.value', '300.00');
+    }
+
     public function test_customers_over_credit_limit_counts_correctly(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
@@ -241,12 +258,29 @@ class ReportingTest extends TestCase
         $response->assertJsonPath('data.active_collection_cases', 1);
     }
 
-    public function test_recovery_rate_is_returned_as_null(): void
+    public function test_recovery_rate_divides_collected_by_amount_due_in_the_selected_period(): void
+    {
+        // Business Owner Backend Completion (pre-Phase 5, DD-032
+        // Product Owner-approved formula): reuses the exact same
+        // Collected ÷ Became Due calculation as collectionAnalytics()'s
+        // Collection Rate — see test_collection_rate_divides_collected_by_
+        // amount_due_in_period for the mirrored Reports-endpoint coverage.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000, 'due_date' => now()->toDateString()]);
+        $this->actingAsTenantUser($tenant);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create(['amount' => 400, 'payment_date' => now()->toDateString()]);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis?period=day');
+
+        $response->assertJsonPath('data.recovery_rate', 40);
+    }
+
+    public function test_recovery_rate_is_zero_when_nothing_became_due_in_the_period(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $this->actingAsTenantUser($tenant);
 
-        $this->getJson('/api/v1/dashboard/kpis')->assertJsonPath('data.recovery_rate', null);
+        $this->getJson('/api/v1/dashboard/kpis')->assertJsonPath('data.recovery_rate', 0);
     }
 
     /**
@@ -495,6 +529,30 @@ class ReportingTest extends TestCase
         $this->assertCount(1, $response->json('data.debts'));
     }
 
+    public function test_debts_report_status_overdue_filter_includes_a_debt_whose_stored_status_has_not_been_lazily_refreshed(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['debt_status' => 'pending', 'due_date' => now()->subDays(5)->toDateString()]);
+        $this->makeDebt($tenant, ['debt_status' => 'pending', 'due_date' => now()->addDays(10)->toDateString()]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/debts?status=overdue');
+
+        $this->assertCount(1, $response->json('data.debts'));
+    }
+
+    public function test_debts_report_status_filter_for_a_non_overdue_status_still_matches_exactly(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['debt_status' => 'pending']);
+        $this->makeDebt($tenant, ['debt_status' => 'partial_paid']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/debts?status=pending');
+
+        $this->assertCount(1, $response->json('data.debts'));
+    }
+
     public function test_collection_cases_report_can_be_filtered_by_status(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
@@ -662,6 +720,49 @@ class ReportingTest extends TestCase
         $this->actingAsTenantUser($tenant);
 
         $this->getJson('/api/v1/reports/not-a-real-report/export?format=csv')->assertStatus(404);
+    }
+
+    // --- Export size limit (Business Owner Backend Completion, pre-Phase 5) ---
+
+    public function test_export_is_rejected_when_the_filtered_dataset_exceeds_the_configured_row_limit(): void
+    {
+        putenv('REPORT_EXPORT_MAX_ROWS=2');
+
+        try {
+            $tenant = Tenant::create(['business_name' => 'Acme Co']);
+            Customer::factory()->for($tenant, 'tenant')->count(3)->create();
+            $this->actingAsTenantUser($tenant);
+
+            $response = $this->getJson('/api/v1/reports/customers/export?format=csv');
+
+            $response->assertStatus(422)->assertJson(['success' => false]);
+        } finally {
+            putenv('REPORT_EXPORT_MAX_ROWS');
+        }
+    }
+
+    public function test_export_succeeds_when_the_filtered_dataset_is_within_the_configured_row_limit(): void
+    {
+        putenv('REPORT_EXPORT_MAX_ROWS=2');
+
+        try {
+            $tenant = Tenant::create(['business_name' => 'Acme Co']);
+            Customer::factory()->for($tenant, 'tenant')->count(2)->create();
+            $this->actingAsTenantUser($tenant);
+
+            $this->get('/api/v1/reports/customers/export?format=csv')->assertStatus(200);
+        } finally {
+            putenv('REPORT_EXPORT_MAX_ROWS');
+        }
+    }
+
+    public function test_export_row_limit_defaults_to_20000_when_unconfigured(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->get('/api/v1/reports/customers/export?format=csv')->assertStatus(200);
     }
 
     // --- Authentication / Authorization / Tenant isolation ---

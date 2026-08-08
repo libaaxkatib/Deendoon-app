@@ -156,20 +156,78 @@ class PaymentTest extends TestCase
         $this->assertSame('0.00', $debt->fresh()->remaining_balance);
     }
 
-    public function test_overpayment_is_accepted_unconditionally_and_remaining_balance_goes_negative(): void
+    public function test_overpayment_is_rejected_and_remaining_balance_is_left_untouched(): void
     {
+        // Business Owner Backend Completion (pre-Phase 5), DD-016
+        // Product Owner-approved decision: overpayment is rejected, not
+        // accepted-and-capped or accepted-and-left-negative.
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
-        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000, 'debt_status' => 'pending']);
         $this->actingAsTenantUser($tenant);
 
         $response = $this->postJson("/api/v1/debts/{$debt->id}/payments", [
             'amount' => 1500, 'payment_date' => now()->toDateString(),
         ]);
 
-        $response->assertStatus(201);
+        $response->assertStatus(422)->assertJson(['success' => false]);
         $debt->refresh();
-        $this->assertSame('paid', $debt->debt_status);
-        $this->assertSame('-500.00', $debt->remaining_balance);
+        $this->assertSame('pending', $debt->debt_status);
+        $this->assertSame('1000.00', $debt->remaining_balance);
+        $this->assertDatabaseMissing('payments', ['debt_id' => $debt->id]);
+    }
+
+    public function test_a_payment_exactly_equal_to_the_remaining_balance_is_accepted(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000, 'debt_status' => 'pending']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/payments", [
+            'amount' => 1000, 'payment_date' => now()->toDateString(),
+        ])->assertStatus(201);
+
+        $this->assertSame('0.00', $debt->fresh()->remaining_balance);
+    }
+
+    public function test_payment_against_a_paid_debt_is_rejected(): void
+    {
+        // DD-017 Product Owner-approved decision.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 0, 'debt_status' => 'paid']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->postJson("/api/v1/debts/{$debt->id}/payments", [
+            'amount' => 50, 'payment_date' => now()->toDateString(),
+        ]);
+
+        $response->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertDatabaseMissing('payments', ['debt_id' => $debt->id]);
+    }
+
+    public function test_payment_against_a_cancelled_debt_is_rejected_even_with_a_stale_positive_remaining_balance(): void
+    {
+        // Cancelling/writing off a Debt does not zero its remaining_balance
+        // (DebtController::updateStatus() never touches that field) — the
+        // terminal-status check must catch this independently of the
+        // amount-vs-remaining_balance check, which alone would not.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000, 'debt_status' => 'cancelled']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/payments", [
+            'amount' => 100, 'payment_date' => now()->toDateString(),
+        ])->assertStatus(422);
+    }
+
+    public function test_payment_against_a_written_off_debt_is_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000, 'debt_status' => 'written_off']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/payments", [
+            'amount' => 100, 'payment_date' => now()->toDateString(),
+        ])->assertStatus(422);
     }
 
     public function test_status_changed_audit_event_is_not_duplicated_when_status_does_not_transition(): void
@@ -341,6 +399,41 @@ class PaymentTest extends TestCase
 
         $stages = collect($response->json('data.stages'));
         $this->assertSame('completed', $stages->firstWhere('event', 'payment')['status']);
+    }
+
+    public function test_timeline_shows_recovered_stage_completed_once_the_debt_is_fully_paid(): void
+    {
+        // Bug fix (Transfer Case to Deendoon Recovery Team review): the
+        // "recovered" stage previously hardcoded 'pending' unconditionally,
+        // regardless of the Debt's actual status.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/payments", ['amount' => 1000, 'payment_date' => now()->toDateString()])->assertStatus(201);
+
+        $response = $this->getJson("/api/v1/debts/{$debt->id}/timeline");
+
+        $stages = collect($response->json('data.stages'));
+        $recovered = $stages->firstWhere('event', 'recovered');
+        $this->assertSame('completed', $recovered['status']);
+        $this->assertNotNull($recovered['occurred_at']);
+    }
+
+    public function test_timeline_recovered_stage_stays_pending_for_a_partially_paid_debt(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/payments", ['amount' => 400, 'payment_date' => now()->toDateString()])->assertStatus(201);
+
+        $response = $this->getJson("/api/v1/debts/{$debt->id}/timeline");
+
+        $stages = collect($response->json('data.stages'));
+        $recovered = $stages->firstWhere('event', 'recovered');
+        $this->assertSame('pending', $recovered['status']);
+        $this->assertNull($recovered['occurred_at']);
     }
 
     // --- Authentication / Authorization / Tenant isolation ---

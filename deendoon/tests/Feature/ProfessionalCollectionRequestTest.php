@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CollectionCase;
 use App\Models\Customer;
 use App\Models\Debt;
+use App\Models\ReferenceData;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -60,12 +61,37 @@ class ProfessionalCollectionRequestTest extends TestCase
 
     private function makeOpenCase(Tenant $tenant): array
     {
+        $this->seedTransferReferenceData($tenant);
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
         $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create();
         $this->actingAsTenantUser($tenant);
         $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
 
         return [$caseId, $debt];
+    }
+
+    /**
+     * Transfer Case to Deendoon Recovery Team (Product Owner-approved
+     * decision): Reason for Transfer/Requested Services must be selected
+     * from the tenant's own active Reference Data, never hardcoded.
+     */
+    private function seedTransferReferenceData(Tenant $tenant): void
+    {
+        ReferenceData::factory()->for($tenant, 'tenant')->create(['category' => 'transfer_reason', 'value_label' => 'Non-payment']);
+        ReferenceData::factory()->for($tenant, 'tenant')->create(['category' => 'transfer_reason', 'value_label' => 'Broken Promise']);
+        ReferenceData::factory()->for($tenant, 'tenant')->create(['category' => 'requested_service', 'value_label' => 'Field Visit']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function submitPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'reasons' => ['Non-payment'],
+            'services' => ['Field Visit'],
+            'declaration_accepted' => true,
+        ], $overrides);
     }
 
     // --- Submission (FR-072) ---
@@ -76,7 +102,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
 
-        $response = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests");
+        $response = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload());
 
         $response->assertStatus(201)
             ->assertJsonPath('data.collection_case_id', $caseId)
@@ -90,7 +116,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         [$caseId] = $this->makeOpenCase($tenant);
         $user = $this->actingAsTenantUser($tenant);
 
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->assertDatabaseHas('audit_log', [
             'entity_type' => 'professional_collection_request',
@@ -108,7 +134,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $this->actingAsTenantUser($tenant);
         $this->postJson("/api/v1/collection-cases/{$caseId}/close", ['closure_outcome' => 'recovered'])->assertStatus(200);
 
-        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->assertStatus(409);
+        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->assertStatus(409);
     }
 
     public function test_submitting_a_case_with_an_existing_active_request_is_rejected(): void
@@ -116,9 +142,9 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->assertStatus(201);
+        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->assertStatus(201);
 
-        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->assertStatus(409);
+        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->assertStatus(409);
     }
 
     // --- Visibility (FR-073, FR-074) ---
@@ -128,7 +154,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->getJson("/api/v1/professional-requests/{$pcrId}")->assertStatus(200);
     }
@@ -139,7 +165,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenantB = Tenant::create(['business_name' => 'Tenant B']);
         [$caseIdB] = $this->makeOpenCase($tenantB);
         $this->actingAsTenantUser($tenantB);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseIdB}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseIdB}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsTenantUser($tenantA);
         $this->getJson("/api/v1/professional-requests/{$pcrId}")->assertStatus(404);
@@ -150,7 +176,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->getJson("/api/v1/professional-requests/{$pcrId}")->assertStatus(200);
@@ -162,11 +188,11 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenantB = Tenant::create(['business_name' => 'Tenant B']);
         [$caseIdA] = $this->makeOpenCase($tenantA);
         $this->actingAsTenantUser($tenantA);
-        $this->postJson("/api/v1/collection-cases/{$caseIdA}/professional-requests")->assertStatus(201);
+        $this->postJson("/api/v1/collection-cases/{$caseIdA}/professional-requests", $this->submitPayload())->assertStatus(201);
 
         [$caseIdB] = $this->makeOpenCase($tenantB);
         $this->actingAsTenantUser($tenantB);
-        $this->postJson("/api/v1/collection-cases/{$caseIdB}/professional-requests")->assertStatus(201);
+        $this->postJson("/api/v1/collection-cases/{$caseIdB}/professional-requests", $this->submitPayload())->assertStatus(201);
 
         $this->actingAsTenantUser($tenantA);
         $tenantView = $this->getJson('/api/v1/professional-requests');
@@ -184,7 +210,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->patchJson("/api/v1/professional-requests/{$pcrId}/status", ['status' => 'under_review'])
@@ -202,7 +228,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->patchJson("/api/v1/professional-requests/{$pcrId}/status", ['status' => 'under_review'])->assertStatus(200);
@@ -217,7 +243,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->patchJson("/api/v1/professional-requests/{$pcrId}/status", ['status' => 'assigned'])
@@ -229,7 +255,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->patchJson("/api/v1/professional-requests/{$pcrId}/status", ['status' => 'recovered'])
@@ -241,7 +267,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->patchJson("/api/v1/professional-requests/{$pcrId}/status", ['status' => 'under_review'])
             ->assertStatus(403);
@@ -254,7 +280,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $response = $this->postJson("/api/v1/professional-requests/{$pcrId}/close", ['outcome' => 'recovered']);
@@ -270,7 +296,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->postJson("/api/v1/professional-requests/{$pcrId}/close", ['outcome' => 'closed'])->assertStatus(200);
@@ -283,7 +309,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->postJson("/api/v1/professional-requests/{$pcrId}/close", ['outcome' => 'recovered'])
             ->assertStatus(403);
@@ -296,7 +322,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $tenantUser = $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->postJson("/api/v1/professional-requests/{$pcrId}/messages", ['content' => 'Please review our case.'])
             ->assertStatus(201)->assertJsonPath('data.sender_user_id', (string) $tenantUser->id);
@@ -318,7 +344,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $tenantUser = $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->postJson("/api/v1/professional-requests/{$pcrId}/messages", ['content' => 'Please review our case.'])
             ->assertStatus(201);
@@ -338,7 +364,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->postJson("/api/v1/professional-requests/{$pcrId}/close", ['outcome' => 'closed'])->assertStatus(200);
@@ -359,7 +385,7 @@ class ProfessionalCollectionRequestTest extends TestCase
         $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create();
         $case = CollectionCase::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create();
 
-        $this->postJson("/api/v1/collection-cases/{$case->id}/professional-requests")->assertStatus(401);
+        $this->postJson("/api/v1/collection-cases/{$case->id}/professional-requests", $this->submitPayload())->assertStatus(401);
         $this->getJson('/api/v1/professional-requests')->assertStatus(401);
     }
 
@@ -369,6 +395,6 @@ class ProfessionalCollectionRequestTest extends TestCase
         [$caseId] = $this->makeOpenCase($tenant);
         $this->actingAsTenantUser($tenant, null);
 
-        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->assertStatus(403);
+        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->assertStatus(403);
     }
 }

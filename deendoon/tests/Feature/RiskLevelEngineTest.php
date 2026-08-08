@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\PromiseToPay;
+use App\Models\ReferenceData;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -45,6 +46,17 @@ class RiskLevelEngineTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token);
 
         return $user;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function submitPcrPayload(Tenant $tenant): array
+    {
+        ReferenceData::factory()->for($tenant, 'tenant')->create(['category' => 'transfer_reason', 'value_label' => 'Non-payment']);
+        ReferenceData::factory()->for($tenant, 'tenant')->create(['category' => 'requested_service', 'value_label' => 'Field Visit']);
+
+        return ['reasons' => ['Non-payment'], 'services' => ['Field Visit'], 'declaration_accepted' => true];
     }
 
     private function actingAsPlatformAdmin(): User
@@ -225,7 +237,7 @@ class RiskLevelEngineTest extends TestCase
             'entity_type' => 'customer', 'entity_id' => $customer->id, 'action' => 'risk_level_recalculated',
         ])->count();
 
-        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->assertStatus(201);
+        $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPcrPayload($tenant))->assertStatus(201);
 
         $auditCountAfter = DB::table('audit_log')->where([
             'entity_type' => 'customer', 'entity_id' => $customer->id, 'action' => 'risk_level_recalculated',
@@ -250,7 +262,7 @@ class RiskLevelEngineTest extends TestCase
         $this->actingAsTenantUser($tenant);
         $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
         $this->actingAsTenantUser($tenant);
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPcrPayload($tenant))->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->postJson("/api/v1/professional-requests/{$pcrId}/close", ['outcome' => 'recovered'])

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\AdminSettingsService;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,7 +71,41 @@ class CustomerTest extends TestCase
         ]);
     }
 
-    public function test_credit_limit_is_required_with_no_automatic_default(): void
+    public function test_omitting_credit_limit_applies_the_tenants_default_credit_limit(): void
+    {
+        // FR-007/BR-034 (Business Owner Backend Completion): resolves what
+        // was previously an unimplemented gap — credit_limit used to be a
+        // required client field with the tenant's configured
+        // SystemSetting::default_credit_limit never consulted.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $user = $this->actingAsTenantUser($tenant);
+        app(AdminSettingsService::class)->updatePreferences($tenant->id, ['default_credit_limit' => 7500], $user);
+
+        $response = $this->postJson('/api/v1/customers', [
+            'name' => 'Jane Trader',
+            'phone' => '254712345678',
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.customer.credit_limit', '7500.00');
+        $this->assertDatabaseHas('customers', ['name' => 'Jane Trader', 'credit_limit' => 7500]);
+    }
+
+    public function test_an_explicit_credit_limit_overrides_the_tenants_default(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $user = $this->actingAsTenantUser($tenant);
+        app(AdminSettingsService::class)->updatePreferences($tenant->id, ['default_credit_limit' => 7500], $user);
+
+        $response = $this->postJson('/api/v1/customers', [
+            'name' => 'Jane Trader',
+            'phone' => '254712345678',
+            'credit_limit' => 5000,
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.customer.credit_limit', '5000.00');
+    }
+
+    public function test_omitting_credit_limit_applies_zero_when_the_tenant_has_no_configured_default(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $this->actingAsTenantUser($tenant);
@@ -80,8 +115,7 @@ class CustomerTest extends TestCase
             'phone' => '254712345678',
         ]);
 
-        $response->assertStatus(422)->assertJsonValidationErrors(['credit_limit']);
-        $this->assertDatabaseMissing('customers', ['name' => 'Jane Trader']);
+        $response->assertStatus(201)->assertJsonPath('data.customer.credit_limit', '0.00');
     }
 
     public function test_creating_a_customer_requires_name_and_phone(): void
@@ -91,7 +125,7 @@ class CustomerTest extends TestCase
 
         $response = $this->postJson('/api/v1/customers', []);
 
-        $response->assertStatus(422)->assertJsonValidationErrors(['name', 'phone', 'credit_limit']);
+        $response->assertStatus(422)->assertJsonValidationErrors(['name', 'phone']);
     }
 
     public function test_created_customer_is_automatically_scoped_to_the_authenticated_users_tenant(): void
@@ -350,13 +384,29 @@ class CustomerTest extends TestCase
         $this->assertDatabaseHas('audit_log', ['entity_id' => $customer->id, 'action' => 'archived']);
     }
 
-    public function test_archived_customer_is_excluded_from_show(): void
+    public function test_archived_customer_is_viewable_in_a_restore_eligible_state(): void
     {
+        // FR-008 (Business Owner Backend Completion): previously 404'd —
+        // now viewable so a Business Owner can review it before restoring.
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $customer = Customer::factory()->for($tenant, 'tenant')->archived()->create();
         $this->actingAsTenantUser($tenant);
 
-        $this->getJson("/api/v1/customers/{$customer->id}")->assertStatus(404);
+        $response = $this->getJson("/api/v1/customers/{$customer->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.id', $customer->id)
+            ->assertJsonPath('data.archived_at', fn (?string $value): bool => $value !== null);
+    }
+
+    public function test_show_returns_404_for_another_tenants_archived_customer(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $otherCustomer = Customer::factory()->for($tenantB, 'tenant')->archived()->create();
+        $this->actingAsTenantUser($tenantA);
+
+        $this->getJson("/api/v1/customers/{$otherCustomer->id}")->assertStatus(404);
     }
 
     public function test_restore_reactivates_an_archived_customer_and_records_an_audit_event(): void

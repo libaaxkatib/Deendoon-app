@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Debt;
 use App\Models\Notification;
 use App\Models\PromiseToPay;
+use App\Models\ReferenceData;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -59,6 +60,17 @@ class NotificationTest extends TestCase
         $customer = Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 5000]);
 
         return Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create($attributes);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function submitPcrPayload(Tenant $tenant): array
+    {
+        ReferenceData::factory()->for($tenant, 'tenant')->create(['category' => 'transfer_reason', 'value_label' => 'Non-payment']);
+        ReferenceData::factory()->for($tenant, 'tenant')->create(['category' => 'requested_service', 'value_label' => 'Field Visit']);
+
+        return ['reasons' => ['Non-payment'], 'services' => ['Field Visit'], 'declaration_accepted' => true];
     }
 
     // --- Generation (FR-058) ---
@@ -156,7 +168,7 @@ class NotificationTest extends TestCase
         $debt = $this->makeDebt($tenant);
         $submitter = $this->actingAsTenantUser($tenant);
         $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPcrPayload($tenant))->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->patchJson("/api/v1/professional-requests/{$pcrId}/status", ['status' => 'under_review'])->assertStatus(200);
@@ -172,7 +184,7 @@ class NotificationTest extends TestCase
         $debt = $this->makeDebt($tenant);
         $submitter = $this->actingAsTenantUser($tenant);
         $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPcrPayload($tenant))->json('data.id');
 
         $this->actingAsPlatformAdmin();
         $this->postJson("/api/v1/professional-requests/{$pcrId}/messages", ['content' => 'Reviewing now.'])->assertStatus(201);
@@ -192,7 +204,7 @@ class NotificationTest extends TestCase
         $debt = $this->makeDebt($tenant);
         $this->actingAsTenantUser($tenant);
         $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
-        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests")->json('data.id');
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPcrPayload($tenant))->json('data.id');
 
         $countBefore = Notification::count();
 

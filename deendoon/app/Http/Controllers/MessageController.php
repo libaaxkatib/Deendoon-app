@@ -15,6 +15,7 @@ use App\Services\MessageTemplateService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * docs/Backend_v2.1_REST_API_Specification.md §8 (Shared APIs) — Message
@@ -35,6 +36,7 @@ class MessageController extends Controller
 
     public function templates(Request $request): JsonResponse
     {
+        Gate::authorize('admin-only');
         $channel = $request->filled('channel') ? MessageChannel::from($request->string('channel')->value()) : null;
 
         return $this->successResponse(
@@ -46,6 +48,8 @@ class MessageController extends Controller
     {
         $template = MessageTemplate::findOrFail($request->validated('template_id'));
         $reminder = Reminder::findOrFail($request->validated('reminder_id'));
+
+        $this->authorize('view', $reminder);
 
         return $this->successResponse($this->rendering->renderForReminder($template, $reminder));
     }

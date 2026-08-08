@@ -8,6 +8,7 @@ use App\Enums\NotificationType;
 use App\Models\Debt;
 use App\Models\Payment;
 use App\Models\User;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -31,20 +32,19 @@ use Illuminate\Support\Facades\DB;
  * - Payment Received Notification (FR-058), via NotificationService
  *   (Module 10) — recorded synchronously in the same transaction.
  *
- * Deliberately NOT implemented (see the module report):
- * - Crediting Module 4 (Credit & Risk) with an on-time/late/partial
- *   classification for scoring — Module 4's scoring computation itself
- *   remains deferred (DD-008/DD-009), so there is no consumer to classify
- *   for, and no approved enum slot to store the classification distinctly.
- * - Overpayment capping/rejection — DD-016 is unresolved; `amount` is only
- *   validated as positive (BRL-037), matching `06`'s and `07`'s explicit
- *   posture that this endpoint "succeeds unconditionally" for now.
- * - Payment against Paid/Cancelled/Written Off Debts is not blocked beyond
- *   the Archived check — DD-017 is unresolved (see the module report for
- *   the exact SRS inconsistency between BRL-037's text and DD-017/BRL-041).
+ * DD-016/DD-017 (Business Owner Backend Completion, pre-Phase 5,
+ * Product Owner-approved decision): both are now resolved. A payment
+ * against a Debt already in a terminal status (Paid/Cancelled/Written
+ * Off) is rejected (422), and a payment amount exceeding the Debt's
+ * current remaining_balance is rejected (422) rather than accepted and
+ * capped — every recorded Payment's `amount` must equal what was
+ * genuinely applied to that Debt. Refund/credit-balance handling is
+ * explicitly out of scope until designed as its own feature.
  */
 class PaymentService
 {
+    private const TERMINAL_DEBT_STATUSES = ['paid', 'cancelled', 'written_off'];
+
     public function __construct(
         private readonly AuditLogService $auditLog,
         private readonly FollowUpHistoryService $followUpHistory,
@@ -54,6 +54,7 @@ class PaymentService
         private readonly DocumentService $documents,
         private readonly NotificationService $notifications,
         private readonly RiskLevelService $riskLevel,
+        private readonly CreditScoreService $creditScore,
     ) {}
 
     /**
@@ -61,6 +62,14 @@ class PaymentService
      */
     public function record(Debt $debt, array $data, User $actor): Payment
     {
+        if (in_array($debt->debt_status, self::TERMINAL_DEBT_STATUSES, true)) {
+            $this->reject('This Debt has already reached a terminal status (Paid, Cancelled, or Written Off) and cannot receive further payments.');
+        }
+
+        if (bccomp((string) $data['amount'], (string) $debt->remaining_balance, 2) > 0) {
+            $this->reject('This payment amount exceeds the Debt\'s remaining balance.');
+        }
+
         return DB::transaction(function () use ($debt, $data, $actor) {
             $payment = new Payment([
                 'debt_id' => $debt->id,
@@ -85,6 +94,10 @@ class PaymentService
             // reached 0) are all re-evaluated together here, once, after
             // every side effect of this payment has already been applied.
             $this->riskLevel->recalculate($debt->customer);
+            // Credit Score (FR-026, Business Owner Backend Completion):
+            // always recalculated at the exact same trigger points as Risk
+            // Level.
+            $this->creditScore->recalculate($debt->customer);
 
             $this->documents->generateReceipt($payment);
 
@@ -128,5 +141,21 @@ class PaymentService
         if ($newStatus === 'paid') {
             $this->recoveryStage->advanceTo($debt, 6, 'Recovery Stage advanced to 6 (Recovered): Debt reached Paid status');
         }
+    }
+
+    /**
+     * Matches DebtController::updateStatus()'s existing convention for a
+     * rejected terminal-state/business-rule violation: 422, not 409 —
+     * this is a request the client should not retry as-is, not a
+     * transient conflict.
+     */
+    private function reject(string $message): never
+    {
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'message' => $message,
+            'data' => null,
+            'errors' => null,
+        ], 422));
     }
 }

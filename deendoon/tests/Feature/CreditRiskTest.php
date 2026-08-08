@@ -54,11 +54,30 @@ class CreditRiskTest extends TestCase
             ->assertJsonPath('data.credit_score_band', null);
     }
 
-    public function test_credit_score_is_null_for_a_customer_with_no_scoring_history(): void
+    public function test_credit_score_reflects_the_baseline_once_the_customer_has_been_viewed(): void
     {
-        // No scoring engine exists (DD-008/DD-009 unresolved; Modules 5/6
-        // don't exist), so a Customer's credit_score genuinely stays NULL
-        // rather than any invented baseline.
+        // Business Owner Backend Completion (pre-Phase 5): CustomerController
+        // ::show() is one of CreditScoreService's trigger points.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson("/api/v1/customers/{$customer->id}")->assertStatus(200);
+
+        $response = $this->getJson("/api/v1/customers/{$customer->id}/credit-score");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.credit_score', 70)
+            ->assertJsonPath('data.credit_score_band', 'fair');
+    }
+
+    public function test_credit_score_is_null_until_credit_score_service_first_recalculates_it(): void
+    {
+        // Business Owner Backend Completion (pre-Phase 5): CreditScoreService
+        // now exists, but it only recalculates at specific trigger points
+        // (Customer/Debt view, Payment, escalation, etc.) — a Customer
+        // that was never routed through one of those stays NULL rather
+        // than an invented baseline appearing out of nowhere.
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
 
@@ -88,7 +107,11 @@ class CreditRiskTest extends TestCase
     public function test_risk_level_does_not_affect_credit_score_or_customer_status(): void
     {
         // BRL-006: Risk Level, Credit Score, Customer Status are
-        // independently maintained.
+        // independently maintained. Business Owner Backend Completion
+        // (pre-Phase 5): both Risk Level and Credit Score are now
+        // populated by viewing the Customer, but from the exact same
+        // underlying events — never from each other, and never from
+        // Customer Status.
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $customer = Customer::factory()->for($tenant, 'tenant')->create(['customer_status' => 'active']);
         $this->actingAsTenantUser($tenant);
@@ -97,7 +120,8 @@ class CreditRiskTest extends TestCase
 
         $fresh = $customer->fresh();
         $this->assertSame('active', $fresh->customer_status);
-        $this->assertNull($fresh->credit_score);
+        $this->assertSame('low', $fresh->risk_level);
+        $this->assertSame(70, $fresh->credit_score);
     }
 
     public function test_manual_risk_level_endpoint_no_longer_exists(): void
@@ -147,11 +171,14 @@ class CreditRiskTest extends TestCase
         Event::assertNotDispatched(CreditLimitReached::class);
     }
 
-    public function test_credit_limit_reached_event_fires_again_on_a_repeated_qualifying_recalculation(): void
+    public function test_credit_limit_reached_event_does_not_re_fire_while_the_customer_remains_over_limit(): void
     {
-        // DD-011 (re-trigger/suppression policy) is unresolved — this
-        // documents the deliberate no-suppression behavior rather than
-        // inventing a de-duplication rule.
+        // Business Owner Backend Completion (pre-Phase 5): DD-011's
+        // re-trigger/suppression policy is resolved — FR-028 Exception E1's
+        // "once per qualifying event" is now enforced by
+        // CustomerBalanceService, firing only on the transition into
+        // over-limit rather than on every recalculation while already
+        // over-limit.
         Event::fake([CreditLimitReached::class]);
 
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
@@ -165,7 +192,7 @@ class CreditRiskTest extends TestCase
             'amount' => 50, 'due_date' => now()->addDays(10)->toDateString(),
         ])->assertStatus(201);
 
-        Event::assertDispatchedTimes(CreditLimitReached::class, 2);
+        Event::assertDispatchedTimes(CreditLimitReached::class, 1);
     }
 
     // --- Authentication / Authorization ---

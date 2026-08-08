@@ -16,6 +16,7 @@ use App\Services\ReportingService;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -192,6 +193,19 @@ class ReportController extends Controller
     }
 
     /**
+     * Business Owner Backend Completion (pre-Phase 5), Product Owner-
+     * approved decision: SRS's own flagged Export size limit Open Item,
+     * resolved. Configurable via REPORT_EXPORT_MAX_ROWS (env), matching
+     * this project's existing convention for configurable numeric limits
+     * (e.g. SANCTUM_IDLE_TIMEOUT, API_RATE_LIMIT_PER_MINUTE) rather than a
+     * new config file. Never silently truncates — a filtered dataset over
+     * the limit is rejected (422) so exported data always remains
+     * complete and trustworthy; the Business Owner narrows their filters
+     * instead.
+     */
+    private const DEFAULT_EXPORT_MAX_ROWS = 20000;
+
+    /**
      * FR-057/BRL-062: exports exactly the same filtered dataset the
      * corresponding GET endpoint would return — unpaginated (a full
      * export, not just the current page) but under the same filters.
@@ -200,34 +214,45 @@ class ReportController extends Controller
     {
         Gate::authorize('view-analytics');
 
+        $query = match ($reportType) {
+            'aging-analysis' => $this->agingAnalysisQuery($request),
+            'customers', 'credit-risk' => $this->customersQuery($request),
+            'debts' => $this->debtsQuery($request),
+            'collection-cases' => $this->collectionCasesQuery($request),
+            'payments' => $this->paymentsQuery($request),
+            default => abort(404),
+        };
+
+        $this->assertWithinExportLimit($query);
+
         [$headings, $rows] = match ($reportType) {
             'aging-analysis' => $this->exportRows(
-                $this->agingAnalysisQuery($request)->orderBy('due_date')->get(),
+                $query->orderBy('due_date')->get(),
                 ['ID', 'Reference Number', 'Amount', 'Remaining Balance', 'Due Date', 'Status', 'Aging Bucket'],
                 fn (Debt $debt) => [$debt->id, $debt->reference_number, $debt->amount, $debt->remaining_balance, $debt->due_date->toDateString(), $debt->debt_status, $this->reporting->assignBucket($debt->due_date)],
             ),
             'customers' => $this->exportRows(
-                $this->customersQuery($request)->orderBy('name')->get(),
+                $query->orderBy('name')->get(),
                 ['ID', 'Name', 'Phone', 'Status', 'Credit Limit', 'Outstanding Balance', 'Risk Level', 'Credit Score'],
                 fn (Customer $c) => [$c->id, $c->name, $c->phone, $c->customer_status, $c->credit_limit, $c->outstanding_balance, $c->risk_level, $c->credit_score],
             ),
             'debts' => $this->exportRows(
-                $this->debtsQuery($request)->orderBy('due_date')->get(),
+                $query->orderBy('due_date')->get(),
                 ['ID', 'Reference Number', 'Amount', 'Remaining Balance', 'Due Date', 'Status', 'Recovery Stage'],
                 fn (Debt $d) => [$d->id, $d->reference_number, $d->amount, $d->remaining_balance, $d->due_date->toDateString(), $d->debt_status, $d->recovery_stage],
             ),
             'collection-cases' => $this->exportRows(
-                $this->collectionCasesQuery($request)->orderBy('created_at')->get(),
+                $query->orderBy('created_at')->get(),
                 ['ID', 'Reference Number', 'Debt ID', 'Status', 'Closure Outcome', 'Assigned Officer'],
                 fn (CollectionCase $c) => [$c->id, $c->reference_number, $c->debt_id, $c->case_status, $c->closure_outcome, $c->assigned_officer_user_id],
             ),
             'payments' => $this->exportRows(
-                $this->paymentsQuery($request)->orderBy('payment_date')->get(),
+                $query->orderBy('payment_date')->get(),
                 ['ID', 'Debt ID', 'Amount', 'Payment Date', 'Payment Method'],
                 fn (Payment $p) => [$p->id, $p->debt_id, $p->amount, $p->payment_date->toDateString(), $p->payment_method],
             ),
             'credit-risk' => $this->exportRows(
-                $this->customersQuery($request)->orderByDesc('credit_score')->get(),
+                $query->orderByDesc('credit_score')->get(),
                 ['ID', 'Name', 'Risk Level', 'Credit Score'],
                 fn (Customer $c) => [$c->id, $c->name, $c->risk_level, $c->credit_score],
             ),
@@ -235,6 +260,17 @@ class ReportController extends Controller
         };
 
         return $this->exporter->export($request->validated('format'), $reportType, $headings, $rows);
+    }
+
+    private function assertWithinExportLimit(Builder $query): void
+    {
+        $maxRows = (int) env('REPORT_EXPORT_MAX_ROWS', self::DEFAULT_EXPORT_MAX_ROWS);
+
+        if ((clone $query)->count() > $maxRows) {
+            throw new HttpResponseException($this->errorResponse(
+                "This export would include more than {$maxRows} rows. Narrow your filters or date range and try again.",
+            ));
+        }
     }
 
     private function agingAnalysisQuery(Request $request): Builder
@@ -304,7 +340,12 @@ class ReportController extends Controller
         }
 
         if ($status = $request->string('status')->trim()->value()) {
-            $query->where('debt_status', $status);
+            // FR-021 (Business Owner Backend Completion): 'overdue' is
+            // filtered via the effective condition (Debt::
+            // scopeEffectivelyOverdue()) so a Debt whose stored status has
+            // not yet been lazily flipped still matches; every other
+            // status value is an exact match as before.
+            $status === 'overdue' ? $query->effectivelyOverdue() : $query->where('debt_status', $status);
         }
 
         if ($request->filled('recoveryStage')) {

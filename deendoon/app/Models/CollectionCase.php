@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['debt_id', 'reference_number', 'assigned_officer_user_id', 'case_status', 'closure_outcome'])]
+#[Fillable(['debt_id', 'reference_number', 'assigned_officer_user_id', 'case_status', 'closure_outcome', 'notes'])]
 class CollectionCase extends Model
 {
     /** @use HasFactory<CollectionCaseFactory> */

@@ -20,6 +20,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessionalCollectionRequestController;
+use App\Http\Controllers\ProfessionalCollectionTimelineController;
 use App\Http\Controllers\PromiseToPayController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReminderCenterController;
@@ -48,7 +49,7 @@ Route::prefix('v1')->group(function () {
         Route::post('customers/import', [CustomerImportController::class, 'store']);
         Route::post('customers/import/{batch}/commit', [CustomerImportController::class, 'commit']);
         Route::post('customers/{customer}/restore', [CustomerController::class, 'restore'])->withTrashed();
-        Route::get('customers/{customer}', [CustomerController::class, 'show']);
+        Route::get('customers/{customer}', [CustomerController::class, 'show'])->withTrashed();
         Route::put('customers/{customer}', [CustomerController::class, 'update']);
         Route::post('customers/{customer}/archive', [CustomerController::class, 'archive']);
         Route::patch('customers/{customer}/status', [CustomerController::class, 'updateStatus']);
@@ -61,7 +62,7 @@ Route::prefix('v1')->group(function () {
         Route::post('customers/{customer}/statements', [StatementController::class, 'storeForCustomer']);
 
         Route::get('debts', [DebtController::class, 'index']);
-        Route::get('debts/{debt}', [DebtController::class, 'show']);
+        Route::get('debts/{debt}', [DebtController::class, 'show'])->withTrashed();
         Route::put('debts/{debt}', [DebtController::class, 'update']);
         Route::patch('debts/{debt}/status', [DebtController::class, 'updateStatus']);
         Route::post('debts/{debt}/archive', [DebtController::class, 'archive']);
@@ -90,11 +91,22 @@ Route::prefix('v1')->group(function () {
         Route::post('collection-cases/{case}/professional-requests', [ProfessionalCollectionRequestController::class, 'store']);
 
         Route::get('professional-requests', [ProfessionalCollectionRequestController::class, 'index']);
+        // Registered ahead of the {id} route below so "summary" is never
+        // swallowed as an id (Transfer Case to Deendoon Recovery Team,
+        // Product Owner-approved decision — Professional Collection
+        // Summary Card).
+        Route::get('professional-requests/summary', [ProfessionalCollectionRequestController::class, 'summary']);
         Route::get('professional-requests/{id}', [ProfessionalCollectionRequestController::class, 'show']);
         Route::patch('professional-requests/{id}/status', [ProfessionalCollectionRequestController::class, 'updateStatus']);
         Route::post('professional-requests/{id}/close', [ProfessionalCollectionRequestController::class, 'close']);
         Route::get('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesIndex']);
         Route::post('professional-requests/{id}/messages', [ProfessionalCollectionRequestController::class, 'messagesStore']);
+        Route::get('professional-requests/{id}/documents', [ProfessionalCollectionRequestController::class, 'documents']);
+        Route::get('professional-requests/{id}/attachments', [ProfessionalCollectionRequestController::class, 'attachmentsIndex']);
+        Route::post('professional-requests/{id}/attachments', [ProfessionalCollectionRequestController::class, 'attachmentsStore']);
+        Route::get('professional-requests/{id}/timeline', [ProfessionalCollectionTimelineController::class, 'index']);
+        Route::post('professional-requests/{id}/timeline', [ProfessionalCollectionTimelineController::class, 'store']);
+        Route::patch('professional-requests/{id}/timeline/{eventId}', [ProfessionalCollectionTimelineController::class, 'update']);
 
         Route::get('receipts/{receipt}', [ReceiptController::class, 'show']);
         Route::get('documents', [DocumentController::class, 'index']);

@@ -4,11 +4,11 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.10 |
-| **Status** | Reopened — RBAC Architecture Amendment (FR-041 retired, FR-067 narrowed) and Risk Level Engine Architecture Amendment (FR-027 rewritten) both applied; Module 12 still awaiting its original approval (see Revision History 1.5) |
+| **Version** | 1.11 |
+| **Status** | Reopened — RBAC Architecture Amendment (FR-041 retired, FR-067 narrowed), Risk Level Engine Architecture Amendment (FR-027 rewritten), and Business Owner Backend Completion (Module 7 approved, FR-001/007/008/019/021/026/053 amended, see Revision History 1.11) all applied; Module 12 still awaiting its original approval (see Revision History 1.5) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-31 |
+| **Last Updated** | 2026-08-07 |
 | **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.5) · `02_Business_Requirements.md` (Reopened — Pending Re-Approval, v1.6) |
 
 ---
@@ -37,6 +37,7 @@
 | 1.8 | 2026-07-31 | **RBAC Architecture Amendment (Product Owner Decision).** FR-041 (Collection Case Assignment) removed — Version 1 has exactly one account per tenant (the Business Owner), so there is no second tenant user to assign a Case to; the endpoint and its "Collection Officer" role restriction (Exception E2) are retired. FR-067 (Role & Permission Management) narrowed from six assignable roles to one (`admin`) — see `08_Security_and_RBAC.md` v1.2 §5. Module 7's Traceability Summary and FR-041's cross-references elsewhere in this document updated accordingly. | Claude |
 | 1.9 | 2026-07-31 | **Risk Level Engine Architecture Amendment (Product Owner Decision — Documentation Consistency Audit correction).** FR-027 rewritten from "Risk Level Assignment" (manual, user-selected from a dropdown) to "Risk Level Calculation & Recalculation" (fully system-calculated, deterministic, event-driven, no manual override) — matching the architecture already approved and recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md`. This corrects a gap where that architecture had been approved but never applied back to this document. The Module 4 Open Items entry for the Risk Level value set updated to reflect that Low/Medium/High and their semantics are now defined (`04_Business_Rules.md` BRL-028); exact numeric thresholds remain pending. **Also corrected in this version (Scope Baseline synchronization):** this document's own Scope Baseline field, which incorrectly cited `01` and `02` as "Approved" when both are actually Reopened — updated to their correct current status and version. No new business rule, workflow, or scope introduced anywhere in this revision — this entry applies already-approved decisions and corrects stale metadata, it does not make a new decision. | Claude |
 | 1.10 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** FR-008's Alternate Flow A1 no longer cites "Viewer" as an example restricted role — Viewer was retired as a tenant role in `02_Business_Requirements.md` v1.4. Scope Baseline updated to cite `01` at its current version (v1.4). No business rule, workflow, or requirement changed. | Claude |
+| 1.11 | 2026-08-07 | **Business Owner Backend Completion (Product Owner Decision, pre-Phase 5).** Module 7's amended scope (FR-072–FR-076) formally approved — status changed from "Reopened — pending re-approval" to "Approved" (Module Tracker, end-of-module marker). Retroactively approved into Version 1 scope, each already fully implemented and tested ahead of this documentation catch-up: (a) Invoice as a fourth Document type alongside Receipt/Demand Letter/Statement (Module 8 — generation, viewing, download, history, storage accounting, `INV-` numbering); (b) the "Reminder Center" subsystem (Modules 5/10 — full CRUD reminders, timing rules, WhatsApp/SMS message templates and rendering, the `reminders:fire-due` command); (c) three additional Reporting & Analytics endpoints beyond FR-053–057 (Module 9 — Collection Analytics, Risk Distribution, Collections Trend). FR-001 narrowed to email-only for Version 1 (username login identifier deferred to Version 2 — no platform-configurable identifier exists). FR-007's Default Credit Limit auto-apply implemented (previously an approved-but-unconsumed setting). FR-008/FR-019 amended: an archived Customer/Debt is now viewable via its detail endpoint in a restore-eligible state (previously 404), matching the original Main Flow text; viewing an archived record no longer triggers any on-view recalculation side effect. FR-021's automatic Overdue transition remains lazy/on-access by design (no scheduler infrastructure), but Reporting/Dashboard queries now compute the same effective condition directly rather than trusting a possibly-stale stored `debt_status`. FR-026 (Credit Score) implemented — exact formula (baseline 70, clamped 0–100, event-driven, mirroring the already-approved Risk Level Engine's qualifying events inverted in sign) recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md`'s companion Credit Score note and this backend's `CreditScoreService`. FR-053's Recovery Rate KPI implemented (DD-032 resolved: Collected ÷ Became Due, the same formula as Module 9's existing Collection Rate). Business Health's Collection Performance and Outstanding Exposure inputs implemented (adaptive, not gated — see `04_Business_Rules.md` for the Outstanding Exposure formula amendment). FR-029 (Automated Reminder Scheduling) formally confirmed deferred to Version 2, consistent with the standing no-scheduler-infrastructure architecture decision. Collection Case appointments on the Calendar (Module 10) and Document regeneration (Module 8) formally confirmed deferred to Version 2. | Claude |
 
 ---
 
@@ -56,7 +57,7 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 4 | Credit & Risk Management | Approved |
 | 5 | Recovery Workflow | Approved |
 | 6 | Payment Tracking | Approved |
-| 7 | Professional Collection | Reopened — amended for Professional Collection Requests, pending re-approval |
+| 7 | Professional Collection | Approved — amended scope (FR-072–076, Professional Collection Requests) formally approved by Product Owner (Business Owner Backend Completion, pre-Phase 5) |
 | 8 | Documents | Approved |
 | 9 | Reporting & Analytics | Approved |
 | 10 | Notifications & Calendar | Approved |
@@ -1904,7 +1905,7 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ---
 
-**End of Module 7. Reopened and amended (FR-072–FR-076 added) — awaiting re-approval.**
+**End of Module 7. Amended scope (FR-072–FR-076) approved by Product Owner — Business Owner Backend Completion, pre-Phase 5 (see Revision History).**
 
 ---
 

@@ -68,14 +68,14 @@ class BusinessHealthTest extends TestCase
             ->assertJsonPath('data.score', null);
     }
 
-    public function test_business_health_returns_neutral_baseline_even_with_real_portfolio_data(): void
+    public function test_business_health_returns_a_real_score_with_real_portfolio_data(): void
     {
-        // Locks in the same guarantee as BusinessHealthServiceTest's core
-        // assertion, at the HTTP layer: Collection Performance (DD-032)
-        // and Outstanding Exposure remain unresolved, so the endpoint
-        // must not return a computed score just because real Customer/
-        // Debt data — and a resolvable Portfolio Risk Levels input —
-        // exist.
+        // Business Owner Backend Completion (pre-Phase 5): Collection
+        // Performance (DD-032) and Outstanding Exposure are now both
+        // Product Owner-approved and implemented — the endpoint returns a
+        // real computed score (with a confidence label) from the
+        // tenant's very first recorded activity, not neutral_baseline.
+        // Exact scoring math is covered by BusinessHealthServiceTest.
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $this->actingAsTenantUser($tenant);
 
@@ -84,9 +84,10 @@ class BusinessHealthTest extends TestCase
 
         $response = $this->getJson('/api/v1/dashboard/business-health');
 
-        $response->assertStatus(200)
-            ->assertJsonPath('data.status', 'neutral_baseline')
-            ->assertJsonPath('data.score', null);
+        $response->assertStatus(200);
+        $this->assertNotSame('neutral_baseline', $response->json('data.status'));
+        $this->assertIsInt($response->json('data.score'));
+        $this->assertContains($response->json('data.confidence'), ['limited_history', 'established']);
     }
 
     public function test_unauthenticated_requests_are_rejected(): void

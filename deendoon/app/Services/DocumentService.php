@@ -13,15 +13,18 @@ use App\Models\DemandLetter;
 use App\Models\DocumentEvent;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\ProfessionalCollectionRequestAttachment;
 use App\Models\Receipt;
 use App\Models\Statement;
 use App\Models\Tenant;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -317,6 +320,37 @@ class DocumentService
      * backend, so this one method is upload enforcement's single source
      * of truth.
      */
+    /**
+     * Transfer Case to Deendoon Recovery Team (Product Owner-approved
+     * decision): "Reuse the existing DocumentService... existing storage
+     * quota enforcement." A third caller of assertCanUpload() alongside
+     * document generation (render()) and the company logo upload — for an
+     * arbitrary uploaded file (a Professional Collection Request
+     * attachment) rather than a system-rendered PDF. Must be called from
+     * inside the same transaction as the resulting database write,
+     * exactly like renderAndSave() — the lock assertCanUpload() takes
+     * must be held until that write durably lands.
+     *
+     * @return array{path: string, size: int, original_filename: string, mime_type: string}
+     */
+    public function storeUploadedFile(UploadedFile $file, Tenant $tenant, string $folder): array
+    {
+        $this->assertCanUpload($tenant);
+
+        $extension = $file->getClientOriginalExtension();
+        $filename = Str::ulid()->toString().($extension !== '' ? ".{$extension}" : '');
+        $path = "documents/{$tenant->id}/{$folder}/{$filename}";
+
+        Storage::disk(self::DISK)->put($path, file_get_contents($file->getRealPath()));
+
+        return [
+            'path' => $path,
+            'size' => $file->getSize(),
+            'original_filename' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+        ];
+    }
+
     public function assertCanUpload(Tenant $tenant): void
     {
         $allowanceBytes = $this->lockAndGetEffectiveAllowanceBytes($tenant);
@@ -362,6 +396,11 @@ class DocumentService
      * Enforcement, not new scope) and the tenant's company logo, read
      * directly off disk since there is no database column tracking its
      * size (no new column was added, per Product Owner instruction).
+     * Transfer Case to Deendoon Recovery Team: also includes Professional
+     * Collection Request attachments' file_size — the same single source
+     * of truth used to enforce the quota those uploads go through
+     * (storeUploadedFile()/assertCanUpload()), so usage accounting never
+     * drifts from enforcement.
      * `total_bytes`/`used_percentage` are deliberately left untouched —
      * still the pre-existing flat env-var quota, not
      * {@see StorageAddonService::totalStorageAllowance()} — since
@@ -376,6 +415,10 @@ class DocumentService
             + (int) DemandLetter::where('tenant_id', $tenant->id)->sum('file_size')
             + (int) Statement::where('tenant_id', $tenant->id)->sum('file_size')
             + (int) Invoice::where('tenant_id', $tenant->id)->sum('file_size')
+            + (int) ProfessionalCollectionRequestAttachment::whereHas(
+                'request',
+                fn ($q) => $q->where('tenant_id', $tenant->id),
+            )->sum('file_size')
             + $this->logoBytes($tenant);
 
         $totalBytes = (int) env('DOCUMENT_STORAGE_QUOTA_BYTES', 10 * 1024 * 1024 * 1024);

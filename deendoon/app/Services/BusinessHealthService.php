@@ -13,26 +13,14 @@ use App\Models\Payment;
  * / Portfolio Customer Risk Levels 35%) then a Guardrail ceiling function,
  * mapped to the three FROZEN status bands (`Mobile_UI_V1_Frozen.md` §4.1).
  *
- * Two of the three inputs cannot be computed yet — this is a declared,
- * not a silent, gap (`docs/00_PROJECT_GOVERNANCE.md` §11/§12):
- * - Collection Performance depends on Recovery Rate, whose exact formula
- *   is unresolved (DD-032, `SRS/04_Business_Rules.md`). `ReportingService::
- *   dashboardKpis()` already returns `null` for this same reason —
- *   this service follows that exact precedent rather than inventing one
- *   of the two competing candidate formulas.
- * - Outstanding Exposure's normalization ("against the tenant's own
- *   historical baseline") is only an approved *concept* — no formula was
- *   ever defined, and the Sufficient Historical Activity gate's minimum
- *   completed-Debt-Cycle count is likewise unset.
- *
- * Per Formula Spec §1 ("gated... the whole card, not a partial
- * substitution"), the composite score is Neutral Baseline until both
- * are resolved — this is correct, not a bug, and is exercised explicitly
- * by this class's tests. Only Portfolio Customer Risk Levels is fully
- * computable today, since Risk Level Engine (Sprint 2B) is implemented;
- * it is built and tested now so nothing but the two `null`-returning
- * methods below need to change once DD-032 and the Outstanding Exposure
- * formula are each resolved.
+ * Business Owner Backend Completion (pre-Phase 5), Product Owner-approved
+ * decision: Collection Performance and Outstanding Exposure are both now
+ * implemented, adaptively — no minimum-history gate hides the whole card.
+ * A tenant sees a real score from their very first recorded activity, with
+ * a `confidence` indicator (`limited_history`/`established`) alongside it
+ * rather than `neutral_baseline`/`null` while data is still sparse. See
+ * collectionPerformance()/outstandingExposure() for each formula and
+ * confidenceFor() for the threshold.
  *
  * No score is ever persisted — recomputed fully from source on every
  * call (Engine doc §12/§13: "Dashboard load" is the only trigger, no
@@ -70,8 +58,25 @@ class BusinessHealthService
         'high' => 0,
     ];
 
+    /** Outstanding Exposure's rolling historical baseline window. */
+    private const EXPOSURE_BASELINE_DAYS = 365;
+
     /**
-     * @return array{status: string, score: int|null}
+     * Product Owner-approved threshold (Business Owner Backend
+     * Completion, pre-Phase 5): fewer completed Debt Cycles than this
+     * marks the score `limited_history` rather than `established` — a
+     * label only, never a gate.
+     */
+    private const ESTABLISHED_HISTORY_MIN_CYCLES = 5;
+
+    private const CLOSED_DEBT_STATUSES = ['paid', 'cancelled', 'written_off'];
+
+    public function __construct(
+        private readonly CollectionRateService $collectionRate,
+    ) {}
+
+    /**
+     * @return array{status: string, score: int|null, confidence?: string}
      */
     public function calculate(): array
     {
@@ -81,11 +86,6 @@ class BusinessHealthService
 
         $collectionPerformance = $this->collectionPerformance();
         $outstandingExposure = $this->outstandingExposure();
-
-        if ($collectionPerformance === null || $outstandingExposure === null) {
-            return $this->neutralBaseline();
-        }
-
         $portfolioRiskLevels = $this->portfolioRiskLevelsIndex();
 
         if ($portfolioRiskLevels === null) {
@@ -96,7 +96,10 @@ class BusinessHealthService
             + ($outstandingExposure * self::WEIGHT_OUTSTANDING_EXPOSURE)
             + ($portfolioRiskLevels * self::WEIGHT_PORTFOLIO_RISK_LEVELS);
 
-        return $this->applyGuardrails($rawScore, $collectionPerformance, $outstandingExposure, $portfolioRiskLevels);
+        $result = $this->applyGuardrails($rawScore, $collectionPerformance, $outstandingExposure, $portfolioRiskLevels);
+        $result['confidence'] = $this->confidenceFor();
+
+        return $result;
     }
 
     /**
@@ -113,28 +116,69 @@ class BusinessHealthService
     }
 
     /**
-     * DD-032 (Recovery Rate's exact formula) is unresolved — at least two
-     * valid definitions exist and neither was ever chosen. Returns `null`
-     * rather than an invented value, exactly matching
-     * `ReportingService::dashboardKpis()`'s existing, approved precedent
-     * for this identical dependency.
+     * DD-032 (Business Owner Backend Completion, Product Owner-approved
+     * formula): reuses the exact same Collected ÷ Became Due calculation
+     * as `ReportingService`'s Collection Rate/Recovery Rate — computed
+     * all-time (this tenant's full history to date), since Business
+     * Health has no period selector of its own. Clamped [0, 100] before
+     * entering the weighted average, since the raw formula can exceed 100
+     * whenever a period collects more than became due within it (e.g.
+     * paying down older debt).
      */
-    private function collectionPerformance(): ?float
+    private function collectionPerformance(): float
     {
-        return null;
+        $rate = $this->collectionRate->rateFor(
+            Payment::query(),
+            Debt::query(),
+            self::allTimeStart(),
+            now()->toDateString(),
+        );
+
+        return max(0.0, min(100.0, $rate));
     }
 
     /**
-     * `Business_Health_Formula_Specification_v1.0.md` §1 approves only the
+     * `Business_Health_Formula_Specification_v1.0.md` §1's approved
      * *concept* ("normalized against the tenant's own historical
-     * baseline") — no normalization formula was ever defined, and the
-     * Sufficient Historical Activity minimum (completed Debt Cycle count)
-     * that gates it is also unset. Returns `null` rather than inventing
-     * either.
+     * baseline"), made concrete (Business Owner Backend Completion,
+     * pre-Phase 5, Product Owner-approved formula):
+     *
+     * Baseline = Total Credit Extended in the trailing
+     * EXPOSURE_BASELINE_DAYS (365) days — the tenant's own recent lending
+     * volume, not their entire lifetime history, so a long-established
+     * business isn't permanently biased toward an excellent score.
+     * Current = current Total Outstanding Balance (open Debts only, the
+     * same "open" definition CustomerBalanceService/ReportingService
+     * already use).
+     * Ratio = Current ÷ Baseline. Score = (1 − Ratio) × 100, clamped
+     * [0, 100] — 100 means nothing is outstanding relative to the
+     * tenant's own recent lending; 0 means outstanding exposure meets or
+     * exceeds a full trailing year of new lending.
+     *
+     * Two degenerate cases where Baseline is 0 (no debts created in the
+     * trailing window): if there's also nothing currently outstanding,
+     * exposure is trivially zero regardless of baseline (Score 100); if
+     * there IS outstanding exposure with zero recent lending to normalize
+     * it against, that is itself the worst-case signal (Score 0), not an
+     * undefined result.
      */
-    private function outstandingExposure(): ?float
+    private function outstandingExposure(): float
     {
-        return null;
+        $current = (float) Debt::whereNotIn('debt_status', self::CLOSED_DEBT_STATUSES)->sum('remaining_balance');
+
+        if (bccomp((string) $current, '0.00', 2) === 0) {
+            return 100.0;
+        }
+
+        $baseline = (float) Debt::where('created_at', '>=', now()->subDays(self::EXPOSURE_BASELINE_DAYS))->sum('amount');
+
+        if (bccomp((string) $baseline, '0.00', 2) === 0) {
+            return 0.0;
+        }
+
+        $ratio = $current / $baseline;
+
+        return max(0.0, min(100.0, (1 - $ratio) * 100));
     }
 
     /**
@@ -208,5 +252,29 @@ class BusinessHealthService
     private function neutralBaseline(): array
     {
         return ['status' => 'neutral_baseline', 'score' => null];
+    }
+
+    /**
+     * Product Owner-approved label (Business Owner Backend Completion,
+     * pre-Phase 5): a `confidence` indicator, never a gate — the score
+     * above is always the real, currently-computed value regardless of
+     * this result.
+     */
+    private function confidenceFor(): string
+    {
+        $completedCycles = Debt::whereIn('debt_status', self::CLOSED_DEBT_STATUSES)->count();
+
+        return $completedCycles >= self::ESTABLISHED_HISTORY_MIN_CYCLES ? 'established' : 'limited_history';
+    }
+
+    /**
+     * A practical "beginning of time" sentinel for an all-time date range
+     * — Deendoon has no data predating this, so it is equivalent to no
+     * lower bound at all without adding nullable-date branching to
+     * CollectionRateService::rateFor()'s signature.
+     */
+    private static function allTimeStart(): string
+    {
+        return '2000-01-01';
     }
 }

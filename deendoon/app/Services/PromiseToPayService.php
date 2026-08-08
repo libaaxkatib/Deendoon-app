@@ -45,6 +45,7 @@ class PromiseToPayService
         private readonly FollowUpHistoryService $followUpHistory,
         private readonly NotificationService $notifications,
         private readonly RiskLevelService $riskLevel,
+        private readonly CreditScoreService $creditScore,
     ) {}
 
     public function refreshBrokenPromises(Debt $debt): void
@@ -98,6 +99,9 @@ class PromiseToPayService
         // Risk Level Engine (Sprint 2B): Broken Promise to Pay + Repeated
         // Missed Commitments (the rolling 12-month pattern check).
         $this->riskLevel->recalculate($debt->customer);
+        // Credit Score (FR-026, Business Owner Backend Completion): always
+        // recalculated at the exact same trigger points as Risk Level.
+        $this->creditScore->recalculate($debt->customer);
     }
 
     /**
