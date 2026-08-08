@@ -26,6 +26,11 @@ import '../theme/app_colors.dart';
 ///   the Business Owner has an actionable item (respond via Messages), so
 ///   it alone gets `warning`; the other 5 are neutral in-progress states
 ///   and get `info`, matching how `pending`/`upcoming` are colored above.
+/// - Subscription `subscription_status` (`tenant_subscriptions.status`):
+///   trialing, active, expired. `active` already exists above
+///   (customer_status) and is reused as-is. `trialing` gets `info`
+///   (matching `pending`/`upcoming`'s "in progress, nothing wrong" tone);
+///   `expired` gets `danger` (matching `overdue`'s "needs attention now").
 /// No value collides across these with a different meaning, so one
 /// widget/mapping serves all rather than duplicating a near-identical
 /// pill per module.
@@ -69,6 +74,9 @@ class StatusBadge extends StatelessWidget {
       'accepted' => (AppColors.info, 'Accepted'),
       'assigned' => (AppColors.info, 'Assigned'),
       'in_progress' => (AppColors.info, 'In Progress'),
+      // subscription_status (active reuses customer_status's mapping above)
+      'trialing' => (AppColors.info, 'Trial'),
+      'expired' => (AppColors.danger, 'Expired'),
       _ => (AppColors.textSecondary, status),
     };
 

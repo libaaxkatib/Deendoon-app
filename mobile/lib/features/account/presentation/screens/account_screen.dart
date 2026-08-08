@@ -13,8 +13,11 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 /// header. The profile summary card itself (avatar, name, email — all
 /// real, cached from login) is the entry point to the Profile screen, so
 /// no separate "Profile" menu entry is shown below it; the grouped menu
-/// card holds Business Profile, Settings, Notifications, and About, with
-/// Logout separated below as a clearly destructive action.
+/// card holds Business Profile, Subscription, Settings, Notifications, and
+/// About, with Logout separated below as a clearly destructive action.
+/// Subscription's own screen is the entry point to Storage (Phase 5) —
+/// no separate "Storage" menu entry here, matching the approved
+/// Account → Subscription → Storage flow.
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
 
@@ -74,6 +77,11 @@ class AccountScreen extends ConsumerWidget {
                 icon: Icons.business_outlined,
                 label: 'Business Profile',
                 onTap: () => context.push('/account/business-profile'),
+              ),
+              _AccountMenuTile(
+                icon: Icons.card_membership_outlined,
+                label: 'Subscription',
+                onTap: () => context.push('/account/subscription'),
               ),
               _AccountMenuTile(
                 icon: Icons.settings_outlined,

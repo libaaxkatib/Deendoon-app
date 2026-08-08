@@ -50,6 +50,8 @@ import '../../features/reminders/presentation/screens/reminder_schedule_screen.d
 import '../../features/search/presentation/screens/global_search_screen.dart';
 import '../../features/shell/presentation/app_shell_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
+import '../../features/subscription/presentation/screens/storage_screen.dart';
+import '../../features/subscription/presentation/screens/subscription_screen.dart';
 import 'route_paths.dart';
 import 'router_refresh_notifier.dart';
 
@@ -175,6 +177,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/account/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/account/change-password', builder: (_, _) => const ChangePasswordScreen()),
       GoRoute(path: '/account/bulk-import', builder: (_, _) => const BulkImportScreen()),
+      GoRoute(path: '/account/subscription', builder: (_, _) => const SubscriptionScreen()),
+      GoRoute(path: '/account/storage', builder: (_, _) => const StorageScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
         branches: [

@@ -32,6 +32,10 @@ void main() {
           path: '/account/business-profile',
           builder: (_, _) => const Scaffold(body: Text('Business Profile Screen')),
         ),
+        GoRoute(
+          path: '/account/subscription',
+          builder: (_, _) => const Scaffold(body: Text('Subscription Screen')),
+        ),
         GoRoute(path: '/account/settings', builder: (_, _) => const Scaffold(body: Text('Settings Screen'))),
         GoRoute(path: '/account/about', builder: (_, _) => const Scaffold(body: Text('About Screen'))),
         GoRoute(path: '/account/bulk-import', builder: (_, _) => const Scaffold(body: Text('Bulk Import Screen'))),
@@ -57,16 +61,26 @@ void main() {
     return container;
   }
 
-  testWidgets('renders all 5 menu items plus the destructive Logout action', (tester) async {
+  testWidgets('renders all 6 menu items plus the destructive Logout action', (tester) async {
     await pumpScreen(tester);
 
     expect(find.text('Profile'), findsNothing);
     expect(find.text('Business Profile'), findsOneWidget);
+    expect(find.text('Subscription'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
     expect(find.text('Bulk Import'), findsOneWidget);
     expect(find.text('Logout'), findsOneWidget);
+  });
+
+  testWidgets('tapping Subscription navigates to the Subscription screen', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.text('Subscription'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Subscription Screen'), findsOneWidget);
   });
 
   testWidgets('tapping Bulk Import navigates to the Bulk Import screen', (tester) async {

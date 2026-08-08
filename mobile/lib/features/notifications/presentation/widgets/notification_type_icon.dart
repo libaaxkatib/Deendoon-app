@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-/// Client-side rendering for the 7 real `NotificationType` enum values
+/// Client-side rendering for the 9 real `NotificationType` enum values
 /// (`deendoon/app/Enums/NotificationType.php`) — the backend resource
 /// carries no title/message text, so icon, color, and label are all
 /// derived from `type` here, the same polymorphic-by-convention pattern
@@ -21,6 +21,8 @@ class NotificationTypeIcon extends StatelessWidget {
         'reminder_sent' => (Icons.notifications_active_outlined, AppColors.primary),
         'promise_to_pay_due' => (Icons.handshake_outlined, AppColors.warning),
         'professional_collection_request_update' => (Icons.support_agent_outlined, AppColors.accent),
+        'subscription_request_update' => (Icons.card_membership_outlined, AppColors.accent),
+        'storage_request_update' => (Icons.storage_outlined, AppColors.accent),
         _ => (Icons.notifications_outlined, AppColors.textSecondary),
       };
 
@@ -47,5 +49,7 @@ String notificationTypeLabel(String type) => switch (type) {
       'reminder_sent' => 'Reminder Sent',
       'promise_to_pay_due' => 'Promise to Pay Due',
       'professional_collection_request_update' => 'Collection Request Update',
+      'subscription_request_update' => 'Subscription Update',
+      'storage_request_update' => 'Storage Add-on Update',
       _ => 'Notification',
     };

@@ -27,12 +27,12 @@ void main() {
   });
 
   Future<void> pumpScreen(WidgetTester tester) async {
-    // The filter chip row is a horizontally-scrolling list of 8 chips —
+    // The filter chip row is a horizontally-scrolling list of 10 chips —
     // wider than the default 800px test viewport, so chips past that
     // width are never materialized in the element tree (not just
     // off-screen for tap purposes). Widened here so every chip's
     // existence and selected state can be asserted directly.
-    tester.view.physicalSize = const Size(2400, 800);
+    tester.view.physicalSize = const Size(3200, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -93,6 +93,8 @@ void main() {
     expect(find.widgetWithText(ChoiceChip, 'Reminder Sent'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'Promise to Pay Due'), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'Collection Request Update'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Subscription Update'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Storage Add-on Update'), findsOneWidget);
   });
 
   testWidgets('the All chip is selected by default', (tester) async {

@@ -18,6 +18,9 @@ import '../widgets/notification_type_icon.dart';
 /// under the new `type`, same principle as the Reminder Center's and
 /// Customer List's filter chips.
 const _notificationTypeFilters = <String>[
+  // Phase 5 Step 6 added the last two: subscription_request_update,
+  // storage_request_update — same real-API-filter treatment as every
+  // other type here, no client-side filtering.
   'credit_limit_reached',
   'payment_received',
   'document_available',
@@ -25,6 +28,8 @@ const _notificationTypeFilters = <String>[
   'reminder_sent',
   'promise_to_pay_due',
   'professional_collection_request_update',
+  'subscription_request_update',
+  'storage_request_update',
 ];
 
 /// Notifications module — Module 10 (FR-058–062), already approved and

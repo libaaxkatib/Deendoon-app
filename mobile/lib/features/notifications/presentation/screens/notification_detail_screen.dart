@@ -19,10 +19,20 @@ class NotificationDetailScreen extends StatelessWidget {
   /// document-generating types (receipt/invoice/demand_letter/statement)
   /// and `payment` are deliberately left unmapped rather than guessing at
   /// an id space this resource doesn't confirm.
+  ///
+  /// `subscription_change_request`/`storage_addon` deliberately route to
+  /// the general Subscription/Storage screen, not a per-record detail
+  /// screen — there is no `GET /subscription/change-requests/{id}` or
+  /// per-id Storage Add-on endpoint reachable by the Business Owner, so
+  /// `relatedEntityId` can't be resolved to anything more specific. Both
+  /// screens already show the tenant's own real, current request state,
+  /// which is the closest honest destination for these two types.
   String? _openRoute() => switch (notification.relatedEntityType) {
         'debt' => '/debts/${notification.relatedEntityId}',
         'customer' => '/customers/${notification.relatedEntityId}',
         'professional_collection_request' => '/professional-requests/${notification.relatedEntityId}',
+        'subscription_change_request' => '/account/subscription',
+        'storage_addon' => '/account/storage',
         _ => null,
       };
 
