@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ReferenceDataCategory;
 use App\Models\Customer;
+use App\Models\ReferenceData;
 use App\Models\StorageAddon;
 use App\Models\SubscriptionChangeRequest;
 use App\Models\SubscriptionPlan;
@@ -566,9 +568,16 @@ class SubscriptionTest extends TestCase
 
     public function test_storage_addon_request_allows_a_new_request_once_the_prior_one_was_approved(): void
     {
+        // 'approved' was never a valid storage_addons.status value (the
+        // CHECK constraint only allows pending/active/expired/rejected/
+        // cancelled) — this test only ever passed under SQLite's
+        // non-enforcement of CHECK constraints, a pre-existing bug fixed
+        // here as part of building the real approve/reject/cancel
+        // workflow. 'active' is the real terminal state a Storage Add-on
+        // request reaches once accepted (StorageAddonService::approve()).
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
         $this->actingAsTenantUser($tenant);
-        StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'approved']);
+        StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'active']);
 
         $this->postJson('/api/v1/subscription/storage-addon-request', [
             'storage_package' => '10gb', 'payment_reference' => 'REF-2',
@@ -639,5 +648,453 @@ class SubscriptionTest extends TestCase
             'entity_id' => $addonId,
             'reason' => 'storage_package=10gb; payment_reference=REF-1',
         ]);
+    }
+
+    // --- Subscription Approval + Storage Add-on Approval (Product
+    // Owner-approved decision record): Decision 24 same-plan guard ---
+
+    public function test_upgrade_request_rejects_a_request_for_the_tenants_current_plan(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create(['name' => 'Small Business']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->active()->create();
+
+        $this->postJson('/api/v1/subscription/upgrade-request', [
+            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1',
+        ])->assertStatus(409)->assertJson(['success' => false]);
+    }
+
+    // --- Business Owner cancels their own pending request ---
+
+    private function seedRejectionReason(ReferenceDataCategory $category, string $label = 'Payment Not Verified'): void
+    {
+        ReferenceData::create([
+            'tenant_id' => null,
+            'category' => $category->value,
+            'value_label' => $label,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_business_owner_can_cancel_their_own_pending_change_request(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $response = $this->postJson("/api/v1/subscription/change-requests/{$changeRequest->id}/cancel");
+
+        $response->assertStatus(200)->assertJsonPath('data.status', 'cancelled');
+        $this->assertDatabaseHas('subscription_change_requests', ['id' => $changeRequest->id, 'status' => 'cancelled']);
+    }
+
+    public function test_business_owner_cannot_cancel_another_tenants_change_request(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenantB->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsTenantUser($tenantA);
+        $this->postJson("/api/v1/subscription/change-requests/{$changeRequest->id}/cancel")->assertStatus(404);
+    }
+
+    public function test_cancelling_a_non_pending_change_request_is_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'approved',
+        ]);
+
+        $this->postJson("/api/v1/subscription/change-requests/{$changeRequest->id}/cancel")
+            ->assertStatus(409)->assertJson(['success' => false]);
+    }
+
+    public function test_business_owner_can_cancel_their_own_pending_storage_addon_request(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $addon = StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'pending']);
+
+        $response = $this->postJson("/api/v1/subscription/storage-addon-requests/{$addon->id}/cancel");
+
+        $response->assertStatus(200)->assertJsonPath('data.status', 'cancelled');
+    }
+
+    // --- Platform Admin Approval Center ---
+
+    public function test_business_owner_is_forbidden_from_the_approval_center_endpoints(): void
+    {
+        $this->actingAsTenantUser(Tenant::create(['business_name' => 'Acme Co']));
+
+        $this->getJson('/api/v1/admin/subscription/change-requests')->assertStatus(403);
+        $this->getJson('/api/v1/admin/subscription/rejection-reasons')->assertStatus(403);
+        $this->getJson('/api/v1/admin/storage-addons')->assertStatus(403);
+        $this->getJson('/api/v1/admin/storage-addons/rejection-reasons')->assertStatus(403);
+    }
+
+    public function test_approval_center_lists_change_requests_across_every_tenant(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create(['tenant_id' => $tenantA->id, 'status' => 'pending']);
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create(['tenant_id' => $tenantB->id, 'status' => 'pending']);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->getJson('/api/v1/admin/subscription/change-requests');
+
+        $response->assertStatus(200);
+        $this->assertCount(2, $response->json('data.change_requests'));
+    }
+
+    public function test_approval_center_filters_change_requests_by_status(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create(['tenant_id' => $tenant->id, 'status' => 'pending']);
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create(['tenant_id' => $tenant->id, 'status' => 'rejected']);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->getJson('/api/v1/admin/subscription/change-requests?status=pending');
+
+        $this->assertCount(1, $response->json('data.change_requests'));
+    }
+
+    public function test_change_request_rejection_reasons_returns_the_predefined_platform_owned_values(): void
+    {
+        $this->seedRejectionReason(ReferenceDataCategory::SubscriptionRejectionReason, 'Payment Not Verified');
+        $this->actingAsPlatformAdmin();
+
+        $response = $this->getJson('/api/v1/admin/subscription/rejection-reasons');
+
+        $response->assertStatus(200);
+        $this->assertContains('Payment Not Verified', collect($response->json('data'))->pluck('value_label'));
+    }
+
+    // --- Approve ---
+
+    public function test_platform_admin_can_approve_a_pending_change_request(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $currentPlan = SubscriptionPlan::factory()->create(['name' => 'Free', 'customer_limit' => 2]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($currentPlan, 'plan')->active()->create();
+        $targetPlan = SubscriptionPlan::factory()->create(['name' => 'Small Business', 'customer_limit' => 110]);
+        $changeRequest = SubscriptionChangeRequest::factory()->for($targetPlan, 'requestedPlan')->for($currentPlan, 'currentPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve");
+
+        $response->assertStatus(200)->assertJsonPath('data.status', 'approved');
+        $this->assertDatabaseHas('tenant_subscriptions', [
+            'tenant_id' => $tenant->id, 'plan_id' => $targetPlan->id, 'status' => 'active',
+        ]);
+    }
+
+    public function test_approving_a_paid_plan_sets_a_one_month_expiry(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $targetPlan = SubscriptionPlan::factory()->create(['name' => 'Small Business']);
+        $changeRequest = SubscriptionChangeRequest::factory()->for($targetPlan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve")->assertStatus(200);
+
+        $subscription = TenantSubscription::where('tenant_id', $tenant->id)->first();
+        $this->assertNotNull($subscription->expires_at);
+        $this->assertEqualsWithDelta(now()->addMonth()->timestamp, $subscription->expires_at->timestamp, 5);
+    }
+
+    public function test_approving_the_free_plan_leaves_no_expiry(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $currentPlan = SubscriptionPlan::factory()->create(['name' => 'Small Business']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($currentPlan, 'plan')->active()->create();
+        $freePlan = SubscriptionPlan::factory()->create(['name' => 'Free']);
+        $changeRequest = SubscriptionChangeRequest::factory()->for($freePlan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve")->assertStatus(200);
+
+        $this->assertNull(TenantSubscription::where('tenant_id', $tenant->id)->first()->expires_at);
+    }
+
+    public function test_approving_a_change_request_recalculates_customer_read_only_status(): void
+    {
+        // Orchestration check: approving a downgrade to a stricter limit
+        // must immediately flip over-limit customers to read-only —
+        // CustomerReadOnlyService::recalculate() is triggered by the
+        // controller after SubscriptionService::approve() returns.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $currentPlan = SubscriptionPlan::factory()->create(['name' => 'Small Business', 'customer_limit' => 110]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($currentPlan, 'plan')->active()->create();
+        $freePlan = SubscriptionPlan::factory()->create(['name' => 'Free', 'customer_limit' => 2]);
+        Customer::factory()->for($tenant, 'tenant')->count(3)->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($freePlan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve")->assertStatus(200);
+
+        // withoutGlobalScope('tenant'): the test process is still
+        // Sanctum::actingAs() the Platform Administrator (tenant_id NULL)
+        // here — Customer's own BelongsToTenant scope would otherwise
+        // apply `WHERE tenant_id IS NULL` on top of this query's explicit
+        // filter and always match zero rows, the exact bug this test
+        // exists to catch in CustomerReadOnlyService itself (now fixed
+        // there via the same scope bypass).
+        $this->assertSame(1, Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->where('is_read_only', true)->count());
+    }
+
+    public function test_approving_an_already_reviewed_change_request_is_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'approved',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve")
+            ->assertStatus(409)->assertJson(['success' => false]);
+    }
+
+    public function test_approving_a_request_for_the_tenants_now_current_plan_is_rejected(): void
+    {
+        // Decision 26 — approval-time safety net: the tenant's plan
+        // changed (e.g. via a separately approved request) between
+        // submission and review, so the requested plan now equals the
+        // tenant's real current plan.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create(['name' => 'Small Business']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->active()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve")
+            ->assertStatus(409)->assertJson(['success' => false]);
+    }
+
+    public function test_approving_a_change_request_records_an_audit_log_entry(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+        $admin = $this->actingAsPlatformAdmin();
+
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve")->assertStatus(200);
+
+        $this->assertDatabaseHas('audit_log', [
+            'tenant_id' => $tenant->id,
+            'user_id' => $admin->id,
+            'action' => 'subscription_change_request_status_changed',
+            'entity_type' => 'subscription_change_request',
+            'entity_id' => $changeRequest->id,
+        ]);
+    }
+
+    public function test_approving_a_change_request_notifies_the_business_owner(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $owner = $this->actingAsTenantUser($tenant);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/approve")->assertStatus(200);
+
+        $this->assertDatabaseHas('notifications', [
+            'tenant_id' => $tenant->id,
+            'recipient_user_id' => $owner->id,
+            'type' => 'subscription_request_update',
+            'related_entity_type' => 'subscription_change_request',
+            'related_entity_id' => $changeRequest->id,
+        ]);
+    }
+
+    // --- Reject ---
+
+    public function test_platform_admin_can_reject_a_pending_change_request_with_predefined_reasons(): void
+    {
+        $this->seedRejectionReason(ReferenceDataCategory::SubscriptionRejectionReason, 'Payment Not Verified');
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/reject", [
+            'reasons' => ['Payment Not Verified'],
+            'notes' => 'Bank reference could not be verified.',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.rejection_reason', 'Bank reference could not be verified.')
+            ->assertJsonPath('data.rejection_reasons', ['Payment Not Verified']);
+        $this->assertDatabaseHas('subscription_change_request_rejection_reasons', [
+            'subscription_change_request_id' => $changeRequest->id, 'reason_label' => 'Payment Not Verified',
+        ]);
+    }
+
+    public function test_rejecting_a_change_request_requires_at_least_one_predefined_reason(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/reject", [])
+            ->assertStatus(422)->assertJsonValidationErrors(['reasons']);
+    }
+
+    public function test_rejecting_a_change_request_rejects_a_reason_not_in_the_predefined_list(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create();
+        $changeRequest = SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/reject", [
+            'reasons' => ['Made Up Reason'],
+        ])->assertStatus(422)->assertJsonValidationErrors(['reasons.0']);
+    }
+
+    public function test_rejecting_a_change_request_does_not_change_the_tenants_subscription(): void
+    {
+        $this->seedRejectionReason(ReferenceDataCategory::SubscriptionRejectionReason);
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $currentPlan = SubscriptionPlan::factory()->create(['name' => 'Free']);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($currentPlan, 'plan')->active()->create();
+        $targetPlan = SubscriptionPlan::factory()->create(['name' => 'Small Business']);
+        $changeRequest = SubscriptionChangeRequest::factory()->for($targetPlan, 'requestedPlan')->create([
+            'tenant_id' => $tenant->id, 'status' => 'pending',
+        ]);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/subscription/change-requests/{$changeRequest->id}/reject", [
+            'reasons' => ['Payment Not Verified'],
+        ])->assertStatus(200);
+
+        $this->assertDatabaseHas('tenant_subscriptions', ['tenant_id' => $tenant->id, 'plan_id' => $currentPlan->id]);
+    }
+
+    // --- Storage Add-on Approval Center ---
+
+    public function test_storage_addon_approval_center_lists_requests_across_every_tenant(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        StorageAddon::factory()->create(['tenant_id' => $tenantA->id, 'status' => 'pending']);
+        StorageAddon::factory()->create(['tenant_id' => $tenantB->id, 'status' => 'pending']);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->getJson('/api/v1/admin/storage-addons');
+
+        $this->assertCount(2, $response->json('data.storage_addon_requests'));
+    }
+
+    public function test_storage_addon_rejection_reasons_returns_the_predefined_platform_owned_values(): void
+    {
+        $this->seedRejectionReason(ReferenceDataCategory::StorageRejectionReason, 'Duplicate Request');
+        $this->actingAsPlatformAdmin();
+
+        $response = $this->getJson('/api/v1/admin/storage-addons/rejection-reasons');
+
+        $this->assertContains('Duplicate Request', collect($response->json('data'))->pluck('value_label'));
+    }
+
+    // --- Storage Add-on Approve ---
+
+    public function test_platform_admin_can_approve_a_pending_storage_addon_request(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $addon = StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'pending', 'storage_size' => 25]);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->postJson("/api/v1/admin/storage-addons/{$addon->id}/approve");
+
+        $response->assertStatus(200)->assertJsonPath('data.status', 'active');
+        $addon->refresh();
+        $this->assertNotNull($addon->started_at);
+        $this->assertEqualsWithDelta(now()->addMonth()->timestamp, $addon->expires_at->timestamp, 5);
+    }
+
+    public function test_approving_a_storage_addon_increases_the_tenants_total_allowance(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $plan = SubscriptionPlan::factory()->create(['storage_limit' => 10]);
+        TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->active()->create();
+        $addon = StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'pending', 'storage_package' => '25gb', 'storage_size' => 25]);
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/storage-addons/{$addon->id}/approve")->assertStatus(200);
+
+        $this->actingAsTenantUser($tenant);
+        $this->getJson('/api/v1/subscription/storage')->assertJsonPath('data.storage_limit_gb', 35);
+    }
+
+    public function test_approving_an_already_reviewed_storage_addon_is_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $addon = StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'active']);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/storage-addons/{$addon->id}/approve")
+            ->assertStatus(409)->assertJson(['success' => false]);
+    }
+
+    // --- Storage Add-on Reject ---
+
+    public function test_platform_admin_can_reject_a_pending_storage_addon_request_with_predefined_reasons(): void
+    {
+        $this->seedRejectionReason(ReferenceDataCategory::StorageRejectionReason, 'Insufficient Payment Amount');
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $addon = StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'pending']);
+
+        $this->actingAsPlatformAdmin();
+        $response = $this->postJson("/api/v1/admin/storage-addons/{$addon->id}/reject", [
+            'reasons' => ['Insufficient Payment Amount'],
+        ]);
+
+        $response->assertStatus(200)->assertJsonPath('data.status', 'rejected');
+        $this->assertDatabaseHas('storage_addon_rejection_reasons', [
+            'storage_addon_id' => $addon->id, 'reason_label' => 'Insufficient Payment Amount',
+        ]);
+    }
+
+    public function test_rejecting_a_storage_addon_requires_at_least_one_predefined_reason(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $addon = StorageAddon::factory()->create(['tenant_id' => $tenant->id, 'status' => 'pending']);
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/admin/storage-addons/{$addon->id}/reject", [])
+            ->assertStatus(422)->assertJsonValidationErrors(['reasons']);
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Backend Completion Roadmap, Phase 3.2 (Product Owner Decision: Option B
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * required on every Storage Add-on Request, matching
  * SubscriptionChangeRequest's existing column.
  */
-#[Fillable(['storage_package', 'storage_size', 'monthly_price', 'payment_reference', 'started_at', 'expires_at', 'approved_by', 'approved_at', 'status'])]
+#[Fillable(['storage_package', 'storage_size', 'monthly_price', 'payment_reference', 'started_at', 'expires_at', 'approved_by', 'approved_at', 'status', 'rejection_reason'])]
 class StorageAddon extends Model
 {
     /** @use HasFactory<StorageAddonFactory> */
@@ -46,5 +47,15 @@ class StorageAddon extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): predefined multi-select Rejection
+     * Reasons chosen by the Deendoon Platform Administrator.
+     */
+    public function reasons(): HasMany
+    {
+        return $this->hasMany(StorageAddonRejectionReason::class, 'storage_addon_id');
     }
 }

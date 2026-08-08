@@ -10,6 +10,8 @@ use App\Models\Payment;
 use App\Models\ProfessionalCollectionRequestReason;
 use App\Models\ReferenceData;
 use App\Models\RequestedServiceItem;
+use App\Models\StorageAddonRejectionReason;
+use App\Models\SubscriptionChangeRequestRejectionReason;
 use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
@@ -27,7 +29,15 @@ class ReferenceDataService
 {
     public function __construct(private readonly AuditLogService $auditLog) {}
 
-    public function forCategory(string $tenantId, ReferenceDataCategory $category): Collection
+    /**
+     * $tenantId is nullable — Subscription Approval + Storage Add-on
+     * Approval (Product Owner-approved decision record, Decision 4): the
+     * platform-owned (tenant_id NULL) Rejection Reason categories are
+     * looked up with the Deendoon Platform Administrator's own (NULL)
+     * tenant_id, matching those rows exactly. Every pre-existing category
+     * remains tenant-scoped as before.
+     */
+    public function forCategory(?string $tenantId, ReferenceDataCategory $category): Collection
     {
         return ReferenceData::where('tenant_id', $tenantId)
             ->where('category', $category->value)
@@ -94,6 +104,13 @@ class ReferenceDataService
                 'request',
                 fn ($q) => $q->where('tenant_id', $tenantId),
             )->where('service_label', $valueLabel)->exists(),
+            // Subscription Approval + Storage Add-on Approval (Product
+            // Owner-approved decision record): platform-owned (tenant_id
+            // NULL) predefined Rejection Reasons — never tenant-scoped, so
+            // $tenantId is deliberately ignored here, matching every other
+            // arm's "in use by its own child rows" check.
+            ReferenceDataCategory::SubscriptionRejectionReason => SubscriptionChangeRequestRejectionReason::where('reason_label', $valueLabel)->exists(),
+            ReferenceDataCategory::StorageRejectionReason => StorageAddonRejectionReason::where('reason_label', $valueLabel)->exists(),
         };
     }
 }

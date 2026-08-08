@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AuditAction;
+use App\Enums\NotificationType;
 use App\Models\StorageAddon;
 use App\Models\Tenant;
 use App\Models\User;
@@ -51,6 +52,7 @@ class StorageAddonService
     public function __construct(
         private readonly SubscriptionService $subscriptions,
         private readonly AuditLogService $auditLog,
+        private readonly NotificationService $notifications,
     ) {}
 
     /**
@@ -139,6 +141,143 @@ class StorageAddonService
 
             return $addon->refresh();
         });
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): the Deendoon Platform
+     * Administrator approves a pending Storage Add-on request — same
+     * manual-payment activation pattern as
+     * {@see SubscriptionService::approve()}. 1-month billing cycle
+     * (confirmed by the Product Owner, applied symmetrically here since
+     * Storage Add-ons are billed the same way — `monthly_price`):
+     * `started_at` = now, `expires_at` = now + 1 month. No plan-equality
+     * guard here — unlike Subscription Change Requests, a tenant may
+     * legitimately stack multiple active add-ons of the same or different
+     * package (Phase 3.1: no "at most one active add-on" constraint).
+     */
+    public function approve(StorageAddon $addon, User $actor): StorageAddon
+    {
+        return DB::transaction(function () use ($addon, $actor) {
+            $addon = StorageAddon::where('id', $addon->id)->lockForUpdate()->first();
+
+            if ($addon === null || $addon->status !== 'pending') {
+                $this->conflict('Only a pending Storage Add-on request may be approved.');
+            }
+
+            $addon->update([
+                'status' => 'active',
+                'started_at' => now(),
+                'expires_at' => now()->addMonth(),
+                'approved_by' => $actor->id,
+                'approved_at' => now(),
+            ]);
+
+            $this->auditLog->record(
+                AuditAction::StorageAddonStatusChanged,
+                'storage_addon',
+                $addon->id,
+                $actor,
+                'status changed from pending to active',
+                $addon->tenant_id,
+            );
+
+            $this->notifyTenantOwner($addon);
+
+            return $addon->refresh();
+        });
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): the Deendoon Platform
+     * Administrator rejects a pending Storage Add-on request. Same
+     * predefined multi-select Rejection Reasons + optional free-text notes
+     * pattern as {@see SubscriptionService::reject()}.
+     *
+     * @param  array<int, string>  $reasonLabels
+     */
+    public function reject(StorageAddon $addon, array $reasonLabels, ?string $notes, User $actor): StorageAddon
+    {
+        return DB::transaction(function () use ($addon, $reasonLabels, $notes, $actor) {
+            $addon = StorageAddon::where('id', $addon->id)->lockForUpdate()->first();
+
+            if ($addon === null || $addon->status !== 'pending') {
+                $this->conflict('Only a pending Storage Add-on request may be rejected.');
+            }
+
+            $addon->update([
+                'status' => 'rejected',
+                'rejection_reason' => $notes,
+            ]);
+
+            foreach (array_unique($reasonLabels) as $label) {
+                $addon->reasons()->create(['reason_label' => $label]);
+            }
+
+            $this->auditLog->record(
+                AuditAction::StorageAddonStatusChanged,
+                'storage_addon',
+                $addon->id,
+                $actor,
+                'status changed from pending to rejected',
+                $addon->tenant_id,
+            );
+
+            $this->notifyTenantOwner($addon);
+
+            return $addon->refresh();
+        });
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): the Business Owner cancels their
+     * own still-pending Storage Add-on request before it has been
+     * reviewed.
+     */
+    public function cancel(StorageAddon $addon, User $actor): StorageAddon
+    {
+        return DB::transaction(function () use ($addon, $actor) {
+            $addon = StorageAddon::where('id', $addon->id)->lockForUpdate()->first();
+
+            if ($addon === null || $addon->status !== 'pending') {
+                $this->conflict('Only a pending Storage Add-on request may be cancelled.');
+            }
+
+            $addon->update(['status' => 'cancelled']);
+
+            $this->auditLog->record(
+                AuditAction::StorageAddonStatusChanged,
+                'storage_addon',
+                $addon->id,
+                $actor,
+                'status changed from pending to cancelled',
+                $addon->tenant_id,
+            );
+
+            return $addon->refresh();
+        });
+    }
+
+    /**
+     * Same reasoning as {@see SubscriptionService::notifyTenantOwner()} —
+     * StorageAddon carries no `submitted_by_user_id` of its own; Version 1
+     * has exactly one account per tenant.
+     */
+    private function notifyTenantOwner(StorageAddon $addon): void
+    {
+        $recipientId = User::where('tenant_id', $addon->tenant_id)->value('id');
+
+        if ($recipientId !== null) {
+            $this->notifications->notify(
+                $addon->tenant_id,
+                (string) $recipientId,
+                NotificationType::StorageRequestUpdate,
+                'storage_addon',
+                $addon->id,
+            );
+        }
     }
 
     private function conflict(string $message): never

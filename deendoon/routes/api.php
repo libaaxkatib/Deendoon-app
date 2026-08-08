@@ -125,8 +125,24 @@ Route::prefix('v1')->group(function () {
         Route::get('subscription/plans', [SubscriptionController::class, 'plans']);
         Route::get('subscription/change-requests', [SubscriptionController::class, 'changeRequests']);
         Route::post('subscription/upgrade-request', [SubscriptionController::class, 'upgradeRequest']);
+        Route::post('subscription/change-requests/{subscriptionChangeRequest}/cancel', [SubscriptionController::class, 'cancelChangeRequest']);
         Route::get('subscription/storage', [SubscriptionController::class, 'storage']);
         Route::post('subscription/storage-addon-request', [SubscriptionController::class, 'storageAddonRequest']);
+        Route::post('subscription/storage-addon-requests/{storageAddon}/cancel', [SubscriptionController::class, 'cancelStorageAddon']);
+
+        // Subscription Approval + Storage Add-on Approval (Product
+        // Owner-approved decision record): the Deendoon Platform Admin
+        // Approval Center — Gate::authorize('platform-admin-only')
+        // restricts every one of these to the Platform Administrator, the
+        // mirror of the Business Owner-only routes above.
+        Route::get('admin/subscription/change-requests', [SubscriptionController::class, 'changeRequestApprovalCenter']);
+        Route::get('admin/subscription/rejection-reasons', [SubscriptionController::class, 'changeRequestRejectionReasons']);
+        Route::post('admin/subscription/change-requests/{subscriptionChangeRequest}/approve', [SubscriptionController::class, 'approveChangeRequest']);
+        Route::post('admin/subscription/change-requests/{subscriptionChangeRequest}/reject', [SubscriptionController::class, 'rejectChangeRequest']);
+        Route::get('admin/storage-addons', [SubscriptionController::class, 'storageAddonApprovalCenter']);
+        Route::get('admin/storage-addons/rejection-reasons', [SubscriptionController::class, 'storageAddonRejectionReasons']);
+        Route::post('admin/storage-addons/{storageAddon}/approve', [SubscriptionController::class, 'approveStorageAddon']);
+        Route::post('admin/storage-addons/{storageAddon}/reject', [SubscriptionController::class, 'rejectStorageAddon']);
         Route::get('reports/aging-analysis', [ReportController::class, 'agingAnalysis']);
         Route::get('reports/customers', [ReportController::class, 'customers']);
         Route::get('reports/debts', [ReportController::class, 'debts']);

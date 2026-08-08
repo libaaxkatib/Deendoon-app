@@ -19,4 +19,6 @@ enum NotificationType: string
     case ReminderSent = 'reminder_sent';
     case PromiseToPayDue = 'promise_to_pay_due';
     case ProfessionalCollectionRequestUpdate = 'professional_collection_request_update';
+    case SubscriptionRequestUpdate = 'subscription_request_update';
+    case StorageRequestUpdate = 'storage_request_update';
 }

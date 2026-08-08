@@ -118,6 +118,21 @@ class CustomerReadOnlyService
      * {@see ExpireSubscriptions} — matching
      * {@see AuditLogService::record()}'s own existing optional-actor
      * signature; every HTTP-triggered call site passes the acting user.
+     *
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): now also reachable from a
+     * Platform-Administrator-authenticated request (approving a
+     * Subscription Change Request). Every Customer query below explicitly
+     * bypasses Customer's own BelongsToTenant scope
+     * (`withoutGlobalScope('tenant')`) — that scope fails closed to
+     * `WHERE tenant_id IS NULL` for a null-tenant actor, which combined
+     * with this method's own explicit `tenant_id` filter would silently
+     * match zero rows for the Deendoon Platform Administrator. Same fix
+     * ProfessionalCollectionRequestService::customerForRequest() already
+     * applies for the identical reason. Harmless no-op for every other
+     * caller (an ordinary tenant actor's scope already agrees with the
+     * explicit filter; console commands have no authenticated actor at
+     * all, so the scope was never filtering there either).
      */
     public function recalculate(Tenant $tenant, ?User $actor = null): void
     {
@@ -125,9 +140,9 @@ class CustomerReadOnlyService
             $limit = $this->subscriptions->effectiveCustomerLimit($tenant);
 
             if ($limit === null) {
-                $restoredCount = Customer::where('tenant_id', $tenant->id)->where('is_read_only', true)->count();
+                $restoredCount = Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->where('is_read_only', true)->count();
 
-                Customer::where('tenant_id', $tenant->id)
+                Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)
                     ->where('is_read_only', true)
                     ->update(['is_read_only' => false]);
 
@@ -145,26 +160,26 @@ class CustomerReadOnlyService
                 return;
             }
 
-            $editableIds = Customer::where('tenant_id', $tenant->id)
+            $editableIds = Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)
                 ->orderBy('created_at')
                 ->limit($limit)
                 ->pluck('id');
 
-            $newlyReadOnly = Customer::where('tenant_id', $tenant->id)
+            $newlyReadOnly = Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)
                 ->whereNotIn('id', $editableIds)
                 ->where('is_read_only', false)
                 ->count();
 
-            $newlyEditable = Customer::where('tenant_id', $tenant->id)
+            $newlyEditable = Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)
                 ->whereIn('id', $editableIds)
                 ->where('is_read_only', true)
                 ->count();
 
-            Customer::where('tenant_id', $tenant->id)
+            Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)
                 ->whereIn('id', $editableIds)
                 ->update(['is_read_only' => false]);
 
-            Customer::where('tenant_id', $tenant->id)
+            Customer::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)
                 ->whereNotIn('id', $editableIds)
                 ->update(['is_read_only' => true]);
 

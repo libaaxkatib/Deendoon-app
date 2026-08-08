@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\AuditAction;
+use App\Enums\NotificationType;
+use App\Models\Concerns\BelongsToTenantOrPlatformAdmin;
 use App\Models\SubscriptionChangeRequest;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
@@ -48,6 +50,7 @@ class SubscriptionService
 {
     public function __construct(
         private readonly AuditLogService $auditLog,
+        private readonly NotificationService $notifications,
     ) {}
 
     public function currentSubscription(Tenant $tenant): ?TenantSubscription
@@ -226,12 +229,21 @@ class SubscriptionService
      * RiskLevelService's recalculation reason), per the Product Owner's
      * requirement that this be sufficient for future Super Admin
      * auditing.
+     *
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record, Decision 24): rejects (409) a
+     * request for the plan the tenant is already subscribed to — there is
+     * nothing for the Deendoon Platform Administrator to approve.
      */
     public function requestUpgrade(Tenant $tenant, string $requestedPlanId, string $paymentReference, User $actor): SubscriptionChangeRequest
     {
         return DB::transaction(function () use ($tenant, $requestedPlanId, $paymentReference, $actor) {
             if (SubscriptionChangeRequest::where('tenant_id', $tenant->id)->where('status', 'pending')->exists()) {
                 $this->conflict('A pending Subscription Change Request already exists for this tenant.');
+            }
+
+            if ($this->currentPlan($tenant)?->id === $requestedPlanId) {
+                $this->conflict('The tenant is already subscribed to the requested plan.');
             }
 
             $changeRequest = new SubscriptionChangeRequest([
@@ -473,6 +485,197 @@ class SubscriptionService
 
             return $subscription->tenant;
         });
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): the Deendoon Platform
+     * Administrator approves a pending Subscription Change Request —
+     * "Request -> Pending -> Administrator Review -> Approve/Reject ->
+     * Activate" (the docblock already carried by
+     * `2026_08_12_090200_create_subscription_change_requests_table.php`).
+     * Activation means creating/updating the tenant's TenantSubscription
+     * row to the requested plan, status 'active'.
+     *
+     * `started_at`/`expires_at` (confirmed by the Product Owner): 1-month
+     * billing cycle — `started_at` = now, `expires_at` = now + 1 month —
+     * except the Free Plan, which never expires (matching
+     * {@see expireOneTrial()}'s identical Free Plan treatment: status
+     * 'active', `expires_at` null).
+     *
+     * Decision 26 — approval-time same-plan safety net: re-checks against
+     * the tenant's *current* plan at approval time (not the change
+     * request's stale `current_plan_id` snapshot), since the tenant's
+     * plan may have changed between request submission and review.
+     *
+     * `lockForUpdate()` on both the change request and the subscription
+     * row, re-verified inside the transaction — same race-safety pattern
+     * as {@see expireOneTrial()}/{@see expireOneSubscription()}.
+     *
+     * Does not itself trigger {@see CustomerReadOnlyService::recalculate()}
+     * — that service already depends on this one, so calling it back from
+     * here would be circular (the same constraint documented on
+     * {@see expireTrials()}). The caller (SubscriptionController) triggers
+     * it after this method returns.
+     */
+    public function approve(SubscriptionChangeRequest $changeRequest, User $actor): SubscriptionChangeRequest
+    {
+        return DB::transaction(function () use ($changeRequest, $actor) {
+            $changeRequest = SubscriptionChangeRequest::where('id', $changeRequest->id)->lockForUpdate()->first();
+
+            if ($changeRequest === null || $changeRequest->status !== 'pending') {
+                $this->conflict('Only a pending Subscription Change Request may be approved.');
+            }
+
+            $tenant = Tenant::findOrFail($changeRequest->tenant_id);
+            $plan = SubscriptionPlan::findOrFail($changeRequest->requested_plan_id);
+
+            if ($this->currentPlan($tenant)?->id === $plan->id) {
+                $this->conflict('The tenant is already subscribed to the requested plan.');
+            }
+
+            $changeRequest->update([
+                'status' => 'approved',
+                'reviewed_by' => $actor->id,
+                'reviewed_at' => now(),
+            ]);
+
+            $subscription = TenantSubscription::where('tenant_id', $tenant->id)->lockForUpdate()->first();
+
+            $attributes = [
+                'plan_id' => $plan->id,
+                'status' => 'active',
+                'started_at' => now(),
+                'expires_at' => $plan->name === 'Free' ? null : now()->addMonth(),
+                'approved_by' => $actor->id,
+                'approved_at' => now(),
+            ];
+
+            if ($subscription !== null) {
+                $subscription->update($attributes);
+            } else {
+                $subscription = new TenantSubscription($attributes);
+                $subscription->tenant_id = $tenant->id;
+                $subscription->save();
+            }
+
+            $this->auditLog->record(
+                AuditAction::SubscriptionChangeRequestStatusChanged,
+                'subscription_change_request',
+                $changeRequest->id,
+                $actor,
+                "status changed from pending to approved; plan_id={$plan->id}",
+                $tenant->id,
+            );
+
+            $this->notifyTenantOwner($changeRequest);
+
+            return $changeRequest->refresh();
+        });
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): the Deendoon Platform
+     * Administrator rejects a pending Subscription Change Request.
+     * `$reasonLabels` are the predefined multi-select Rejection Reasons
+     * (Decision 4, validated by the controller's FormRequest against the
+     * platform-owned Reference Data category); `$notes` is optional
+     * free-text stored in the existing `rejection_reason` column. No
+     * TenantSubscription change — a rejected request never activates
+     * anything.
+     *
+     * @param  array<int, string>  $reasonLabels
+     */
+    public function reject(SubscriptionChangeRequest $changeRequest, array $reasonLabels, ?string $notes, User $actor): SubscriptionChangeRequest
+    {
+        return DB::transaction(function () use ($changeRequest, $reasonLabels, $notes, $actor) {
+            $changeRequest = SubscriptionChangeRequest::where('id', $changeRequest->id)->lockForUpdate()->first();
+
+            if ($changeRequest === null || $changeRequest->status !== 'pending') {
+                $this->conflict('Only a pending Subscription Change Request may be rejected.');
+            }
+
+            $changeRequest->update([
+                'status' => 'rejected',
+                'reviewed_by' => $actor->id,
+                'reviewed_at' => now(),
+                'rejection_reason' => $notes,
+            ]);
+
+            foreach (array_unique($reasonLabels) as $label) {
+                $changeRequest->reasons()->create(['reason_label' => $label]);
+            }
+
+            $this->auditLog->record(
+                AuditAction::SubscriptionChangeRequestStatusChanged,
+                'subscription_change_request',
+                $changeRequest->id,
+                $actor,
+                'status changed from pending to rejected',
+                $changeRequest->tenant_id,
+            );
+
+            $this->notifyTenantOwner($changeRequest);
+
+            return $changeRequest->refresh();
+        });
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): the Business Owner cancels their
+     * own still-pending Subscription Change Request before it has been
+     * reviewed. Authorization (only the owning tenant, only their own
+     * request) is enforced by the controller/Policy, matching every other
+     * write in this domain — this method only enforces the business-state
+     * rule (must still be pending).
+     */
+    public function cancel(SubscriptionChangeRequest $changeRequest, User $actor): SubscriptionChangeRequest
+    {
+        return DB::transaction(function () use ($changeRequest, $actor) {
+            $changeRequest = SubscriptionChangeRequest::where('id', $changeRequest->id)->lockForUpdate()->first();
+
+            if ($changeRequest === null || $changeRequest->status !== 'pending') {
+                $this->conflict('Only a pending Subscription Change Request may be cancelled.');
+            }
+
+            $changeRequest->update(['status' => 'cancelled']);
+
+            $this->auditLog->record(
+                AuditAction::SubscriptionChangeRequestStatusChanged,
+                'subscription_change_request',
+                $changeRequest->id,
+                $actor,
+                'status changed from pending to cancelled',
+                $changeRequest->tenant_id,
+            );
+
+            return $changeRequest->refresh();
+        });
+    }
+
+    /**
+     * `notifications.tenant_id` is NOT NULL and Version 1 has exactly one
+     * account per tenant (the Business Owner) — see
+     * {@see BelongsToTenantOrPlatformAdmin}'s own
+     * docblock — so the recipient is simply that tenant's sole `admin`
+     * user; SubscriptionChangeRequest carries no `submitted_by_user_id` of
+     * its own to look up instead (unlike ProfessionalCollectionRequest).
+     */
+    private function notifyTenantOwner(SubscriptionChangeRequest $changeRequest): void
+    {
+        $recipientId = User::where('tenant_id', $changeRequest->tenant_id)->value('id');
+
+        if ($recipientId !== null) {
+            $this->notifications->notify(
+                $changeRequest->tenant_id,
+                (string) $recipientId,
+                NotificationType::SubscriptionRequestUpdate,
+                'subscription_change_request',
+                $changeRequest->id,
+            );
+        }
     }
 
     private function conflict(string $message): never

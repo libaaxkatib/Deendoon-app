@@ -93,6 +93,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-dashboard', fn (User $user): bool => $user->hasRole('admin')
             || ($user->tenant_id === null && $user->hasRole('deendoon_platform_administrator')));
 
+        // Subscription Approval + Storage Add-on Approval (Product
+        // Owner-approved decision record): the approve/reject/
+        // approval-center endpoints are exclusively the Deendoon Platform
+        // Administrator's — the mirror of 'admin-only' rather than an
+        // extension of it, matching User::isPlatformAdmin()'s own
+        // definition.
+        Gate::define('platform-admin-only', fn (User $user): bool => $user->isPlatformAdmin());
+
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(Debt::class, DebtPolicy::class);
         Gate::policy(CollectionCase::class, CollectionCasePolicy::class);

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Backend Completion Roadmap, Phase 3.2 (Product Owner Decision: Option B
@@ -49,5 +50,15 @@ class SubscriptionChangeRequest extends Model
     public function currentPlan(): BelongsTo
     {
         return $this->belongsTo(SubscriptionPlan::class, 'current_plan_id');
+    }
+
+    /**
+     * Subscription Approval + Storage Add-on Approval (Product
+     * Owner-approved decision record): predefined multi-select Rejection
+     * Reasons chosen by the Deendoon Platform Administrator.
+     */
+    public function reasons(): HasMany
+    {
+        return $this->hasMany(SubscriptionChangeRequestRejectionReason::class, 'subscription_change_request_id');
     }
 }
