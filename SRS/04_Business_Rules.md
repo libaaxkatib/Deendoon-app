@@ -1,15 +1,15 @@
-# 04. Business Rules
+﻿# 04. Business Rules
 
 | Field | Value |
 |---|---|
 | **Document ID** | SRS-DEENDOON-04 |
 | **Document Title** | Business Rules |
-| **Version** | 1.7 |
+| **Version** | 1.10 |
 | **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-08-07 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.11) |
+| **Last Updated** | 2026-08-08 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.7) · `03_Functional_Requirements.md` (v1.15) |
 
 ---
 
@@ -26,6 +26,9 @@
 | 1.5 | 2026-07-31 | **Risk Level Engine Architecture Amendment (Product Owner Decision — Documentation Consistency Audit correction).** BRL-028 (Risk Level Value Set) updated from "not resolved" to reflect the approved qualitative value set — Low/Medium/High Risk, with semantics — recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md` §6. DD-010 updated to match: the value set itself is resolved; only the exact numeric thresholds and event point-value catalog remain open, tracked as Formula Design work in the same document. The Section 8 entity table's Risk Level row updated accordingly. This entry applies an already-approved decision to restore consistency with `03_Functional_Requirements.md` v1.9 — it does not introduce or change any business rule. | Claude |
 | 1.6 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4) and `03` (v1.10) following those documents' own updates for the Product Vision Amendment. No business rule changed. | Claude |
 | 1.7 | 2026-08-07 | **Business Owner Backend Completion (Product Owner Decision, pre-Phase 5).** BRL-064 amended to add Professional Collection Request Update as a seventh qualifying Notification event source, alongside `03_Functional_Requirements.md` v1.11's approval of Module 7's amended scope. Deferred Decisions resolved: DD-008/DD-009 (Credit Score baseline/point-value catalog/bands — an exact sign-inversion of the approved Risk Level Engine), DD-016 (overpayment rejected, not capped/credited), DD-017 (payment against a terminal Debt rejected), DD-032 (Recovery Rate = the existing Collection Rate formula). DD-011 partially resolved (Credit Limit Reached re-trigger only, not the general policy). DD-029 (Document regeneration) and DD-036 (Collection Appointments on Calendar) confirmed deferred to Version 2, not silently left open. Scope Baseline updated to cite `03` at v1.11. | Claude |
+| 1.8 | 2026-08-08 | **SRS Final Alignment (Product Owner Decision): current implemented app + backend are the final product.** BRL-078 retitled and amended from "Submission Eligibility" to "Submission Eligibility and Required Fields" — the implemented, final backend requires at least one Reason for Transfer and at least one Requested Service (both Reference Data-backed, tenant-scoped), plus Client Declaration acceptance, with optional free-text Notes; a submission missing any required field is rejected. This corrects a discrepancy where BRL-078 still described only the pre-amendment eligibility check, silent on the required-fields behavior the implemented backend (`SubmitProfessionalCollectionRequestRequest`) already enforces. Scope Baseline updated to cite `03` at v1.12. | Claude |
+| 1.9 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Added a new **12. Subscription & Storage Rules** section: BRL-083 (fixed Plan Catalog), BRL-084 (one pending Subscription Change Request / Storage Add-on Request per tenant), BRL-085 (Subscription Change Request approval, activation, and 1-month billing cycle), BRL-086 (Subscription lifecycle — Trial provisioning at registration, Trial→Free expiration, paid Subscription expiration), BRL-087 (subscription-driven Customer read-only mechanics), BRL-088 (Storage Add-on packages, pricing, accumulation, and plan-downgrade survival), BRL-089 (Storage Add-on approval and billing cycle — including a confirmed implementation gap, DD-047), BRL-090 (Analytics feature gating by plan), and BRL-091 (request cancellation and Platform Administrator Rejection Reasons) — all confirmed directly against the implemented `SubscriptionService`/`StorageAddonService`/`CustomerReadOnlyService`/`CustomerPolicy` backend code, not invented. Added a "Subscription Change Request Status" and "Storage Add-on Status" transition table under State Transition Rules; added `SubscriptionChangeRequest` and `StorageAddon` rows to the Validation Rules table; added the fixed Plan Catalog and Storage Add-on packages to the Configuration Policy's "Fixed, not configurable" list; added a Module 13 row to Consistency Validation; added **DD-047** (Storage Add-on Expiration Mechanism Not Implemented — confirmed by the absence of any command sweeping an approved Add-on past its `expires_at`, unlike `subscriptions:expire` for the Subscription itself). Scope Baseline updated to cite `03` at v1.13. No existing Business Rule was renumbered; Professional Collection Request content (BRL-078–082) was not touched. | Claude |
+| 1.10 | 2026-08-08 | **Documentation Consistency Sweep (Product Owner Decision): current implemented app + backend are the final product.** Section 8's Collection Case entity table row corrected from "Notes & Attachments" to "Notes, free-text (BR-022)" — matching the same correction applied across `03_Functional_Requirements.md` v1.15 and `05_UI_UX_Specification.md` v1.8: Attachments (arbitrary file upload) were never implemented for Collection Case, only a real free-text Notes field. | Claude |
 
 ---
 
@@ -552,13 +555,13 @@ These six rules are frozen and restated here for reference only; they are not mo
 - **Related Functional Requirements:** FR-040 through FR-046 (general).
 - **Notes:** See DD-026 and DD-027.
 
-### BRL-078 — Professional Collection Request Submission Eligibility
-- **Purpose:** Define when a Collection Case may be submitted to Deendoon's recovery team.
+### BRL-078 — Professional Collection Request Submission Eligibility and Required Fields
+- **Purpose:** Define when a Collection Case may be submitted to Deendoon's recovery team, and what information submission requires.
 - **Applies To:** Professional Collection Request Submission (FR-072).
-- **Rule Statement:** A Collection Case may be submitted as a Professional Collection Request only while it is Open and has no other active Request already pending against it (mirrors BRL-048's duplicate-prevention pattern). Submission does not change the Collection Case's own status (Open/Closed, BRL-050) — the Case and the Request are tracked independently.
-- **Trigger:** User selects "Submit Case to Deendoon" on an open Collection Case.
-- **Result:** Request created with status Submitted.
-- **Exceptions:** Case Closed → submission rejected (FR-072, E2). Case already has an active Request → **not resolved**, see DD-042.
+- **Rule Statement:** A Collection Case may be submitted as a Professional Collection Request only while it is Open and has no other active Request already pending against it (mirrors BRL-048's duplicate-prevention pattern). Submission does not change the Collection Case's own status (Open/Closed, BRL-050) — the Case and the Request are tracked independently. **Required fields (Product Owner-approved amendment, final implemented behavior):** submission requires at least one Reason for Transfer and at least one Requested Service, both selected only from the tenant's own active Reference Data values (`reference_data` category `transfer_reason` and `requested_service` respectively — never a hardcoded list, consistent with BC-003's configuration-over-hardcoding principle), plus acceptance of the Client Declaration. Free-text Notes are optional (max 2000 characters). A submission missing any required field is rejected with a validation error and no Request is created (FR-072, E3).
+- **Trigger:** User selects "Submit Case to Deendoon" on an open Collection Case, selects Reasons and Requested Services, optionally adds Notes, and accepts the Client Declaration.
+- **Result:** Request created with status Submitted, storing the selected Reasons, Requested Services, Notes, and the Declaration's acceptance timestamp and accepting user.
+- **Exceptions:** Case Closed → submission rejected (FR-072, E2). No Reason, no Requested Service, or Declaration not accepted → submission rejected (FR-072, E3). Case already has an active Request → **not resolved**, see DD-042.
 - **Related Functional Requirements:** FR-072.
 - **Notes:** See DD-042.
 
@@ -865,6 +868,99 @@ These six rules are frozen and restated here for reference only; they are not mo
 
 ---
 
+## 12. Subscription & Storage Rules
+
+*(Added — Subscription & Storage Self-Service Catch-Up, Revision History 1.9. A real, live-verified capability found fully implemented in both the backend and the Customer Mobile App, retroactively documented per Product Owner decision that the current implemented app + backend are the final product. Every rule below is confirmed directly against the implemented `SubscriptionService`, `StorageAddonService`, `CustomerReadOnlyService`, and `CustomerPolicy` — none is inferred or invented.)*
+
+### BRL-083 — Subscription Plan Catalog
+- **Purpose:** Confirm the Plan Catalog is a fixed, platform-owned set, not tenant-configurable data.
+- **Applies To:** View Subscription & Plan Catalog (FR-077).
+- **Rule Statement:** Exactly five Subscription Plans exist, seeded and maintained by the platform, never by a Business Owner: **Trial** ($0/month, unlimited Customers, 10GB storage, Analytics enabled), **Free** ($0/month, 2-Customer limit, 10GB storage, Analytics disabled), **Small Business** ($5/month, 110-Customer limit, 25GB storage, Analytics enabled), **Medium Business** ($8/month, 250-Customer limit, 50GB storage, Analytics enabled), and **Corporate** ($20/month, unlimited Customers, 100GB storage, Analytics enabled). A tenant with no resolvable Subscription record at all falls back to the Free Plan's limits for display and reporting purposes only (`customerLimit()`); this fallback is never used for enforcement — see BRL-087.
+- **Trigger:** N/A — a standing, fixed data set.
+- **Result:** The same five plans, with the same limits and pricing, are shown to every tenant; no Business Owner-facing or Platform Administrator-facing capability exists anywhere in the backend to create, edit, re-price, or deactivate a Plan.
+- **Exceptions:** None.
+- **Related Functional Requirements:** FR-077, FR-078.
+- **Notes:** Confirmed from `SubscriptionPlanSeeder` and the `subscription_plans` table (nullable `customer_limit` represents "Unlimited," never a magic number).
+
+### BRL-084 — One Pending Request Per Tenant (Subscription & Storage)
+- **Purpose:** Prevent a tenant from stacking multiple simultaneous requests of the same type.
+- **Applies To:** Request Subscription Plan Change (FR-078); Request Storage Add-on (FR-081).
+- **Rule Statement:** A tenant may have at most one **Pending** Subscription Change Request, and, independently, at most one **Pending** Storage Add-on Request, at a time. An Approved, Rejected, or Cancelled request never blocks a new submission of the same type. A Subscription Change Request naming the plan the tenant is already subscribed to is also rejected — there would be nothing for the Deendoon Platform Administrator to approve.
+- **Trigger:** A new request is submitted while a Pending request of the same type already exists for the tenant.
+- **Result:** Submission rejected (409 Conflict).
+- **Exceptions:** Enforced at two layers: an application-level pre-check, and — because the pre-check alone cannot prevent two concurrent submissions from both passing it before either commits — a database-level partial unique index on each table (`subscription_change_requests_one_pending_per_tenant`, `storage_addons_one_pending_per_tenant`) as the actual race-safe guarantee.
+- **Related Functional Requirements:** FR-078, FR-081.
+
+### BRL-085 — Subscription Change Request Approval, Activation & Billing Cycle
+- **Purpose:** Define what happens when the Deendoon Platform Administrator approves a Subscription Change Request.
+- **Applies To:** Platform Administrator Review (FR-084).
+- **Rule Statement:** On approval, the tenant's Subscription is updated (or created, if none existed) to the requested plan with status **Active**. The billing cycle is **1 month**: `started_at` = the moment of approval, `expires_at` = approval + 1 month — **except the Free Plan, which never expires** (`expires_at` left null), matching how a Trial expiring into the Free Plan is treated (BRL-086). At approval time, the request is re-checked against the tenant's *current* plan (not the request's original snapshot, since the tenant's plan may have changed between submission and review) — approving a request for a plan the tenant is already on is rejected. Approving a plan change also triggers an immediate recalculation of the tenant's Customer read-only state (BRL-087), since the effective Customer Limit may have changed.
+- **Trigger:** The Deendoon Platform Administrator approves a Pending Subscription Change Request.
+- **Result:** Subscription updated; request status becomes **Approved**; tenant's Business Owner notified (Module 10).
+- **Exceptions:** Only a Pending request may be approved (already Approved/Rejected/Cancelled → rejected). Approving a request for the tenant's current plan → rejected.
+- **Related Functional Requirements:** FR-078, FR-084.
+
+### BRL-086 — Subscription Lifecycle Transitions
+- **Purpose:** Define how a tenant's Subscription moves between Trial, Free, Active, and Expired over time.
+- **Applies To:** View Subscription (FR-077); Platform Administrator Review (FR-084).
+- **Rule Statement:** Every newly-registered tenant automatically receives a **Trial** Subscription (status `trialing`) at registration, lasting **7 days** from registration (`trial_ends_at` = registration + 7 days). When a Trial's 7 days elapse, the tenant automatically moves to the **Free Plan** (status becomes `active`, `expires_at` cleared to null — the Free Plan never expires); this transition is performed by a plain Artisan command (`subscriptions:expire-trials`), run manually/externally rather than by a scheduler — matching this codebase's standing no-scheduler-infrastructure decision — not automatically the instant the 7 days elapse. A **paid** Subscription (Small Business/Medium Business/Corporate) that reaches its `expires_at` without a renewal being approved moves to status **Expired** (via `subscriptions:expire`, same manual-command pattern); its `plan_id` is left unchanged (no automatic downgrade), but an Expired subscription's effective Customer Limit becomes **0** regardless of the plan's own limit (BRL-087) until a renewal is approved. Neither expiration command runs automatically on a schedule — an operator (or an external cron outside this codebase) must invoke them.
+- **Trigger:** Trial's 7 days elapse (`subscriptions:expire-trials` run); a paid Subscription's `expires_at` passes with no approved renewal (`subscriptions:expire` run).
+- **Result:** Trial → Free (active, no expiry); paid Subscription → Expired (plan unchanged, effective Customer Limit 0).
+- **Exceptions:** A Free Plan subscription is never swept into Expired by `subscriptions:expire` — only a subscription with a non-null `expires_at` still in the past qualifies, and the Free Plan's `expires_at` is always null.
+- **Related Functional Requirements:** FR-077, FR-084.
+- **Notes:** Both commands are race-safe and idempotent — each candidate row is locked and re-verified inside its own short transaction before being transitioned, so re-running either command is a safe no-op.
+
+### BRL-087 — Subscription-Driven Customer Read-Only
+- **Purpose:** Define exactly what triggers a Customer to become read-only, and what read-only blocks.
+- **Applies To:** Subscription-Driven Customer Read-Only (FR-083); Customer Creation (FR-007, Exception E3); Customer Update/Archive (FR-009, FR-010).
+- **Rule Statement:** A tenant's **effective Customer Limit** is: the current plan's `customer_limit` (null = unlimited, e.g., Trial/Corporate) — **except** an **Expired** paid Subscription, which forces the effective limit to **0** regardless of plan (BRL-086), and a tenant with **no resolvable Subscription/Plan at all**, which also fails closed to **0** (Product Owner Decision: "No subscription record must never be treated as Unlimited — fail closed"), never falling back to "Free Plan" or "unlimited" for this specific enforcement purpose (contrast BRL-083's display-only Free Plan fallback). Given the effective limit N, a tenant's Customers ordered oldest-first by creation date: the oldest N remain **editable**; every Customer beyond that becomes **read-only**. A read-only Customer cannot be updated, archived, or have documents generated against it — it remains fully **viewable**, remains **searchable**, and **can still be restored** if archived (Product Owner Decision, 2026-08-06: restore is never blocked by this rule; recalculation alone then decides whether the restored Customer ends up editable or read-only). Creating a **new** Customer is blocked outright once the tenant's Customer count already meets or exceeds the effective limit — this is a stricter, separate check from the read-only recalculation, since it prevents the tenant from ever exceeding the limit via a new record in the first place, race-safe via a row lock inside the same transaction as the insert.
+- **Trigger:** A Customer is created, archived, or restored; a Trial expires (BRL-086); a paid Subscription expires (BRL-086); a Subscription Change Request is approved (BRL-085).
+- **Result:** `customers.is_read_only` recomputed from scratch on every trigger (never incremented/decremented) — the set of read-only Customers always reflects current state, never a stale accumulation.
+- **Exceptions:** A plan with no Customer Limit (null, e.g., Corporate, Trial) marks no Customer read-only, restoring every currently-read-only Customer to editable if the tenant moves onto such a plan.
+- **Related Functional Requirements:** FR-007 (E3), FR-009, FR-010, FR-083.
+- **Notes:** Confirmed from `CustomerReadOnlyService::recalculate()`/`assertCanCreateCustomer()` and `CustomerPolicy` (`create`/`update`/`archive`/`generateDocuments` gated; `view`/`viewAny`/`restore`/`import`/`viewCreditScore` explicitly not gated).
+
+### BRL-088 — Storage Add-on Packages, Pricing & Accumulation
+- **Purpose:** Define the fixed Storage Add-on catalog and how multiple Add-ons combine.
+- **Applies To:** Storage Overview (FR-080); Request Storage Add-on (FR-081).
+- **Rule Statement:** Exactly four Storage Add-on packages exist, fixed and platform-owned, never tenant-configurable: **10GB** ($2.00/month), **25GB** ($4.00/month), **50GB** ($7.00/month), **100GB** ($12.00/month). A tenant's **effective Storage Limit** is its current plan's base `storage_limit` **plus the sum of every currently-Active Storage Add-on's size** — there is no "at most one active Add-on" constraint; a tenant may accumulate multiple Add-ons of the same or different packages over time, and every one of them contributes to the total for as long as it remains Active. Because this total is computed independently of the tenant's Subscription plan, an active Storage Add-on **survives a plan downgrade or upgrade** — approving a Subscription Change Request never touches or removes any Storage Add-on row.
+- **Trigger:** N/A for the catalog (fixed); recomputed live on every read of the effective Storage Limit for the accumulation behavior.
+- **Result:** Storage allowance = plan base allowance + Σ(Active Add-on sizes), regardless of plan changes.
+- **Exceptions:** None.
+- **Related Functional Requirements:** FR-080, FR-081.
+
+### BRL-089 — Storage Add-on Approval, Billing Cycle & Expiration Mechanism Gap
+- **Purpose:** Define what happens when the Deendoon Platform Administrator approves a Storage Add-on Request, and record a confirmed implementation gap.
+- **Applies To:** Platform Administrator Review (FR-084).
+- **Rule Statement:** On approval, a Storage Add-on's status becomes **Active** with a **1-month billing cycle** (`started_at` = approval, `expires_at` = approval + 1 month), the same cycle length as a paid Subscription plan (BRL-085), applied symmetrically since Add-ons are billed the same way. Unlike a Subscription Change Request, there is no "already has this" guard — a tenant may legitimately hold multiple Active Add-ons at once (BRL-088). **Confirmed gap:** no mechanism — scheduled or manual — exists anywhere in the backend to transition an Active Storage Add-on past its `expires_at` into an `expired` status, unlike `subscriptions:expire` for the Subscription itself. An approved Add-on therefore continues to count toward the tenant's effective Storage Limit indefinitely, regardless of its `expires_at` date, until this is resolved. See DD-047.
+- **Trigger:** The Deendoon Platform Administrator approves a Pending Storage Add-on Request.
+- **Result:** Add-on becomes Active with a 1-month billing cycle; tenant's Business Owner notified (Module 10); no automatic expiration currently occurs.
+- **Exceptions:** Only a Pending request may be approved (already Active/Expired/Rejected/Cancelled → rejected).
+- **Related Functional Requirements:** FR-081, FR-084.
+- **Notes:** See DD-047.
+
+### BRL-090 — Analytics Feature Gating by Subscription Plan
+- **Purpose:** Define which Subscription Plans include access to the Reporting & Analytics module.
+- **Applies To:** View Subscription (FR-077); Reporting & Analytics (Module 9, FR-054, FR-055, FR-057).
+- **Rule Statement:** A tenant's current plan's `analytics_enabled` flag gates the entire Reporting module: Aging Analysis (FR-054), Standard Operational Reports (FR-055), and Report Export (FR-057), plus Collection Analytics, Risk Distribution, and Collections Trend (the three additional Reporting endpoints from the Business Owner Backend Completion catch-up, Revision History 1.7). Every plan except **Free** includes Analytics (Trial, Small Business, Medium Business, Corporate all enable it; Free does not). This gate is deliberately **not** applied to the Dashboard Summary / Executive KPI Cards (FR-053), Business Health, Today's Overview, or Recent Cases — those remain available on every plan, including Free (Product Owner Decision, 2026-08-06 clarification: "Business Health must remain available for all subscription plans... do NOT gate Business Health behind `analytics_enabled`").
+- **Trigger:** A tenant on the Free Plan attempts to access any Reporting endpoint.
+- **Result:** Access denied (403) for Reporting endpoints; Dashboard/Business Health/KPI Cards remain unaffected.
+- **Exceptions:** None — the Free Plan's exclusion from Analytics is the rule, not an exception to it.
+- **Related Functional Requirements:** FR-053 (explicitly NOT gated), FR-054, FR-055, FR-057, FR-077.
+- **Notes:** Confirmed from `AppServiceProvider`'s `view-analytics` Gate definition and `SubscriptionService::analyticsEnabled()`.
+
+### BRL-091 — Subscription & Storage Request Cancellation and Rejection Reasons
+- **Purpose:** Define when a Business Owner may cancel their own request, and what a Deendoon Platform Administrator must select when rejecting one.
+- **Applies To:** Subscription Change Request History & Cancellation (FR-079); Storage Add-on Request History & Cancellation (FR-082); Platform Administrator Review (FR-084).
+- **Rule Statement:** A Business Owner may cancel their own Subscription Change Request or Storage Add-on Request **only while it is still Pending** — an Approved, Rejected, or already-Cancelled request cannot be cancelled. When the Deendoon Platform Administrator rejects a request (of either type), they must select **at least one** predefined Rejection Reason from a fixed, platform-owned Reference Data set (category `subscription_rejection_reason` or `storage_rejection_reason`, tenant_id NULL — visible only to the Platform Administrator, reusing Module 12's existing Lookup & Reference Data mechanism, BC-003) and may add optional free-text notes (max 2000 characters); rejection without at least one selected reason is rejected with a validation error.
+- **Trigger:** Business Owner cancels a Pending request; Deendoon Platform Administrator rejects a request.
+- **Result:** Request status becomes Cancelled (Business Owner action) or Rejected with recorded reason(s) (Platform Administrator action); nothing is activated in either case.
+- **Exceptions:** Cancellation attempted on a non-Pending request → rejected. Rejection attempted with zero reasons selected → rejected.
+- **Related Functional Requirements:** FR-079, FR-082, FR-084.
+- **Notes:** The four predefined reasons (Payment Not Verified, Insufficient Payment Amount, Duplicate Request, Invalid Payment Reference) are seeded identically for both categories, confirmed from the seeding migration.
+
+---
+
 ## State Transition Rules
 
 ### Customer Status
@@ -916,6 +1012,27 @@ Only two states are confirmed to exist (Open, Closed); the initial status value 
 
 Recovered and Closed are terminal. Cells marked ❓ are not confirmed either way (BRL-079, DD-043) — this matrix asserts only the named sequence from BR-039–042/FR-073, not a fully resolved graph. Every transition is performed by the Deendoon Super Admin — the already-approved Deendoon Platform Administrator actor; no new actor or permission model is introduced. **"Assigned" does not mean assignment to another system user** — it means the Super Admin has accepted ownership of the Request and started handling it (BRL-079). Any coordination with other Deendoon staff is manual and outside the system.
 
+### Subscription Change Request Status *(added — Subscription & Storage Self-Service)*
+| From ↓ / To → | Approved | Rejected | Cancelled |
+|---|---|---|---|
+| Pending | ✅ (Deendoon Platform Administrator, BRL-085) | ✅ (Deendoon Platform Administrator, BRL-091) | ✅ (Business Owner, BRL-091) |
+| Approved | — | — | — |
+| Rejected | — | — | — |
+| Cancelled | — | — | — |
+
+Approved, Rejected, and Cancelled are all terminal — a request is submitted exactly once and reaches exactly one final state (BRL-084/BRL-091: none of the three block a *new* request of the same type from being submitted afterward, but the request row itself never re-opens).
+
+### Storage Add-on Status *(added — Subscription & Storage Self-Service)*
+| From ↓ / To → | Active | Rejected | Cancelled | Expired |
+|---|---|---|---|---|
+| Pending | ✅ (Deendoon Platform Administrator, BRL-089) | ✅ (Deendoon Platform Administrator, BRL-091) | ✅ (Business Owner, BRL-091) | — |
+| Active | — | — | — | ❓ Not implemented — see BRL-089, DD-047 |
+| Rejected | — | — | — | — |
+| Cancelled | — | — | — | — |
+| Expired | — | — | — | — |
+
+`Expired` is a value the schema's `status` CHECK constraint already allows, but no confirmed code path in this backend ever transitions a row into it (BRL-089) — shown here as unreachable-in-practice (❓) rather than omitted, so the gap is visible in the same place the rest of this matrix lives, not hidden by leaving the value out entirely.
+
 ---
 
 ## Calculation Rules
@@ -944,9 +1061,11 @@ Recovered and Closed are terminal. Cells marked ❓ are not confirmed either way
 | Customer | Name, Phone | Credit Limit (defaults per BRL-012), other profile fields (`06_Database_Design.md`) | Customer Status: 7 approved values (BRL-014); Risk Level: 3 approved values — Low/Medium/High (BRL-028); numeric thresholds pending (DD-010) | Missing/invalid required field → reject with field-level error (FR-007, E1) |
 | Debt | Amount (> 0), Due Date | Notes | Debt Status: 7 approved values (BRL-021) | Negative/zero amount, invalid date → reject (FR-017, E1) |
 | Payment | Amount (> 0), Date, Debt reference | Payment Method (pending catalog, DD-019), reference notes | N/A | Non-positive/non-numeric amount → reject (FR-034 validation) |
-| Collection Case | Debt reference (exactly one) | Notes & Attachments (Assigned Officer field retired v1.4, RBAC Architecture Amendment — see FR-041) | Status: Open/Closed (initial value pending, DD-020; outcome set pending, DD-024) | Attempt to reference more than one Debt → not supported (BRL-038) |
+| Collection Case | Debt reference (exactly one) | Notes, free-text (BR-022) (Assigned Officer field retired v1.4, RBAC Architecture Amendment — see FR-041) | Status: Open/Closed (initial value pending, DD-020; outcome set pending, DD-024) | Attempt to reference more than one Debt → not supported (BRL-038) |
 | Professional Collection Request *(added)* | Collection Case reference (exactly one) | Conversation messages | Status: Submitted…Recovered/Closed (full matrix pending, DD-043) | Submission against a Closed Case → rejected (FR-072, E2); duplicate active Request → not resolved (DD-042) |
 | User Account | Identifier (email or username, per tenant config), name | Contact details | Role: 1 approved value (Business Owner/`admin` — RBAC Architecture Amendment v1.4) | Missing required field → reject (FR-066, E2); invalid Role → reject (FR-067, E2) |
+| Subscription Change Request *(added)* | Requested Plan (1 of 5 fixed plans), Payment Reference | — | Status: Pending/Approved/Rejected/Cancelled (BRL-084/BRL-085/BRL-091) | Pending request already exists for tenant → reject (FR-078, E3); requested plan = current plan → reject (FR-078, E4) |
+| Storage Add-on Request *(added)* | Storage Package (1 of 4 fixed packages), Payment Reference | — | Status: Pending/Active/Rejected/Cancelled/Expired (unreachable in practice, DD-047) (BRL-084/BRL-088/BRL-089/BRL-091) | Pending request already exists for tenant → reject (FR-081, E3) |
 
 ---
 
@@ -968,14 +1087,16 @@ Per the approved architectural principle **Configuration over Hardcoding** (`01_
 - The four Demand Letter templates and their names (First Reminder, Second Reminder, Final Demand, Legal Notice).
 - The Auto Numbering prefixes (`DBT-`, `RCT-`, `DL-`, `ST-`, `COL-`) and the five entities that receive them.
 - The overall module/workflow structure defined in `03_Functional_Requirements.md`.
+- **The Subscription Plan Catalog** *(added — Subscription & Storage Self-Service)*: the five plans (Trial, Free, Small Business, Medium Business, Corporate) and each one's price, Customer Limit, Storage allowance, and Analytics availability (BRL-083) — platform-seeded, with no Business Owner-facing or Platform Administrator-facing capability to create, edit, or re-price a plan.
+- **The Storage Add-on package catalog** *(added)*: the four packages (10GB/25GB/50GB/100GB) and their prices (BRL-088) — platform-seeded, not tenant- or Business Owner-configurable.
 
-This document introduces no new configurable values beyond what Modules 1–12 already identified as configuration (System Settings, Lookup & Reference Data); it only clarifies which already-approved items belong in which category.
+This document introduces no new configurable values beyond what Modules 1–12 already identified as configuration (System Settings, Lookup & Reference Data), plus Module 13's Subscription Rejection Reasons and Storage Rejection Reasons — both of which reuse the existing Lookup & Reference Data mechanism (BC-003) as platform-owned (tenant_id NULL) value sets, not a new mechanism; it only clarifies which already-approved items belong in which category.
 
 ---
 
 ## Consistency Validation
 
-Every Functional Requirement across Modules 1–12 (FR-001–FR-071) has been reviewed against this document. FRs whose Main Flow, Alternate Flows, or Exceptions referenced "defined in `04_Business_Rules.md`" are covered above; FRs with no referenced ambiguity (e.g., pure display/read FRs such as FR-008, FR-019, FR-042, FR-050) require no additional Business Rule beyond the RBAC/BRL-004/BRL-006 principles already stated.
+Every Functional Requirement across Modules 1–13 (FR-001–FR-076, FR-077–FR-084) has been reviewed against this document. FRs whose Main Flow, Alternate Flows, or Exceptions referenced "defined in `04_Business_Rules.md`" are covered above; FRs with no referenced ambiguity (e.g., pure display/read FRs such as FR-008, FR-019, FR-042, FR-050) require no additional Business Rule beyond the RBAC/BRL-004/BRL-006 principles already stated.
 
 | Module | FR Range | Business Rules Applied |
 |---|---|---|
@@ -991,6 +1112,7 @@ Every Functional Requirement across Modules 1–12 (FR-001–FR-071) has been re
 | 10 — Notifications & Calendar | FR-058–062 | BRL-064–068 |
 | 11 — Search & Productivity | FR-063–065 | BRL-013 (matching, cross-ref), BRL-004/BRL-006 (RBAC/visibility, general) |
 | 12 — Administration & Settings | FR-066–071 | BRL-069–076 |
+| 13 — Subscription & Storage Self-Service | FR-077–084 | BRL-083–091 |
 
 No Functional Requirement was found to require business logic that this document leaves entirely unaddressed — every ambiguity flagged in `03_Functional_Requirements.md`'s Open Items has a corresponding Business Rule entry above, resolved where the approved baseline permitted a safe answer, and deferred where it did not.
 
@@ -1063,6 +1185,7 @@ Every rule above either formalizes mechanics already implied by an approved FR/B
 | DD-044 | Whether Request Conversation remains available after a terminal outcome (Recovered/Closed) | Not specified | FR-075 |
 | DD-045 | Professional Collection Request Auto Numbering format confirmation (`PCR-000001` proposed) | Not yet formally confirmed | FR-072 |
 | DD-046 | Relationship between Professional Collection Request closure and the linked Collection Case's own closure (coupled vs. independent) | Not specified | FR-045, FR-076 |
+| DD-047 | Storage Add-on Expiration Mechanism | Not implemented — confirmed by the absence of any command (scheduled or manual) that transitions an Active Storage Add-on past its `expires_at` into `expired`, unlike `subscriptions:expire` for the Subscription itself (BRL-089); an approved Add-on currently counts toward the tenant's effective Storage Limit indefinitely | FR-081, FR-082 |
 
 ---
 

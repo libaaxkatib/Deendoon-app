@@ -1,14 +1,14 @@
-# 03. Functional Requirements
+﻿# 03. Functional Requirements
 
 | Field | Value |
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.11 |
-| **Status** | Reopened — RBAC Architecture Amendment (FR-041 retired, FR-067 narrowed), Risk Level Engine Architecture Amendment (FR-027 rewritten), and Business Owner Backend Completion (Module 7 approved, FR-001/007/008/019/021/026/053 amended, see Revision History 1.11) all applied; Module 12 still awaiting its original approval (see Revision History 1.5) |
+| **Version** | 1.15 |
+| **Status** | Reopened — RBAC Architecture Amendment (FR-041 retired, FR-067 narrowed), Risk Level Engine Architecture Amendment (FR-027 rewritten), Business Owner Backend Completion (Module 7 approved, FR-001/007/008/019/021/026/053 amended, see Revision History 1.11), SRS Final Alignment (FR-072/FR-074 amended to match the final implemented Professional Collection workflow, see Revision History 1.12), Subscription & Storage Self-Service Catch-Up (Module 13 added — FR-077–FR-084, see Revision History 1.13), Documentation Consistency Pass (Module 8 amended to add FR-085 — Invoice Generation, closing a gap between Revision History 1.11's claim and Module 8's own text, see Revision History 1.14), and a Documentation Consistency Sweep (Notes & Attachments corrected across Modules 2/3/7, see Revision History 1.15) all applied; Module 12 still awaiting its original approval (see Revision History 1.5) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-08-07 |
+| **Last Updated** | 2026-08-08 |
 | **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.5) · `02_Business_Requirements.md` (Reopened — Pending Re-Approval, v1.6) |
 
 ---
@@ -38,6 +38,10 @@
 | 1.9 | 2026-07-31 | **Risk Level Engine Architecture Amendment (Product Owner Decision — Documentation Consistency Audit correction).** FR-027 rewritten from "Risk Level Assignment" (manual, user-selected from a dropdown) to "Risk Level Calculation & Recalculation" (fully system-calculated, deterministic, event-driven, no manual override) — matching the architecture already approved and recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md`. This corrects a gap where that architecture had been approved but never applied back to this document. The Module 4 Open Items entry for the Risk Level value set updated to reflect that Low/Medium/High and their semantics are now defined (`04_Business_Rules.md` BRL-028); exact numeric thresholds remain pending. **Also corrected in this version (Scope Baseline synchronization):** this document's own Scope Baseline field, which incorrectly cited `01` and `02` as "Approved" when both are actually Reopened — updated to their correct current status and version. No new business rule, workflow, or scope introduced anywhere in this revision — this entry applies already-approved decisions and corrects stale metadata, it does not make a new decision. | Claude |
 | 1.10 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** FR-008's Alternate Flow A1 no longer cites "Viewer" as an example restricted role — Viewer was retired as a tenant role in `02_Business_Requirements.md` v1.4. Scope Baseline updated to cite `01` at its current version (v1.4). No business rule, workflow, or requirement changed. | Claude |
 | 1.11 | 2026-08-07 | **Business Owner Backend Completion (Product Owner Decision, pre-Phase 5).** Module 7's amended scope (FR-072–FR-076) formally approved — status changed from "Reopened — pending re-approval" to "Approved" (Module Tracker, end-of-module marker). Retroactively approved into Version 1 scope, each already fully implemented and tested ahead of this documentation catch-up: (a) Invoice as a fourth Document type alongside Receipt/Demand Letter/Statement (Module 8 — generation, viewing, download, history, storage accounting, `INV-` numbering); (b) the "Reminder Center" subsystem (Modules 5/10 — full CRUD reminders, timing rules, WhatsApp/SMS message templates and rendering, the `reminders:fire-due` command); (c) three additional Reporting & Analytics endpoints beyond FR-053–057 (Module 9 — Collection Analytics, Risk Distribution, Collections Trend). FR-001 narrowed to email-only for Version 1 (username login identifier deferred to Version 2 — no platform-configurable identifier exists). FR-007's Default Credit Limit auto-apply implemented (previously an approved-but-unconsumed setting). FR-008/FR-019 amended: an archived Customer/Debt is now viewable via its detail endpoint in a restore-eligible state (previously 404), matching the original Main Flow text; viewing an archived record no longer triggers any on-view recalculation side effect. FR-021's automatic Overdue transition remains lazy/on-access by design (no scheduler infrastructure), but Reporting/Dashboard queries now compute the same effective condition directly rather than trusting a possibly-stale stored `debt_status`. FR-026 (Credit Score) implemented — exact formula (baseline 70, clamped 0–100, event-driven, mirroring the already-approved Risk Level Engine's qualifying events inverted in sign) recorded in `deendoon/docs/Risk_Level_Engine_v1.0.md`'s companion Credit Score note and this backend's `CreditScoreService`. FR-053's Recovery Rate KPI implemented (DD-032 resolved: Collected ÷ Became Due, the same formula as Module 9's existing Collection Rate). Business Health's Collection Performance and Outstanding Exposure inputs implemented (adaptive, not gated — see `04_Business_Rules.md` for the Outstanding Exposure formula amendment). FR-029 (Automated Reminder Scheduling) formally confirmed deferred to Version 2, consistent with the standing no-scheduler-infrastructure architecture decision. Collection Case appointments on the Calendar (Module 10) and Document regeneration (Module 8) formally confirmed deferred to Version 2. | Claude |
+| 1.12 | 2026-08-08 | **SRS Final Alignment (Product Owner Decision): current implemented app + backend are the final product.** FR-072 (Submit Professional Collection Request) amended: submission is no longer a zero-field confirmation — the implemented, final backend requires selecting at least one Reason for Transfer and at least one Requested Service (both Reference Data-backed, tenant-scoped multi-select), optional free-text Notes, and acceptance of the Client Declaration; added Exception E3 for missing required fields; Main Flow and Related APIs updated to match. FR-074 (Request List & History) amended to note the full detail view now includes Reasons, Requested Services, Notes, and the Declaration acceptance record. Added an Implementation Note documenting that Documents/Attachments/Timeline sub-resources and the Dashboard summary widget are backend-implemented but not yet exposed in the Customer Mobile App — a gap, not a scope exclusion. This corrects a discrepancy where this document still described the pre-amendment zero-field workflow that the Business Owner Backend Completion (v1.11) had already superseded in the implemented backend without updating this text. | Claude |
+| 1.13 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): the current implemented app + backend are the final product.** A prior full-app audit found a real, fully-built, live-verified Subscription & Storage Add-on self-service capability in both the Flutter app and the Laravel backend that was completely absent from this SRS — the largest scope gap the audit found. Added **Module 13 — Subscription & Storage Self-Service** (FR-077–FR-084): viewing the current subscription/trial and the fixed Plan Catalog (FR-077); requesting a plan upgrade/downgrade with a payment reference (FR-078); viewing Subscription Change Request history and cancelling a pending request (FR-079); viewing the Storage Overview — base/effective/remaining allowance (FR-080); requesting a Storage Add-on with a payment reference (FR-081); viewing Storage Add-on Request history and cancelling a pending request (FR-082); the subscription-driven Customer read-only mechanism (FR-083); and the Deendoon Platform Administrator's review/approve/reject responsibilities for both request types (FR-084). Module Tracker updated to add Module 13. **Module 12's "Out of Scope (Explicitly Confirmed)" section corrected:** it previously stated "Subscription Management" and "Billing Configuration" do not appear anywhere in the system, "consistent with their absence from the approved Feature Freeze" — this was true when written but is now false for the narrower, approved capability actually built (Business Owner self-service view/request, Platform Administrator approval); the line is corrected to name Module 13 while confirming that full plan/pricing configuration, tenant management, and billing infrastructure configuration remain genuinely out of scope (Business Owners cannot create, edit, or price plans themselves — confirmed from the backend, which exposes no such capability). Module 2's FR-007 (Customer Creation) gains Exception E3 cross-referencing the read-only block (FR-083, `04_Business_Rules.md` BRL-087). Module 9 gains a one-line Scope Boundary cross-reference noting that `analytics_enabled` gates the Reporting module (FR-054/055/057), explicitly not the Executive KPI Cards/Dashboard (FR-053). Module 10's FR-058/FR-060 notification-type enumerations and Traceability Summary gain the two new event types (`subscription_request_update`, `storage_request_update`). No existing FR was renumbered; Professional Collection content (Module 7) was not touched. | Claude |
+| 1.14 | 2026-08-08 | **Documentation Consistency Pass (Product Owner Decision): current implemented app + backend are the final product.** A targeted re-check of Revision History 1.11's claim "(a) Invoice as a fourth Document type alongside Receipt/Demand Letter/Statement" found that claim was never actually applied to Module 8's own text — the Functional Overview, Scope Boundary, Functional Requirements table, and Traceability Summary still described exactly three document types, with no Invoice-generation FR of its own. Corrected: added **FR-085 — Invoice Generation** (mirroring FR-047/FR-048/FR-049's structure: manual, user-initiated generation from Debt Details, `INV-000001` Auto Numbering per BR-036, immutable once generated); Functional Overview, Scope Boundary ("Ownership boundary"), the Module 8 Functional Requirements table, and the Module 8 Traceability Summary all updated to list Invoice as the fourth type; FR-050/FR-051/FR-052 (View/Download/History) already applied generically to "a generated document" and needed no Main Flow change — only their reference-only "Related Database Entities" lines were extended to name Invoice alongside Receipt/DemandLetter/Statement. No other module's FR text, numbering, or scope was touched — this entry corrects only the pre-existing gap between Revision History 1.11's summary and Module 8's body text; it does not introduce new scope beyond what 1.11 had already retroactively approved. | Claude |
+| 1.15 | 2026-08-08 | **Documentation Consistency Sweep (Product Owner Decision): current implemented app + backend are the final product.** Found and corrected a wider "Notes & Attachments" inconsistency: this generic phrase was used throughout the document to describe a capability that only half-exists. Corrected: FR-008 (Customer Profile display) no longer claims a Customer carries Notes/Attachments — the Customer entity has neither (only Debt and Collection Case have a real, implemented `notes` field, per `02_Business_Requirements.md` v1.7 BR-022); FR-019 (Debt Details display) and FR-042 (Case Details display) now say "Notes" instead of "Notes & Attachments," since Attachments (arbitrary file upload) were never implemented for any of the three entities; FR-042's Traceability Summary row corrected to cite BR-022 instead of a nonexistent Module 8 attachment capability. Also found and removed a leftover reference to "assigned Collection Officer" in FR-042's Main Flow — a retired concept (FR-041 retirement, v1.8) missed by that version's sweep. | Claude |
 
 ---
 
@@ -58,11 +62,12 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 5 | Recovery Workflow | Approved |
 | 6 | Payment Tracking | Approved |
 | 7 | Professional Collection | Approved — amended scope (FR-072–076, Professional Collection Requests) formally approved by Product Owner (Business Owner Backend Completion, pre-Phase 5) |
-| 8 | Documents | Approved |
+| 8 | Documents | Approved — amended to add FR-085 (Invoice Generation), a documentation-consistency correction closing the gap between Revision History 1.11's claim and this module's own text (see Revision History 1.14) |
 | 9 | Reporting & Analytics | Approved |
 | 10 | Notifications & Calendar | Approved |
 | 11 | Search & Productivity | Approved |
 | 12 | Administration & Settings | Submitted for Review |
+| 13 | Subscription & Storage Self-Service | Approved — added by Product Owner Decision (Subscription & Storage Self-Service Catch-Up); real, live-verified backend and Flutter capability retroactively documented (see Revision History 1.13) |
 
 ---
 
@@ -332,8 +337,9 @@ As with Authentication in Module 1, the ability to create and maintain a Custome
 **Exceptions**
 - **E1 — Required fields missing or invalid:** System rejects submission with field-level validation errors; no record is created.
 - **E2 — User lacks permission to create Customers:** Action is not available (RBAC, `08_Security_and_RBAC.md`).
+- **E3 — Tenant is already at its subscription plan's effective Customer Limit (Subscription & Storage Self-Service, Module 13):** Creation is blocked — see Module 13, FR-083 (Subscription-Driven Customer Read-Only) and `04_Business_Rules.md` BRL-087.
 
-**Business Rule References:** BRL-005 (duplicate detection is advisory, never blocking); BC-003 (default values are configurable, not hardcoded).
+**Business Rule References:** BRL-005 (duplicate detection is advisory, never blocking); BC-003 (default values are configurable, not hardcoded); BRL-087 (subscription plan Customer Limit enforcement, Module 13).
 **Related APIs (reference only):** `POST /customers` — see `07_API_Design.md`.
 **Related Database Entities (reference only):** Customer, AuditLog, SystemSettings (Default Credit Limit) — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-007.
@@ -350,7 +356,7 @@ As with Authentication in Module 1, the ability to create and maintain a Custome
 
 **Main Flow**
 1. User selects a Customer.
-2. System retrieves and displays the Customer Profile: identifying details, Credit Limit, Outstanding Balance, Remaining Credit, Risk Level, Credit Score, and Customer Status (BR-003, BR-004, BR-005, BR-006), together with associated Notes & Attachments and document-generation actions (Module 8, reference only).
+2. System retrieves and displays the Customer Profile: identifying details, Credit Limit, Outstanding Balance, Remaining Credit, Risk Level, Credit Score, and Customer Status (BR-003, BR-004, BR-005, BR-006), together with document-generation actions (Module 8, reference only). **(Corrected, SRS Final Alignment)** the Customer entity itself carries no Notes field and no attachment capability in the final implemented product — see `02_Business_Requirements.md` v1.7, BR-022.
 3. If the Customer is Archived, system displays the record in a restore-eligible state per BR-032.
 
 **Alternate Flows**
@@ -597,7 +603,7 @@ As with Authentication in Module 1, the ability to create and maintain a Custome
 
 | FR | Business Requirement(s) | Related Modules |
 |---|---|---|
-| FR-007 | BR-001, BR-003, BR-004, BR-005, BR-006, BR-034, BR-038 | Module 3 (Debt Register); Module 12 (System Settings — Default Credit Limit) |
+| FR-007 | BR-001, BR-003, BR-004, BR-005, BR-006, BR-034, BR-038 | Module 3 (Debt Register); Module 12 (System Settings — Default Credit Limit); Module 13 (Subscription-Driven Customer Read-Only — Customer Limit block, FR-083) |
 | FR-008 | BR-003, BR-004, BR-005, BR-006 | Module 4 (Credit & Risk Management); Module 8 (Documents) |
 | FR-009 | BR-003, BR-006, BR-030 | Module 4 (Credit & Risk Management) |
 | FR-010 | BR-031 | Module 11 (Search & Productivity — archived-record retrieval) |
@@ -723,7 +729,7 @@ The Debt Register is the core record of what a Customer owes. Every other recove
 
 **Main Flow**
 1. User selects a Debt.
-2. System displays Debt Details: amount, due date, Debt Status, Recovery Stage, Recovery Timeline, and any Notes & Attachments (Module 8, reference only).
+2. System displays Debt Details: amount, due date, Debt Status, Recovery Stage, Recovery Timeline, any Notes (free-text, BR-022), and document-generation actions (Module 8, reference only).
 3. If the Debt is Archived, system displays it in a restore-eligible state (FR-023).
 
 **Alternate Flows**
@@ -1600,7 +1606,7 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 
 **Main Flow**
 1. User selects a Collection Case.
-2. System displays the Case's referenced Debt, assigned Collection Officer, current status, and associated Notes & Attachments (Module 8, reference only).
+2. System displays the Case's referenced Debt, current status, and associated Notes (free-text, BR-022).
 
 **Alternate Flows**
 - **A1 — Case is Closed:** Displayed in a read-only state.
@@ -1737,11 +1743,12 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 
 **Main Flow**
 1. User selects an open Collection Case and initiates "Submit Case to Deendoon."
-2. System creates a Professional Collection Request referencing exactly one Collection Case (and, transitively, exactly one Debt) — mirroring the one-Debt-per-Case cardinality already established for Collection Cases (Scope Boundary).
-3. System sets the Request's status to **Submitted**.
-4. System assigns the Request a unique identifier (exact Auto Numbering format confirmed in `04_Business_Rules.md`; see Open Items).
-5. System records a **Professional Collection Request Submitted** event in the Audit Trail (a new event type — distinct from the existing **Collection Requested** event, which denotes internal escalation to Professional Collection, Module 7 FR-040, not a hand-off to Deendoon).
-6. The Request becomes visible in the tenant's Professional Collection Requests view (FR-074) and to the Deendoon Super Admin within the Deendoon Super Admin Web Panel (Module 12), for review.
+2. User selects one or more Reasons for Transfer (multi-select, drawn only from the tenant's own active Reference Data, category `transfer_reason`) and one or more Requested Services (multi-select, drawn only from the tenant's own active Reference Data, category `requested_service`); may optionally add free-text Notes (max 2000 characters); and accepts the Client Declaration.
+3. System creates a Professional Collection Request referencing exactly one Collection Case (and, transitively, exactly one Debt) — mirroring the one-Debt-per-Case cardinality already established for Collection Cases (Scope Boundary) — recording the selected Reasons, Requested Services, Notes, and the Declaration's acceptance timestamp and accepting user.
+4. System sets the Request's status to **Submitted**.
+5. System assigns the Request a unique identifier (exact Auto Numbering format confirmed in `04_Business_Rules.md`; see Open Items).
+6. System records a **Professional Collection Request Submitted** event in the Audit Trail (a new event type — distinct from the existing **Collection Requested** event, which denotes internal escalation to Professional Collection, Module 7 FR-040, not a hand-off to Deendoon).
+7. The Request becomes visible in the tenant's Professional Collection Requests view (FR-074) and to the Deendoon Super Admin within the Deendoon Super Admin Web Panel (Module 12), for review.
 
 **Alternate Flows**
 - **A1 — Collection Case already has an active Request:** A duplicate Request is not created; exact handling (reject vs. surface the existing Request) confirmed in `04_Business_Rules.md`.
@@ -1749,11 +1756,14 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 **Exceptions**
 - **E1 — User lacks permission to submit:** Action is not available.
 - **E2 — Collection Case is Closed:** Submission is not permitted; the Case must be Open.
+- **E3 — Required field missing (Product Owner-approved amendment):** No Reason selected, no Requested Service selected, or the Client Declaration not accepted — submission is rejected with a field-level validation error; no Request is created.
 
-**Business Rule References:** BR-039; BC-009 (submission never removes the business's own visibility into the Case). Auto Numbering format and duplicate-submission handling deferred to `04_Business_Rules.md`.
-**Related APIs (reference only):** `POST /collection-cases/{id}/professional-requests` — see `07_API_Design.md`.
+**Business Rule References:** BR-039; BC-009 (submission never removes the business's own visibility into the Case); BRL-078 (submission field requirements). Auto Numbering format and duplicate-submission handling deferred to `04_Business_Rules.md`.
+**Related APIs (reference only):** `POST /collection-cases/{id}/professional-requests` (body: `reasons[]`, `services[]`, `notes` optional, `declaration_accepted`) — see `07_API_Design.md`.
 **Related Database Entities (reference only):** ProfessionalCollectionRequest, CollectionCase, AuditLog — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-072.
+
+> **Implementation Note (Product Owner-approved, final product):** Documents, Attachments, and Timeline events for a Professional Collection Request, and the Dashboard summary widget referenced in `05_UI_UX_Specification.md` §"Professional Collection Requests widget", are implemented on the backend (`GET/POST professional-requests/{id}/documents|attachments|timeline`, `GET professional-requests/summary`) but are not yet exposed in the Customer Mobile App. This is a backend-ahead-of-Flutter implementation gap, not a scope exclusion — it may be closed in a future release without any SRS change.
 
 ---
 
@@ -1794,7 +1804,7 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 
 **Main Flow**
 1. User views their business's submitted Requests: linked Case, current Status, Submitted Date.
-2. User selects a Request to view its full status history and conversation (FR-075).
+2. User selects a Request to view its full detail — Reasons for Transfer, Requested Services, Notes, Client Declaration acceptance record (timestamp and accepting user), status history — and its conversation (FR-075).
 
 **Alternate Flows**
 - None.
@@ -1868,7 +1878,7 @@ Professional Collection is a case-management layer over an existing Debt; it doe
 |---|---|---|
 | FR-040 | BR-014, BR-036 | Module 3 (Debt Register); Module 5 (Recovery Workflow — escalation eligibility) |
 | FR-041 | BR-014 | Module 12 (Administration & Settings — Collection Officer role) |
-| FR-042 | BR-014 | Module 8 (Documents — Notes & Attachments) |
+| FR-042 | BR-014 | BR-022 (Notes) |
 | FR-043 | BR-014, BR-030 | — |
 | FR-044 | BR-014, BR-010 | Module 3 (Recovery Timeline); Module 5 (Follow-up History); Module 6 (payment event consumption); Module 8 (Documents) |
 | FR-045 | BR-014 | Module 6 (Payment Tracking — separate, not implied) |
@@ -1913,7 +1923,7 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ## 1. Functional Overview
 
-This module owns all document generation and document management in Version 1: Digital Receipts, Demand Letters (including the Legal Notice template), Customer Statements of Account, and their viewing, downloading, and history. Other modules *request* document generation or *trigger* it as a side effect of their own events; none of them generate PDFs, assign document numbers, or store document content themselves. Module 8 is the sole owner of documents as an artifact, while remaining strictly a consumer of the data (Debt, Payment, Customer, Collection Case) it renders into those documents.
+This module owns all document generation and document management in Version 1: Digital Receipts, Demand Letters (including the Legal Notice template), Customer Statements of Account, Invoices, and their viewing, downloading, and history. Other modules *request* document generation or *trigger* it as a side effect of their own events; none of them generate PDFs, assign document numbers, or store document content themselves. Module 8 is the sole owner of documents as an artifact, while remaining strictly a consumer of the data (Debt, Payment, Customer, Collection Case) it renders into those documents.
 
 ## Scope Boundary
 
@@ -1923,13 +1933,15 @@ This module owns all document generation and document management in Version 1: D
 - **Professional Collection (Module 7):** May request Demand Letters or Legal Notices as part of a Collection Case. This module generates the documents; Professional Collection never generates them directly.
 - **Reporting (Module 9):** Consumes document metadata (counts, types, generation dates). This module never creates reports.
 - **Notifications (Module 10):** May notify a user that a document is available. Delivery remains owned by Module 10.
-- **Ownership boundary:** This module owns only Documents (Receipt, Demand Letter, Statement) as generated artifacts. It never owns Customer, Debt, Payment, Collection Case, or Credit Score — those remain owned by Modules 2, 3, 6, 7, and 4 respectively. Documents are generated *from* other modules' data; they never become the source of truth for that data.
+- **Ownership boundary:** This module owns only Documents (Receipt, Demand Letter, Statement, Invoice) as generated artifacts. It never owns Customer, Debt, Payment, Collection Case, or Credit Score — those remain owned by Modules 2, 3, 6, 7, and 4 respectively. Documents are generated *from* other modules' data; they never become the source of truth for that data.
 
 **Scope note — Customer Statement of Account:** This module also specifies Statement of Account generation (FR-049), even though it was not listed among this module's functional scope in your message. It is included because it is already approved Version 1 scope (BR-021) with its own Auto Numbering identifier under BR-036, and Modules 2 (FR-008) and 3 (FR-019) already forward-reference "Generate Statement" to this module. Omitting it here would leave those two approved forward references unresolved and would contradict the already-approved baseline. Flagging this rather than silently deciding either way.
 
 **Scope note — Legal Notice as a Demand Letter template, not a separate document type:** Your message's examples imply Legal Notice may be a distinct numbered document series (`LNT-000001`) alongside Demand Letter (`DLT-000001`). The already-approved baseline (`01_Project_Overview.md` glossary and BR-036) defines exactly five Auto-Numbered document/record types — Debt, Receipt, Demand Letter, Statement, Collection Case — with Legal Notice explicitly listed as one of the **four templates** of the single Demand Letter Generator feature, not a sixth numbered entity. This module therefore implements Legal Notice as a Demand Letter template sharing the approved `DL-000001` numbering series, consistent with the frozen baseline, rather than introducing a new `LNT-000001` series. Reporting this rather than silently changing the previously approved numbering scope.
 
 **Scope note — numbering format preserved:** For the same reason, this module uses the previously approved formats `RCT-000001` (Receipt), `DL-000001` (Demand Letter, all four templates), and `ST-000001` (Statement) — as already established in `01_Project_Overview.md` and referenced by Modules 2, 3, and 6 — rather than the illustrative `DLT-000001` / `LNT-000001` pattern in your message, to avoid silently modifying frozen documentation.
+
+**Scope note — Invoice as a fourth Document type (retroactive; see Revision History 1.14):** Revision History 1.11 (2026-08-07) recorded that Invoice generation — already fully implemented and tested (`POST /debts/{id}/invoices`, `INV-000001` Auto Numbering, viewing, download, history, storage accounting) — was retroactively approved into Version 1 scope as a fourth Document type alongside Receipt, Demand Letter, and Statement. That approval was never actually applied to this module's own text: the Functional Overview, Scope Boundary, Functional Requirements table, and Traceability Summary below still described exactly three types. FR-085 — Invoice Generation is added below to close that gap, following the same manual-generation pattern as FR-048 (Demand Letter) and FR-049 (Statement). FR-050 (Viewing), FR-051 (Downloading), and FR-052 (History) already applied generically to "a generated document" and needed no Main Flow change; only their reference-only "Related Database Entities" lines are extended to list Invoice alongside Receipt/DemandLetter/Statement, for consistency.
 
 ## 2. Functional Requirements
 
@@ -1941,6 +1953,7 @@ This module owns all document generation and document management in Version 1: D
 | FR-050 | The system shall allow an authorized user to view a generated document. | BR-019, BR-020, BR-021 |
 | FR-051 | The system shall allow an authorized user to download a generated document as a PDF. | BR-019, BR-020, BR-021 |
 | FR-052 | The system shall allow an authorized user to view the chronological history of a document. | BR-019, BR-020, BR-021, BR-030 |
+| FR-085 | The system shall allow an authorized user to generate an Invoice PDF against a Debt. | BR-020 (closest analog — no dedicated BR for Invoice exists in `02_Business_Requirements.md`; see Scope Note) |
 
 ---
 
@@ -2032,10 +2045,38 @@ This module owns all document generation and document management in Version 1: D
 
 ---
 
+### FR-085 — Invoice Generation
+
+**Preconditions**
+- The referenced Debt exists; user holds permission to generate documents against it.
+
+**Triggers**
+- User requests an Invoice against a Debt (typically from Debt Details).
+
+**Main Flow**
+1. User requests an Invoice for a specific Debt.
+2. System generates the Invoice PDF, populated with Debt, Customer, and Company branding details (Module 12 — System Settings). Unlike Demand Letter, there is only one Invoice template — no template selection step.
+3. System assigns the Invoice a unique Auto Numbering identifier (`INV-000001` format, per BR-036).
+4. System records an **Invoice Generated** event in the Audit Trail (User = requesting user, Timestamp, Action = Invoice Generated, Entity = Debt/Invoice).
+5. The generated Invoice is made available for viewing/download (FR-050, FR-051) and counted toward the tenant's storage usage, consistent with Receipt, Demand Letter, and Statement.
+
+**Alternate Flows**
+- None; generation is manual and user-initiated only — the implemented Business Rule is explicit that Invoices are never generated automatically (see Business Rule References).
+
+**Exceptions**
+- **E1 — User lacks permission to request Invoices:** Action is not available.
+
+**Business Rule References:** BR-020 (closest analog; see Scope Note above); BR-036 (Auto Numbering). Generation is manual-only by implemented Business Rule ("Invoice generation is a manual business action. Do NOT generate invoices automatically.") — not automatic like Receipt (FR-047), consistent with the same manual pattern already approved for Demand Letter (FR-048) and Statement (FR-049).
+**Related APIs (reference only):** `POST /debts/{id}/invoices` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Invoice, Debt — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-085.
+
+---
+
 ### FR-050 — Document Viewing
 
 **Preconditions**
-- A Document (Receipt, Demand Letter, or Statement) exists; user holds view permission.
+- A Document (Receipt, Demand Letter, Statement, or Invoice) exists; user holds view permission.
 
 **Triggers**
 - User selects a generated document from a Customer Profile, Debt Details, or Collection Case.
@@ -2053,7 +2094,7 @@ This module owns all document generation and document management in Version 1: D
 
 **Business Rule References:** Role-based access per `08_Security_and_RBAC.md`.
 **Related APIs (reference only):** `GET /documents/{id}` — see `07_API_Design.md`.
-**Related Database Entities (reference only):** Receipt, DemandLetter, Statement — see `06_Database_Design.md`.
+**Related Database Entities (reference only):** Receipt, DemandLetter, Statement, Invoice — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-050.
 
 ---
@@ -2078,7 +2119,7 @@ This module owns all document generation and document management in Version 1: D
 
 **Business Rule References:** Role-based access per `08_Security_and_RBAC.md`; watermarking and digital-signature policy deferred to `04_Business_Rules.md` (see Open Items).
 **Related APIs (reference only):** `GET /documents/{id}/download` — see `07_API_Design.md`.
-**Related Database Entities (reference only):** Receipt, DemandLetter, Statement — see `06_Database_Design.md`.
+**Related Database Entities (reference only):** Receipt, DemandLetter, Statement, Invoice — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-051.
 
 ---
@@ -2104,7 +2145,7 @@ This module owns all document generation and document management in Version 1: D
 
 **Business Rule References:** BRL-003 (attributable action); regeneration policy deferred to `04_Business_Rules.md` (see Open Items).
 **Related APIs (reference only):** `GET /documents/{id}/history`, `GET /debts/{id}/documents`, `GET /customers/{id}/documents` — see `07_API_Design.md`.
-**Related Database Entities (reference only):** Receipt, DemandLetter, Statement, AuditLog — see `06_Database_Design.md`.
+**Related Database Entities (reference only):** Receipt, DemandLetter, Statement, Invoice, AuditLog — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-052.
 
 ---
@@ -2119,6 +2160,7 @@ This module owns all document generation and document management in Version 1: D
 | FR-050 | BR-019, BR-020, BR-021 | Module 9 (Reporting — document metadata) |
 | FR-051 | BR-019, BR-020, BR-021 | — |
 | FR-052 | BR-019, BR-020, BR-021, BR-030 | Module 10 (Notifications — document-available events) |
+| FR-085 | BR-020 (closest analog — see Scope Note) | Module 3 (Debt Details — entry point) |
 
 ---
 
@@ -2134,12 +2176,13 @@ The following behaviors are not addressed in the approved Feature Freeze or Busi
 6. **Document template customization scope (FR-048):** Module 12 governs template management (BR-035), but the exact set of customizable fields/wording constraints is not specified.
 7. **Legal Notice wording:** Legal content for the Legal Notice template is not specified in the Feature Freeze and would typically require legal review outside SRS scope.
 8. **Statement of Account scope when requested from Debt Details (FR-049, A1):** Not specified whether the resulting Statement covers only that Debt or the Customer's full account.
+9. **No dedicated Business Requirement for Invoice (FR-085):** `02_Business_Requirements.md` has no BR naming Invoice specifically (unlike Receipt/BR-019, Demand Letter/BR-020, Statement/BR-021); FR-085 traces to BR-020 as the closest existing analog (a user-requested, manually generated billing document against a Debt). Formally adding a dedicated BR is outside this file's scope and is flagged here rather than silently invented.
 
 None of the above items change Version 1 scope; they are implementation-level decisions needed to make Module 8 fully unambiguous before `04_Business_Rules.md` is finalized.
 
 ---
 
-**End of Module 8. Approved.**
+**End of Module 8. Approved — amended to add FR-085 (Invoice Generation), a documentation-consistency correction, not a new scope decision (see Revision History 1.14).**
 
 ---
 
@@ -2161,6 +2204,7 @@ This module specifies read-only reporting and analytics over data owned by other
 - **Notifications (Module 10):** Not consumed by this module; Reporting never triggers notifications, reminders, recovery stage changes, or payment changes — it is passive.
 - **Ownership boundary:** This module owns no business entity. It never owns Customer, Debt, Payment, Collection Case, Document, or Credit Score — those remain owned by Modules 2, 3, 6, 7, 8, and 4 respectively.
 - **RBAC:** All reports respect Role-Based Access Control; a user can only report on data their role permits (`08_Security_and_RBAC.md`).
+- **Subscription plan gating (Module 13, Subscription & Storage Self-Service):** The Aging Analysis Report (FR-054), Standard Operational Reports (FR-055), and Report Export (FR-057) — and, by extension, Report Filtering (FR-056), which has no endpoint of its own — are available only to tenants whose subscription plan enables Analytics (`analytics_enabled`); see Module 13, FR-077 and `04_Business_Rules.md` BRL-090. The Dashboard Summary / Executive KPI Cards (FR-053) are explicitly **not** gated by this and remain available on every plan, including Free.
 
 **Scope note — five report categories:** Your message's Functional Scope lists Customer, Debt, Collection, Payment, and Credit Risk Reports as distinct items, but the approved Feature Freeze and Business Requirements only formally specify two report artifacts in detail — Aging Analysis (BR-023) and Executive KPI Cards (BR-024) — plus a general Export capability (BR-025) applying to "all major reports." No column-level or layout-level specification exists for five separate named reports beyond that. To avoid inventing unapproved report logic, this module consolidates the five categories into a single Functional Requirement (FR-055) that presents each entity's already-existing data read-only, rather than defining five distinct new report specifications. Flagging this consolidation rather than silently expanding scope.
 
@@ -2382,13 +2426,13 @@ This module specifies the in-app Notification Center and Calendar View: the pres
 ### FR-058 — In-App Notification Delivery
 
 **Preconditions**
-- A qualifying business event has occurred in another module: Credit Limit Reached (Module 4, FR-028), Payment Received (Module 6, FR-039), Document Available (Module 8), Collection Case Assignment (Module 7, FR-041), Reminder Sent (Module 5, FR-029), or Promise to Pay Due (Module 5, FR-031).
+- A qualifying business event has occurred in another module: Credit Limit Reached (Module 4, FR-028), Payment Received (Module 6, FR-039), Document Available (Module 8), Collection Case Assignment (Module 7, FR-041), Reminder Sent (Module 5, FR-029), Promise to Pay Due (Module 5, FR-031), or, per Module 13's Subscription & Storage Self-Service catch-up, a Subscription Change Request or Storage Add-on Request being approved or rejected (Module 13, FR-078/FR-081/FR-084).
 
 **Triggers**
 - The Reminder Engine receives a qualifying event from another module.
 
 **Main Flow**
-1. A qualifying event occurs in an owning module (Modules 4–8, as enumerated above).
+1. A qualifying event occurs in an owning module (Modules 4–8 and 13, as enumerated above).
 2. The owning module emits the event to the Reminder Engine.
 3. The Reminder Engine creates an in-app Notification entry, linked to the originating entity (Debt, Payment, Document, or Collection Case, as applicable).
 4. The Notification appears in the user's Notification Center (Customer Mobile App or Super Admin Web Panel, per role).
@@ -2401,7 +2445,7 @@ This module specifies the in-app Notification Center and Calendar View: the pres
 
 **Business Rule References:** Implements the Notification Center strictly as defined in `01_Project_Overview.md` (consumption-only; never generates, schedules, or originates events). See Scope Notes above regarding Email and SMS. Duplicate-event suppression (e.g., repeated Credit Limit Reached notifications) inherits the open question already flagged in Module 4, FR-028, and is not re-decided here.
 **Related APIs (reference only):** Internal event consumption; exposed via `GET /notifications` — see `07_API_Design.md`.
-**Related Database Entities (reference only):** Notification, with read-only references to Debt, Payment, Document, CollectionCase — see `06_Database_Design.md`.
+**Related Database Entities (reference only):** Notification, with read-only references to Debt, Payment, Document, CollectionCase, SubscriptionChangeRequest, StorageAddon — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-058.
 
 ---
@@ -2441,7 +2485,7 @@ This module specifies the in-app Notification Center and Calendar View: the pres
 - User applies a type filter within the Notification Center.
 
 **Main Flow**
-1. User selects a notification type filter (e.g., Credit Limit Reached, Payment Received, Document Available, Collection Assignment, Reminder Sent, Promise to Pay Due).
+1. User selects a notification type filter (e.g., Credit Limit Reached, Payment Received, Document Available, Collection Assignment, Reminder Sent, Promise to Pay Due, Subscription Request Update, Storage Request Update).
 2. System displays only Notifications matching the selected type(s).
 
 **Alternate Flows**
@@ -2511,7 +2555,7 @@ This module specifies the in-app Notification Center and Calendar View: the pres
 
 | FR | Business Requirement(s) | Related Modules |
 |---|---|---|
-| FR-058 | BR-007, BR-017 | Module 4 (Credit Limit Reached); Module 5 (Reminder Sent, Promise to Pay Due); Module 6 (Payment Received); Module 7 (Collection Assignment); Module 8 (Document Available) |
+| FR-058 | BR-007, BR-017 | Module 4 (Credit Limit Reached); Module 5 (Reminder Sent, Promise to Pay Due); Module 6 (Payment Received); Module 7 (Collection Assignment); Module 8 (Document Available); Module 13 (Subscription Request Update, Storage Request Update) |
 | FR-059 | BR-017 | — |
 | FR-060 | BR-017 | — |
 | FR-061 | BR-017 | Module 12 (Audit Trail — distinct, not duplicated) |
@@ -2917,7 +2961,9 @@ This module owns administrative configuration and system governance: user accoun
 
 ## Out of Scope (Explicitly Confirmed)
 
-Per your instruction, none of the following appear in this module, consistent with their absence from the approved Feature Freeze: Tenant Management, Subscription Management, Billing Configuration, Feature Flags, API Key Management, self-service Backup & Restore, Email Server Configuration, SMS Gateway Configuration, WhatsApp Provider Configuration, Third-party Integrations, Webhooks, Audit Configuration, Environment Management, Plugin Management, or License Management.
+Per your instruction, none of the following appear in this module, consistent with their absence from the approved Feature Freeze: Tenant Management, Feature Flags, API Key Management, self-service Backup & Restore, Email Server Configuration, SMS Gateway Configuration, WhatsApp Provider Configuration, Third-party Integrations, Webhooks, Audit Configuration, Environment Management, Plugin Management, or License Management.
+
+**Correction (Subscription & Storage Self-Service Catch-Up, Revision History 1.13):** this line previously also listed "Subscription Management" and "Billing Configuration" as fully absent from the system. That was true when written but is no longer accurate — a narrower, approved capability now exists and is documented in **Module 13 — Subscription & Storage Self-Service**: a Business Owner may view their tenant's current subscription/trial status and the fixed Plan Catalog, request a plan upgrade or downgrade with a payment reference, view their own Subscription Change Request history and cancel a pending request, view Storage usage/allowance, request a Storage Add-on with a payment reference, and cancel a pending Storage Add-on request; the Deendoon Platform Administrator reviews and approves/rejects these requests via the Deendoon Super Admin Web Panel (FR-084). What remains genuinely out of scope, confirmed against the backend, is full platform **Billing Configuration** in the broader sense your instruction meant: Business Owners cannot create, edit, price, or otherwise configure Subscription Plans themselves (the Plan Catalog is a fixed, platform-owned set — `04_Business_Rules.md` BRL-083); there is no Tenant Management surface, no billing-gateway/payment-processor integration (payment is a manually-entered reference number, verified off-system by the Deendoon Platform Administrator), and no self-service plan-pricing or billing-infrastructure configuration anywhere in the product. Tenant Management, Feature Flags, API Key Management, and the remaining items in the paragraph above are unaffected by this correction and remain fully out of scope.
 
 ## Open Items Identified During Module 12 Specification
 
@@ -2935,4 +2981,289 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ---
 
-**End of Module 12. Awaiting review and approval.** This is the final module (12 of 12) — once approved, `03_Functional_Requirements.md` is complete and the SRS proceeds to `04_Business_Rules.md`, not a "Module 13."
+**End of Module 12. Awaiting review and approval.** This was originally the final module (12 of 12) of the approved Feature Freeze. **Correction (Subscription & Storage Self-Service Catch-Up, Revision History 1.13):** a real, live-verified Subscription & Storage Self-Service capability was subsequently found implemented in both the backend and the Customer Mobile App but never documented — Module 13 (below) retroactively documents it, per Product Owner decision that the current implemented app + backend are the final product. This is the one exception to this document's earlier statement that Module 12 is final; it is not a re-opening of Modules 1–12's own approved content.
+
+---
+
+# Module 13 — Subscription & Storage Self-Service
+
+## 1. Functional Overview
+
+This module documents a real, implemented Business Owner self-service capability that was fully built (backend and Customer Mobile App) ahead of this SRS and is retroactively catalogued here per Product Owner decision (Subscription & Storage Self-Service Catch-Up, Revision History 1.13): a tenant's Business Owner can view their subscription/trial status and the fixed Plan Catalog, request a plan upgrade or downgrade with a payment reference, view and cancel their own pending Subscription Change Requests, view their Storage allowance/usage, request a Storage Add-on with a payment reference, and view and cancel their own pending Storage Add-on Requests. Approval is a manual, off-system-payment-verified workflow performed by the Deendoon Platform Administrator via the Deendoon Super Admin Web Panel — the same actor and interface already approved for Professional Collection Request review (Module 7) — introducing no new actor, role, or application interface. This module also documents the subscription-driven Customer read-only mechanism, since it is triggered by, and only meaningful in the context of, subscription plan limits.
+
+## Scope Boundary
+
+- **Customer Management (Module 2):** This module's Customer Limit enforcement (FR-083) determines whether a Customer record may be created or edited, but this module never edits Customer business data itself — ownership of the Customer entity remains with Module 2.
+- **Reporting & Analytics (Module 9):** This module's Analytics feature gate (`analytics_enabled`, BRL-090) determines whether the Reporting module is reachable at all for a given tenant, but this module never generates or consumes report data itself.
+- **Notifications (Module 10):** This module emits the two qualifying events consumed by Module 10 (Subscription Request Update, Storage Request Update, FR-084) but never renders or manages the Notification Center itself.
+- **Administration & Settings (Module 12):** This module's Plan Catalog and Storage Add-on packages are fixed, platform-owned data, not tenant-configurable System Preferences or Lookup & Reference Data — they are not reachable through Module 12's Administration surfaces. The Rejection Reasons a Deendoon Platform Administrator selects when rejecting a request (FR-084) are, however, ordinary tenant-scoped-to-`NULL` (platform-owned) Lookup & Reference Data rows, reusing Module 12's existing Reference Data mechanism (BC-003) rather than a new one.
+- **Ownership boundary:** This module owns the Subscription, Subscription Plan Catalog, Subscription Change Request, and Storage Add-on Request entities, and the `is_read_only` flag on Customer records (written here, read by Module 2's Policies).
+- **Payment processing:** Out of scope. Payment is a manually-entered free-text reference (e.g., a mobile-money transaction ID), verified off-system by the Deendoon Platform Administrator before approval — there is no payment-gateway integration, automatic charge, or billing-infrastructure configuration anywhere in this module.
+- **Plan/pricing configuration:** Out of scope. The Plan Catalog (five plans: Trial, Free, Small Business, Medium Business, Corporate) and the four Storage Add-on packages are fixed, seeded, platform-owned data (BRL-083, BRL-088) — no Business Owner-facing or Platform Administrator-facing capability exists anywhere in the backend to create, edit, or re-price a Plan or a Storage Add-on package.
+
+## 2. Functional Requirements
+
+| ID | Requirement | Traces To |
+|---|---|---|
+| FR-077 | The system shall allow an authorized Business Owner to view their tenant's current Subscription (plan, trial/subscription status, billing dates, Customer/Storage usage and limits, Analytics availability) and the fixed Plan Catalog. | BC-003, BR-034 |
+| FR-078 | The system shall allow an authorized Business Owner to request a Subscription plan upgrade or downgrade, submitting a payment reference for manual verification. | BR-034 |
+| FR-079 | The system shall allow an authorized Business Owner to view their tenant's Subscription Change Request history and cancel a still-pending request. | BR-034 |
+| FR-080 | The system shall allow an authorized Business Owner to view their tenant's Storage Overview: base plan allowance, active Storage Add-ons, effective (total) allowance, usage, and remaining allowance. | BR-034 |
+| FR-081 | The system shall allow an authorized Business Owner to request a Storage Add-on, submitting a payment reference for manual verification. | BR-034 |
+| FR-082 | The system shall allow an authorized Business Owner to view their tenant's Storage Add-on Request history and cancel a still-pending request. | BR-034 |
+| FR-083 | The system shall automatically restrict Customer creation and editing once a tenant reaches or exceeds its subscription plan's effective Customer Limit, without permanently deleting or hiding any Customer record. | BC-002, BR-034 |
+| FR-084 | The system shall allow the Deendoon Platform Administrator to review, approve, or reject a tenant's pending Subscription Change Request or Storage Add-on Request via the Deendoon Super Admin Web Panel. | BR-034 |
+
+---
+
+### FR-077 — View Subscription & Plan Catalog
+
+**Preconditions**
+- User is authenticated as a Business Owner (`admin`).
+
+**Triggers**
+- User opens the Subscription screen (Account menu).
+
+**Main Flow**
+1. User opens the Subscription screen.
+2. System displays the tenant's current Subscription: plan name and price, trial status (on trial / trial end date, if applicable), subscription status (`trialing`/`active`/`expired`), start/expiry dates, Customer usage vs. Customer Limit, Storage usage vs. effective Storage Limit, whether Analytics is enabled for the current plan, and whether the tenant is currently in the read-only state (FR-083).
+3. User may view the Plan Catalog: the five fixed, platform-owned plans (Trial, Free, Small Business, Medium Business, Corporate), each showing its monthly price, Customer Limit (or Unlimited), Storage allowance, and whether Analytics is included, plus whether the tenant is still eligible to start a Trial.
+4. From here, the user may proceed to request a plan change (FR-078) or view Storage (FR-080).
+
+**Alternate Flows**
+- **A1 — Tenant has no Subscription record at all (e.g., a data-availability gap, not a normal state):** The tenant is treated as being on the Free Plan for display purposes.
+
+**Exceptions**
+- **E1 — User lacks Business Owner permission:** Access is denied (RBAC, `08_Security_and_RBAC.md`; only the Business Owner role may access this screen — the Deendoon Platform Administrator uses the separate Approval Center, FR-084).
+
+**Business Rule References:** BRL-083 (fixed Plan Catalog); BRL-086 (Trial/subscription status resolution); BC-003 (configuration over hardcoding — the Plan Catalog itself is platform-configured, not tenant-configured).
+**Related APIs (reference only):** `GET /subscription`, `GET /subscription/plans` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** SubscriptionPlan, TenantSubscription — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-077.
+
+---
+
+### FR-078 — Request Subscription Plan Change
+
+**Preconditions**
+- User is authenticated as a Business Owner; the tenant has no other Subscription Change Request already pending.
+
+**Triggers**
+- User selects a different plan from the Plan Catalog and submits a change request.
+
+**Main Flow**
+1. User selects a target plan (upgrade or downgrade) from the Plan Catalog.
+2. User enters a payment reference (e.g., a mobile-money transaction ID) confirming they have paid for the plan off-system.
+3. System validates the request and creates a Subscription Change Request with status **Pending**, recording the requested plan, a server-derived snapshot of the tenant's current plan, and the payment reference.
+4. The request becomes visible in the tenant's own Subscription Change Request history (FR-079) and in the Deendoon Platform Administrator's Approval Center (FR-084) for review.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Action is not available.
+- **E2 — Payment reference or requested plan missing:** Submission is rejected with a field-level validation error.
+- **E3 — A Subscription Change Request is already pending for this tenant:** Rejected; the tenant must wait for the existing request to be approved, rejected, or cancelled (FR-079) before submitting another.
+- **E4 — Requested plan is the tenant's current plan:** Rejected — there is nothing for the Deendoon Platform Administrator to approve.
+
+**Business Rule References:** BRL-084 (one pending request per tenant); BRL-085 (approval, activation, and billing cycle).
+**Related APIs (reference only):** `POST /subscription/upgrade-request` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** SubscriptionChangeRequest, SubscriptionPlan, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-078.
+
+---
+
+### FR-079 — Subscription Change Request History & Cancellation
+
+**Preconditions**
+- User is authenticated as a Business Owner.
+
+**Triggers**
+- User views their Subscription Change Request history, or cancels a still-pending request.
+
+**Main Flow**
+1. User views their tenant's own Subscription Change Request history: requested plan, prior plan, status (Pending/Approved/Rejected/Cancelled), submission date, and — for a reviewed request — the Deendoon Platform Administrator's decision and, if rejected, the selected Rejection Reason(s).
+2. User may cancel a request that is still Pending.
+3. System sets the request's status to **Cancelled**; the Plan Catalog and current Subscription are unaffected.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — Cancellation attempted on a request that is no longer Pending (already Approved/Rejected/Cancelled):** Rejected.
+
+**Business Rule References:** BRL-091 (cancellation permitted only while Pending).
+**Related APIs (reference only):** `GET /subscription/change-requests`, `POST /subscription/change-requests/{id}/cancel` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** SubscriptionChangeRequest — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-079.
+
+---
+
+### FR-080 — Storage Overview
+
+**Preconditions**
+- User is authenticated as a Business Owner.
+
+**Triggers**
+- User opens the Storage screen (reached from the Subscription screen).
+
+**Main Flow**
+1. User opens the Storage screen.
+2. System displays: current Storage usage (bytes and GB), the tenant's effective Storage Limit (current plan's base allowance plus every currently-active Storage Add-on's allowance), remaining allowance, and the list of the tenant's purchased Storage Add-ons (package, size, price, status).
+3. From here, the user may request a new Storage Add-on (FR-081).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+
+**Business Rule References:** BRL-088 (Storage Add-on packages, pricing, and accumulation).
+**Related APIs (reference only):** `GET /subscription/storage` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** StorageAddon, SubscriptionPlan — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-080.
+
+---
+
+### FR-081 — Request Storage Add-on
+
+**Preconditions**
+- User is authenticated as a Business Owner; the tenant has no other Storage Add-on Request already pending.
+
+**Triggers**
+- User selects a Storage Add-on package and submits a request.
+
+**Main Flow**
+1. User selects one of the four fixed Storage Add-on packages (by size).
+2. User enters a payment reference confirming they have paid for the add-on off-system.
+3. System validates the request and creates a Storage Add-on Request with status **Pending**, recording the selected package's size and price (server-derived, never client-supplied) and the payment reference.
+4. The request becomes visible in the tenant's own Storage Add-on Request history (FR-082) and in the Deendoon Platform Administrator's Approval Center (FR-084) for review.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Action is not available.
+- **E2 — Payment reference or package missing/invalid:** Submission is rejected with a field-level validation error.
+- **E3 — A Storage Add-on Request is already pending for this tenant:** Rejected; the tenant must wait for the existing request to be approved, rejected, or cancelled (FR-082) before submitting another.
+
+**Business Rule References:** BRL-084 (one pending request per tenant); BRL-088 (packages/pricing); BRL-089 (approval and billing cycle).
+**Related APIs (reference only):** `POST /subscription/storage-addon-request` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** StorageAddon, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-081.
+
+---
+
+### FR-082 — Storage Add-on Request History & Cancellation
+
+**Preconditions**
+- User is authenticated as a Business Owner.
+
+**Triggers**
+- User views their Storage Add-on Request history, or cancels a still-pending request.
+
+**Main Flow**
+1. User views their tenant's own Storage Add-on Request history: package, size, price, status, submission date, and — for a reviewed request — the decision and, if rejected, the selected Rejection Reason(s).
+2. User may cancel a request that is still Pending.
+3. System sets the request's status to **Cancelled**.
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — User lacks permission:** Access is denied.
+- **E2 — Cancellation attempted on a request that is no longer Pending:** Rejected.
+
+**Business Rule References:** BRL-091 (cancellation permitted only while Pending).
+**Related APIs (reference only):** `GET /subscription/storage` (list of purchased add-ons, includes Pending), `POST /subscription/storage-addon-requests/{id}/cancel` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** StorageAddon — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-082.
+
+---
+
+### FR-083 — Subscription-Driven Customer Read-Only
+
+**Preconditions**
+- A tenant's effective Customer Limit is determined by its current subscription plan and subscription status.
+
+**Triggers**
+- A Customer is created, archived, or restored; a Trial expires; a paid Subscription expires; or a Subscription Change Request is approved — any event that can change a tenant's Customer count or effective Customer Limit.
+
+**Main Flow**
+1. System recomputes, from the tenant's current effective Customer Limit and its Customers ordered by creation date (oldest first), which Customers remain editable (the oldest N, where N is the effective limit) and which become read-only (every Customer beyond that).
+2. Customers newly beyond the limit are marked read-only; Customers newly within the limit (e.g., after an upgrade, or after an over-limit Customer is archived) are restored to editable. A plan with no Customer Limit (Corporate, Trial) marks no Customer read-only.
+3. A read-only Customer cannot be edited, archived, or have documents generated against it, but remains fully viewable, remains searchable, and can still be restored if archived.
+4. Attempting to create a new Customer while the tenant is already at or over its effective Customer Limit is blocked outright (Module 2, FR-007, Exception E3) — this is a distinct, stricter check than "existing Customers become read-only," since it prevents the tenant from ever exceeding the limit in the first place.
+
+**Alternate Flows**
+- **A1 — Tenant's Subscription record cannot be resolved at all (not even the Free Plan fallback, e.g., an unseeded environment):** The effective Customer Limit is treated as **0** (fail closed, Product Owner Decision) — every Customer becomes read-only and no new Customer may be created, rather than being silently treated as unlimited.
+
+**Exceptions**
+- None beyond the blocking behavior itself, which is not an error state — it is the intended, recorded outcome of exceeding a plan's limit.
+
+**Business Rule References:** BRL-087 (read-only mechanics, triggers, and scope).
+**Related APIs (reference only):** Enforced within `POST /customers`, `PUT /customers/{id}`, `POST /customers/{id}/archive`, and document-generation endpoints (Module 2, Module 8) — no dedicated endpoint of its own; surfaced as `read_only`/`customer_usage`/`customer_limit` on `GET /subscription` (FR-077) — see `07_API_Design.md`.
+**Related Database Entities (reference only):** Customer (`is_read_only`), TenantSubscription, SubscriptionPlan, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-083.
+
+---
+
+### FR-084 — Platform Administrator Review of Subscription & Storage Requests
+
+**Preconditions**
+- A Subscription Change Request or Storage Add-on Request exists.
+
+**Triggers**
+- The Deendoon Platform Administrator reviews a pending request via the Deendoon Super Admin Web Panel.
+
+**Main Flow**
+1. The Deendoon Platform Administrator opens the Subscription/Storage Approval Center within the Deendoon Super Admin Web Panel — the same actor and interface already approved for Professional Collection Request review (Module 7); no new actor, role, or interface is introduced.
+2. The Administrator views every tenant's pending (and, optionally filtered, historical) Subscription Change Requests and Storage Add-on Requests.
+3. The Administrator verifies the submitted payment reference off-system, then approves or rejects the request.
+4. **On approval:** the requested Subscription plan (or Storage Add-on) is activated — for a Subscription Change Request, the tenant's Subscription is updated to the new plan with status Active and a new billing cycle (BRL-085); for a Storage Add-on, its status becomes Active with its own billing cycle (BRL-089). Approving a plan change also triggers an immediate recalculation of the tenant's Customer read-only state (FR-083), since the effective Customer Limit may have changed.
+5. **On rejection:** the Administrator selects one or more predefined Rejection Reasons (platform-owned Reference Data, Module 12) and may add optional free-text notes; the request's status becomes Rejected and nothing is activated.
+6. System records a status-change event in the Audit Trail and notifies the tenant's Business Owner (Module 10, FR-058 — Subscription Request Update / Storage Request Update).
+
+**Alternate Flows**
+- None.
+
+**Exceptions**
+- **E1 — Requesting user is not the Deendoon Platform Administrator:** Action is not available.
+- **E2 — Request is no longer Pending (already Approved/Rejected/Cancelled by the time it's actioned):** Rejected.
+- **E3 — Approving a Subscription Change Request for a plan the tenant is already subscribed to (the tenant's plan changed between submission and review):** Rejected — re-checked against the tenant's *current* plan at approval time, not the request's original snapshot.
+- **E4 — Rejecting without selecting at least one Rejection Reason:** Rejected with a validation error.
+
+**Business Rule References:** BRL-085 (Subscription approval/activation); BRL-089 (Storage Add-on approval/activation); BRL-091 (Rejection Reasons).
+**Related APIs (reference only):** `GET /admin/subscription/change-requests`, `GET /admin/subscription/rejection-reasons`, `POST /admin/subscription/change-requests/{id}/approve`, `POST /admin/subscription/change-requests/{id}/reject`, `GET /admin/storage-addons`, `GET /admin/storage-addons/rejection-reasons`, `POST /admin/storage-addons/{id}/approve`, `POST /admin/storage-addons/{id}/reject` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** SubscriptionChangeRequest, SubscriptionChangeRequestRejectionReason, StorageAddon, StorageAddonRejectionReason, ReferenceData, AuditLog, Notification — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-084.
+
+---
+
+## Module 13 — Traceability Summary
+
+| FR | Business Requirement(s) | Related Modules |
+|---|---|---|
+| FR-077 | BC-003, BR-034 | Module 12 (Reference Data pattern reused for Rejection Reasons, not the Plan Catalog itself) |
+| FR-078 | BR-034 | Module 10 (Notifications — status-change visibility, FR-058) |
+| FR-079 | BR-034 | — |
+| FR-080 | BR-034 | — |
+| FR-081 | BR-034 | Module 10 (Notifications — status-change visibility, FR-058) |
+| FR-082 | BR-034 | — |
+| FR-083 | BC-002, BR-034 | Module 2 (Customer Management — FR-007 Exception E3, FR-009/FR-010 read-only block) |
+| FR-084 | BR-034 | Module 7 (shared Deendoon Super Admin Web Panel actor/interface, not a new one); Module 10 (Notifications); Module 12 (Reference Data — Rejection Reasons) |
+
+---
+
+## Open Items Identified During Module 13 Specification
+
+The following behaviors are genuinely unresolved in the implemented backend, confirmed by reading the code rather than assumed. None are invented here; all are deferred to `04_Business_Rules.md`:
+
+1. **Storage Add-on expiration mechanism (FR-081, FR-082):** An approved Storage Add-on's approved 1-month billing cycle sets an `expires_at` date, but no scheduled or manual process (unlike `subscriptions:expire` for the Subscription itself) ever transitions an Add-on past that date into an `expired` status — it remains counted in the tenant's effective Storage Limit indefinitely once approved. Confirmed by the absence of any such command in the backend. See `04_Business_Rules.md` DD-047.
+
+None of the above items change Version 1 scope; they are implementation-level facts surfaced for the Product Owner's awareness, consistent with how every other module in this document handles a genuine gap.
+
+---
+
+**End of Module 13.** Retroactively documents a real, implemented, live-verified capability per Product Owner decision (Subscription & Storage Self-Service Catch-Up, Revision History 1.13) — the current implemented app + backend are the final product. This is now the final module (13 of 13).

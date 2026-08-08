@@ -1,16 +1,16 @@
-# 06. Database Design
+﻿# 06. Database Design
 
 | Field | Value |
 |---|---|
 | **Document ID** | SRS-DEENDOON-06 |
 | **Document Title** | Database Design |
-| **Version** | 1.6 |
-| **Status** | Reopened — Section 6.1 (`roles`) amended by the RBAC Architecture Amendment |
+| **Version** | 1.7 |
+| **Status** | Reopened — Section 6.1 (`roles`) amended by the RBAC Architecture Amendment; Section 6.10 added by the Subscription & Storage Self-Service Catch-Up |
 | **State** | Frozen (pending re-freeze) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-31 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval**, see 03's Revision History 1.5) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.3) |
+| **Last Updated** | 2026-08-08 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.13 — **Module 12 still awaiting its original approval**, see 03's Revision History 1.5) · `04_Business_Rules.md` (Reopened v1.9) · `05_UI_UX_Specification.md` (Reopened, v1.7) |
 
 ---
 
@@ -25,6 +25,7 @@
 | 1.4 | 2026-07-31 | **RBAC Architecture Amendment (Product Owner Decision).** Section 6.1's `roles` table is amended from seven approved rows (six tenant-scoped + one platform) to exactly **two**: Business Owner (`admin`) and Platform Administrator (`deendoon_platform_administrator`) — see `08_Security_and_RBAC.md` v1.2 §5 for the full role-model change and rationale. `is_tenant_scoped` remains `FALSE` only for the Platform Administrator row. This entry does not reconcile the pre-existing, separate gap between this section's dedicated `roles`/`user_roles` table design and the actual running implementation (spatie/laravel-permission's own tables) — that reconciliation, if pursued, is a distinct decision outside this amendment's scope; see `deendoon/docs/Role_Model_Audit.md` §1.7/§2.2 for the documented gap. | Claude |
 | 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02`, `03`, `04`, and `05` (previously stale). No table, column, relationship, constraint, or approved schema content changed — including `customers.risk_level`, whose database representation is separately tracked as a deferred Database Architecture Decision (`deendoon/docs/Known_Backend_Issues.md` §3.9), explicitly out of scope for this correction. | Claude |
 | 1.6 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4), `03` (v1.10), `04` (v1.6), and `05` (Reopened, v1.3) following those documents' own updates. No table, column, or schema content changed. | Claude |
+| 1.7 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Added **Section 6.10 — Subscription & Storage Self-Service**: `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons` — every column, constraint, and index transcribed directly from the implemented migrations, not designed fresh. Amended Section 6.2's `customers` table to add the `is_read_only` column (implemented Phase 3.1, previously undocumented here). Added a "Subscription & Storage" group to Section 5 and six new entities to the Section 4 ERD. Added the two new partial unique indexes (`subscription_change_requests_one_pending_per_tenant`, `storage_addons_one_pending_per_tenant`) to Section 8's Business Rule Enforcement table. Added six new rows to Section 7's Relationship Definitions and Section 12's Traceability Matrix. Section 13's Decisions Required gains a note cross-referencing the confirmed Storage Add-on expiration gap already recorded as DD-047 in `04_Business_Rules.md`. Scope Baseline updated to cite `03` v1.13, `04` v1.9, `05` v1.7. No existing table, column, relationship, or constraint was altered. | Claude |
 
 ---
 
@@ -154,6 +155,14 @@ erDiagram
     USERS ||--o{ NOTIFICATIONS : receives
 
     IMPORT_BATCHES ||--o{ IMPORT_ROWS : contains
+
+    SUBSCRIPTION_PLANS ||--o{ TENANT_SUBSCRIPTIONS : "subscribed via"
+    TENANTS ||--|| TENANT_SUBSCRIPTIONS : subscribes
+    SUBSCRIPTION_PLANS ||--o{ SUBSCRIPTION_CHANGE_REQUESTS : "requested plan"
+    TENANTS ||--o{ SUBSCRIPTION_CHANGE_REQUESTS : submits
+    SUBSCRIPTION_CHANGE_REQUESTS ||--o{ SUBSCRIPTION_CHANGE_REQUEST_REJECTION_REASONS : "rejected with"
+    TENANTS ||--o{ STORAGE_ADDONS : purchases
+    STORAGE_ADDONS ||--o{ STORAGE_ADDON_REJECTION_REASONS : "rejected with"
 ```
 
 This diagram shows cardinality only; every column, constraint, and index is defined in Section 6.
@@ -174,6 +183,7 @@ Tables are grouped below to mirror the twelve approved Functional Requirements m
 | Documents | `receipts`, `demand_letters`, `statements`, `document_events` | 8 |
 | Notifications | `notifications` | 10 |
 | Administration | `system_settings`, `document_templates`, `reference_data` | 12 |
+| Subscription & Storage Self-Service | `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons` | 13 |
 | Audit | `audit_log` | Cross-cutting (BR-030) |
 
 Reporting (Module 9) and Search (Module 11) introduce **no new tables** — per their own Scope Boundaries in `03_Functional_Requirements.md`, both are strictly read-only consumers of the tables above.
@@ -273,6 +283,7 @@ Seeded with exactly two rows at deployment; no FR provides a create/edit/delete 
 | `risk_level` | `VARCHAR(50)` | NULLABLE | NULL | Value set pending DD-010. Application-validated against `reference_data` (category `risk_level`) once configured — **not** a foreign key; see Section 6.8. |
 | `credit_score` | `SMALLINT` | NULLABLE, `CHECK (credit_score BETWEEN 0 AND 100)` | NULL | Baseline pending DD-008. PostgreSQL has no unsigned integer type; the `CHECK` bound is the sole non-negativity guarantee, which is sufficient here. |
 | `credit_score_band` | `VARCHAR(20)` | NULLABLE, `CHECK (credit_score_band IN ('excellent','good','fair','poor'))` | NULL | Labels approved; numeric thresholds pending DD-009 |
+| `is_read_only` | `BOOLEAN` | NOT NULL | `FALSE` | *(added — Subscription & Storage Self-Service, Section 6.10)* Fully recomputed on every trigger, never incremented/decremented (`04_Business_Rules.md` BRL-087); no dedicated index — this column's query pattern (bulk `UPDATE ... WHERE tenant_id = ?` during recalculation) doesn't benefit from one beyond the existing `(tenant_id, ...)` indexes already present below |
 | `created_at` / `updated_at` / `archived_at` | `TIMESTAMPTZ` | `archived_at` NULLABLE | — | BC-002 |
 
 **Foreign Keys:** `tenant_id` → `tenants.id`. **Indexes:** `(tenant_id, phone)`; `(tenant_id, name)`; `(tenant_id, customer_status)`; `(tenant_id, archived_at)`. **RLS (recommended, pending Product Owner approval):** if adopted, `tenant_id = current_setting('app.current_tenant_id', true)::char(26)`, with **no** platform-level bypass on this table — the Deendoon Super Admin does not have general Customer visibility; only what BR-042 approves via Professional Collection Requests, and `customers` isn't even reachable through that chain (only `debts` and `tenants` are — see Section 2).
@@ -543,6 +554,113 @@ All three are **immutable after generation** (BRL-057) — no `UPDATE` path; reg
 
 ---
 
+### 6.10 Subscription & Storage Self-Service
+
+*(Added — Subscription & Storage Self-Service Catch-Up, Revision History 1.7. A real, live-verified capability found fully implemented in both the backend and the Customer Mobile App, retroactively documented per Product Owner decision that the current implemented app + backend are the final product. Every column, constraint, and index below is transcribed directly from the implemented migrations — none is designed fresh.)*
+
+#### `subscription_plans`
+**Purpose:** The fixed, platform-owned Plan Catalog (Module 13, FR-077). A global reference/catalog table — no `tenant_id` — since the five plans are shared platform-wide, not per-tenant data.
+
+| Column | Type | Constraints | Default | Notes |
+|---|---|---|---|---|
+| `id` | `CHAR(26)` | PK | — | |
+| `name` | `VARCHAR(50)` | NOT NULL, UNIQUE | — | `Trial`/`Free`/`Small Business`/`Medium Business`/`Corporate` (`04_Business_Rules.md` BRL-083) |
+| `customer_limit` | `INTEGER` | NULLABLE | NULL | NULL represents "Unlimited" (Trial, Corporate) — never a magic sentinel value |
+| `analytics_enabled` | `BOOLEAN` | NOT NULL | `TRUE` | Gates the Reporting module (BRL-090); `FALSE` only for Free |
+| `storage_limit` | `INTEGER` | NOT NULL | — | GB; never null at the schema level, unlike `customer_limit` |
+| `monthly_price` | `NUMERIC(8,2)` | NOT NULL | — | `0` for Trial/Free |
+| `active` | `BOOLEAN` | NOT NULL | `TRUE` | Only active plans are returned by the Plan Catalog endpoint |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | |
+
+**No Foreign Keys.** **Indexes:** `(name)` unique. **RLS:** Not applicable — this is platform-owned, non-tenant data readable by every authenticated tenant session; no tenant-scoping policy is meaningful here.
+
+#### `tenant_subscriptions`
+**Purpose:** One row per tenant — the tenant's current Subscription state (Module 13, FR-077, FR-084).
+
+| Column | Type | Constraints | Default | Notes |
+|---|---|---|---|---|
+| `id` | `CHAR(26)` | PK | — | |
+| `tenant_id` | `CHAR(26)` | FK → `tenants.id`, NOT NULL, UNIQUE | — | 1:1 with tenant, mirroring `system_settings` |
+| `plan_id` | `CHAR(26)` | FK → `subscription_plans.id`, NOT NULL | — | |
+| `status` | `VARCHAR(20)` | NOT NULL, `CHECK (status IN ('trialing','active','expired'))` | `'trialing'` | BRL-086 — only these three values are approved; no additional status is invented |
+| `started_at` | `TIMESTAMPTZ` | NOT NULL | — | |
+| `expires_at` | `TIMESTAMPTZ` | NULLABLE | NULL | NULL for the Free Plan (never expires) and for an active Trial (uses `trial_ends_at` instead); set to approval + 1 month for a paid plan (BRL-085) |
+| `trial_started_at` / `trial_ends_at` | `TIMESTAMPTZ` | NULLABLE | NULL | Set once at Trial provisioning (registration + 7 days); left untouched by the Trial→Free transition — historical record, not erased (BRL-086) |
+| `approved_by` | `CHAR(26)` | NULLABLE, no FK | NULL | `users.id` is a bigint auto-increment, not a ULID — the same pre-existing type mismatch already documented and accepted for `professional_collection_requests.submitted_by_user_id`/`.actioned_by_user_id`; not fixed here |
+| `approved_at` | `TIMESTAMPTZ` | NULLABLE | NULL | |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | |
+
+**Foreign Keys:** `tenant_id`, `plan_id`, each explicitly indexed. **Indexes:** `(tenant_id)` unique; `(plan_id)`; `(status)`. **RLS (recommended, pending Product Owner approval):** if adopted, tenant-scoped — no Deendoon Super Admin bypass is needed on this table, since the Platform Administrator reviews *requests* (below), not the tenant's live Subscription row directly.
+
+#### `subscription_change_requests`
+**Purpose:** The Manual Payment Workflow for plan upgrades/downgrades (Module 13, FR-078, FR-079, FR-084): Request → Pending → Administrator Review → Approve/Reject/Cancel → Activate.
+
+| Column | Type | Constraints | Default | Notes |
+|---|---|---|---|---|
+| `id` | `CHAR(26)` | PK | — | |
+| `tenant_id` | `CHAR(26)` | FK → `tenants.id`, NOT NULL | — | Identifies the *submitting* tenant; **the Deendoon Platform Administrator's queries against this table are an approved exception to tenant filtering** (Section 2), the same pattern already established for `professional_collection_requests` |
+| `requested_plan_id` | `CHAR(26)` | FK → `subscription_plans.id`, NOT NULL | — | |
+| `current_plan_id` | `CHAR(26)` | FK → `subscription_plans.id`, NULLABLE | NULL | Server-derived snapshot at submission time, never client-supplied; re-checked against the tenant's *current* plan at approval time, not trusted as still-accurate (BRL-085, Decision 26) |
+| `payment_reference` | `VARCHAR(100)` | NULLABLE (required at the application/FormRequest layer) | NULL | |
+| `status` | `VARCHAR(20)` | NOT NULL, `CHECK (status IN ('pending','approved','rejected','cancelled'))` | `'pending'` | `'cancelled'` added after `'pending'/'approved'/'rejected'` (BRL-091) — same additive CHECK-constraint expansion pattern used throughout this schema |
+| `requested_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | |
+| `reviewed_by` | `CHAR(26)` | NULLABLE, no FK | NULL | Same `users.id` bigint/ULID mismatch as `tenant_subscriptions.approved_by` |
+| `reviewed_at` | `TIMESTAMPTZ` | NULLABLE | NULL | |
+| `rejection_reason` | `TEXT` | NULLABLE | NULL | Optional free-text notes accompanying the predefined Rejection Reasons (below) |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | |
+
+**Foreign Keys:** `tenant_id`, `requested_plan_id`, `current_plan_id`, each explicitly indexed. **Indexes:** `(tenant_id, status)`; `(status)` (Platform Administrator's cross-tenant Approval Center); **`CREATE UNIQUE INDEX subscription_change_requests_one_pending_per_tenant ON subscription_change_requests (tenant_id) WHERE status = 'pending'`** — a native PostgreSQL partial unique index enforcing BRL-084 (at most one Pending request per tenant) directly at the database level, the same pattern already established for `professional_collection_requests`/`collection_cases`. **RLS (recommended, pending Product Owner approval):** if adopted, `tenant_id` match for the owning tenant, **or** flag-only bypass for the Deendoon Platform Administrator — this table's rows already *are* the full approved review relationship (no narrower `EXISTS` scoping is meaningful), the same reasoning already applied to `professional_collection_requests`.
+
+#### `subscription_change_request_rejection_reasons`
+**Purpose:** The predefined, multi-select Rejection Reasons a Deendoon Platform Administrator selects when rejecting a Subscription Change Request (Module 13, FR-084; BRL-091) — one row per selected reason, mirroring `professional_collection_request_reasons`'s "store the selected value_label string" convention.
+
+| Column | Type | Constraints | Default | Notes |
+|---|---|---|---|---|
+| `id` | `CHAR(26)` | PK | — | |
+| `subscription_change_request_id` | `CHAR(26)` | FK → `subscription_change_requests.id`, NOT NULL | — | |
+| `reason_label` | `VARCHAR(100)` | NOT NULL | — | Sourced from `reference_data` (category `subscription_rejection_reason`, `tenant_id IS NULL` — platform-owned), never a hardcoded list |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | No `updated_at` — immutable once recorded, same convention as `request_messages` |
+
+**Foreign Keys:** `subscription_change_request_id`, explicitly indexed. **Indexes:** `(subscription_change_request_id, reason_label)` unique — the same reason cannot be recorded twice against one request.
+
+#### `storage_addons`
+**Purpose:** Storage Add-on purchases, billed and approved separately from the Subscription plan itself (Module 13, FR-080, FR-081, FR-082, FR-084) — same manual-payment request/approve/reject/activate pattern as `subscription_change_requests`.
+
+| Column | Type | Constraints | Default | Notes |
+|---|---|---|---|---|
+| `id` | `CHAR(26)` | PK | — | |
+| `tenant_id` | `CHAR(26)` | FK → `tenants.id`, NOT NULL | — | Same Platform-Administrator cross-tenant review exception as `subscription_change_requests` |
+| `storage_package` | `VARCHAR(20)` | NOT NULL, `CHECK (storage_package IN ('10gb','25gb','50gb','100gb'))` | — | The four fixed, platform-owned packages (BRL-088) |
+| `storage_size` | `INTEGER` | NOT NULL | — | GB; server-derived from `storage_package`, never client-supplied |
+| `monthly_price` | `NUMERIC(8,2)` | NOT NULL | — | $2.00 / $4.00 / $7.00 / $12.00 respectively (BRL-088), server-derived |
+| `payment_reference` | `VARCHAR(100)` | NULLABLE (required at the application/FormRequest layer) | NULL | Added after the initial table (Phase 3.3 correction) — column stays nullable, matching `subscription_change_requests.payment_reference`'s type exactly; required-ness enforced at the application layer |
+| `started_at` / `expires_at` | `TIMESTAMPTZ` | NULLABLE | NULL | Set on approval: `started_at` = approval, `expires_at` = approval + 1 month (BRL-089) |
+| `approved_by` | `CHAR(26)` | NULLABLE, no FK | NULL | Same `users.id` bigint/ULID mismatch as elsewhere in this section |
+| `approved_at` | `TIMESTAMPTZ` | NULLABLE | NULL | |
+| `status` | `VARCHAR(20)` | NOT NULL, `CHECK (status IN ('pending','active','expired','rejected','cancelled'))` | `'pending'` | `'cancelled'` added after the original `'pending'/'active'/'expired'/'rejected'` set (BRL-091). **`'expired'` is schema-allowed but not currently reachable** — no code path writes it (BRL-089, `04_Business_Rules.md` DD-047) |
+| `rejection_reason` | `TEXT` | NULLABLE | NULL | Added to bring this table to parity with `subscription_change_requests`, which had it from the start |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | |
+
+**Foreign Keys:** `tenant_id`, explicitly indexed. **Indexes:** `(tenant_id, status)`; **`CREATE UNIQUE INDEX storage_addons_one_pending_per_tenant ON storage_addons (tenant_id) WHERE status = 'pending'`** — partial unique index enforcing BRL-084, the storage-side counterpart to `subscription_change_requests`' identical index. **No** "at most one active Add-on" constraint exists (deliberate — BRL-088 approves accumulating multiple Active Add-ons). **RLS (recommended, pending Product Owner approval):** if adopted, same tenant-match-or-Platform-Administrator-flag-bypass shape as `subscription_change_requests`.
+
+#### `storage_addon_rejection_reasons`
+**Purpose:** The predefined, multi-select Rejection Reasons a Deendoon Platform Administrator selects when rejecting a Storage Add-on Request (Module 13, FR-084; BRL-091) — identical shape and convention to `subscription_change_request_rejection_reasons`.
+
+| Column | Type | Constraints | Default | Notes |
+|---|---|---|---|---|
+| `id` | `CHAR(26)` | PK | — | |
+| `storage_addon_id` | `CHAR(26)` | FK → `storage_addons.id`, NOT NULL | — | |
+| `reason_label` | `VARCHAR(100)` | NOT NULL | — | Sourced from `reference_data` (category `storage_rejection_reason`, `tenant_id IS NULL`) |
+| `created_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | Immutable, no `updated_at` |
+
+**Foreign Keys:** `storage_addon_id`, explicitly indexed. **Indexes:** `(storage_addon_id, reason_label)` unique.
+
+**Not modeled:** any billing-gateway, payment-processor, or automated-charge table. Payment is a manually-entered free-text reference verified off-system by the Deendoon Platform Administrator (`03_Functional_Requirements.md` Module 13 Scope Boundary) — there is no payment-processing schema anywhere in this section, deliberately.
+
+**Reference Data note:** `subscription_rejection_reason` and `storage_rejection_reason` are two more categories added to the `reference_data.category` CHECK constraint (Section 6.8) by the implemented migrations, alongside `transfer_reason`/`requested_service` (Professional Collection Requests) — Section 6.8's own table definition predates all four of these additions and is not amended here; this is a pre-existing documentation gap in that subsection, not introduced by this revision, and is out of scope for this catch-up to close.
+
+---
+
 ## 7. Relationship Definitions
 
 | Relationship | Cardinality | Enforcement |
@@ -564,6 +682,13 @@ All three are **immutable after generation** (BRL-057) — no `UPDATE` path; reg
 | Tenant → Document Templates | 1:4 (fixed) | `document_templates.tenant_id` FK + unique `(tenant_id, template_type)` |
 | Tenant → Reference Data | 1:N | `reference_data.tenant_id` FK |
 | User → Audit Log | 1:N | `audit_log.user_id` FK (nullable for system actions) |
+| Subscription Plan → Tenant Subscription | 1:N | `tenant_subscriptions.plan_id` FK *(added, Section 6.10)* |
+| Tenant → Tenant Subscription | 1:1 | `tenant_subscriptions.tenant_id` FK unique *(added)* |
+| Subscription Plan → Subscription Change Request | 1:N (requested), 1:N (current, snapshot) | `subscription_change_requests.requested_plan_id` / `.current_plan_id` FK *(added)* |
+| Tenant → Subscription Change Request | 1:0..1 pending at a time | `subscription_change_requests.tenant_id` FK + partial-unique index (BRL-084) *(added)* |
+| Subscription Change Request → Rejection Reasons | 1:N | `subscription_change_request_rejection_reasons.subscription_change_request_id` FK *(added)* |
+| Tenant → Storage Add-on | 1:N (multiple Active allowed), 1:0..1 pending at a time | `storage_addons.tenant_id` FK + partial-unique index on Pending only (BRL-084, BRL-088) *(added)* |
+| Storage Add-on → Rejection Reasons | 1:N | `storage_addon_rejection_reasons.storage_addon_id` FK *(added)* |
 
 ---
 
@@ -575,6 +700,7 @@ All three are **immutable after generation** (BRL-057) — no `UPDATE` path; reg
 | BRL-004 / BC-002 — Never hard-delete | `archived_at` columns; no `DELETE` grant on tenant-owned tables at the application database role level. |
 | BRL-048 — At most one open Collection Case per Debt | PostgreSQL **partial unique index** on `collection_cases(debt_id) WHERE case_status = 'open'` — natively supported and directly expressive in PostgreSQL. |
 | BRL-078 — At most one active Professional Collection Request per Case | Partial unique index on `professional_collection_requests(collection_case_id) WHERE status NOT IN ('recovered','closed')`. |
+| BRL-084 — At most one Pending Subscription Change Request / Storage Add-on Request per tenant *(added)* | Partial unique indexes `subscription_change_requests_one_pending_per_tenant` and `storage_addons_one_pending_per_tenant`, each `ON (tenant_id) WHERE status = 'pending'` — same partial-unique-index pattern as BRL-048/BRL-078 above. |
 | BRL-076 / BR-030 — Audit Trail is immutable | No `UPDATE`/`DELETE` grant on `audit_log` for the application's database role; `INSERT`-only. |
 | BRL-080 — Request messages are immutable | No `updated_at`/`deleted_at` columns on `request_messages`; no `UPDATE`/`DELETE` grant. |
 | BRL-057 — Documents are immutable after generation | No `UPDATE` grant on `receipts`, `demand_letters`, `statements` for the application's database role, enforced identically to `audit_log`'s immutability grant above — PostgreSQL's `REVOKE UPDATE` at the role level applies cleanly here (unlike a MySQL-specific limitation this document previously cited, PostgreSQL's privilege system supports exactly the column/table-level grant restriction this rule needs natively). |
@@ -645,8 +771,11 @@ All three are **immutable after generation** (BRL-057) — no `UPDATE` path; reg
 | `system_settings`, `document_templates` | FR-069 | BRL-074 |
 | `reference_data` | FR-070 | BRL-075 |
 | `audit_log` | FR-071 | BRL-003, BRL-076 |
+| `subscription_plans`, `tenant_subscriptions` *(added)* | FR-077, FR-084 | BRL-083, BRL-085, BRL-086, BRL-090 |
+| `subscription_change_requests`, `subscription_change_request_rejection_reasons` *(added)* | FR-078, FR-079, FR-084 | BRL-084, BRL-085, BRL-091 |
+| `storage_addons`, `storage_addon_rejection_reasons` *(added)* | FR-080, FR-081, FR-082, FR-084 | BRL-084, BRL-088, BRL-089, BRL-091 |
 
-Reporting (Module 9, FR-053–057) and Search (Module 11, FR-063–065) are covered by the read-only indexes above, not by dedicated tables (Section 5).
+Reporting (Module 9, FR-053–057) and Search (Module 11, FR-063–065) are covered by the read-only indexes above, not by dedicated tables (Section 5). FR-083 (subscription-driven Customer read-only) has no table of its own — it is enforced entirely via `customers.is_read_only` (Section 6.2, amended) read against `tenant_subscriptions`/`subscription_plans`.
 
 ---
 
@@ -659,9 +788,10 @@ Per the Guardian instruction not to assume business or architecture decisions th
 3. **`reference_data.category`'s constrained set is deliberately narrow** (`risk_level`, `payment_method`, `collection_outcome` only) — it does not speculatively include categories for DDs that haven't been resolved in favor of "tenant-configurable" (e.g., Professional Collection Request outcome variants, DD-046, might resolve to a fixed set instead, like Debt Status). Extending this `CHECK` constraint is a five-minute follow-up once that specific DD resolves — flagging so it isn't forgotten, not because it blocks anything now.
 4. **`professional_collection_requests.reference_number` is nullable** because the `PCR-000001` format is proposed but not confirmed (DD-045). Once confirmed, this becomes `NOT NULL` — a backward-compatible tightening, not a redesign.
 5. **Connection pooling mode for RLS session variables** (Section 2's implementation note) is an operations/deployment decision (`09_Non_Functional_Requirements.md`), not a schema decision — flagged so it's addressed before RLS policies are implemented, not silently assumed.
+6. **`storage_addons.status` includes `'expired'` with no code path that ever writes it** *(added — Subscription & Storage Self-Service)*. This is not a schema gap — the CHECK constraint correctly allows the value the approved business workflow describes — it is an application-layer gap: no scheduled or manual process transitions an Active Add-on past its `expires_at`, unlike `tenant_subscriptions.status`'s `subscriptions:expire` command. Tracked as `04_Business_Rules.md` DD-047; this document does not resolve it, only records where it would need to attach (a future `storage-addons:expire` command, symmetric to the existing one) if it is resolved.
 
 None of the above block producing this document; they block a *future* migration decision, and are recorded here so they aren't silently forgotten between now and `07_API_Design.md`'s own eventual review.
 
 ---
 
-**End of 06_Database_Design.md — Approved. Frozen (v1.3, PostgreSQL).** No further modifications are permitted unless required by an approved scope change, a documented architecture issue, a security issue, or a contradiction with another approved document (Project Guardian rule, consistent with 01–05).
+**End of 06_Database_Design.md — Approved. Frozen (v1.7, PostgreSQL).** No further modifications are permitted unless required by an approved scope change, a documented architecture issue, a security issue, or a contradiction with another approved document (Project Guardian rule, consistent with 01–05). This document was reopened for the RBAC Architecture Amendment (Section 6.1, v1.4) and again for the Subscription & Storage Self-Service Catch-Up (Section 6.10, v1.7) — both times to align with an already-approved decision or an already-implemented, live-verified capability, never to design new, unimplemented schema.

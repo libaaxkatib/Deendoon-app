@@ -1,15 +1,15 @@
-# 05. UI/UX Specification
+﻿# 05. UI/UX Specification
 
 | Field | Value |
 |---|---|
 | **Document ID** | SRS-DEENDOON-05 |
 | **Document Title** | UI/UX Specification |
-| **Version** | 1.5 |
-| **Status** | Reopened — RBAC Architecture Amendment (retroactive) applied |
+| **Version** | 1.8 |
+| **Status** | Reopened — RBAC Architecture Amendment (retroactive) applied; SRS Final Alignment (Product Owner Decision) applied; Subscription & Storage Self-Service Catch-Up (Product Owner Decision) applied; Documentation Consistency Sweep applied |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-31 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened, v1.5) · `02_Business_Requirements.md` (Reopened, v1.6) · `03_Functional_Requirements.md` (v1.10 — Module 12 still awaiting its original approval) · `04_Business_Rules.md` (Reopened, v1.6) |
+| **Last Updated** | 2026-08-08 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened, v1.6) · `02_Business_Requirements.md` (Reopened, v1.7) · `03_Functional_Requirements.md` (v1.15) · `04_Business_Rules.md` (Reopened, v1.10) |
 
 ---
 
@@ -23,6 +23,9 @@
 | 1.3 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision) — this document had never been updated for the RBAC Architecture Amendment.** Removed all remaining references to Operations Manager, Collection Officer (as a tenant role), Finance Staff, Support Staff, and Viewer across SCR-005, SCR-007, SCR-018, and SCR-024 — Version 1 has exactly one tenant-side role (Business Owner), matching `02_Business_Requirements.md` v1.4 and `08_Security_and_RBAC.md` v1.2. SCR-026 (Collection Case Assignment Modal) marked **Retired**, matching FR-041's retirement in `03_Functional_Requirements.md` v1.8 — content preserved for history, not deleted. SCR-024 and SCR-025 updated to remove the retired Assigned Officer field/Reassign action; SCR-025's Navigation Exit and SCR-024's Navigation Exit no longer point to the retired SCR-026. Screen Inventory and Traceability tables updated to mark SCR-026 Retired. No workflow, screen behavior, or functionality changed beyond removing what FR-041's retirement already removed — role references and dead navigation targets only. | Claude |
 | 1.4 | 2026-07-31 | **Product Vision Amendment (generic "staff" sweep, Product Owner Decision).** SCR-005's Purpose line ("Give the business owner/staff...") updated to "Give the Business Owner..." — a missed sibling of the earlier SCR-005 Users fix (v1.3). No other content changed. | Claude |
 | 1.5 | 2026-07-31 | **Final architecture consistency audit correction.** SCR-039/SCR-040/SCR-041 (Super Admin's deprecated-but-functional User/Role Administration screens, FR-066/FR-067) still referenced "six/seven approved roles" — missed by every prior sweep since these screens live on the Super Admin Web Panel, not the Customer Mobile App. Updated to reflect the single approved role (Business Owner, `admin`); DD-039 correctly cited as resolved/moot rather than pending. No screen, workflow, or functionality changed — role references only. | Claude |
+| 1.6 | 2026-08-08 | **SRS Final Alignment (Product Owner Decision): current implemented app + backend are the final product.** SCR-025's Deendoon Hand-off tab and Validation rule amended: Submit Case to Deendoon is a Form, not a zero-field confirmation — it requires at least one Reason for Transfer and at least one Requested Service (both Reference Data-backed multi-select), optional Notes, and Client Declaration acceptance, matching `03_Functional_Requirements.md` v1.12 (FR-072) and `04_Business_Rules.md` v1.8 (BRL-078). The Deendoon Hand-off tab's Displayed Data now also lists Reasons, Requested Services, Notes, and the Declaration acceptance record for an existing Request. This corrects a discrepancy where this document still described the pre-amendment "no additional fields required" workflow. Scope Baseline updated to cite `03` v1.12 and `04` v1.8. | Claude |
+| 1.7 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Integrated Module 13 (`03_Functional_Requirements.md` FR-077–FR-084) into the existing UI architecture: two new screens — **SCR-050 Subscription (Business Owner)** and **SCR-051 Storage (Business Owner)** — both live-verified against the implemented Customer Mobile App, reusing the existing single-column Form/List screen pattern rather than introducing a new interaction model; the "Request Plan Change" and "Request Storage Add-on" actions are documented as bottom-sheet Forms embedded within their parent screen's own Sections/Validation, matching how SCR-025 already documents "Submit Case to Deendoon" as an embedded action rather than a separate screen. Amended SCR-046 (My Profile / Account Settings) to note the Account menu's "Subscription" tile (Business Owner only) as the entry point into SCR-050, which is itself the entry point into SCR-051 (no separate top-level "Storage" menu entry). Updated §4 Navigation Specification, §9 Screen Inventory, and §17 Traceability to include SCR-050/SCR-051, matching how the Professional Collection Requests addition (v1.1) updated the same three places. No new application interface, actor, or RBAC role was introduced — both screens live inside the existing Customer Mobile App, reachable only by the Business Owner. Scope Baseline updated to cite `03` v1.13 and `04` v1.9. | Claude |
+| 1.8 | 2026-08-08 | **Documentation Consistency Sweep (Product Owner Decision): current implemented app + backend are the final product.** Corrected every remaining "Notes & Attachments" reference to match reality: the Component Library's File Upload entry no longer lists Notes as a use case (Notes is a plain text field, not a file upload); SCR-008 (Customer Details) had its "Notes" tab removed entirely — the Customer entity carries no Notes field in the final product, unlike Debt and Collection Case, which do (`02_Business_Requirements.md` v1.7, BR-022); SCR-014 (Debt Details) and SCR-025 (Collection Case Details) now list "Notes (free-text, BR-022)" instead of "Notes & Attachments." No screen was added or removed beyond SCR-008's tab count change; no workflow changed. | Claude |
 
 ---
 
@@ -137,6 +140,8 @@ Slide-in panel (right on desktop for detail-peek/filters; left on mobile for nav
 
 **Primary Navigation** (role-filtered per RBAC): Dashboard, Customers, Debts, Collection Cases, Reports, Calendar, Administration (Super Admin Web Panel role-gated). Mobile: Dashboard, Customers, Debts, Notifications, More (Tab Bar, 5 items max, remaining items in "More"). Professional Collection Requests has **no separate top-level entry** on the Customer Mobile App — it is reached via the Dashboard widget (SCR-005) or from within a specific Collection Case (SCR-025), consistent with it being a hand-off *of* a Case rather than a distinct object the tenant manages independently. On the Super Admin Web Panel, **Professional Collection Requests is a peer Sidebar item to Administration**, not nested under it — it is Deendoon's own operational queue (reviewing/actioning submitted cases), not platform configuration, so it does not belong in the Administration information architecture (SCR-039–045).
 
+**Subscription & Storage Navigation** *(added — Subscription & Storage Self-Service, Module 13)*: Subscription/Storage also has **no separate top-level entry** on the Customer Mobile App — it is reached via the Account menu's "Subscription" tile (SCR-046 → SCR-050), consistent with it being a Business Owner-only account/billing concern rather than a day-to-day operational object like Customers or Debts. Storage (SCR-051) has no menu entry of its own — it is reached only from within the Subscription screen (**Account → Subscription → Storage**), mirroring how Storage's own effective allowance is itself derived from the Subscription (plan base allowance plus active Storage Add-ons). The Deendoon Platform Administrator's Approval Center for these requests is not a separate screen specified here — it reuses the same Table + Detail Drawer pattern already established for SCR-049 (see `03_Functional_Requirements.md` FR-084); a dedicated SCR number is not assigned since Module 13's Approval Center is intentionally documented at the same "briefly, not a full screen spec" depth the Guardian process applied to Module 7's admin side before SCR-049 was added, and no live-verified screen design for it exists to specify.
+
 **Secondary Navigation**: Within a section, tabs (e.g., Customer Details: Profile / Debts / Documents / Notes; Debt Details: Details / Timeline / Payments / Follow-up History).
 
 **Breadcrumb Behavior**: Reflects the navigation hierarchy actually traversed (Customer List → [Customer Name] → [Debt Reference]); each segment is a clickable link back to that level.
@@ -183,7 +188,7 @@ Each entry defines behavior only — visual styling follows §2.
 - **Snackbar** — as Toast, but may include an inline action (e.g., "Customer archived — Undo"), where Undo is available.
 - **Notification Bell** — Top Bar icon with unread-count Badge; opens the Notification Center (SCR-036) as a Drawer (desktop) or full screen (mobile).
 - **Avatar** — user identity indicator (initials placeholder by default); opens the Account menu (SCR-046).
-- **File Upload** — drag-and-drop + browse fallback; used for Customer Import (FR-016), Notes & Attachments, Company Logo (FR-068); shows filename, size, and a remove control before submission.
+- **File Upload** — drag-and-drop + browse fallback; used for Customer Import (FR-016), Company Logo (FR-068); shows filename, size, and a remove control before submission. **(Corrected, SRS Final Alignment)** Notes (BR-022) is a plain free-text field, not a File Upload use — no attachment-upload capability was implemented for Customer, Debt, or Collection Case.
 - **Progress Indicator** — determinate bar for multi-step flows (e.g., Customer Import: Upload → Preview → Validate → Import).
 - **Loading Spinner** — indeterminate, used for short (< 2s expected) waits.
 - **Skeleton Loader** — used for list/table/card content taking longer than a spinner is appropriate for; mirrors the shape of the content it replaces.
@@ -293,8 +298,10 @@ Each entry defines behavior only — visual styling follows §2.
 | SCR-047 | Permission Denied (global state) | Cross-cutting |
 | SCR-048 | 404 Not Found (global state) | Cross-cutting |
 | SCR-049 | Professional Collection Requests (Super Admin) *(added)* | 7 |
+| SCR-050 | Subscription (Business Owner) *(added)* | 13 |
+| SCR-051 | Storage (Business Owner) *(added)* | 13 |
 
-Every Module (1–12) is represented; every screen named in your Screen Inventory request (Authentication, Dashboard, Customer, Debt, Credit & Risk, Recovery Workflow, Payments, Collection Cases, Documents, Reports, Notifications, Calendar, Global Search, Administration, Settings, Audit Trail, Profile, Account) is present above. Professional Collection Requests (Module 7, reopened) is integrated as one new screen (SCR-049) plus amendments to three existing screens (SCR-005, SCR-006, SCR-025) rather than a parallel set of new screens — consistent with the instruction to reuse the existing UX pattern set rather than assume new surfaces are required.
+Every Module (1–13) is represented; every screen named in your Screen Inventory request (Authentication, Dashboard, Customer, Debt, Credit & Risk, Recovery Workflow, Payments, Collection Cases, Documents, Reports, Notifications, Calendar, Global Search, Administration, Settings, Audit Trail, Profile, Account) is present above. Professional Collection Requests (Module 7, reopened) is integrated as one new screen (SCR-049) plus amendments to three existing screens (SCR-005, SCR-006, SCR-025) rather than a parallel set of new screens — consistent with the instruction to reuse the existing UX pattern set rather than assume new surfaces are required. Subscription & Storage Self-Service (Module 13, catch-up) is integrated as two new screens (SCR-050, SCR-051) plus an amendment to SCR-046 (Account menu entry point) — both new screens reuse the existing single-column Form/List pattern and the bottom-sheet Form pattern already established elsewhere in this document (§6), not a new interaction model.
 
 ---
 
@@ -422,8 +429,8 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 ### SCR-008 — Customer Details
 - **Purpose:** Full Customer profile: identity, Credit Profile, Risk, Status, related Debts and Documents.
 - **Users:** All roles with Customer view permission (fields vary by role, per FR-008 A1).
-- **Layout:** Header (name, Status chip) + Tabs: Profile / Debts / Documents / Notes.
-- **Sections:** Credit & Risk Panel (SCR-018, embedded), Debts tab (→ SCR-013 scoped to this Customer), Documents tab (→ SCR-030 scoped), Notes & Attachments tab.
+- **Layout:** Header (name, Status chip) + Tabs: Profile / Debts / Documents.
+- **Sections:** Credit & Risk Panel (SCR-018, embedded), Debts tab (→ SCR-013 scoped to this Customer), Documents tab (→ SCR-030 scoped). **(Corrected, SRS Final Alignment)** removed the Notes tab — the Customer entity carries no Notes field in the final implemented product (unlike Debt and Collection Case, which do; BR-022).
 - **Displayed Data:** Name, phone, Customer Status, Credit Limit, Outstanding Balance, Remaining Credit, Risk Level, Credit Score.
 - **Primary Actions:** Edit (→ SCR-010), Add Debt (→ SCR-015), Generate Statement (→ SCR-032).
 - **Secondary Actions:** Archive (→ SCR-011), Generate Demand Letter (→ SCR-031, if an active Debt exists), Change Customer Status (inline control).
@@ -526,7 +533,7 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Users:** All roles with Debt view permission.
 - **Layout:** Header (Debt reference, amount, Debt Status chip, Recovery Stage chip) + Tabs: Details / Timeline / Payments / Follow-up History.
 - **Sections:** Recovery Timeline (Timeline component, §5, read-only), Recovery Stage display + Override control, Credit Limit Soft Warning history (if applicable), Payments tab (→ SCR-023), Follow-up History tab (→ SCR-021).
-- **Displayed Data:** Amount, due date, Debt Status, Recovery Stage, Remaining Balance, linked Customer, Notes & Attachments.
+- **Displayed Data:** Amount, due date, Debt Status, Recovery Stage, Remaining Balance, linked Customer, Notes (free-text, BR-022).
 - **Primary Actions:** Receive Payment (→ SCR-022), Edit (→ SCR-016).
 - **Secondary Actions:** Archive (→ SCR-017), Send WhatsApp/SMS/Call (→ SCR-019), Record Promise to Pay (→ SCR-020), Generate Demand Letter (→ SCR-031), Override Recovery Stage (inline Confirmation Dialog with mandatory Reason field).
 - **Validation:** Recovery Stage Override requires a non-empty Reason (BR-015).
@@ -712,11 +719,11 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Purpose:** Full Collection Case record: linked Debt, activity, closure, and (as of this update) its Deendoon hand-off status.
 - **Users:** Business Owner.
 - **Layout:** Header (Case reference, status chip) + Tabs: Details / Activity / History / **Deendoon Hand-off** *(added)*.
-- **Sections:** Linked Debt summary (→ SCR-014), Notes & Attachments, Activity log (Activity Feed). **Deendoon Hand-off tab** *(added)*: if no Request has been submitted, a single explanatory line plus a "Submit Case to Deendoon" action; if a Request exists, its Status Chip (Professional Collection Request Status, §5) plus the shared Conversation Thread component (§5).
-- **Displayed Data:** Per FR-042. Deendoon Hand-off tab additionally shows the linked Request's status and message history, per FR-073/FR-074/FR-075.
+- **Sections:** Linked Debt summary (→ SCR-014), Notes (free-text, BR-022), Activity log (Activity Feed). **Deendoon Hand-off tab** *(added)*: if no Request has been submitted, a single explanatory line plus a "Submit Case to Deendoon" action; if a Request exists, its Status Chip (Professional Collection Request Status, §5), its Reasons for Transfer, Requested Services, Notes, and Client Declaration acceptance record, plus the shared Conversation Thread component (§5).
+- **Displayed Data:** Per FR-042. Deendoon Hand-off tab additionally shows the linked Request's Reasons, Requested Services, Notes, Declaration acceptance record, status, and message history, per FR-072/FR-073/FR-074/FR-075.
 - **Primary Actions:** Record Activity (→ SCR-027), Close Case (→ SCR-028).
 - **Secondary Actions:** Generate Demand Letter (→ SCR-031), **Submit Case to Deendoon** *(added, Deendoon Hand-off tab only, shown only when the Case has no active Request)*.
-- **Validation:** N/A (view screen); actions validated in their own modals. Submit Case to Deendoon is confirmed via a Confirmation Dialog (§5) — a single-step confirmation, not a form, since no additional fields are required (FR-072).
+- **Validation:** N/A (view screen); actions validated in their own modals. Submit Case to Deendoon is confirmed via a Form (§5) — **(amended, Product Owner-approved, final implemented behavior)** at least one Reason for Transfer (multi-select) and at least one Requested Service (multi-select), both Reference Data-backed, are required; free-text Notes are optional; the Client Declaration checkbox must be accepted before the Submit action is enabled (FR-072, BRL-078).
 - **Empty State:** Activity tab: "No activity recorded yet." Deendoon Hand-off tab: "This case hasn't been submitted to Deendoon" (with the Submit action).
 - **Loading State:** Skeleton per section.
 - **Error State:** Error State with Retry.
@@ -1072,21 +1079,21 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Related Functional Requirements:** FR-071.
 
 ### SCR-046 — My Profile / Account Settings
-- **Purpose:** Let a user view their own account and change their password.
+- **Purpose:** Let a user view their own account and change their password. On the Customer Mobile App, this screen's Avatar-menu entry point also opens onto the Business Owner's broader Account menu — Business Profile, **Subscription** *(added — Module 13)*, Settings, Notifications, About, Bulk Import — of which Change Password/Log Out (below) is one part; the menu itself is not separately specified beyond noting the entry points it exposes.
 - **Users:** All authenticated roles.
 - **Layout:** Single-column form/panel from the Avatar menu.
-- **Sections:** Identity display (read-only), Change Password sub-form (current + new credential), Log Out action.
+- **Sections:** Identity display (read-only), Change Password sub-form (current + new credential), Log Out action. *(Added — Module 13)* On the Customer Mobile App, a **"Subscription"** menu entry (Business Owner only) sits alongside these, navigating to SCR-050.
 - **Displayed Data:** User's own name, identifier, assigned Role (read-only — Role change is Administration-only, SCR-041).
 - **Primary Actions:** Change Password (Save).
-- **Secondary Actions:** Log Out.
+- **Secondary Actions:** Log Out; *(added)* navigate to Subscription (Business Owner only, → SCR-050).
 - **Validation:** Current credential must validate; new credential confirmation must match (FR-005, E1).
 - **Empty State:** N/A.
 - **Loading State:** Submit button Loading Spinner.
 - **Error State:** Inline error on mismatch.
-- **Permission Behavior:** Always reachable to the authenticated user for their own account only.
+- **Permission Behavior:** Always reachable to the authenticated user for their own account only; the Subscription entry is shown only to the Business Owner role.
 - **Navigation Entry:** Top Bar Avatar (any screen).
-- **Navigation Exit:** Same screen on save; SCR-001 on Log Out.
-- **Related Functional Requirements:** FR-002, FR-005.
+- **Navigation Exit:** Same screen on save; SCR-001 on Log Out; *(added)* SCR-050 on "Subscription."
+- **Related Functional Requirements:** FR-002, FR-005; *(added)* FR-077 (Subscription entry point).
 
 ### SCR-047 — Permission Denied (Global State)
 - **Purpose:** Inform a user their role does not permit the requested view/action, without revealing restricted data.
@@ -1140,6 +1147,42 @@ Every Module (1–12) is represented; every screen named in your Screen Inventor
 - **Navigation Entry:** Sidebar "Professional Collection Requests" (peer to Administration, not nested under it — §4), SCR-006 "Pending Professional Collection Requests" card.
 - **Navigation Exit:** SCR-025 (linked Collection Case, read-only from the Super Admin's perspective — Case data itself remains tenant-owned).
 - **Related Functional Requirements:** FR-073, FR-075, FR-076.
+
+---
+
+### SCR-050 — Subscription (Business Owner) *(added — Subscription & Storage Self-Service, Module 13)*
+- **Purpose:** The Business Owner's single screen for viewing their tenant's current Subscription, browsing the fixed Plan Catalog, requesting a plan change, and reviewing/cancelling their own Subscription Change Request history.
+- **Users:** Business Owner only.
+- **Layout:** Single-column screen: summary Card at top, Plan Catalog list/grid below, Change Request history as a scrollable list beneath.
+- **Sections:** Current Subscription summary Card (plan name, price, trial/subscription status with end/expiry date if applicable, Customer usage vs. limit, Storage usage vs. effective limit, Analytics availability, read-only-state indicator if applicable, per FR-077); Plan Catalog (five plan Cards: Trial, Free, Small Business, Medium Business, Corporate, each showing price, Customer Limit or "Unlimited," Storage allowance, Analytics included/not, and a "Request This Plan" action, disabled on the tenant's current plan); Change Request History list (requested plan, prior plan, Status Chip, submitted date; a Cancel action on the one Pending entry, if any). **Request Plan Change bottom sheet** *(embedded modal Form, same pattern as SCR-025's "Submit Case to Deendoon")*: opened from a Plan Catalog Card's "Request This Plan" action — Payment Reference text field (required) and a confirmation of the selected plan; Submit/Cancel.
+- **Displayed Data:** Per FR-077 (current Subscription, Plan Catalog) and FR-079 (Change Request history).
+- **Primary Actions:** Request This Plan (per Plan Catalog Card, → Request Plan Change bottom sheet); Navigate to Storage (→ SCR-051).
+- **Secondary Actions:** Cancel (on the one Pending Change Request entry, if any).
+- **Validation:** Request Plan Change bottom sheet: Payment Reference required (FR-078, E2); "Request This Plan" disabled on the tenant's current plan (FR-078, E4) and disabled entirely while another Change Request is already Pending (FR-078, E3).
+- **Empty State:** Change Request History: "No plan change requests yet."
+- **Loading State:** Skeleton for the summary Card and Plan Catalog; Skeleton rows for history; bottom sheet Submit button Loading Spinner.
+- **Error State:** Error State with Retry (screen-level); inline error on bottom sheet submission failure.
+- **Permission Behavior:** Screen restricted to the Business Owner role; not reachable by the Deendoon Platform Administrator (a distinct interface, Section 4).
+- **Navigation Entry:** SCR-046 "Subscription" menu tile.
+- **Navigation Exit:** SCR-051 (Storage); SCR-046 (Back).
+- **Related Functional Requirements:** FR-077, FR-078, FR-079.
+
+### SCR-051 — Storage (Business Owner) *(added — Subscription & Storage Self-Service, Module 13)*
+- **Purpose:** The Business Owner's screen for viewing Storage usage/allowance, requesting a Storage Add-on, and reviewing/cancelling their own Storage Add-on Request history.
+- **Users:** Business Owner only.
+- **Layout:** Single-column screen: usage summary Card at top, purchased Add-ons list beneath.
+- **Sections:** Storage Overview summary Card (usage in GB, effective allowance in GB, remaining allowance, per FR-080); Purchased Storage Add-ons list (package size, price, Status Chip — Pending/Active/Rejected/Cancelled — start/expiry date where applicable; a Cancel action on the one Pending entry, if any). **Request Storage Add-on bottom sheet** *(embedded modal Form, same pattern as SCR-050's Request Plan Change)*: opened from a "Request Storage Add-on" action — Package selector (10GB/25GB/50GB/100GB, each showing its price, Radio group) and Payment Reference text field (required); Submit/Cancel.
+- **Displayed Data:** Per FR-080 (Storage Overview) and FR-082 (Add-on Request history).
+- **Primary Actions:** Request Storage Add-on (→ Request Storage Add-on bottom sheet).
+- **Secondary Actions:** Cancel (on the one Pending Add-on Request, if any).
+- **Validation:** Request Storage Add-on bottom sheet: Package selection and Payment Reference both required (FR-081, E2); "Request Storage Add-on" disabled while another Add-on Request is already Pending (FR-081, E3).
+- **Empty State:** Purchased Add-ons list: "No storage add-ons purchased yet."
+- **Loading State:** Skeleton for the summary Card; Skeleton rows for the Add-ons list; bottom sheet Submit button Loading Spinner.
+- **Error State:** Error State with Retry (screen-level); inline error on bottom sheet submission failure.
+- **Permission Behavior:** Screen restricted to the Business Owner role.
+- **Navigation Entry:** SCR-050 "Navigate to Storage."
+- **Navigation Exit:** SCR-050 (Back).
+- **Related Functional Requirements:** FR-080, FR-081, FR-082.
 
 ---
 
@@ -1227,6 +1270,8 @@ This specification supports every approved Functional Requirement in `03_Functio
 
 **Reopened-scope confirmation:** Professional Collection Requests is integrated using only the two approved application interfaces (Customer Mobile App, Deendoon Super Admin Web Panel). No new dashboard, portal, actor, or RBAC role is introduced anywhere in this document — SCR-049 is a screen within the existing Deendoon Super Admin Web Panel, operated by the existing Deendoon Platform Administrator (Super Admin) actor, exactly as required by the corrected 01/02/03/04.
 
+**Subscription & Storage Self-Service confirmation (Module 13, catch-up):** SCR-050 and SCR-051 are screens within the existing Customer Mobile App, reachable only by the existing Business Owner actor via the existing Account menu. No new application interface, actor, or RBAC role is introduced. This specification supports `03_Functional_Requirements.md` FR-077–FR-084 and `04_Business_Rules.md` BRL-083–091, introduces zero new functionality beyond what the audit confirmed is already implemented and live-verified, and does not pre-decide DD-047 (Storage Add-on expiration) — SCR-051 simply displays whatever Add-on status the backend returns, including a currently-unreachable "Expired" state, without assuming a UI treatment for a transition that doesn't yet occur.
+
 ---
 
 ## 17. Traceability
@@ -1282,25 +1327,27 @@ This specification supports every approved Functional Requirement in `03_Functio
 | SCR-047 Permission Denied | Cross-cutting |
 | SCR-048 404 Not Found | Cross-cutting |
 | SCR-049 Professional Collection Requests (Super Admin) | FR-073, FR-075, FR-076 |
+| SCR-050 Subscription (Business Owner) | FR-077, FR-078, FR-079 |
+| SCR-051 Storage (Business Owner) | FR-080, FR-081, FR-082 |
 
-Every Functional Requirement from FR-001 through FR-076 is covered by at least one screen above. FR-072 and FR-074 are covered by SCR-005/SCR-025 as noted; FR-073, FR-075, and FR-076 are covered by SCR-049 (Super Admin side) and, for FR-075, also by SCR-025 (tenant side of the shared Conversation Thread).
+Every Functional Requirement from FR-001 through FR-084 is covered by at least one screen above. FR-072 and FR-074 are covered by SCR-005/SCR-025 as noted; FR-073, FR-075, and FR-076 are covered by SCR-049 (Super Admin side) and, for FR-075, also by SCR-025 (tenant side of the shared Conversation Thread). FR-083 (subscription-driven Customer read-only) is covered by SCR-050's summary Card (read-only-state indicator) and, on the Customer side, by the existing Archived/read-only rendering already specified for SCR-008/SCR-010 (§14 UI State Catalog, "Archived Record" row) — no new UI state is introduced for it. FR-084 (Platform Administrator review) has no dedicated screen in this document (see §4's Subscription & Storage Navigation note) — it is not omitted, but deliberately not specified beyond that note, since no live-verified Super Admin Web Panel screen design exists to document.
 
 ---
 
 ## 18. Validation Checklist
 
-- [x] Every Module (1–12) is represented — see §9 Screen Inventory, "Module" column.
-- [x] Every major screen is documented — 49 screens specified in §10 (48 original + SCR-049).
-- [x] Every reusable component is specified — §5 covers all components listed in your Component Library request, plus the Conversation Thread component added for FR-075.
-- [x] No business logic appears — all rule-dependent behavior (e.g., overpayment handling, closure outcomes, transition matrices) is referenced by pointer to `04_Business_Rules.md`, never restated or decided here.
+- [x] Every Module (1–13) is represented — see §9 Screen Inventory, "Module" column.
+- [x] Every major screen is documented — 51 screens specified in §10 (48 original + SCR-049 + SCR-050 + SCR-051).
+- [x] Every reusable component is specified — §5 covers all components listed in your Component Library request, plus the Conversation Thread component added for FR-075; SCR-050/051's bottom sheets reuse existing Form/Modal components, no new component was introduced for them.
+- [x] No business logic appears — all rule-dependent behavior (e.g., overpayment handling, closure outcomes, transition matrices, Storage Add-on expiration gap DD-047) is referenced by pointer to `04_Business_Rules.md`, never restated or decided here.
 - [x] No API definitions appear — no endpoint, payload, or contract detail is present anywhere in this document.
 - [x] No database schema appears — no table/field/type definitions are present; entities are referenced by name only, as already established in `03_Functional_Requirements.md`.
-- [x] No new functionality has been introduced — every screen maps to an existing, approved Functional Requirement (§17); SCR-047/048 are cross-cutting UI states required by any RBAC/routing system, not new features; SCR-049 maps to the reopened Module 7's FR-072–FR-076.
+- [x] No new functionality has been introduced — every screen maps to an existing, approved Functional Requirement (§17); SCR-047/048 are cross-cutting UI states required by any RBAC/routing system, not new features; SCR-049 maps to the reopened Module 7's FR-072–FR-076; SCR-050/051 map to the retroactively-documented Module 13's FR-077–FR-084, a real capability confirmed already implemented and live-verified, not a new one being designed here.
 - [x] No approved workflow has changed — screens implement the Main Flows/Alternate Flows/Exceptions already defined in `03_Functional_Requirements.md` without altering their sequence or outcome.
-- [x] Only the two approved application interfaces are used — every Professional Collection Requests surface lives inside the Customer Mobile App or the Deendoon Super Admin Web Panel; no third interface, portal, or dashboard was introduced.
-- [x] No new actor or RBAC role was introduced — SCR-049 is operated exclusively by the already-approved Deendoon Platform Administrator (Super Admin); no "Recovery Specialist" or equivalent appears anywhere in this document.
+- [x] Only the two approved application interfaces are used — every Professional Collection Requests and Subscription & Storage Self-Service surface lives inside the Customer Mobile App or the Deendoon Super Admin Web Panel; no third interface, portal, or dashboard was introduced.
+- [x] No new actor or RBAC role was introduced — SCR-049 is operated exclusively by the already-approved Deendoon Platform Administrator (Super Admin); SCR-050/051 are operated exclusively by the already-approved Business Owner; no "Recovery Specialist" or equivalent appears anywhere in this document.
 - [x] "Assigned" is described consistently with `03`/`04` wherever it appears (§5 Status Chips, SCR-049) — accepted ownership by the Super Admin, not reassignment to another system user.
 
 ---
 
-**End of 05_UI_UX_Specification.md — Approved. Frozen.** No further changes are permitted unless an approved scope change, contradiction, security issue, or architecture issue requires reopening (Project Guardian rule, consistent with 01–04).
+**End of 05_UI_UX_Specification.md — Approved. Frozen (v1.7).** No further changes are permitted unless an approved scope change, contradiction, security issue, or architecture issue requires reopening (Project Guardian rule, consistent with 01–04). This document was reopened once for Professional Collection Requests (v1.1) and again for Subscription & Storage Self-Service (v1.7) — both times to retroactively document a real, already-implemented capability per Product Owner decision, never to design new, unimplemented functionality.

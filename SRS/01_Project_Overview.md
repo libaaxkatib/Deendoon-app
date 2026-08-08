@@ -4,11 +4,11 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-01 |
 | **Document Title** | Project Overview |
-| **Version** | 1.5 |
+| **Version** | 1.6 |
 | **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-31 |
+| **Last Updated** | 2026-08-08 |
 | **Scope Baseline** | Version 1 Feature Freeze (approved) |
 
 ---
@@ -23,6 +23,7 @@
 | 1.3 | 2026-07-24 | **Correction to 1.2.** Removed the invented "Deendoon Recovery Specialist" actor — Version 1 has exactly two application interfaces (Customer Mobile App, Deendoon Super Admin Web Panel) and no additional internal roles, portals, or dashboards. Professional Collection Requests are instead handled entirely by the already-approved Deendoon Platform Administrator (Super Admin), via the already-approved Super Admin Web Panel. Also reverted an earlier mischaracterization of that actor as "tenant-scoped" — it operates at the true platform level, which is what makes reviewing requests from any tenant possible without inventing a new actor. Any further coordination among Deendoon's own staff happens manually, outside the system, and is not modeled. | Claude |
 | 1.4 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** This document had never been updated to reflect the RBAC Architecture Amendment already approved and applied to `02`–`08` (2026-07-31). Section 1.5's Target Users table amended: Operations Manager, Collection Officer (as a tenant role), Finance Staff, Support Staff, and Viewer removed — Version 1 has exactly one tenant-side account, the Business Owner. Collection Officer is redefined as an internal Deendoon operational function (per `02_Business_Requirements.md` v1.4), not a tenant actor. Section 1.6's Administration & Governance capability list, Section 1.8's High-Level System Overview, and the Glossary's Customer Mobile App entry updated to name only the Business Owner and Deendoon Platform Administrator. No workflow, capability, or functionality changed — role references only. | Claude |
 | 1.5 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision).** Section 1.6's Business Goal → Capability mapping table row "Support multi-staff operation safely" rewritten as "Maintain accountability and access separation between the Business Owner and the Deendoon Platform Administrator," matching the corresponding rewrite of `02_Business_Requirements.md` BG-006/BP-007/BR-028/BR-029/BR-030 (v1.6). This is a current Version 1 requirement, not deferred — no new functionality, workflow, API, or database change introduced; the underlying capabilities (Role-Based Access Control, Audit Trail) are unchanged. | Claude |
+| 1.6 | 2026-08-08 | **SRS Final Alignment (Product Owner Decision): current implemented app + backend are the final product.** Section 1.6's "Documents & Reporting" capability list: removed "Document Scanner" (camera/OCR document capture was never implemented in either the backend or the Customer Mobile App, and is not part of the final product — see `02_Business_Requirements.md` v1.7, BR-022); replaced "Notes & Attachments" with "Notes (Debt, Collection Case)," matching the real, implemented free-text `notes` field; added "Invoice Generation" (implemented, `03_Functional_Requirements.md` v1.14, FR-085). "Platform Foundations" Auto Numbering list and the Glossary's Auto Numbering entry extended to include Invoice. The Glossary's Collection Case entry corrected from "may carry Notes & Attachments" to "may carry free-text Notes," matching the same correction. No workflow, API, or database change introduced — this entry corrects the top-level Scope list and Glossary to match capabilities already confirmed implemented (or confirmed never built) elsewhere in this SRS set. | Claude |
 
 ---
 
@@ -117,7 +118,7 @@ Debt Register · Smart Daily Reminder · Business Rule Recovery Automation · Ma
 Risk Levels (qualitative) · Credit Score (quantitative, rule-based) · Credit Limit Management · Customer Status · Debt Status
 
 **Documents & Reporting**
-Document Scanner · Demand Letter Generator (First Reminder, Second Reminder, Final Demand, Legal Notice templates) · Digital Receipt Generator · Customer Statement of Account · Aging Analysis (dashboard widget, full report, pie chart, bar chart) · Export Reports (PDF/Excel/CSV) · Notes & Attachments
+Demand Letter Generator (First Reminder, Second Reminder, Final Demand, Legal Notice templates) · Digital Receipt Generator · Customer Statement of Account · Invoice Generation · Aging Analysis (dashboard widget, full report, pie chart, bar chart) · Export Reports (PDF/Excel/CSV) · Notes (Debt, Collection Case)
 
 **Productivity & UX**
 Premium Mobile UI · Customer Mobile App · Notification Center · Calendar View · Global Search · Quick Actions · Advanced Search & Filters · Duplicate Customer Detection · Customer Import (Excel)
@@ -126,7 +127,7 @@ Premium Mobile UI · Customer Mobile App · Notification Center · Calendar View
 Deendoon Super Admin Web Panel · Role-Based Access Control (Business Owner, Deendoon Platform Administrator) · Audit Trail · System Settings · Soft Delete / Archive
 
 **Platform Foundations**
-Auto Numbering (Debt, Receipt, Demand Letter, Statement, Collection Case) · Automated Infrastructure Backups (non-functional requirement)
+Auto Numbering (Debt, Receipt, Demand Letter, Statement, Invoice, Collection Case) · Automated Infrastructure Backups (non-functional requirement)
 
 ---
 
@@ -208,13 +209,13 @@ These principles govern how every subsequent SRS document should resolve ambigui
 | **Statement of Account** | A generated PDF summarizing a customer's debt and payment history. |
 | **Audit Trail** | The immutable log of system events (creation, edits, deletions/archives, status changes, overrides, document generation, authentication events), each recording User, Timestamp, Action, Entity, and Reason where applicable. |
 | **Soft Delete / Archive** | The mechanism by which records are removed from active views without permanent deletion. Archived records are excluded from default operational lists and dashboards but remain retrievable via search and reporting, subject to the viewing user's role permissions; reversible via Restore. |
-| **Auto Numbering** | The system-generated, sequential, unique identifier scheme applied to Debts, Receipts, Demand Letters, Statements, and Collection Cases. |
+| **Auto Numbering** | The system-generated, sequential, unique identifier scheme applied to Debts, Receipts, Demand Letters, Statements, Invoices, and Collection Cases. |
 | **System Settings** | The centralized, admin-managed configuration module governing credit policy, recovery policy, notifications, company profile, branding, and document templates. |
 | **Global Search** | The unified search capability spanning Customers, Debts, Receipts, Statements, Demand Letters, and Collection Cases. Search is RBAC-aware: results are filtered to only what the requesting user's role and permissions allow them to access, including correct handling of archived records per the Soft Delete / Archive policy. |
 | **Role-Based Access Control (RBAC)** | The permission system restricting module and action access by assigned role. |
 | **Deendoon Super Admin Web Panel** | The administrative web application used for platform configuration, user/role management, and system-wide reporting. |
 | **Customer Mobile App** | The primary mobile application used by Deendoon's business-owner customers (the Business Owner — exactly one account per tenant) for day-to-day debt recovery operations. Distinct from the "Customer" entity used elsewhere in this document, which refers to the business's own debtors — debtors do not use this application in Version 1. |
-| **Collection Case** | A formal case record created under Professional Collection when a debt is escalated to structured recovery action. Receives its own Auto Numbering identifier (`COL-000001`) and may carry Notes & Attachments. |
+| **Collection Case** | A formal case record created under Professional Collection when a debt is escalated to structured recovery action. Receives its own Auto Numbering identifier (`COL-000001`) and may carry free-text Notes. |
 | **Tenant** | A single business account within the Deendoon platform. In Version 1, all Customers, Debts, and configuration belong to exactly one Tenant; multi-location structures within a single Tenant (Branch Management) are out of scope — see Section 1.7. |
 | **Company / Business** | The business entity operating a Deendoon Tenant — the owner of the Customers, Debts, and recovery activity managed within the system. Its identifying details (name, contact information, branding) are configured under System Settings → Company Profile. |
 

@@ -4,11 +4,11 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-02 |
 | **Document Title** | Business Requirements |
-| **Version** | 1.6 |
+| **Version** | 1.7 |
 | **Status** | Reopened — Pending Re-Approval |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-31 |
+| **Last Updated** | 2026-08-08 |
 | **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.5) |
 
 ---
@@ -24,6 +24,7 @@
 | 1.4 | 2026-07-31 | **RBAC Architecture Amendment (Product Owner Decision), applying the same principle 1.3 already established for BA-009 to BA-002/004/005/006.** Removed BA-002 (Operations Manager), BA-004 (Finance Staff), BA-005 (Support Staff), and BA-006 (Viewer) — Version 1 has exactly two application interfaces and no internal staff-role differentiation beyond the single Business Owner account per tenant; these four actors described distinct staff tiers that were never given a distinct interface to operate. Redefined BA-003 (Collection Officer) as Deendoon's own internal operational function (Platform Administrator staff, exercised after a Professional Collection Request is accepted), not a tenant-side actor. BA-001, BA-007, BA-008 unchanged. BR-029's role list updated to match; see `08_Security_and_RBAC.md` v1.2 for the corresponding RBAC table amendment. | Claude |
 | 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` at its current version (v1.4). No business requirement changed. | Claude |
 | 1.6 | 2026-07-31 | **Product Vision Amendment (Product Owner Decision) — obsolete multi-staff assumptions removed, not deferred.** BG-006, BP-007 (renamed from "Staff Access Governance" to "Access Governance"), BR-028, BR-029, and BR-030's rationale rewritten as current Version 1 requirements reflecting the approved two-account architecture (Business Owner, tenant-side; Deendoon Platform Administrator, platform-side) — no internal staff tiers, no role assignment, no multi-user tenant. Each item's original intent (data-access protection, role-appropriate access, accountability) is preserved, only re-grounded in the actual two accounts that exist rather than a retired multi-staff model. IDs, traceability (`Traces To` columns), and structure unchanged. No workflow, API, database design, or business logic changed beyond this. Scope Baseline updated to cite `01` at v1.5. | Claude |
+| 1.7 | 2026-08-08 | **SRS Final Alignment (Product Owner Decision): current implemented app + backend are the final product.** BR-022 retitled and narrowed from "attach supporting notes and documents ... Notes & Attachments; Document Scanner" to "attach supporting free-text notes to a debt or collection case ... Notes" — the implemented backend provides a real `notes` field on Debt and Collection Case; "Document Scanner" (camera/OCR capture) and arbitrary document attachment were never implemented and are not part of the final product. Traceability Matrix's BR-022 row updated to match. This corrects a discrepancy where this document still described unimplemented, never-built capabilities as part of an approved requirement whose other half (Notes) is genuinely implemented. | Claude |
 
 ---
 
@@ -124,7 +125,9 @@ Each requirement is Mandatory for Version 1 unless stated otherwise, per the Fea
 | BR-019 | The business must be able to provide the customer with formal proof of payment automatically. | Builds trust and prevents payment disputes. | BG-004 · BP-005 · Digital Receipt Generator |
 | BR-020 | The business must be able to formally demand payment using a professionally worded, escalating set of documents. | Increases the credibility and effectiveness of escalation. | BG-004 · BP-004 · Demand Letter Generator |
 | BR-021 | The business must be able to produce a consolidated statement of a customer's debt and payment history on demand. | Supports transparency and dispute resolution. | BG-004, BG-005 · BP-005 · Customer Statement of Account |
-| BR-022 | The business must be able to attach supporting notes and documents to a customer, debt, or collection case. | Preserves context and evidence relevant to recovery. | BG-004 · BP-004, BP-005 · Notes & Attachments; Document Scanner |
+| BR-022 | The business must be able to attach supporting free-text notes to a debt or collection case. | Preserves context and evidence relevant to recovery. | BG-004 · BP-004, BP-005 · Notes |
+
+> **Correction (SRS Final Alignment, Product Owner Decision, 2026-08-08).** BR-022 previously read "attach supporting notes and documents ... Notes & Attachments; Document Scanner." The implemented, final product provides a free-text `notes` field on Debt and Collection Case (backend-complete: `PUT /debts/{id}`, `PUT /collection-cases/{id}` both accept `notes`, returned by their Resources) — this requirement is retitled accordingly. **"Document Scanner"** (camera-based document capture/OCR) and arbitrary file **attachment** to a Customer/Debt/Collection Case were never implemented in either the backend or the Customer Mobile App and are not part of the final product — OCR is independently confirmed out of scope elsewhere in this SRS set (`03_Functional_Requirements.md`, Module 11 Out of Scope). Supporting evidence, where needed, is provided instead by the four system-generated Document types (Receipt, Demand Letter, Statement, Invoice — Module 8) and the Timeline/Activity Feed. This requirement is not retired — the Notes portion is a real, implemented capability — only narrowed to match what was actually built.
 
 ### 2.5.4 Reporting & Business Intelligence
 
@@ -251,7 +254,7 @@ Stated here at business-policy level only. Detailed logic, thresholds, formulas,
 | BR-019 | BG-004 | BP-005 | Digital Receipt Generator |
 | BR-020 | BG-004 | BP-004 | Demand Letter Generator |
 | BR-021 | BG-004, BG-005 | BP-005 | Customer Statement of Account |
-| BR-022 | BG-004 | BP-004, BP-005 | Notes & Attachments; Document Scanner |
+| BR-022 | BG-004 | BP-004, BP-005 | Notes |
 | BR-023 | BG-003, BG-005 | BP-006 | Aging Analysis |
 | BR-024 | BG-005 | BP-006 | Executive KPI Cards |
 | BR-025 | BG-005 | BP-006 | Export Reports |

@@ -1,15 +1,15 @@
-# 07. API Design
+﻿# 07. API Design
 
 | Field | Value |
 |---|---|
 | **Document ID** | SRS-DEENDOON-07 |
 | **Document Title** | API Design |
-| **Version** | 1.5 |
-| **Status** | Reopened — Section 5.4 (Collection Cases) amended |
+| **Version** | 1.7 |
+| **Status** | Reopened — Section 5.4 (Collection Cases) amended; Section 5.11 and Section 15 added by the Subscription & Storage Self-Service Catch-Up; Documentation Consistency Sweep applied |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-07-31 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.3) · `06_Database_Design.md` (Reopened v1.6 — §6.1 amended) |
+| **Last Updated** | 2026-08-08 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.6) · `02_Business_Requirements.md` (Reopened v1.7) · `03_Functional_Requirements.md` (v1.15 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.10) · `05_UI_UX_Specification.md` (Reopened, v1.8) · `06_Database_Design.md` (Reopened v1.7 — §6.1, §6.10) |
 
 ---
 
@@ -23,6 +23,8 @@
 | 1.3 | 2026-07-31 | RBAC Architecture Amendment (Product Owner Decision — see `docs/RBAC_Architecture_Amendment_Proposal.md` and `08_Security_and_RBAC.md` v1.2): Version 1 has exactly one account per tenant (the Business Owner) and Collection Officer is no longer a login role, so there is no second tenant user to assign a Collection Case to. Section 5.4's `PATCH /collection-cases/{id}/assign` row (FR-041) marked Retired, consistent with `03_Functional_Requirements.md` v1.8. `GET /me` (FR-006) confirmed implemented (flat path, single-role response — see `08_Security_and_RBAC.md` v1.2). No other endpoint, method, request/response shape, FR, or business rule changed. | Claude |
 | 1.4 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02`, `03`, `04`, `05`, and `06` (previously stale). No endpoint, method, request/response shape, FR, or business rule changed. | Claude |
 | 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4), `03` (v1.10), `04` (v1.6), `05` (Reopened, v1.3), and `06` (v1.6) following those documents' own updates. No endpoint or contract changed. | Claude |
+| 1.6 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Added **Section 5.11 — Subscription & Storage (Module 13)**, listing all 16 implemented endpoints (8 Business Owner-facing, 8 Platform Administrator-facing — corrected in-section from an initial undercount of 12 after re-reading `routes/api.php` directly). Added **Section 15 — Subscription & Storage Self-Service APIs**, the full dedicated surface (`SubscriptionPlan`/`TenantSubscription`/`SubscriptionChangeRequest`/`StorageAddon` models, request/response shapes, authorization detail), mirroring Section 10's Professional Collection APIs treatment. Added `/subscription/change-requests`, `/admin/subscription/change-requests`, and `/admin/storage-addons` to Section 8's paginated-endpoint list. Added a new row to Section 13's API Traceability Matrix. Scope Baseline updated to cite `03` v1.13, `04` v1.9, `05` v1.7, `06` v1.7. No existing endpoint, method, request/response shape, FR, or business rule changed. | Claude |
+| 1.7 | 2026-08-08 | **Documentation Consistency Sweep (Product Owner Decision): current implemented app + backend are the final product.** Section 13's "Note & Attachment uploads" note and Section 14's Decision Required item 1 both resolved rather than left as open items: Notes (`02_Business_Requirements.md` v1.7, BR-022) is a plain field on the Debt/Collection Case resource, already covered by their existing `PUT` endpoints — no dedicated endpoint exists or is needed. Attachments (arbitrary file upload) were never implemented and are confirmed out of scope, not a gap awaiting an endpoint shape. | Claude |
 
 ---
 
@@ -258,6 +260,29 @@ Advanced Filtering (FR-064) is not a separate endpoint — it's the shared set o
 | `PUT` | `/admin/reference-data/{category}` 🔒 | Update a value set | FR-070 |
 | `GET` | `/admin/audit-trail` 🔒 | View the Audit Trail (read-only, no write endpoint exists — Section 13) | FR-071 |
 
+### 5.11 Subscription & Storage (Module 13) *(added — Subscription & Storage Self-Service Catch-Up)*
+
+Full detail: Section 15. Business Owner-facing endpoints (8) act only on the authenticated session's own tenant, never a client-supplied tenant identifier. Platform Administrator-facing endpoints (8 — 4 for Subscription Change Requests, 4 for Storage Add-on Requests, prefixed `/admin/subscription/*` and `/admin/storage-addons*`) are cross-tenant, matching the `/admin/*` convention already established in Section 5.10. **Verification note:** an earlier characterization of this capability described 12 total endpoints (8 Business Owner + 4 Platform Administrator, omitting the 4 Storage Add-on Approval Center endpoints). Reading `routes/api.php` directly during this catch-up found **16** endpoints — the 4 admin endpoints are a full symmetric copy of the Subscription Change Request Approval Center for Storage Add-on Requests (`storageAddonApprovalCenter`, `storageAddonRejectionReasons`, `approveStorageAddon`, `rejectStorageAddon`) — corrected here rather than silently under-documented.
+
+| Method | Path | Purpose | FR | Actor |
+|---|---|---|---|---|
+| `GET` | `/subscription` 🔒 | Current Subscription: plan, trial/status, dates, Customer/Storage usage vs. limits, Analytics availability, read-only state | FR-077 | Business Owner |
+| `GET` | `/subscription/plans` 🔒 | The fixed Plan Catalog (active plans only) | FR-077 | Business Owner |
+| `GET` | `/subscription/change-requests` 🔒 | Own Subscription Change Request history *(list endpoint required by SCR-050)* | FR-079 | Business Owner |
+| `POST` | `/subscription/upgrade-request` 🔒 | Request a plan upgrade/downgrade | FR-078 | Business Owner |
+| `POST` | `/subscription/change-requests/{id}/cancel` 🔒 | Cancel own Pending Subscription Change Request | FR-079 | Business Owner |
+| `GET` | `/subscription/storage` 🔒 | Storage Overview: usage, effective limit, remaining, purchased Add-ons *(list endpoint required by SCR-051)* | FR-080, FR-082 | Business Owner |
+| `POST` | `/subscription/storage-addon-request` 🔒 | Request a Storage Add-on | FR-081 | Business Owner |
+| `POST` | `/subscription/storage-addon-requests/{id}/cancel` 🔒 | Cancel own Pending Storage Add-on Request | FR-082 | Business Owner |
+| `GET` | `/admin/subscription/change-requests` 🔒 | Approval Center — every tenant's Subscription Change Requests, optionally filtered by status | FR-084 | Deendoon Platform Administrator |
+| `GET` | `/admin/subscription/rejection-reasons` 🔒 | Predefined Rejection Reasons for Subscription Change Requests | FR-084 | Deendoon Platform Administrator |
+| `POST` | `/admin/subscription/change-requests/{id}/approve` 🔒 | Approve a Pending Subscription Change Request | FR-084 | Deendoon Platform Administrator |
+| `POST` | `/admin/subscription/change-requests/{id}/reject` 🔒 | Reject a Pending Subscription Change Request | FR-084 | Deendoon Platform Administrator |
+| `GET` | `/admin/storage-addons` 🔒 | Approval Center — every tenant's Storage Add-on Requests, optionally filtered by status | FR-084 | Deendoon Platform Administrator |
+| `GET` | `/admin/storage-addons/rejection-reasons` 🔒 | Predefined Rejection Reasons for Storage Add-on Requests | FR-084 | Deendoon Platform Administrator |
+| `POST` | `/admin/storage-addons/{id}/approve` 🔒 | Approve a Pending Storage Add-on Request | FR-084 | Deendoon Platform Administrator |
+| `POST` | `/admin/storage-addons/{id}/reject` 🔒 | Reject a Pending Storage Add-on Request | FR-084 | Deendoon Platform Administrator |
+
 ---
 
 ## 6. Request/Response Models
@@ -374,7 +399,7 @@ Every field's constraint traces to `06_Database_Design.md`; the API enforces the
 
 ## 8. Pagination, Filtering & Sorting
 
-Applies uniformly to every `GET` collection endpoint (`/customers`, `/debts`, `/collection-cases`, `/professional-requests`, `/reports/*`, `/notifications`, `/admin/users`, `/admin/audit-trail`):
+Applies uniformly to every `GET` collection endpoint (`/customers`, `/debts`, `/collection-cases`, `/professional-requests`, `/reports/*`, `/notifications`, `/admin/users`, `/admin/audit-trail`, and, *(added — Subscription & Storage Self-Service)* `/subscription/change-requests`, `/admin/subscription/change-requests`, `/admin/storage-addons`):
 
 | Query Parameter | Meaning | Notes |
 |---|---|---|
@@ -430,7 +455,7 @@ Both use `multipart/form-data`. Accepted file types/size limits are a UI-validat
 ```
 `resolution` is one of `skip` / `update` / `new`, per FR-016 exactly.
 
-**Note & Attachment uploads** (Module 8, Document Scanner reuse) are referenced across Customer/Debt/Collection Case detail screens in `05` but have no dedicated endpoint named in any FR's "Related APIs" annotation — `03_Functional_Requirements.md` treats Notes & Attachments as owned by Module 8 without a standalone FR of its own beyond the reference-only mentions in FR-008, FR-019, FR-042. Rather than invent an endpoint shape not specified anywhere, this is flagged in Section 15 for confirmation before implementation.
+**Notes** (BR-022) — **(Corrected, SRS Final Alignment)** this is resolved, not an open item: Debt Notes and Collection Case Notes are each a plain field on their own resource, updated via the existing `PUT /debts/{id}` and `PUT /collection-cases/{id}` endpoints (no dedicated Notes endpoint exists or is needed). Customer carries no Notes field. **Attachments** (arbitrary file upload to a Customer/Debt/Collection Case) were never implemented in the final product — no endpoint exists, and none is needed; this is confirmed out of scope, not a gap awaiting an endpoint shape.
 
 ---
 
@@ -534,8 +559,9 @@ Rejected with `409 CONFLICT` if the target status isn't a valid transition from 
 | `/notifications/*`, `/calendar` | FR-058–FR-062 | `notifications`, `follow_up_history`, `promises_to_pay`, `collection_cases` |
 | `/search` | FR-063 | Read-only across `customers`, `debts`, `payments`, `receipts`, `demand_letters`, `statements`, `collection_cases` |
 | `/admin/*` | FR-066–FR-071 | `users`, `roles`, `user_roles`, `tenants`, `system_settings`, `document_templates`, `reference_data`, `audit_log` |
+| `/subscription/*`, `/admin/subscription/*`, `/admin/storage-addons*` *(added)* | FR-077–FR-084 | `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons`; `customers.is_read_only` (FR-083, no dedicated endpoint — see Section 15) |
 
-Every table in `06_Database_Design.md` Section 6 is reachable through at least one endpoint above, except `roles` (seeded, no CRUD endpoint — Section 5, `06` §6.1) and `user_roles` (mutated only via `PATCH /admin/users/{id}/role`, never listed/queried directly).
+Every table in `06_Database_Design.md` Section 6 is reachable through at least one endpoint above, except `roles` (seeded, no CRUD endpoint — Section 5, `06` §6.1) and `user_roles` (mutated only via `PATCH /admin/users/{id}/role`, never listed/queried directly). `subscription_plans` is seeded, platform-owned, read-only data (Section 6.10) — reachable via `GET /subscription/plans`, but, like `roles`, has no create/update/delete endpoint anywhere in this API.
 
 ---
 
@@ -543,11 +569,161 @@ Every table in `06_Database_Design.md` Section 6 is reachable through at least o
 
 Consistent with `06`'s Section 13, surfaced rather than assumed:
 
-1. **Notes & Attachments has no dedicated endpoint.** `03_Functional_Requirements.md` references it (Module 8, reused across Customer/Debt/Collection Case screens) but never gives it its own FR or a "Related APIs" line the way every other capability in this document has. Before implementation, this needs either a small FR addition (Guardian-style reopening of Module 8) or an explicit confirmation that it's covered by the general-purpose file-upload pattern in Section 9. Flagging rather than inventing an endpoint shape.
+1. ~~**Notes & Attachments has no dedicated endpoint.**~~ **Resolved (SRS Final Alignment, 2026-08-08).** Notes (BR-022) is a plain field on the Debt/Collection Case resource, covered by their existing `PUT` endpoints — no dedicated endpoint was ever needed. Attachments (arbitrary file upload) were never implemented and are confirmed out of scope, not a gap. See §13's correction, above.
 2. **Default page size / max page size** (Section 8) has no source anywhere in 01–06 — an implementation default will be chosen at build time, not asserted here as if it were approved.
 3. **Rate limit thresholds** (`429`, Section 4) depend on `09_Non_Functional_Requirements.md`, which doesn't exist yet — the status code is reserved, not the numbers.
 4. **Overpayment API behavior** (`POST /debts/{id}/payments` with `amount` exceeding the remaining balance) currently succeeds unconditionally, per `06`'s posture on DD-016. If DD-016 resolves toward "reject" or "cap," this endpoint's validation (Section 7) needs a follow-up change — flagged, not pre-decided.
 
 ---
 
-**End of 07_API_Design.md — Awaiting review and approval.**
+## 15. Subscription & Storage Self-Service APIs *(added — Subscription & Storage Self-Service Catch-Up)*
+
+The full, dedicated surface for the retroactively-documented Module 13 capability (FR-077–FR-084), mirroring how Section 10 consolidates Professional Collection with complete detail. A real, live-verified capability found fully implemented in both the backend and the Customer Mobile App — every field below is transcribed directly from the implemented `SubscriptionController`/`SubscriptionPlanResource`/`SubscriptionChangeRequestResource`/`StorageAddonResource`, not designed fresh.
+
+### `GET /subscription` response
+```json
+{
+  "plan": { "id": "01J...ULID", "name": "Small Business", "monthlyPrice": "5.00", "customerLimit": 110, "storageLimit": 25, "analyticsEnabled": true, "trialEligible": false, "features": [] },
+  "planName": "Small Business",
+  "planPrice": "5.00",
+  "trialStatus": { "onTrial": false, "trialEndsAt": null },
+  "startedAt": "2026-07-01T00:00:00Z",
+  "expiresAt": "2026-08-01T00:00:00Z",
+  "subscriptionStatus": "active",
+  "customerUsage": 47,
+  "customerLimit": 110,
+  "storageUsageBytes": 1073741824,
+  "storageLimit": 25,
+  "analyticsEnabled": true,
+  "readOnly": false
+}
+```
+`customerLimit`/`storageLimit` here are the plan's raw values (nullable = unlimited) for display purposes — distinct from the fail-closed **effective** limit used for enforcement (`04_Business_Rules.md` BRL-087), which is never returned as a separate field since it's an internal enforcement detail, not a display value. `readOnly` is the tenant's actual, persisted read-only state (`customers.is_read_only`, any row true) — not a second, independently-computed definition of "over limit."
+
+### `GET /subscription/plans` response
+```json
+{
+  "data": [
+    { "id": "01J...ULID", "name": "Trial", "monthlyPrice": "0.00", "customerLimit": null, "storageLimit": 10, "analyticsEnabled": true, "trialEligible": true, "features": [] },
+    { "id": "01J...ULID", "name": "Free", "monthlyPrice": "0.00", "customerLimit": 2, "storageLimit": 10, "analyticsEnabled": false, "trialEligible": true, "features": [] },
+    { "id": "01J...ULID", "name": "Small Business", "monthlyPrice": "5.00", "customerLimit": 110, "storageLimit": 25, "analyticsEnabled": true, "trialEligible": true, "features": [] },
+    { "id": "01J...ULID", "name": "Medium Business", "monthlyPrice": "8.00", "customerLimit": 250, "storageLimit": 50, "analyticsEnabled": true, "trialEligible": true, "features": [] },
+    { "id": "01J...ULID", "name": "Corporate", "monthlyPrice": "20.00", "customerLimit": null, "storageLimit": 100, "analyticsEnabled": true, "trialEligible": true, "features": [] }
+  ]
+}
+```
+`customerLimit: null` = Unlimited (Trial, Corporate). `trialEligible` reflects the *requesting tenant's* own history (has this tenant ever started a Trial before), not a property of the plan itself — identical across every plan in one response. `features` is always `[]` — no configured per-plan feature-description data exists in this backend; returning an empty array rather than inventing feature copy.
+
+### `POST /subscription/upgrade-request` request / response
+```json
+{ "requestedPlanId": "01J...ULID", "paymentReference": "MPESA-TXN-00123456" }
+```
+`201 Created`, body: `SubscriptionChangeRequest` (below). `409 CONFLICT` if a Pending request already exists for the tenant, or if `requestedPlanId` is the tenant's current plan (FR-078, E3/E4).
+
+### `SubscriptionChangeRequest` model
+```json
+{
+  "id": "01J...ULID",
+  "tenantId": "01J...ULID",
+  "tenantName": "Iftin Supermarket",
+  "requestedPlan": { "id": "01J...ULID", "name": "Medium Business", "...": "SubscriptionPlan fields" },
+  "currentPlan": { "id": "01J...ULID", "name": "Small Business", "...": "SubscriptionPlan fields" },
+  "paymentReference": "MPESA-TXN-00123456",
+  "status": "pending",
+  "requestedAt": "2026-08-08T09:00:00Z",
+  "reviewedBy": null,
+  "reviewedAt": null,
+  "rejectionReason": null,
+  "rejectionReasons": []
+}
+```
+`status` is one of `pending`/`approved`/`rejected`/`cancelled` (BRL-084/BRL-085/BRL-091). `tenantName` is present only on the Platform Administrator's Approval Center response (`whenLoaded`); absent on the Business Owner's own `GET /subscription/change-requests` (a tenant already knows which business they are).
+
+### `GET /subscription/change-requests` response
+```json
+{
+  "data": { "changeRequests": [ "...": "array of SubscriptionChangeRequest" ] },
+  "meta": { "page": 1, "perPage": 25, "total": 3, "totalPages": 1 }
+}
+```
+
+### `POST /subscription/change-requests/{id}/cancel`
+No request body. `200 OK`, body: `SubscriptionChangeRequest` with `status: "cancelled"`. `409 CONFLICT` if the request is no longer Pending (FR-079, E2).
+
+### `GET /subscription/storage` response
+```json
+{
+  "storageUsageBytes": 1073741824,
+  "storageUsageGb": 1.0,
+  "storageLimitGb": 35,
+  "purchasedAddons": [ "...": "array of StorageAddon" ],
+  "remainingStorageGb": 34.0
+}
+```
+`storageLimitGb` is the tenant's **effective** allowance — current plan's base `storageLimit` plus every currently-Active Add-on's size (BRL-088) — not the plan's raw base value alone. `remainingStorageGb` is `null` if `storageLimitGb` cannot be resolved (no plan at all), never silently treated as `0`.
+
+### `POST /subscription/storage-addon-request` request / response
+```json
+{ "storagePackage": "25gb", "paymentReference": "MPESA-TXN-00123457" }
+```
+`storagePackage` is one of `10gb`/`25gb`/`50gb`/`100gb` (BRL-088) — `storageSize`/`monthlyPrice` are always derived server-side from this value, never accepted from the client. `201 Created`, body: `StorageAddon` (below). `409 CONFLICT` if a Pending request already exists for the tenant (FR-081, E3).
+
+### `StorageAddon` model
+```json
+{
+  "id": "01J...ULID",
+  "tenantId": "01J...ULID",
+  "tenantName": "Iftin Supermarket",
+  "storagePackage": "25gb",
+  "storageSize": 25,
+  "monthlyPrice": "4.00",
+  "paymentReference": "MPESA-TXN-00123457",
+  "status": "pending",
+  "startedAt": null,
+  "expiresAt": null,
+  "approvedBy": null,
+  "approvedAt": null,
+  "rejectionReason": null,
+  "rejectionReasons": []
+}
+```
+`status` is one of `pending`/`active`/`rejected`/`cancelled`/`expired` (BRL-088/BRL-089/BRL-091) — **`expired` is schema-allowed but not currently reachable by any code path in this backend; no endpoint or command ever produces it** (`04_Business_Rules.md` DD-047). This is stated plainly rather than silently omitting the value, consistent with how `06_Database_Design.md` §6.10 documents the same gap at the schema level.
+
+### `POST /subscription/storage-addon-requests/{id}/cancel`
+No request body. `200 OK`, body: `StorageAddon` with `status: "cancelled"`. `409 CONFLICT` if the request is no longer Pending (FR-082, E2).
+
+### `GET /admin/subscription/change-requests?status=` / `GET /admin/storage-addons?status=`
+Cross-tenant Approval Center listings — same response envelope as their Business Owner-facing counterparts above (`changeRequests[]`/`storageAddonRequests[]` + `pagination`), but unfiltered by tenant (every tenant's requests, per the `BelongsToTenantOrPlatformAdmin` scope's Platform Administrator bypass, `06` §2) and each row includes `tenantName`. Optional `status` query parameter narrows by status.
+
+### `GET /admin/subscription/rejection-reasons` / `GET /admin/storage-addons/rejection-reasons`
+```json
+{
+  "data": [
+    { "id": "01J...ULID", "category": "subscription_rejection_reason", "valueLabel": "Payment Not Verified" },
+    { "id": "01J...ULID", "category": "subscription_rejection_reason", "valueLabel": "Insufficient Payment Amount" },
+    { "id": "01J...ULID", "category": "subscription_rejection_reason", "valueLabel": "Duplicate Request" },
+    { "id": "01J...ULID", "category": "subscription_rejection_reason", "valueLabel": "Invalid Payment Reference" }
+  ]
+}
+```
+Platform-owned Reference Data (`tenant_id IS NULL`), reusing the existing `/admin/reference-data/{category}`-style mechanism (Section 5.10) rather than a new one; `storage_rejection_reason`'s four reasons are seeded identically. Matches the pattern already established for Professional Collection Request rejection reasons.
+
+### `POST /admin/subscription/change-requests/{id}/approve` / `POST /admin/storage-addons/{id}/approve`
+No request body. `200 OK`, body: `SubscriptionChangeRequest`/`StorageAddon` with `status: "approved"`/`"active"` respectively and the new billing-cycle dates populated. `409 CONFLICT` if the request is no longer Pending, or (Subscription only) if the tenant's *current* plan already matches the requested plan by approval time (FR-084, E2/E3).
+
+### `POST /admin/subscription/change-requests/{id}/reject` / `POST /admin/storage-addons/{id}/reject` request
+```json
+{ "reasons": ["Payment Not Verified", "Duplicate Request"], "notes": "Optional free-text context for the Business Owner." }
+```
+`reasons` is required, minimum one value, each drawn only from the corresponding platform-owned Reference Data category above (FR-084, E4 if empty). `notes` is optional free text, max 2000 characters, stored in `rejectionReason`.
+
+### Authorization detail specific to this resource
+- The 8 Business Owner-facing endpoints require the `admin-only` Gate and always resolve the tenant from the authenticated session — no endpoint accepts a client-supplied `tenantId` (Principle 3).
+- The 8 Platform Administrator-facing endpoints (`/admin/subscription/*`, `/admin/storage-addons*`) require the `platform-admin-only` Gate — a Business Owner session attempting any of them receives `403 FORBIDDEN`, matching the same pattern already established for `/professional-requests/{id}/status`/`/close` (Section 10).
+- Route-model binding plus each resource's own `BelongsToTenantOrPlatformAdmin` scope already restrict `POST /subscription/change-requests/{id}/cancel` and `POST /subscription/storage-addon-requests/{id}/cancel` to the authenticated tenant's own rows (`404` for another tenant's request) — no manual tenant-match step is needed in the endpoint itself, unlike some Professional Collection Request endpoints that resolve/mask a tenant explicitly.
+- **No endpoint exists for a Business Owner to create, edit, price, or deactivate a Subscription Plan or Storage Add-on package** — the Plan Catalog and package catalog are read-only from every tenant-facing endpoint in this section (`03_Functional_Requirements.md` Module 13 Scope Boundary).
+- **FR-083 (subscription-driven Customer read-only) has no endpoint of its own** — it is enforced inside `POST /customers`, `PUT /customers/{id}`, `POST /customers/{id}/archive`, and document-generation endpoints (Sections 5.2/5.6), and surfaced as the `readOnly`/`customerUsage`/`customerLimit` fields on `GET /subscription` above.
+
+---
+
+**End of 07_API_Design.md — Awaiting review and approval.** Reopened once for the RBAC Architecture Amendment (Section 5.4, v1.3) and again for the Subscription & Storage Self-Service Catch-Up (Section 5.11, Section 15, v1.6) — both times to align with an already-approved decision or an already-implemented, live-verified capability.
