@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\ReferenceData;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\ReferenceDataService;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -332,6 +333,137 @@ class AdministrationTest extends TestCase
                 ['id' => $referenceData->id, 'value_label' => 'high', 'is_active' => false],
             ],
         ])->assertStatus(409);
+    }
+
+    // --- Professional Collection Reference Data fix: provisioned defaults ---
+
+    public function test_a_newly_registered_tenant_receives_the_13_default_transfer_reasons(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'business_name' => 'Acme Co',
+            'name' => 'Jane Owner',
+            'email' => 'jane@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+        $response->assertStatus(201);
+        $this->withHeader('Authorization', 'Bearer '.$response->json('data.token'));
+
+        $response = $this->getJson('/api/v1/admin/reference-data/transfer_reason');
+
+        $response->assertStatus(200);
+        $labels = collect($response->json('data'))->pluck('value_label');
+        $this->assertCount(13, $labels);
+        $this->assertContains('Customer stopped answering calls', $labels);
+        $this->assertContains('Other', $labels);
+        $this->assertTrue(collect($response->json('data'))->every(fn ($item) => $item['is_active'] === true));
+    }
+
+    public function test_a_newly_registered_tenant_receives_the_13_default_requested_services(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'business_name' => 'Acme Co',
+            'name' => 'Jane Owner',
+            'email' => 'jane2@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+        $response->assertStatus(201);
+        $this->withHeader('Authorization', 'Bearer '.$response->json('data.token'));
+
+        $response = $this->getJson('/api/v1/admin/reference-data/requested_service');
+
+        $response->assertStatus(200);
+        $labels = collect($response->json('data'))->pluck('value_label');
+        $this->assertCount(13, $labels);
+        $this->assertContains('Telephone Collection', $labels);
+        $this->assertContains('Court Preparation', $labels);
+    }
+
+    public function test_reference_data_defaults_are_tenant_isolated(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        app(ReferenceDataService::class)->provisionDefaults($tenantA);
+        app(ReferenceDataService::class)->provisionDefaults($tenantB);
+
+        $this->actingAsTenantUser($tenantA);
+        $response = $this->getJson('/api/v1/admin/reference-data/transfer_reason');
+
+        $response->assertStatus(200);
+        $this->assertCount(13, $response->json('data'));
+        // Scoped to these two tenants' transfer_reason/requested_service
+        // rows only — the table also legitimately holds platform-owned
+        // (tenant_id NULL) subscription/storage rejection reason rows
+        // seeded independently of this feature.
+        $count = ReferenceData::withoutGlobalScope('tenant')
+            ->whereIn('tenant_id', [$tenantA->id, $tenantB->id])
+            ->whereIn('category', ['transfer_reason', 'requested_service'])
+            ->count();
+        $this->assertSame(52, $count); // 13 + 13 reasons/services x 2 tenants
+    }
+
+    public function test_provisioning_defaults_twice_for_the_same_tenant_is_idempotent(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $service = app(ReferenceDataService::class);
+
+        $service->provisionDefaults($tenant);
+        $service->provisionDefaults($tenant);
+
+        $this->assertSame(
+            13,
+            ReferenceData::where('tenant_id', $tenant->id)->where('category', 'transfer_reason')->count(),
+        );
+        $this->assertSame(
+            13,
+            ReferenceData::where('tenant_id', $tenant->id)->where('category', 'requested_service')->count(),
+        );
+    }
+
+    public function test_provisioning_defaults_does_not_touch_a_tenants_own_customized_values(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        $custom = ReferenceData::factory()->for($tenant, 'tenant')->create([
+            'category' => 'transfer_reason',
+            'value_label' => 'A custom tenant-specific reason',
+            'is_active' => true,
+        ]);
+
+        app(ReferenceDataService::class)->provisionDefaults($tenant);
+
+        $this->assertDatabaseHas('reference_data', [
+            'id' => $custom->id,
+            'value_label' => 'A custom tenant-specific reason',
+        ]);
+        $this->assertSame(
+            14,
+            ReferenceData::where('tenant_id', $tenant->id)->where('category', 'transfer_reason')->count(),
+        );
+    }
+
+    public function test_reference_data_is_active_flag_round_trips_correctly(): void
+    {
+        // ReferenceDataService::forCategory() intentionally returns every
+        // row (active and inactive) — `AdminReferenceDataController::show()`
+        // is the admin editing view, so the Business Owner must see
+        // inactive rows too when managing the list. The Professional
+        // Collection submission form (the actual consumer) is what filters
+        // to `is_active` client-side — this test verifies the flag itself
+        // is stored and returned correctly, which that filtering depends on.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+        app(ReferenceDataService::class)->provisionDefaults($tenant);
+        $active = ReferenceData::where('tenant_id', $tenant->id)->where('category', 'transfer_reason')->first();
+        $active->update(['is_active' => false]);
+
+        $response = $this->getJson('/api/v1/admin/reference-data/transfer_reason');
+
+        $inactiveCount = collect($response->json('data'))->where('is_active', false)->count();
+        $activeCount = collect($response->json('data'))->where('is_active', true)->count();
+        $this->assertSame(1, $inactiveCount);
+        $this->assertSame(12, $activeCount);
     }
 
     // --- FR-071: Audit Trail Viewing ---

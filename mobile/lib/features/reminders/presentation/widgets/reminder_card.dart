@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../domain/reminder.dart';
 import '../providers/related_entity_provider.dart';
+import 'reminder_type_badge.dart';
 import 'reminder_type_icon.dart';
 
 /// Reminder List card (§7.3): type icon, title, related customer/entity
@@ -42,7 +44,9 @@ class ReminderCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(reminder.title, style: AppTypography.body, maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
+                ReminderTypeBadge(type: reminder.type),
+                const SizedBox(height: 4),
                 Text(
                   relatedAsync.valueOrNull?.name ?? '…',
                   style: AppTypography.caption,
@@ -50,7 +54,12 @@ class ReminderCard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
-                Text(reminder.dueDate, style: AppTypography.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  formatFriendlyDateTimeFromIso(reminder.dueDate),
+                  style: AppTypography.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),

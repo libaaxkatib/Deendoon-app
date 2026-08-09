@@ -60,9 +60,14 @@ class DebtActions {
   Future<void> promiseToPay({required String debtId, required String promisedDate}) async {
     await _repository.promiseToPay(debtId: debtId, promisedDate: promisedDate);
     _ref.invalidate(debtTimelineProvider(debtId));
+    _ref.invalidate(debtPromiseToPayHistoryProvider(debtId));
   }
 
-  Future<CollectionCase> openCase(String debtId) => _repository.openCase(debtId);
+  Future<CollectionCase> openCase(String debtId) async {
+    final collectionCase = await _repository.openCase(debtId);
+    _ref.invalidate(debtRelatedCaseProvider(debtId));
+    return collectionCase;
+  }
 
   Future<DocumentSummary> generateStatement(String debtId) async {
     final statement = await _repository.generateStatement(debtId);

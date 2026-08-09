@@ -43,14 +43,42 @@ void main() {
     mockRepository = _MockCustomerImportRepository();
   });
 
-  testWidgets('shows the upload prompt and the honest sample-template unavailable note', (tester) async {
+  testWidgets('shows the upload prompt and the real Download Sample Template button', (tester) async {
     await _pumpScreen(tester, repository: mockRepository, picker: () => _fakePickerReturning(null));
 
     expect(find.text('Select Excel file'), findsOneWidget);
-    expect(
-      find.text('Sample template download is not available yet — no backend endpoint exists for this.'),
-      findsOneWidget,
-    );
+    expect(find.widgetWithText(ElevatedButton, 'Download Sample Template'), findsOneWidget);
+  });
+
+  testWidgets('tapping Download Sample Template calls the real endpoint', (tester) async {
+    when(() => mockRepository.downloadTemplate()).thenAnswer((_) async => [1, 2, 3, 4]);
+
+    await _pumpScreen(tester, repository: mockRepository, picker: () => _fakePickerReturning(null));
+
+    // A bounded pump rather than pumpAndSettle: the actual on-device file
+    // write this action performs afterward (via `path_provider`) isn't
+    // reliably completable in the widget-test sandbox — same untested
+    // territory as `DocumentActions.saveToDevice`, which has no widget
+    // test anywhere in this codebase for the identical reason. What's
+    // verifiable and meaningful here is that the real network call
+    // happens; the on-device save itself is exercised for real on a
+    // device/emulator, not simulated in this environment.
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Download Sample Template'));
+    await tester.pump();
+
+    verify(() => mockRepository.downloadTemplate()).called(1);
+  });
+
+  testWidgets('shows the real backend error when the template download fails', (tester) async {
+    when(() => mockRepository.downloadTemplate())
+        .thenThrow(const ApiException(message: 'This action is unauthorized.', statusCode: 403));
+
+    await _pumpScreen(tester, repository: mockRepository, picker: () => _fakePickerReturning(null));
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Download Sample Template'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('This action is unauthorized.'), findsOneWidget);
   });
 
   testWidgets('picking a supported file shows the Selected File Card', (tester) async {

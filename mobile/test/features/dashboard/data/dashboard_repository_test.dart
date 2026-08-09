@@ -63,7 +63,7 @@ void main() {
   });
 
   test('fetchKpis returns the value straight through on success', () async {
-    when(() => mockApi.kpis()).thenAnswer((_) async => _kpis);
+    when(() => mockApi.kpis(period: 'month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
 
     final result = await repository.fetchKpis();
 
@@ -71,7 +71,7 @@ void main() {
   });
 
   test('fetchKpis throws ApiException with the server message on failure', () async {
-    when(() => mockApi.kpis()).thenThrow(
+    when(() => mockApi.kpis(period: 'month', dateFrom: null, dateTo: null)).thenThrow(
       DioException(
         requestOptions: RequestOptions(path: '/dashboard/kpis'),
         response: Response(

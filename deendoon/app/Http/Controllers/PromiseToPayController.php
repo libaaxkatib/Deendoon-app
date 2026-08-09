@@ -47,4 +47,38 @@ class PromiseToPayController extends Controller
 
         return $this->successResponse(new PromiseToPayResource($promise), 'Promise to Pay recorded successfully', 201);
     }
+
+    /**
+     * Debt Detail's "Promise to Pay History" (mobile Item 11) — same
+     * `view` gate as the analogous `PaymentController::index()`.
+     */
+    public function index(Debt $debt): JsonResponse
+    {
+        $this->authorize('view', $debt);
+
+        // Ordered by id (ULID), not created_at: `created_at` is a
+        // second-precision DB-default timestamp (useCurrent()), so two
+        // promises recorded within the same second would tie under it —
+        // ULIDs stay strictly monotonic regardless.
+        $promises = $debt->promisesToPay()->orderBy('id', 'desc')->get();
+
+        return $this->successResponse(PromiseToPayResource::collection($promises));
+    }
+
+    /**
+     * Standalone (not `/debts/{debt}/...`) — mobile Item 14: a reminder's
+     * `related_entity_type == 'promise_to_pay'` only carries the Promise's
+     * own id, not its parent Debt id, so the client needs a lookup that
+     * starts from the Promise alone. `PromiseToPay` has no dedicated
+     * Policy (no direct user-facing CRUD beyond create/list, both already
+     * scoped through their parent Debt) — authorizes through `$promise->debt`,
+     * the same object `Reminder::relatedCustomer()` already resolves
+     * through server-side for this exact reminder type.
+     */
+    public function show(PromiseToPay $promise): JsonResponse
+    {
+        $this->authorize('view', $promise->debt);
+
+        return $this->successResponse(new PromiseToPayResource($promise));
+    }
 }

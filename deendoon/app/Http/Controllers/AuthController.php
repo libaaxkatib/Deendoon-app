@@ -15,6 +15,7 @@ use App\Services\AuditLogService;
 use App\Services\CustomerReadOnlyService;
 use App\Services\MessageTemplateService;
 use App\Services\PasswordResetService;
+use App\Services\ReferenceDataService;
 use App\Services\SecurityEventLogger;
 use App\Services\SubscriptionService;
 use App\Traits\ApiResponse;
@@ -50,6 +51,7 @@ class AuthController extends Controller
         private readonly MessageTemplateService $messageTemplates,
         private readonly SubscriptionService $subscriptions,
         private readonly CustomerReadOnlyService $customerReadOnly,
+        private readonly ReferenceDataService $referenceData,
     ) {}
 
     /**
@@ -72,6 +74,15 @@ class AuthController extends Controller
             // default reminder templates for every new tenant, closing the
             // gap where only tenants seeded before this fix had them.
             $this->messageTemplates->provisionDefaults($tenant);
+
+            // Professional Collection Reference Data fix: provision the
+            // approved default Reason for Transfer / Requested Service
+            // options for every new tenant — same rationale as message
+            // templates above (Reference Data is otherwise
+            // Business-Owner-configured with no default, so a brand new
+            // tenant's Professional Collection submission form would
+            // otherwise show two empty option lists).
+            $this->referenceData->provisionDefaults($tenant);
 
             $user = new User([
                 'name' => $request->validated('name'),

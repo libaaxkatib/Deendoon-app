@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/coming_soon.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../reminders/domain/reminder_entity_preset.dart';
 import '../providers/customer_actions.dart';
 import '../providers/customer_detail_providers.dart';
 import '../widgets/credit_limit_sheet.dart';
 import '../widgets/customer_info_card.dart';
+import '../widgets/customer_status_sheet.dart';
 import '../widgets/customer_recent_payments.dart';
 
 /// Customer Details — Customer Information, Contact Details, Outstanding
@@ -22,18 +25,17 @@ import '../widgets/customer_recent_payments.dart';
 /// (`POST /customers/{id}/statements`), distinct from the Debt Detail
 /// screen's own per-debt Statement generation.
 ///
-/// "Cases" stays a `showComingSoon` stub — `CollectionCaseController::index()`
-/// only filters by `status`/`tab`, there is no `customer_id` filter, so
-/// there is no real destination to wire without inventing a backend
-/// capability that doesn't exist.
+/// "Cases" opens `CustomerCasesScreen`, backed by
+/// `CollectionCaseController::index()`'s `customer_id` filter (added
+/// alongside this screen).
 ///
 /// "Active Cases" and "Recent Follow-ups" are deliberately not rendered —
-/// no backend endpoint returns collection cases or follow-up history
-/// scoped to a customer (`CollectionCaseController::index()` only filters
-/// by `status`/`tab`; `FollowUpHistoryController` is per-debt, not
-/// per-customer). Per this project's "never use mock data" rule and the
-/// precedent set for Business Health, these are hidden entirely rather
-/// than shown with a placeholder — add them back once a real endpoint
+/// no backend endpoint returns follow-up history scoped to a customer
+/// (`FollowUpHistoryController` is per-debt, not per-customer; "Active
+/// Cases" is now covered by the real "Cases" destination above). Per this
+/// project's "never use mock data" rule and the precedent set for Business
+/// Health, "Recent Follow-ups" stays hidden entirely rather than shown
+/// with a placeholder — add it back once a real per-customer endpoint
 /// exists.
 class CustomerDetailScreen extends ConsumerWidget {
   final String customerId;
@@ -90,19 +92,22 @@ class CustomerDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final customerAsync = ref.watch(customerDetailProvider(customerId));
 
+    final customer = customerAsync.valueOrNull;
+    final isReadOnly = customer?.isReadOnly ?? false;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(customerAsync.valueOrNull?.name ?? 'Customer Details'),
+        title: Text(customer?.name ?? 'Customer Details'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit Customer',
-            onPressed: () => context.push('/customers/$customerId/edit'),
+            tooltip: isReadOnly ? 'This customer is read-only' : 'Edit Customer',
+            onPressed: customer == null || isReadOnly ? null : () => context.push('/customers/$customerId/edit'),
           ),
           IconButton(
             icon: const Icon(Icons.archive_outlined),
-            tooltip: 'Archive Customer',
-            onPressed: () => _archive(context, ref),
+            tooltip: isReadOnly ? 'This customer is read-only' : 'Archive Customer',
+            onPressed: customer == null || isReadOnly ? null : () => _archive(context, ref),
           ),
         ],
       ),
@@ -128,8 +133,17 @@ class CustomerDetailScreen extends ConsumerWidget {
             children: [
               CustomerInfoCard(
                 customer: customer,
-                onEditCreditLimit: () => showCreditLimitSheet(context, customerId, customer.creditLimit),
+                onEditCreditLimit: customer.isReadOnly
+                    ? null
+                    : () => showCreditLimitSheet(context, customerId, customer.creditLimit),
+                onEditStatus: customer.isReadOnly
+                    ? null
+                    : () => showCustomerStatusSheet(context, customerId, customer.customerStatus),
               ),
+              if (customer.isReadOnly) ...[
+                const SizedBox(height: 16),
+                const _CustomerReadOnlyBanner(),
+              ],
               const SizedBox(height: 24),
               const Text('Recent Payments', style: AppTypography.heading),
               const SizedBox(height: 12),
@@ -144,7 +158,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => showComingSoon(context, 'Cases'),
+                      onPressed: () => context.push('/customers/$customerId/cases'),
                       child: const Text('Cases'),
                     ),
                   ),
@@ -159,12 +173,73 @@ class CustomerDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => _generateStatement(context, ref),
+                onPressed: () => context.push('/customers/$customerId/attachments', extra: !customer.isReadOnly),
+                child: const Text('Attachments'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: customer.isReadOnly ? null : () => _generateStatement(context, ref),
                 child: const Text('Generate Statement'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: customer.isReadOnly
+                    ? null
+                    : () => context.push(
+                          '/reminders/new',
+                          extra: ReminderEntityPreset(type: 'customer', id: customerId, label: customer.name),
+                        ),
+                icon: const Icon(Icons.add_alarm_outlined),
+                label: const Text('Add Reminder'),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// FR-083: a read-only Customer remains fully viewable and searchable but
+/// cannot be edited, archived, or have documents generated against it
+/// until the tenant is back under its plan's effective customer limit.
+/// Same visual language as Subscription's `_ReadOnlyBanner`, scoped to
+/// this one customer rather than the whole tenant.
+class _CustomerReadOnlyBanner extends StatelessWidget {
+  const _CustomerReadOnlyBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lock_outline, color: AppColors.warning, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Read-only Customer',
+                  style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Your tenant is over its plan\'s customer limit, so this customer cannot be edited, '
+                  'archived, or have documents generated. It remains fully viewable. '
+                  'Upgrade your plan to restore full access.',
+                  style: AppTypography.body,
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () => context.push('/account/subscription'),
+                  child: const Text('Upgrade Plan'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

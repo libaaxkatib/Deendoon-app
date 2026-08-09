@@ -47,17 +47,19 @@ class CustomerRepository {
   Future<CustomerSaveResult> createCustomer({
     required String name,
     required String phone,
+    String? address,
     required String creditLimit,
   }) =>
-      _guard(() => _api.store(name: name, phone: phone, creditLimit: creditLimit));
+      _guard(() => _api.store(name: name, phone: phone, address: address, creditLimit: creditLimit));
 
   Future<CustomerSaveResult> updateCustomer({
     required String id,
     required String name,
     required String phone,
+    String? address,
     required String creditLimit,
   }) =>
-      _guard(() => _api.update(id: id, name: name, phone: phone, creditLimit: creditLimit));
+      _guard(() => _api.update(id: id, name: name, phone: phone, address: address, creditLimit: creditLimit));
 
   Future<void> archiveCustomer(String id) => _guard(() => _api.archive(id));
 
@@ -65,6 +67,9 @@ class CustomerRepository {
 
   Future<Customer> updateCreditLimit({required String id, required String creditLimit}) =>
       _guard(() => _api.updateCreditLimit(id: id, creditLimit: creditLimit));
+
+  Future<Customer> updateStatus({required String id, required String customerStatus}) =>
+      _guard(() => _api.updateStatus(id: id, customerStatus: customerStatus));
 
   Future<DuplicateWarning?> checkDuplicateCustomer({required String name, required String phone}) =>
       _guard(() => _api.checkDuplicate(name: name, phone: phone));

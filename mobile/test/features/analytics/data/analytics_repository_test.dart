@@ -9,6 +9,8 @@ import 'package:mobile/features/analytics/domain/collection_analytics.dart';
 import 'package:mobile/features/analytics/domain/payment_page.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/customers/domain/customer_page.dart';
+import 'package:mobile/features/debts/domain/debt.dart';
+import 'package:mobile/features/debts/domain/debt_page.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockAnalyticsApi extends Mock implements AnalyticsApi {}
@@ -25,6 +27,18 @@ const _customer = Customer(
   creditScore: 700,
   creditScoreBand: 'good',
   archivedAt: null,
+);
+
+const _debt = Debt(
+  id: '1',
+  customerId: '01CUST',
+  referenceNumber: 'DBT-0001',
+  amount: '500.00',
+  dueDate: '2026-01-15',
+  debtStatus: 'paid',
+  remainingBalance: '0.00',
+  recoveryStage: 1,
+  notes: null,
 );
 
 void main() {
@@ -89,6 +103,41 @@ void main() {
     final result = await repository.fetchReportPayments(page: 1);
 
     expect(result.payments, [payment]);
+  });
+
+  test('fetchReportDebts passes dateFrom/dateTo/perPage through (Collection Rate detail, Item 9)', () async {
+    const page = DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1);
+    when(() => mockApi.reportDebts(
+          page: 1,
+          status: null,
+          dateFrom: '2026-01-01',
+          dateTo: '2026-01-31',
+          paidDateFrom: null,
+          paidDateTo: null,
+          perPage: 100,
+        )).thenAnswer((_) async => page);
+
+    final result = await repository.fetchReportDebts(page: 1, dateFrom: '2026-01-01', dateTo: '2026-01-31', perPage: 100);
+
+    expect(result.debts, [_debt]);
+  });
+
+  test('fetchReportDebts passes paidDateFrom/paidDateTo through (Average Days detail, Item 10)', () async {
+    const page = DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1);
+    when(() => mockApi.reportDebts(
+          page: 1,
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+          paidDateFrom: '2026-01-01',
+          paidDateTo: '2026-01-31',
+          perPage: 100,
+        )).thenAnswer((_) async => page);
+
+    final result =
+        await repository.fetchReportDebts(page: 1, paidDateFrom: '2026-01-01', paidDateTo: '2026-01-31', perPage: 100);
+
+    expect(result.debts, [_debt]);
   });
 
   test('exportReport delegates to the api and returns raw bytes', () async {

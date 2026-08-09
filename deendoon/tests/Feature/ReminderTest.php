@@ -297,6 +297,52 @@ class ReminderTest extends TestCase
         $this->patchJson("/api/v1/reminders/{$reminder->id}/complete")->assertStatus(409);
     }
 
+    // --- Check In (P2.2) ---
+
+    public function test_admin_can_check_in_on_a_reminder(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $reminder = Reminder::factory()->for($tenant, 'tenant')
+            ->create(['related_entity_type' => 'debt', 'related_entity_id' => $debt->id]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->patchJson("/api/v1/reminders/{$reminder->id}/check-in");
+
+        $response->assertStatus(200);
+        $this->assertNotNull($response->json('data.checked_in_at'));
+
+        // Confirmed persisted (not just reflected in this one response) by
+        // re-fetching through a separate real request.
+        $this->getJson("/api/v1/reminders/{$reminder->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.checked_in_at', fn ($value) => $value !== null);
+    }
+
+    public function test_checking_in_again_simply_refreshes_the_timestamp_not_a_conflict(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $reminder = Reminder::factory()->for($tenant, 'tenant')
+            ->create(['related_entity_type' => 'debt', 'related_entity_id' => $debt->id]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->patchJson("/api/v1/reminders/{$reminder->id}/check-in")->assertStatus(200);
+        $this->patchJson("/api/v1/reminders/{$reminder->id}/check-in")->assertStatus(200);
+    }
+
+    public function test_checking_in_is_blocked_when_the_related_customer_is_read_only(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        Customer::where('id', $debt->customer_id)->update(['is_read_only' => true]);
+        $reminder = Reminder::factory()->for($tenant, 'tenant')
+            ->create(['related_entity_type' => 'debt', 'related_entity_id' => $debt->id]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->patchJson("/api/v1/reminders/{$reminder->id}/check-in")->assertStatus(403);
+    }
+
     // --- Summary (§7.1) ---
 
     public function test_summary_returns_due_today_and_overdue_counts(): void

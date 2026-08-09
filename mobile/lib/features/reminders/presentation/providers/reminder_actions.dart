@@ -83,6 +83,13 @@ class ReminderActions {
     return reminder;
   }
 
+  Future<Reminder> checkIn(String id) async {
+    final reminder = await _repository.checkInReminder(id);
+    _ref.invalidate(reminderDetailProvider(id));
+    _ref.read(reminderListProvider.notifier).replaceReminder(reminder);
+    return reminder;
+  }
+
   Future<void> delete(String id) async {
     await _repository.deleteReminder(id);
     _ref.invalidate(reminderDetailProvider(id));

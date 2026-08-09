@@ -71,6 +71,35 @@ class CustomerTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_create_a_customer_with_an_address(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->postJson('/api/v1/customers', [
+            'name' => 'Jane Trader',
+            'phone' => '254712345678',
+            'address' => '123 Market Street, Mogadishu',
+            'credit_limit' => 5000,
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.customer.address', '123 Market Street, Mogadishu');
+        $this->assertDatabaseHas('customers', ['name' => 'Jane Trader', 'address' => '123 Market Street, Mogadishu']);
+    }
+
+    public function test_address_is_optional_and_null_when_omitted(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->postJson('/api/v1/customers', [
+            'name' => 'Jane Trader',
+            'phone' => '254712345678',
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.customer.address', null);
+    }
+
     public function test_omitting_credit_limit_applies_the_tenants_default_credit_limit(): void
     {
         // FR-007/BR-034 (Business Owner Backend Completion): resolves what
@@ -313,6 +342,27 @@ class CustomerTest extends TestCase
             'entity_id' => $customer->id,
             'action' => 'edited',
         ]);
+    }
+
+    public function test_update_can_set_and_clear_the_address(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['address' => null]);
+        $this->actingAsTenantUser($tenant);
+
+        $this->putJson("/api/v1/customers/{$customer->id}", [
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'address' => '456 Harbour Road',
+            'credit_limit' => $customer->credit_limit,
+        ])->assertStatus(200)->assertJsonPath('data.customer.address', '456 Harbour Road');
+
+        $this->putJson("/api/v1/customers/{$customer->id}", [
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'address' => null,
+            'credit_limit' => $customer->credit_limit,
+        ])->assertStatus(200)->assertJsonPath('data.customer.address', null);
     }
 
     public function test_update_that_changes_credit_limit_records_a_credit_limit_changed_audit_event(): void

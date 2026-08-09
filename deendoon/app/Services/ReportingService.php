@@ -45,7 +45,7 @@ class ReportingService
      * same computation `GET /dashboard/business-health` (Logical Unit 2)
      * exposes on its own, not a second, divergent calculation.
      */
-    public function dashboardKpis(User $user, string $period): array
+    public function dashboardKpis(User $user, string $period, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $isPlatformAdmin = $user->tenant_id === null && $user->hasRole('deendoon_platform_administrator');
 
@@ -54,7 +54,7 @@ class ReportingService
         $payments = $isPlatformAdmin ? Payment::withoutGlobalScope('tenant') : Payment::query();
         $cases = $isPlatformAdmin ? CollectionCase::withoutGlobalScope('tenant') : CollectionCase::query();
 
-        [$periodStart, $periodEnd] = $this->periodBounds($period);
+        [$periodStart, $periodEnd] = $this->periodBounds($period, $dateFrom, $dateTo);
 
         $totalOutstanding = (clone $debts)->whereNotIn('debt_status', self::CLOSED_DEBT_STATUSES)->sum('remaining_balance');
         $totalCollected = (clone $payments)
@@ -187,15 +187,15 @@ class ReportingService
      * each Paid debt — a debt only reaches 'paid' status once its
      * remaining_balance reaches zero, so its last payment is that date.
      * Uses Eloquent's withMax() (one aggregate query, no N+1) rather than
-     * a per-debt lookup.
+     * a per-debt lookup. Extracted into `debtsPaidWithin()` so
+     * `ReportController`'s Debts report can filter to this exact same
+     * population (Analytics' Average Days detail view, mobile Item 10) —
+     * one source of truth for "paid within period", not two definitions
+     * that could quietly drift apart.
      */
     private function averageDaysToPay(string $dateFrom, string $dateTo): ?float
     {
-        $paidDebts = Debt::where('debt_status', 'paid')
-            ->withMax('payments', 'payment_date')
-            ->get(['id', 'due_date'])
-            ->filter(fn (Debt $debt) => $debt->payments_max_payment_date !== null
-                && Carbon::parse($debt->payments_max_payment_date)->betweenIncluded($dateFrom, $dateTo));
+        $paidDebts = $this->debtsPaidWithin($dateFrom, $dateTo);
 
         if ($paidDebts->isEmpty()) {
             return null;
@@ -206,6 +206,18 @@ class ReportingService
         );
 
         return round($totalDays / $paidDebts->count(), 1);
+    }
+
+    /**
+     * @return Collection<int, Debt>
+     */
+    public function debtsPaidWithin(string $dateFrom, string $dateTo): Collection
+    {
+        return Debt::where('debt_status', 'paid')
+            ->withMax('payments', 'payment_date')
+            ->get(['id', 'due_date'])
+            ->filter(fn (Debt $debt) => $debt->payments_max_payment_date !== null
+                && Carbon::parse($debt->payments_max_payment_date)->betweenIncluded($dateFrom, $dateTo));
     }
 
     /**
@@ -280,20 +292,41 @@ class ReportingService
      * same posture every other date operation in this project already
      * takes, rather than inventing a specific policy.
      *
+     * Dashboard KPI Period Selector (mobile Item 8): `day`/`week`/`month`/
+     * `year` are the original values, kept as backward-compatible aliases
+     * for `today`/`this_week`/`this_month`/`this_year`. Every "last_*"
+     * value is a fully-elapsed past period (start AND end both in the
+     * past), unlike the "this_*" values, which always end "now" — a
+     * current period's future days haven't happened yet, so there's
+     * nothing to bound them by except the present moment. `custom` uses
+     * the caller-supplied `$dateFrom`/`$dateTo` (already validated by
+     * `DashboardController::kpis()`) verbatim.
+     *
      * @return array{0: string, 1: string}
      */
-    private function periodBounds(string $period): array
+    private function periodBounds(string $period, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $now = now();
 
-        $start = match ($period) {
-            'day' => $now->copy()->startOfDay(),
-            'week' => $now->copy()->startOfWeek(),
-            'year' => $now->copy()->startOfYear(),
-            default => $now->copy()->startOfMonth(),
+        if ($period === 'custom' && $dateFrom !== null && $dateTo !== null) {
+            return [Carbon::parse($dateFrom)->toDateString(), Carbon::parse($dateTo)->toDateString()];
+        }
+
+        [$start, $end] = match ($period) {
+            'day', 'today' => [$now->copy()->startOfDay(), $now->copy()],
+            'yesterday' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+            'week', 'this_week' => [$now->copy()->startOfWeek(), $now->copy()],
+            'last_week' => [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()],
+            'month', 'this_month' => [$now->copy()->startOfMonth(), $now->copy()],
+            'last_month' => [$now->copy()->subMonthsNoOverflow()->startOfMonth(), $now->copy()->subMonthsNoOverflow()->endOfMonth()],
+            'this_quarter' => [$now->copy()->startOfQuarter(), $now->copy()],
+            'last_quarter' => [$now->copy()->subMonthsNoOverflow(3)->startOfQuarter(), $now->copy()->subMonthsNoOverflow(3)->endOfQuarter()],
+            'year', 'this_year' => [$now->copy()->startOfYear(), $now->copy()],
+            'last_year' => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
+            default => [$now->copy()->startOfMonth(), $now->copy()],
         };
 
-        return [$start->toDateString(), $now->toDateString()];
+        return [$start->toDateString(), $end->toDateString()];
     }
 
     private function money(mixed $sum): string

@@ -12,6 +12,7 @@ use App\Models\ReferenceData;
 use App\Models\RequestedServiceItem;
 use App\Models\StorageAddonRejectionReason;
 use App\Models\SubscriptionChangeRequestRejectionReason;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
@@ -28,6 +29,100 @@ use Illuminate\Support\Collection;
 class ReferenceDataService
 {
     public function __construct(private readonly AuditLogService $auditLog) {}
+
+    /**
+     * Transfer Case to Deendoon Recovery Team (Product Owner-approved
+     * default options): the 13 approved Reason for Transfer and 13
+     * approved Requested Service values, provisioned per tenant. Every
+     * other Reference Data category (`risk_level`/`payment_method`/
+     * `collection_outcome`) is deliberately left to the Business Owner to
+     * configure via `PUT /admin/reference-data/{category}` — these two
+     * are the only ones with a Product Owner-approved default list, so
+     * they're the only ones provisioned automatically.
+     *
+     * Idempotent: looked up by tenant_id + category + value_label and
+     * updated in place if found, so calling this more than once for the
+     * same tenant (e.g. re-running the seeder) never creates duplicates
+     * and never touches a value the Business Owner has since customized
+     * under a different label — same pattern as
+     * `MessageTemplateService::provisionDefaults()`.
+     *
+     * `tenant_id` is set via direct property assignment rather than
+     * `updateOrCreate()`'s mass-assignment (`ReferenceData` deliberately
+     * excludes it from Fillable, see `BelongsToTenant`).
+     * `withoutGlobalScope('tenant')` guards the lookup for the same
+     * reason as that method: this can run before any Sanctum user is
+     * authenticated (mid-registration) or from a seeder.
+     */
+    public function provisionDefaults(Tenant $tenant): void
+    {
+        $categories = [
+            [ReferenceDataCategory::TransferReason, self::defaultTransferReasons()],
+            [ReferenceDataCategory::RequestedService, self::defaultRequestedServices()],
+        ];
+
+        foreach ($categories as [$category, $values]) {
+            foreach ($values as $index => $valueLabel) {
+                $item = ReferenceData::withoutGlobalScope('tenant')
+                    ->where('tenant_id', $tenant->id)
+                    ->where('category', $category->value)
+                    ->where('value_label', $valueLabel)
+                    ->first() ?? new ReferenceData;
+
+                $item->tenant_id = $tenant->id;
+                $item->category = $category->value;
+                $item->value_label = $valueLabel;
+                $item->sort_order = $index + 1;
+                $item->is_active = true;
+                $item->created_at ??= now();
+                $item->save();
+            }
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function defaultTransferReasons(): array
+    {
+        return [
+            'Customer stopped answering calls',
+            'Customer ignores WhatsApp messages',
+            'Customer ignores SMS',
+            'Customer repeatedly promises but never pays',
+            'Customer disputes the debt',
+            'Customer cannot be located',
+            'Customer business is closed',
+            'Customer intentionally delays payment',
+            'Debt is high value',
+            'Long overdue account',
+            'Previous follow-up unsuccessful',
+            'Client requested agency collection',
+            'Other',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function defaultRequestedServices(): array
+    {
+        return [
+            'Telephone Collection',
+            'WhatsApp Follow-up',
+            'SMS Follow-up',
+            'Email Collection',
+            'Payment Negotiation',
+            'Settlement Negotiation',
+            'Installment Arrangement',
+            'Official Demand Letter',
+            'Field Visit',
+            'Executive Collection',
+            'Skip Tracing (Locate Debtor)',
+            'Legal Review',
+            'Court Preparation',
+        ];
+    }
 
     /**
      * $tenantId is nullable — Subscription Approval + Storage Add-on

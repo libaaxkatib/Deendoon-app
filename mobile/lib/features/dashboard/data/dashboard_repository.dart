@@ -21,7 +21,8 @@ class DashboardRepository {
 
   Future<BusinessHealth> fetchBusinessHealth() => _guard(() => _api.businessHealth());
 
-  Future<DashboardKpis> fetchKpis() => _guard(() => _api.kpis());
+  Future<DashboardKpis> fetchKpis({String period = 'month', String? dateFrom, String? dateTo}) =>
+      _guard(() => _api.kpis(period: period, dateFrom: dateFrom, dateTo: dateTo));
 
   Future<TodaysOverview> fetchTodaysOverview() => _guard(() => _api.todaysOverview());
 

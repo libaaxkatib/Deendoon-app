@@ -21,6 +21,7 @@ const _case = CollectionCase(
   assignedOfficerUserId: null,
   caseStatus: 'open',
   closureOutcome: null,
+  notes: null,
   lastActivityAt: '2026-07-28T10:00:00.000000Z',
   createdAt: '2026-07-01T10:00:00.000000Z',
   closedAt: null,
@@ -37,15 +38,33 @@ void main() {
 
   test('fetchCases passes tab through and returns the page', () async {
     const page = CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 2, total: 21);
-    when(() => mockApi.list(page: 1, tab: 'high_risk')).thenAnswer((_) async => page);
+    when(() => mockApi.list(page: 1, tab: 'high_risk', customerId: null)).thenAnswer((_) async => page);
 
     final result = await repository.fetchCases(page: 1, tab: 'high_risk');
 
     expect(result.cases, [_case]);
   });
 
+  test('fetchCases passes customerId through and returns the page', () async {
+    const page = CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1);
+    when(() => mockApi.list(page: 1, tab: null, customerId: '01CUST')).thenAnswer((_) async => page);
+
+    final result = await repository.fetchCases(page: 1, customerId: '01CUST');
+
+    expect(result.cases, [_case]);
+  });
+
+  test('fetchCasesForCustomer returns the flat case list for that customer', () async {
+    const page = CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1);
+    when(() => mockApi.list(page: 1, tab: null, customerId: '01CUST')).thenAnswer((_) async => page);
+
+    final result = await repository.fetchCasesForCustomer('01CUST');
+
+    expect(result, [_case]);
+  });
+
   test('fetchCases throws ApiException on failure', () async {
-    when(() => mockApi.list(page: 1, tab: null)).thenThrow(
+    when(() => mockApi.list(page: 1, tab: null, customerId: null)).thenThrow(
       DioException(
         requestOptions: RequestOptions(path: '/collection-cases'),
         response: Response(
@@ -90,6 +109,7 @@ void main() {
       assignedOfficerUserId: null,
       caseStatus: 'closed',
       closureOutcome: 'Paid in full',
+      notes: null,
       lastActivityAt: '2026-07-28T11:00:00.000000Z',
       createdAt: '2026-07-01T10:00:00.000000Z',
       closedAt: '2026-07-28T11:00:00.000000Z',
@@ -106,5 +126,50 @@ void main() {
     when(() => mockApi.history('1')).thenAnswer((_) async => history);
 
     expect(await repository.fetchHistory('1'), history);
+  });
+
+  test('updateNotes delegates to the api and returns the updated case', () async {
+    const updated = CollectionCase(
+      id: '1',
+      debtId: '01DEBT',
+      customerId: '01CUST',
+      customerName: 'Somali Builders',
+      outstandingAmount: '4467.40',
+      riskLevel: 'high',
+      referenceNumber: 'COL-0001',
+      assignedOfficerUserId: null,
+      caseStatus: 'open',
+      closureOutcome: null,
+      notes: 'Called customer, promised payment next week.',
+      lastActivityAt: '2026-07-28T12:00:00.000000Z',
+      createdAt: '2026-07-01T10:00:00.000000Z',
+      closedAt: null,
+    );
+    when(() => mockApi.updateNotes(caseId: '1', notes: 'Called customer, promised payment next week.'))
+        .thenAnswer((_) async => updated);
+
+    final result =
+        await repository.updateNotes(caseId: '1', notes: 'Called customer, promised payment next week.');
+
+    expect(result, updated);
+  });
+
+  test('updateNotes throws ApiException on failure', () async {
+    when(() => mockApi.updateNotes(caseId: '1', notes: null)).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(path: '/collection-cases/1'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/collection-cases/1'),
+          statusCode: 403,
+          data: {'success': false, 'message': 'This action is unauthorized.', 'data': null, 'errors': null},
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(
+      () => repository.updateNotes(caseId: '1', notes: null),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+    );
   });
 }

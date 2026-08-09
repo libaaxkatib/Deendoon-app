@@ -16,6 +16,7 @@ class StoreCustomerRequest extends FormRequest
         $this->merge([
             'name' => trim((string) $this->input('name')),
             'phone' => trim((string) $this->input('phone')),
+            'address' => $this->filled('address') ? trim((string) $this->input('address')) : null,
         ]);
     }
 
@@ -27,6 +28,9 @@ class StoreCustomerRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
+            // Item 13 (mobile Client Visit Navigate): optional — most
+            // existing customers won't have one, not required by FR-007.
+            'address' => ['nullable', 'string', 'max:500'],
             // FR-007/BR-034 (Business Owner Backend Completion): when
             // omitted, CustomerController::store() applies the tenant's
             // configured SystemSetting::default_credit_limit instead.

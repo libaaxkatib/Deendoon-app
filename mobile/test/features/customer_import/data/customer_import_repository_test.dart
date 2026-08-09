@@ -18,6 +18,31 @@ void main() {
     repository = CustomerImportRepository(mockApi);
   });
 
+  test('downloadTemplate delegates to the api and returns the raw bytes', () async {
+    when(() => mockApi.downloadTemplate()).thenAnswer((_) async => [1, 2, 3]);
+
+    expect(await repository.downloadTemplate(), [1, 2, 3]);
+  });
+
+  test('downloadTemplate throws ApiException on failure', () async {
+    when(() => mockApi.downloadTemplate()).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(path: '/customers/import/template'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/customers/import/template'),
+          statusCode: 403,
+          data: {'success': false, 'message': 'This action is unauthorized.', 'data': null, 'errors': null},
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(
+      () => repository.downloadTemplate(),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+    );
+  });
+
   test('previewImport delegates to the api and returns the parsed preview', () async {
     const preview = ImportPreview(batchId: '01BATCH', status: 'preview', rows: []);
     when(() => mockApi.preview(filePath: '/tmp/customers.xlsx', fileName: 'customers.xlsx'))

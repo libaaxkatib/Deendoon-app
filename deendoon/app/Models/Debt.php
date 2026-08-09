@@ -76,6 +76,11 @@ class Debt extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(DebtAttachment::class);
+    }
+
     /**
      * FR-021 (Business Owner Backend Completion): the query-level mirror of
      * DebtController::refreshOverdueStatus()'s exact condition

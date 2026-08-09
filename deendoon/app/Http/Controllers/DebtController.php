@@ -8,6 +8,8 @@ use App\Http\Requests\StoreDebtRequest;
 use App\Http\Requests\UpdateDebtRecoveryStageRequest;
 use App\Http\Requests\UpdateDebtRequest;
 use App\Http\Requests\UpdateDebtStatusRequest;
+use App\Http\Requests\UploadDebtAttachmentRequest;
+use App\Http\Resources\DebtAttachmentResource;
 use App\Http\Resources\DebtResource;
 use App\Models\AuditLog;
 use App\Models\Customer;
@@ -15,6 +17,7 @@ use App\Models\Debt;
 use App\Services\AuditLogService;
 use App\Services\CreditScoreService;
 use App\Services\CustomerBalanceService;
+use App\Services\DocumentService;
 use App\Services\PromiseToPayService;
 use App\Services\ReferenceNumberService;
 use App\Services\RiskLevelService;
@@ -45,6 +48,7 @@ class DebtController extends Controller
         private readonly PromiseToPayService $promiseToPay,
         private readonly RiskLevelService $riskLevel,
         private readonly CreditScoreService $creditScore,
+        private readonly DocumentService $documents,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -323,6 +327,45 @@ class DebtController extends Controller
         });
 
         return $this->successResponse(new DebtResource($debt->fresh()), 'Recovery stage updated successfully');
+    }
+
+    /**
+     * Final Product Completion Roadmap, P1.6 — generic file attachments on
+     * a Debt. Also backs Scan Invoice/Upload Invoice (P2.6/P2.7), which
+     * reuse this exact endpoint as pure storage — distinguished only by
+     * their Flutter-side entry point and `description` caption.
+     */
+    public function attachmentsIndex(Debt $debt): JsonResponse
+    {
+        $this->authorize('view', $debt);
+
+        return $this->successResponse(
+            DebtAttachmentResource::collection($debt->attachments()->orderBy('created_at')->get()),
+        );
+    }
+
+    public function attachmentsStore(UploadDebtAttachmentRequest $request, Debt $debt): JsonResponse
+    {
+        $this->authorize('update', $debt);
+
+        $attachment = DB::transaction(function () use ($request, $debt) {
+            $stored = $this->documents->storeUploadedFile($request->file('file'), $debt->tenant, 'debt_attachments');
+
+            $attachment = $debt->attachments()->create([
+                'uploaded_by_user_id' => $request->user()->id,
+                'file_path' => $stored['path'],
+                'original_filename' => $stored['original_filename'],
+                'mime_type' => $stored['mime_type'],
+                'file_size' => $stored['size'],
+                'description' => $request->validated('description'),
+            ]);
+
+            $this->auditLog->record(AuditAction::Created, 'debt_attachment', $attachment->id, $request->user());
+
+            return $attachment;
+        });
+
+        return $this->successResponse(new DebtAttachmentResource($attachment), 'Attachment uploaded successfully', 201);
     }
 
     /**

@@ -3,7 +3,13 @@ import 'package:mobile/features/cases/domain/case_history.dart';
 import 'package:mobile/features/cases/domain/collection_case.dart';
 import 'package:mobile/features/cases/domain/collection_case_page.dart';
 
-Map<String, dynamic> _caseJson({String caseStatus = 'open', String? closureOutcome, String? assignedOfficerUserId}) => {
+Map<String, dynamic> _caseJson({
+  String caseStatus = 'open',
+  String? closureOutcome,
+  String? assignedOfficerUserId,
+  String? notes,
+}) =>
+    {
       'id': '01CASE',
       'debt_id': '01DEBT',
       'customer_id': '01CUST',
@@ -14,6 +20,7 @@ Map<String, dynamic> _caseJson({String caseStatus = 'open', String? closureOutco
       'assigned_officer_user_id': assignedOfficerUserId,
       'case_status': caseStatus,
       'closure_outcome': closureOutcome,
+      'notes': notes,
       'last_activity_at': '2026-07-28T10:00:00.000000Z',
       'created_at': '2026-07-01T10:00:00.000000Z',
       'closed_at': null,
@@ -34,6 +41,7 @@ void main() {
       expect(collectionCase.assignedOfficerUserId, '01OFFICER');
       expect(collectionCase.caseStatus, 'open');
       expect(collectionCase.closureOutcome, isNull);
+      expect(collectionCase.notes, isNull);
       expect(collectionCase.lastActivityAt, '2026-07-28T10:00:00.000000Z');
       expect(collectionCase.closedAt, isNull);
     });
@@ -42,6 +50,13 @@ void main() {
       final collectionCase = CollectionCase.fromJson(_caseJson());
 
       expect(collectionCase.assignedOfficerUserId, isNull);
+    });
+
+    test('parses a real notes value', () {
+      final collectionCase =
+          CollectionCase.fromJson(_caseJson(notes: 'Called customer, promised payment next week.'));
+
+      expect(collectionCase.notes, 'Called customer, promised payment next week.');
     });
 
     test('parses a closed case with a closure outcome', () {

@@ -37,7 +37,11 @@ return new class extends Migration
             $table->foreign('tenant_id')->references('id')->on('tenants');
             $table->foreign('template_id')->references('id')->on('message_templates');
             $table->foreign('reminder_id')->references('id')->on('reminders');
-            $table->foreign('case_id')->references('id')->on('collection_cases');
+            // case_id's FK to collection_cases is added later
+            // (2026_08_19_090000_add_collection_case_foreign_keys_to_reminders_and_sent_messages.php)
+            // — collection_cases doesn't exist yet at this migration's
+            // timestamp (created 2026-07-31). See that migration's
+            // docblock and Known_Backend_Issues.md §2.1.
 
             $table->index(['tenant_id', 'reminder_id']);
             $table->index(['tenant_id', 'case_id']);

@@ -82,6 +82,8 @@ class ReminderRepository {
 
   Future<Reminder> completeReminder(String id) => _guard(() => _api.complete(id));
 
+  Future<Reminder> checkInReminder(String id) => _guard(() => _api.checkIn(id));
+
   Future<SentMessage> sendReminder({required String id, required String channel, required String templateId}) =>
       _guard(() => _api.send(id: id, channel: channel, templateId: templateId));
 

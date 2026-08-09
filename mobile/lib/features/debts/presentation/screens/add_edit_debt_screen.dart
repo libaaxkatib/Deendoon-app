@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/coming_soon.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../attachments/data/attachment_repository.dart';
+import '../../../attachments/presentation/providers/attachment_providers.dart';
 import '../../../quick_actions/domain/debt_draft.dart';
 import '../providers/debt_actions.dart';
 import '../providers/debt_detail_providers.dart';
@@ -25,10 +26,16 @@ import '../providers/debt_detail_providers.dart';
 /// as a dialog after the debt is already successfully created.
 ///
 /// The "Invoice (Optional)" section (Scan/Upload) between Due Date and
-/// Notes is UI-only — no invoice capture/upload endpoint exists yet, so
-/// both actions use the app's existing `showComingSoon` convention rather
-/// than a fake upload. Purely additive: does not touch `StoreDebtRequest`/
-/// `UpdateDebtRequest`, validation, or the submit flow.
+/// Notes reuses the same real attachment architecture as Debt Detail's own
+/// Scan/Upload Invoice buttons (`POST /debts/{id}/attachments`, tagged
+/// `description: 'Invoice'`) — V1 scope only: capture/pick a file and
+/// attach it, no OCR, no invoice-data extraction, no manual metadata form.
+/// A new Debt has no id until it's created, so the file is only picked
+/// here and uploaded right after a successful save: immediately for Edit
+/// (the id is already known) and Add (the id comes back from `create()`);
+/// in wizard `deferSubmit` mode the picked file travels inside
+/// [DebtDraft] and is uploaded later, by `AddCaseReviewScreen`, once its
+/// own `create()` call returns a real Debt id.
 class AddEditDebtScreen extends ConsumerStatefulWidget {
   final String? customerId;
   final String? debtId;
@@ -57,6 +64,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
   bool _prefilled = false;
   bool _isSaving = false;
   String? _error;
+  PickedAttachmentFile? _invoiceFile;
 
   @override
   void dispose() {
@@ -87,6 +95,33 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
   String _dateOnly(DateTime dt) =>
       '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
+  Future<void> _pickInvoice(Future<PickedAttachmentFile?> Function() pick) async {
+    final file = await pick();
+    if (file == null || !mounted) return;
+    setState(() => _invoiceFile = file);
+  }
+
+  /// Best-effort: the Debt/Case has already been created successfully by
+  /// the time this runs, so a failed invoice upload is surfaced as a
+  /// snackbar rather than blocking or reverting an otherwise-successful
+  /// save — matches `AddCaseReviewScreen`'s "no rollback on a later
+  /// failure" convention for this same wizard chain.
+  Future<void> _uploadInvoiceIfPicked(String debtId) async {
+    final file = _invoiceFile;
+    if (file == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(attachmentRepositoryProvider).uploadAttachment(
+            entityPathPrefix: 'debts/$debtId',
+            filePath: file.path,
+            fileName: file.name,
+            description: 'Invoice',
+          );
+    } on ApiException catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text('Debt saved, but the invoice failed: ${e.message}')));
+    }
+  }
+
   Future<void> _showCreditLimitDialog(String message) {
     return showDialog<void>(
       context: context,
@@ -114,6 +149,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
         amount: _amountController.text.trim(),
         dueDate: _dateOnly(_dueDate!),
         notes: notes.isEmpty ? null : notes,
+        invoiceFile: _invoiceFile,
       ));
       return;
     }
@@ -131,6 +167,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
               dueDate: _dateOnly(_dueDate!),
               notes: notes.isEmpty ? null : notes,
             );
+        await _uploadInvoiceIfPicked(widget.debtId!);
         if (!mounted) return;
         setState(() => _isSaving = false);
         router.pop();
@@ -141,6 +178,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
               dueDate: _dateOnly(_dueDate!),
               notes: notes.isEmpty ? null : notes,
             );
+        await _uploadInvoiceIfPicked(result.debt.id);
         if (!mounted) return;
         setState(() => _isSaving = false);
         if (result.warning != null) {
@@ -221,7 +259,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => showComingSoon(context, 'Scan Invoice'),
+                    onPressed: () => _pickInvoice(ref.read(attachmentCameraProvider)),
                     icon: const Icon(Icons.document_scanner_outlined, size: 18),
                     label: const Text('Scan Invoice'),
                   ),
@@ -229,13 +267,30 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => showComingSoon(context, 'Upload Invoice'),
+                    onPressed: () => _pickInvoice(ref.read(attachmentFilePickerProvider)),
                     icon: const Icon(Icons.upload_file_outlined, size: 18),
                     label: const Text('Upload Invoice'),
                   ),
                 ),
               ],
             ),
+            if (_invoiceFile != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.attach_file, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(_invoiceFile!.name, style: AppTypography.caption, overflow: TextOverflow.ellipsis),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    tooltip: 'Remove selected invoice',
+                    onPressed: () => setState(() => _invoiceFile = null),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 20),
             const Text('Notes', style: AppTypography.heading),
             const SizedBox(height: 12),

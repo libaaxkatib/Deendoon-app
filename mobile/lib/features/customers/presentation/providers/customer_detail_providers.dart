@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/document_summary.dart';
 import '../../../../core/models/payment.dart';
+import '../../../cases/data/collection_case_repository.dart';
+import '../../../cases/domain/collection_case.dart';
 import '../../data/customer_repository.dart';
 import '../../domain/customer.dart';
 
@@ -19,4 +21,8 @@ final customerPaymentsProvider = FutureProvider.family<List<Payment>, String>(
 
 final customerDocumentsProvider = FutureProvider.family<List<DocumentSummary>, String>(
   (ref, customerId) => ref.watch(customerRepositoryProvider).fetchDocuments(customerId),
+);
+
+final customerCasesProvider = FutureProvider.family<List<CollectionCase>, String>(
+  (ref, customerId) => ref.watch(collectionCaseRepositoryProvider).fetchCasesForCustomer(customerId),
 );

@@ -20,10 +20,12 @@ import '../providers/customer_detail_providers.dart';
 /// (`PrimaryButton`, `AppTypography`) rather than a new mockup.
 ///
 /// Fields mirror `StoreCustomerRequest`/`UpdateCustomerRequest` exactly:
-/// `name` (required, max 255), `phone` (required, max 30), `credit_limit`
-/// (required, numeric, min 0). Both endpoints also return an optional
-/// possible-duplicate `warning` (BRL-013) alongside the saved customer —
-/// surfaced here as a post-save dialog, never blocking the save itself.
+/// `name` (required, max 255), `phone` (required, max 30), `address`
+/// (optional, max 500 — feeds the Client Visit reminder's real "Navigate"
+/// action), `credit_limit` (required, numeric, min 0). Both endpoints also
+/// return an optional possible-duplicate `warning` (BRL-013) alongside the
+/// saved customer — surfaced here as a post-save dialog, never blocking
+/// the save itself.
 class AddEditCustomerScreen extends ConsumerStatefulWidget {
   final String? customerId;
 
@@ -47,6 +49,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
   final _creditLimitController = TextEditingController();
 
   bool _prefilled = false;
@@ -61,6 +64,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     _duplicateDebounce?.cancel();
     _nameController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     _creditLimitController.dispose();
     super.dispose();
   }
@@ -70,6 +74,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     _prefilled = true;
     _nameController.text = customer.name as String;
     _phoneController.text = customer.phone as String;
+    _addressController.text = (customer.address as String?) ?? '';
     _creditLimitController.text = customer.creditLimit as String;
   }
 
@@ -125,10 +130,16 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
 
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
+    final address = _addressController.text.trim();
     final creditLimit = _creditLimitController.text.trim();
 
     if (widget.deferSubmit) {
-      GoRouter.of(context).pop(CustomerDraft(name: name, phone: phone, creditLimit: creditLimit));
+      GoRouter.of(context).pop(CustomerDraft(
+        name: name,
+        phone: phone,
+        address: address.isEmpty ? null : address,
+        creditLimit: creditLimit,
+      ));
       return;
     }
 
@@ -144,9 +155,15 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
                 id: widget.customerId!,
                 name: name,
                 phone: phone,
+                address: address.isEmpty ? null : address,
                 creditLimit: creditLimit,
               )
-          : await ref.read(customerActionsProvider).create(name: name, phone: phone, creditLimit: creditLimit);
+          : await ref.read(customerActionsProvider).create(
+                name: name,
+                phone: phone,
+                address: address.isEmpty ? null : address,
+                creditLimit: creditLimit,
+              );
 
       if (!mounted) return;
       // Clear the saving spinner before the (possibly modal) duplicate
@@ -224,6 +241,12 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _addressController,
+              maxLength: 500,
+              decoration: const InputDecoration(labelText: 'Address (Optional)'),
+            ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _creditLimitController,

@@ -26,6 +26,11 @@ import '../theme/app_colors.dart';
 ///   the Business Owner has an actionable item (respond via Messages), so
 ///   it alone gets `warning`; the other 5 are neutral in-progress states
 ///   and get `info`, matching how `pending`/`upcoming` are colored above.
+/// - Promise to Pay `status` (`promises_to_pay.status`, the real Postgres
+///   CHECK constraint): open, fulfilled, broken. `open` already exists
+///   above (case_status) and is reused as-is; `fulfilled` gets `success`
+///   (matching `paid`/`recovered`'s "good outcome" tone), `broken` gets
+///   `danger` (matching `overdue`'s "needs attention now" tone).
 /// - Subscription `subscription_status` (`tenant_subscriptions.status`):
 ///   trialing, active, expired. `active` already exists above
 ///   (customer_status) and is reused as-is. `trialing` gets `info`
@@ -74,6 +79,9 @@ class StatusBadge extends StatelessWidget {
       'accepted' => (AppColors.info, 'Accepted'),
       'assigned' => (AppColors.info, 'Assigned'),
       'in_progress' => (AppColors.info, 'In Progress'),
+      // promise_to_pay status (open reuses case_status's mapping above)
+      'fulfilled' => (AppColors.success, 'Fulfilled'),
+      'broken' => (AppColors.danger, 'Broken'),
       // subscription_status (active reuses customer_status's mapping above)
       'trialing' => (AppColors.info, 'Trial'),
       'expired' => (AppColors.danger, 'Expired'),

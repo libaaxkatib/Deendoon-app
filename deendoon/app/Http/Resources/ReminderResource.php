@@ -38,6 +38,7 @@ class ReminderResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'completed_at' => $this->completed_at,
+            'checked_in_at' => $this->checked_in_at,
         ];
     }
 }

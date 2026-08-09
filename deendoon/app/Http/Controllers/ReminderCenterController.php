@@ -120,6 +120,21 @@ class ReminderCenterController extends Controller
     }
 
     /**
+     * P2.2 — Client Visit "Check In." Reuses the `update` ability (same
+     * role + related-Customer-not-read-only gate as Reschedule/Notes) —
+     * no dedicated ability needed for what is, authorization-wise, an
+     * ordinary field update.
+     */
+    public function checkIn(Reminder $reminder): JsonResponse
+    {
+        $this->authorize('update', $reminder);
+
+        $reminder = $this->reminders->checkIn($reminder);
+
+        return $this->successResponse(new ReminderResource($reminder), 'Checked in successfully');
+    }
+
+    /**
      * §7.3's inline "Send Reminder" action.
      */
     public function send(SendReminderRequest $request, Reminder $reminder): JsonResponse

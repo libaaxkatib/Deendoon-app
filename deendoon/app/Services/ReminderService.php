@@ -82,6 +82,20 @@ class ReminderService
         return $reminder->fresh();
     }
 
+    /**
+     * P2.2 — Client Visit "Check In." Deliberately idempotent (re-checking
+     * in just refreshes the timestamp) rather than 409ing on a second
+     * call, unlike complete() — there's no data-integrity reason to
+     * forbid it, and a Business Owner re-opening the app mid-visit is a
+     * normal case, not a conflict.
+     */
+    public function checkIn(Reminder $reminder): Reminder
+    {
+        $reminder->update(['checked_in_at' => now()]);
+
+        return $reminder->fresh();
+    }
+
     public function delete(Reminder $reminder): void
     {
         $reminder->delete();

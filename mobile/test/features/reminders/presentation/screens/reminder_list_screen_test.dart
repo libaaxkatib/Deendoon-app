@@ -48,6 +48,7 @@ const _reminder = Reminder(
   createdAt: '2026-07-25T09:00:00.000000Z',
   updatedAt: '2026-07-25T09:00:00.000000Z',
   completedAt: null,
+  checkedInAt: null,
 );
 
 const _customer = Customer(
@@ -82,6 +83,7 @@ const _clientVisitReminder = Reminder(
   createdAt: '2026-07-20T09:00:00.000000Z',
   updatedAt: '2026-07-20T09:00:00.000000Z',
   completedAt: null,
+  checkedInAt: null,
 );
 
 Future<void> _pumpScreen(
@@ -193,12 +195,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    for (final label in ['All', 'Today', 'Payments', 'Visits', 'Calls', 'Upcoming', 'Overdue', 'Completed']) {
+    for (final label in ['All', 'Today', 'Payments', 'Client Visits', 'Follow-ups', 'Upcoming', 'Overdue', 'Completed']) {
       expect(find.widgetWithText(ChoiceChip, label), findsOneWidget, reason: '$label chip should render');
     }
   });
 
-  testWidgets('tapping the Visits chip shows only client_visit reminders from the same All fetch', (tester) async {
+  testWidgets('tapping the Client Visits chip shows only client_visit reminders from the same All fetch', (tester) async {
     when(() => mockReminderRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
       (_) async =>
           const ReminderPage(reminders: [_reminder, _clientVisitReminder], currentPage: 1, lastPage: 1, total: 2),
@@ -212,18 +214,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Visits'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Client Visits'));
     await tester.pumpAndSettle();
 
     // Both calls are the same real "All" fetch (initial load, then re-fetched
-    // by filterByType) — Visits is a client-side filter, never a distinct
-    // `tab`/`reminder_type` API call.
+    // by filterByType) — Client Visits is a client-side filter, never a
+    // distinct `tab`/`reminder_type` API call.
     verify(() => mockReminderRepository.fetchReminders(page: 1, tab: null)).called(2);
     expect(find.text('Client Visit'), findsWidgets);
     expect(find.text('Payment Due'), findsNothing);
   });
 
-  testWidgets('tapping the Visits mini-stat card applies the same Visits filter', (tester) async {
+  testWidgets('tapping the Client Visits mini-stat card applies the same filter', (tester) async {
     when(() => mockReminderRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
       (_) async =>
           const ReminderPage(reminders: [_reminder, _clientVisitReminder], currentPage: 1, lastPage: 1, total: 2),
@@ -232,14 +234,14 @@ void main() {
     await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
     await tester.pumpAndSettle();
 
-    // 'Visits' also labels the filter chip below — the mini-stat is the
-    // first match in tree order since the summary row renders above it.
-    await tester.tap(find.text('Visits').first);
+    // 'Client Visits' also labels the filter chip below — the mini-stat is
+    // the first match in tree order since the summary row renders above it.
+    await tester.tap(find.text('Client Visits').first);
     await tester.pumpAndSettle();
 
     expect(find.text('Client Visit'), findsWidgets);
     expect(find.text('Payment Due'), findsNothing);
-    expect(find.widgetWithText(ChoiceChip, 'Visits'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Client Visits'), findsOneWidget);
   });
 
   testWidgets('an initialFilter of payments pre-selects the Payments chip and filters the list', (tester) async {
@@ -281,6 +283,7 @@ void main() {
       createdAt: '2026-07-25T09:00:00.000000Z',
       updatedAt: '2026-07-25T09:00:00.000000Z',
       completedAt: '2026-07-28T10:00:00.000000Z',
+      checkedInAt: null,
     );
     when(() => mockReminderRepository.completeReminder('1')).thenAnswer((_) async => completed);
 

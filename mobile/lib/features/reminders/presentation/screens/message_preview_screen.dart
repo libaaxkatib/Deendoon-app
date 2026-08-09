@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -9,8 +10,37 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../data/reminder_repository.dart';
 import '../../domain/message_template.dart';
-import '../providers/reminder_actions.dart';
 import '../providers/reminder_detail_providers.dart';
+
+/// The approved V1 default template display order — the backend's
+/// `GET message-templates` sorts alphabetically (`orderBy('name')`, a
+/// reasonable general-purpose default for the endpoint itself), which
+/// doesn't match the documented chip order, so this screen re-sorts the
+/// fetched list rather than changing the backend's general-purpose
+/// ordering. Templates not in this list (e.g. a future custom template)
+/// sort after these seven, in whatever order the backend returned them.
+const _templateDisplayOrder = <String>[
+  'First Reminder',
+  'Second Reminder',
+  'Third Reminder',
+  'Last Reminder',
+  'Meeting Request',
+  'Phone Call Follow-up',
+  'Promise to Pay Confirmation',
+];
+
+List<MessageTemplate> _sortedForDisplay(List<MessageTemplate> templates) {
+  final sorted = [...templates];
+  sorted.sort((a, b) {
+    final aIndex = _templateDisplayOrder.indexOf(a.name);
+    final bIndex = _templateDisplayOrder.indexOf(b.name);
+    if (aIndex == -1 && bIndex == -1) return 0;
+    if (aIndex == -1) return 1;
+    if (bIndex == -1) return -1;
+    return aIndex.compareTo(bIndex);
+  });
+  return sorted;
+}
 
 /// WhatsApp Preview / SMS Preview (§7.7/§7.8) — identical structure for
 /// both channels per §7.8 ("Identical in structure to WhatsApp Preview"),
@@ -19,21 +49,39 @@ import '../providers/reminder_detail_providers.dart';
 /// `POST /messages/render` response (`MessageRenderingService::
 /// resolveCustomer()` resolves the customer server-side regardless of
 /// the reminder's `related_entity_type`) — more reliable than the client
-/// re-deriving it. The actual send commits through the single real
-/// `POST /reminders/{id}/send` endpoint, which produces the identical
-/// `SentMessage` row as the two-step `messages/render` →
-/// `messages/send/whatsapp|sms` path.
+/// re-deriving it.
+///
+/// "Send via WhatsApp"/"Send via SMS" work exactly like the existing Call
+/// action (`ReminderDetailScreen._placeCall`'s non-debt path): they launch
+/// the device's own WhatsApp/SMS app via `url_launcher` with the recipient
+/// and rendered text pre-filled, and the user presses that app's own Send
+/// button. No backend call is made here and no message-sent record is
+/// created — there is no confirmation that the user actually pressed Send
+/// in the external app, so claiming one would be dishonest. WhatsApp tries
+/// the native `whatsapp://send` app intent first (opens the installed app
+/// directly to the chat, same as the wa.me "click to chat" API but without
+/// ever touching a browser) and only falls back to the `wa.me` web link if
+/// WhatsApp isn't installed; SMS uses the standard `sms:` URI. No WhatsApp
+/// Business API, no paid service either way. The backend's
+/// `POST /reminders/{id}/send` endpoint and `ReminderActions.send()` still
+/// exist and are still tested, but nothing in the UI calls them anymore.
 class MessagePreviewScreen extends ConsumerStatefulWidget {
   final String reminderId;
 
-  const MessagePreviewScreen({super.key, required this.reminderId});
+  /// Preselects the channel toggle when arriving from a Follow-up
+  /// reminder's WhatsApp/SMS action (Reminder Detail). Falls back to
+  /// 'whatsapp' for any other/unrecognized value, same as the toggle's
+  /// original default.
+  final String? initialChannel;
+
+  const MessagePreviewScreen({super.key, required this.reminderId, this.initialChannel});
 
   @override
   ConsumerState<MessagePreviewScreen> createState() => _MessagePreviewScreenState();
 }
 
 class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
-  String _channel = 'whatsapp';
+  late String _channel = widget.initialChannel == 'sms' ? 'sms' : 'whatsapp';
   MessageTemplate? _selectedTemplate;
   String? _renderedText;
   String? _recipientName;
@@ -65,27 +113,58 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
     }
   }
 
+  /// Launches the device's own WhatsApp/SMS app with the recipient and
+  /// rendered message pre-filled — the user presses that app's Send
+  /// button themselves, same as `_placeCall`'s dialer launch. SMS uses the
+  /// standard `sms:` URI, which accepts the phone number as-is.
   Future<void> _send() async {
-    if (_selectedTemplate == null) return;
+    if (_selectedTemplate == null || _renderedText == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final phone = _recipientPhone;
+    if (phone == null || phone.trim().isEmpty) {
+      messenger.showSnackBar(const SnackBar(content: Text('No phone number available for this customer.')));
+      return;
+    }
+
     setState(() {
       _isSending = true;
       _error = null;
     });
-    final messenger = ScaffoldMessenger.of(context);
-    final router = GoRouter.of(context);
-    try {
-      await ref.read(reminderActionsProvider).send(
-            id: widget.reminderId,
-            channel: _channel,
-            templateId: _selectedTemplate!.id,
-          );
-      messenger.showSnackBar(const SnackBar(content: Text('Reminder sent successfully')));
-      router.pop();
-    } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
-    } finally {
-      if (mounted) setState(() => _isSending = false);
+    final navigator = Navigator.of(context);
+    final launched = _channel == 'whatsapp'
+        ? await _launchWhatsApp(phone, _renderedText!)
+        : await launchUrl(Uri(scheme: 'sms', path: phone, queryParameters: {'body': _renderedText!}), mode: LaunchMode.externalApplication);
+    if (!mounted) return;
+    setState(() => _isSending = false);
+    if (launched) {
+      navigator.pop();
+    } else {
+      setState(() => _error = _channel == 'whatsapp' ? 'Could not open WhatsApp.' : 'Could not open the messaging app.');
     }
+  }
+
+  /// Tries the native `whatsapp://send` app intent first — this opens the
+  /// installed WhatsApp app directly to the customer's chat, never a
+  /// browser. Only if that fails (WhatsApp not installed) does it fall
+  /// back to the `wa.me` web "click to chat" link. Both require the phone
+  /// number in digits-only international format, hence the strip.
+  ///
+  /// Unlike `tel:`/`sms:`, `launchUrl` doesn't return `false` for the
+  /// unregistered `whatsapp:` scheme when no app can handle it — it throws
+  /// `PlatformException(ACTIVITY_NOT_FOUND)` instead, so that has to be
+  /// caught here and treated the same as "not installed" to reach the
+  /// fallback rather than surfacing as an unhandled error.
+  Future<bool> _launchWhatsApp(String phone, String text) async {
+    final digitsOnlyPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final nativeUri = Uri(scheme: 'whatsapp', host: 'send', queryParameters: {'phone': digitsOnlyPhone, 'text': text});
+    try {
+      if (await launchUrl(nativeUri, mode: LaunchMode.externalApplication)) return true;
+    } on PlatformException {
+      // WhatsApp not installed — fall through to the web fallback below.
+    }
+
+    final webUri = Uri.https('wa.me', '/$digitsOnlyPhone', {'text': text});
+    return launchUrl(webUri, mode: LaunchMode.externalApplication);
   }
 
   void _switchChannel(String channel) {
@@ -157,7 +236,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          for (final template in templates)
+                          for (final template in _sortedForDisplay(templates))
                             ChoiceChip(
                               label: Text(template.name),
                               selected: _selectedTemplate?.id == template.id,
@@ -168,7 +247,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                       const SizedBox(height: 16),
                       if (_isRendering) const Center(child: CircularProgressIndicator()),
                       if (_renderedText != null)
-                        AppCard(child: Text(_renderedText!, style: AppTypography.body)),
+                        AppCard(child: Text(_renderedText!, style: AppTypography.body.copyWith(height: 1.6))),
                       if (_error != null) ...[
                         const SizedBox(height: 12),
                         Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
@@ -180,7 +259,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: (_selectedTemplate == null || _isSending) ? null : _send,
+              onPressed: (_selectedTemplate == null || _renderedText == null || _isSending) ? null : _send,
               child: _isSending
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : Text(_channel == 'whatsapp' ? 'Send via WhatsApp' : 'Send via SMS'),

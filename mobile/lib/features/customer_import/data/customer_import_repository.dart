@@ -16,6 +16,8 @@ class CustomerImportRepository {
 
   const CustomerImportRepository(this._api);
 
+  Future<List<int>> downloadTemplate() => _guard(() => _api.downloadTemplate());
+
   Future<ImportPreview> previewImport({required String filePath, required String fileName}) =>
       _guard(() => _api.preview(filePath: filePath, fileName: fileName));
 

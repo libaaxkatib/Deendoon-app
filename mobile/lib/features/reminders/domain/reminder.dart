@@ -29,6 +29,7 @@ class Reminder {
   final String createdAt;
   final String updatedAt;
   final String? completedAt;
+  final String? checkedInAt;
 
   const Reminder({
     required this.id,
@@ -48,6 +49,7 @@ class Reminder {
     required this.createdAt,
     required this.updatedAt,
     required this.completedAt,
+    required this.checkedInAt,
   });
 
   factory Reminder.fromJson(Map<String, dynamic> json) => Reminder(
@@ -68,5 +70,6 @@ class Reminder {
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
         completedAt: json['completed_at'] as String?,
+        checkedInAt: json['checked_in_at'] as String?,
       );
 }

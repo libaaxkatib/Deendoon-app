@@ -57,15 +57,33 @@ class DashboardController extends Controller
         return $this->successResponse($this->businessHealth->calculate());
     }
 
+    /**
+     * Dashboard KPI Period Selector (mobile Item 8): `day`/`week`/`month`/
+     * `year` are kept as backward-compatible aliases (see
+     * `ReportingService::periodBounds()`) alongside the richer set the
+     * mobile period picker actually offers. `custom` requires
+     * `date_from`/`date_to` — every other value ignores them.
+     */
     public function kpis(Request $request): JsonResponse
     {
         Gate::authorize('view-dashboard');
 
         $request->validate([
-            'period' => ['nullable', 'string', Rule::in(['day', 'week', 'month', 'year'])],
+            'period' => ['nullable', 'string', Rule::in([
+                'day', 'week', 'month', 'year',
+                'today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month',
+                'this_quarter', 'last_quarter', 'this_year', 'last_year', 'custom',
+            ])],
+            'date_from' => ['required_if:period,custom', 'date'],
+            'date_to' => ['required_if:period,custom', 'date', 'after_or_equal:date_from'],
         ]);
 
-        $kpis = $this->reporting->dashboardKpis($request->user(), $request->string('period')->value() ?: 'month');
+        $kpis = $this->reporting->dashboardKpis(
+            $request->user(),
+            $request->string('period')->value() ?: 'month',
+            $request->string('date_from')->value() ?: null,
+            $request->string('date_to')->value() ?: null,
+        );
 
         return $this->successResponse($kpis);
     }

@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/models/payment.dart';
+import 'package:mobile/core/network/api_exception.dart';
+import 'package:mobile/features/attachments/data/attachment_repository.dart';
+import 'package:mobile/features/attachments/domain/attachment.dart';
+import 'package:mobile/features/attachments/presentation/providers/attachment_providers.dart';
 import 'package:mobile/features/cases/domain/collection_case.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
@@ -10,12 +14,15 @@ import 'package:mobile/features/debts/data/debt_repository.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
 import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/debts/domain/debt_timeline.dart';
+import 'package:mobile/features/debts/domain/promise_to_pay.dart';
 import 'package:mobile/features/debts/presentation/screens/debt_detail_screen.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockDebtRepository extends Mock implements DebtRepository {}
 
 class _MockCustomerRepository extends Mock implements CustomerRepository {}
+
+class _MockAttachmentRepository extends Mock implements AttachmentRepository {}
 
 const _customer = Customer(
   id: '01CUST',
@@ -78,9 +85,11 @@ void main() {
     when(() => mockDebtRepository.fetchDocuments('1')).thenAnswer((_) async => []);
     when(() => mockDebtRepository.fetchTimeline('1'))
         .thenAnswer((_) async => const DebtTimeline(debtId: '1', stages: []));
+    when(() => mockDebtRepository.fetchPromiseToPayHistory('1')).thenAnswer((_) async => []);
+    when(() => mockDebtRepository.fetchRelatedCase('1')).thenAnswer((_) async => null);
   });
 
-  testWidgets('renders debt summary, customer info, and keeps unavailable sections structurally present', (tester) async {
+  testWidgets('renders debt summary, customer info, and both section titles', (tester) async {
     await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
     await tester.pumpAndSettle();
 
@@ -90,16 +99,48 @@ void main() {
     expect(find.text('400.00'), findsOneWidget);
     expect(find.text('Call before 5pm'), findsOneWidget);
 
-    // Section titles remain in the layout even though their data isn't
-    // available — per Sprint 12's explicit "keep the structure" rule.
     expect(find.text('Promise to Pay History'), findsOneWidget);
     expect(find.text('Related Case'), findsOneWidget);
-    expect(find.textContaining('the backend has no endpoint to list past promises'), findsOneWidget);
-    expect(find.textContaining('the backend has no endpoint to fetch an existing case'), findsOneWidget);
+    expect(find.text('No promises to pay recorded yet'), findsOneWidget);
+    expect(find.text('No collection case has been opened for this debt yet'), findsOneWidget);
 
     expect(find.text('Record Payment'), findsOneWidget);
     expect(find.text('Promise to Pay'), findsOneWidget);
     expect(find.text('Open Case'), findsOneWidget);
+  });
+
+  testWidgets('renders real Promise to Pay History and Related Case data when present', (tester) async {
+    when(() => mockDebtRepository.fetchPromiseToPayHistory('1')).thenAnswer((_) async => const [
+          PromiseToPay(
+            id: '1',
+            debtId: '1',
+            promisedDate: '2026-08-15',
+            status: 'open',
+            createdAt: '2026-08-01T10:00:00.000000Z',
+          ),
+        ]);
+    when(() => mockDebtRepository.fetchRelatedCase('1')).thenAnswer((_) async => const CollectionCase(
+          id: '01CASE',
+          debtId: '1',
+          customerId: '01CUST',
+          customerName: 'Somali Builders',
+          outstandingAmount: '400.00',
+          riskLevel: 'low',
+          referenceNumber: 'COL-0001',
+          assignedOfficerUserId: null,
+          caseStatus: 'open',
+          closureOutcome: null,
+          notes: null,
+          lastActivityAt: '2026-08-01T10:00:00.000000Z',
+          createdAt: '2026-08-01T10:00:00.000000Z',
+          closedAt: null,
+        ));
+
+    await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Promised 2026-08-15'), findsOneWidget);
+    expect(find.text('COL-0001'), findsOneWidget);
   });
 
   testWidgets('renders real payment history and documents when present', (tester) async {
@@ -144,6 +185,7 @@ void main() {
       assignedOfficerUserId: null,
       caseStatus: 'open',
       closureOutcome: null,
+      notes: null,
       lastActivityAt: '2026-08-01T10:00:00.000000Z',
       createdAt: '2026-08-01T10:00:00.000000Z',
       closedAt: null,
@@ -212,6 +254,37 @@ void main() {
     expect(find.text('Edit Debt Screen'), findsOneWidget);
   });
 
+  testWidgets('Attachments opens the debt-scoped Attachments screen', (tester) async {
+    tester.view.physicalSize = const Size(400, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const DebtDetailScreen(debtId: '1')),
+        GoRoute(path: '/debts/1/attachments', builder: (_, _) => const Text('Attachments Screen')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+          customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Attachments'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Attachments Screen'), findsOneWidget);
+  });
+
   testWidgets('Generate Statement calls the real endpoint and shows a success snackbar', (tester) async {
     const statement = DocumentSummary(
       id: '2',
@@ -230,6 +303,208 @@ void main() {
 
     verify(() => mockDebtRepository.generateStatement('1')).called(1);
     expect(find.text('Statement generated successfully'), findsOneWidget);
+  });
+
+  group('Scan Invoice (P2.6)', () {
+    const attachment = Attachment(
+      id: '1',
+      entityId: '1',
+      uploadedByUserId: '01USER',
+      originalFilename: 'invoice.jpg',
+      mimeType: 'image/jpeg',
+      fileSize: 5000,
+      description: 'Invoice',
+      createdAt: '2026-08-01T00:00:00.000000Z',
+    );
+
+    Future<void> pumpWithCamera(
+      WidgetTester tester, {
+      required _MockAttachmentRepository attachmentRepository,
+      ({String path, String name})? capturedFile,
+    }) async {
+      tester.view.physicalSize = const Size(400, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+            customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+            attachmentRepositoryProvider.overrideWithValue(attachmentRepository),
+            attachmentCameraProvider.overrideWithValue(() async => capturedFile),
+          ],
+          child: const MaterialApp(home: DebtDetailScreen(debtId: '1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('capturing a photo uploads it as a debt attachment tagged Invoice', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).thenAnswer((_) async => attachment);
+
+      await pumpWithCamera(
+        tester,
+        attachmentRepository: mockAttachmentRepository,
+        capturedFile: (path: '/tmp/invoice.jpg', name: 'invoice.jpg'),
+      );
+
+      await tester.tap(find.text('Scan Invoice'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).called(1);
+      expect(find.text('Invoice attached successfully'), findsOneWidget);
+    });
+
+    testWidgets('dismissing the camera without a capture uploads nothing', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+
+      await pumpWithCamera(tester, attachmentRepository: mockAttachmentRepository, capturedFile: null);
+
+      await tester.tap(find.text('Scan Invoice'));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: any(named: 'entityPathPrefix'),
+            filePath: any(named: 'filePath'),
+            fileName: any(named: 'fileName'),
+            description: any(named: 'description'),
+          ));
+    });
+
+    testWidgets('shows the exact backend error when the upload fails', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).thenThrow(const ApiException(message: 'Storage limit reached.', statusCode: 422));
+
+      await pumpWithCamera(
+        tester,
+        attachmentRepository: mockAttachmentRepository,
+        capturedFile: (path: '/tmp/invoice.jpg', name: 'invoice.jpg'),
+      );
+
+      await tester.tap(find.text('Scan Invoice'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Storage limit reached.'), findsOneWidget);
+    });
+  });
+
+  group('Upload Invoice (P2.7)', () {
+    const attachment = Attachment(
+      id: '1',
+      entityId: '1',
+      uploadedByUserId: '01USER',
+      originalFilename: 'invoice.pdf',
+      mimeType: 'application/pdf',
+      fileSize: 5000,
+      description: 'Invoice',
+      createdAt: '2026-08-01T00:00:00.000000Z',
+    );
+
+    Future<void> pumpWithFilePicker(
+      WidgetTester tester, {
+      required _MockAttachmentRepository attachmentRepository,
+      ({String path, String name})? pickedFile,
+    }) async {
+      tester.view.physicalSize = const Size(400, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+            customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+            attachmentRepositoryProvider.overrideWithValue(attachmentRepository),
+            attachmentFilePickerProvider.overrideWithValue(() async => pickedFile),
+          ],
+          child: const MaterialApp(home: DebtDetailScreen(debtId: '1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('picking a file uploads it as a debt attachment tagged Invoice', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.pdf',
+            fileName: 'invoice.pdf',
+            description: 'Invoice',
+          )).thenAnswer((_) async => attachment);
+
+      await pumpWithFilePicker(
+        tester,
+        attachmentRepository: mockAttachmentRepository,
+        pickedFile: (path: '/tmp/invoice.pdf', name: 'invoice.pdf'),
+      );
+
+      await tester.tap(find.text('Upload Invoice'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.pdf',
+            fileName: 'invoice.pdf',
+            description: 'Invoice',
+          )).called(1);
+      expect(find.text('Invoice attached successfully'), findsOneWidget);
+    });
+
+    testWidgets('dismissing the file picker without a selection uploads nothing', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+
+      await pumpWithFilePicker(tester, attachmentRepository: mockAttachmentRepository, pickedFile: null);
+
+      await tester.tap(find.text('Upload Invoice'));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: any(named: 'entityPathPrefix'),
+            filePath: any(named: 'filePath'),
+            fileName: any(named: 'fileName'),
+            description: any(named: 'description'),
+          ));
+    });
+
+    testWidgets('shows the exact backend error when the upload fails', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.pdf',
+            fileName: 'invoice.pdf',
+            description: 'Invoice',
+          )).thenThrow(const ApiException(message: 'Only PDF, JPG, PNG, DOC, or DOCX files are allowed.', statusCode: 422));
+
+      await pumpWithFilePicker(
+        tester,
+        attachmentRepository: mockAttachmentRepository,
+        pickedFile: (path: '/tmp/invoice.pdf', name: 'invoice.pdf'),
+      );
+
+      await tester.tap(find.text('Upload Invoice'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Only PDF, JPG, PNG, DOC, or DOCX files are allowed.'), findsOneWidget);
+    });
   });
 
   group('Log Reminder', () {

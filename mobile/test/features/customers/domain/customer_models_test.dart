@@ -49,6 +49,41 @@ void main() {
       expect(customer.creditScore, isNull);
       expect(customer.creditScoreBand, isNull);
     });
+
+    test('parses is_read_only: true (FR-083, over the plan\'s effective customer limit)', () {
+      final customer = Customer.fromJson({
+        'id': '01ABC',
+        'name': 'Somali Builders',
+        'phone': '+252612345678',
+        'customer_status': 'good_standing',
+        'credit_limit': '5000.00',
+        'outstanding_balance': '800.00',
+        'remaining_credit': '4200.00',
+        'risk_level': 'low',
+        'credit_score': 720,
+        'credit_score_band': 'good',
+        'is_read_only': true,
+      });
+
+      expect(customer.isReadOnly, isTrue);
+    });
+
+    test('defaults isReadOnly to false when the field is absent', () {
+      final customer = Customer.fromJson({
+        'id': '01ABC',
+        'name': 'Somali Builders',
+        'phone': '+252612345678',
+        'customer_status': 'good_standing',
+        'credit_limit': '5000.00',
+        'outstanding_balance': '800.00',
+        'remaining_credit': '4200.00',
+        'risk_level': null,
+        'credit_score': null,
+        'credit_score_band': null,
+      });
+
+      expect(customer.isReadOnly, isFalse);
+    });
   });
 
   group('CustomerPage', () {

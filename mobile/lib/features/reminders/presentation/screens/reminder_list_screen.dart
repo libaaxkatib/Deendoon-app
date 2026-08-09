@@ -54,15 +54,19 @@ class _ReminderFilterChipDef {
 }
 
 /// Matches the reminder categories shown in the Home Dashboard's Today's
-/// Overview and the Reminder Center's own summary cards (Visits, Calls,
-/// Payments, Overdue), so the two screens no longer disagree about what
-/// a "category" is.
+/// Overview and the Reminder Center's own summary cards (Client Visits,
+/// Follow-ups, Payments, Overdue), so the two screens no longer disagree
+/// about what a "category" is. Chip `key`s are unchanged from their
+/// original values ('visits'/'calls') even though their labels changed
+/// (Client Visits/Follow-ups) — this keeps existing deep links
+/// (`/reminders?filter=calls` from the Dashboard's Today's Overview)
+/// working without any router/dashboard change.
 const _reminderFilterChips = <_ReminderFilterChipDef>[
   _ReminderFilterChipDef.tab(key: 'all', label: 'All', tab: null),
   _ReminderFilterChipDef.tab(key: 'today', label: 'Today', tab: 'today'),
   _ReminderFilterChipDef.type(key: 'payments', label: 'Payments', type: 'payment_due'),
-  _ReminderFilterChipDef.type(key: 'visits', label: 'Visits', type: 'client_visit'),
-  _ReminderFilterChipDef.type(key: 'calls', label: 'Calls', type: 'follow_up_call'),
+  _ReminderFilterChipDef.type(key: 'visits', label: 'Client Visits', type: 'client_visit'),
+  _ReminderFilterChipDef.type(key: 'calls', label: 'Follow-ups', type: 'follow_up_call'),
   _ReminderFilterChipDef.tab(key: 'upcoming', label: 'Upcoming', tab: 'upcoming'),
   _ReminderFilterChipDef.tab(key: 'overdue', label: 'Overdue', tab: 'overdue'),
   _ReminderFilterChipDef.tab(key: 'completed', label: 'Completed', tab: 'completed'),

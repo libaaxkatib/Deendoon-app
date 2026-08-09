@@ -40,4 +40,9 @@ class CollectionCase extends Model
     {
         return $this->hasMany(ProfessionalCollectionRequest::class);
     }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(CollectionCaseAttachment::class);
+    }
 }

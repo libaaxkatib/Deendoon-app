@@ -63,6 +63,22 @@ class DebtRepository {
   Future<PromiseToPay> promiseToPay({required String debtId, required String promisedDate}) =>
       _guard(() => _api.promiseToPay(debtId: debtId, promisedDate: promisedDate));
 
+  Future<List<PromiseToPay>> fetchPromiseToPayHistory(String debtId) =>
+      _guard(() => _api.promiseToPayHistory(debtId));
+
+  Future<PromiseToPay> fetchPromiseToPayById(String id) => _guard(() => _api.showPromiseToPay(id));
+
+  /// Null means "no related case yet" (the real 404 the backend returns
+  /// for a debt with no Collection Case) — not an error state.
+  Future<CollectionCase?> fetchRelatedCase(String debtId) async {
+    try {
+      return await _api.relatedCase(debtId);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw ApiException.fromDioException(e);
+    }
+  }
+
   Future<CollectionCase> openCase(String debtId) => _guard(() => _api.openCase(debtId));
 
   Future<DebtSaveResult> createDebt({

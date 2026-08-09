@@ -119,6 +119,11 @@ class ReminderApi {
     return Reminder.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
+  Future<Reminder> checkIn(String id) async {
+    final response = await _dio.patch('reminders/$id/check-in');
+    return Reminder.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
   Future<SentMessage> send({required String id, required String channel, required String templateId}) async {
     final response = await _dio.post('reminders/$id/send', data: {
       'channel': channel,

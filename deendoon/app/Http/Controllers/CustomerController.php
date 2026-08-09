@@ -8,6 +8,8 @@ use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerCreditLimitRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Requests\UpdateCustomerStatusRequest;
+use App\Http\Requests\UploadCustomerAttachmentRequest;
+use App\Http\Resources\CustomerAttachmentResource;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use App\Services\AdminSettingsService;
@@ -15,6 +17,7 @@ use App\Services\AuditLogService;
 use App\Services\CreditScoreService;
 use App\Services\CustomerDuplicateDetectionService;
 use App\Services\CustomerReadOnlyService;
+use App\Services\DocumentService;
 use App\Services\RiskLevelService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +35,7 @@ class CustomerController extends Controller
         private readonly CreditScoreService $creditScore,
         private readonly CustomerReadOnlyService $customerReadOnly,
         private readonly AdminSettingsService $adminSettings,
+        private readonly DocumentService $documents,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -122,6 +126,7 @@ class CustomerController extends Controller
             $customer = Customer::create([
                 'name' => $request->validated('name'),
                 'phone' => $request->validated('phone'),
+                'address' => $request->validated('address'),
                 'customer_status' => 'active',
                 'credit_limit' => $creditLimit,
             ]);
@@ -189,6 +194,7 @@ class CustomerController extends Controller
             $customer->update([
                 'name' => $request->validated('name'),
                 'phone' => $request->validated('phone'),
+                'address' => $request->validated('address'),
                 'credit_limit' => $request->validated('credit_limit'),
             ]);
 
@@ -300,6 +306,50 @@ class CustomerController extends Controller
         });
 
         return $this->successResponse(new CustomerResource($customer->fresh()), 'Credit limit updated successfully');
+    }
+
+    /**
+     * Final Product Completion Roadmap, P1.6 — generic file attachments on
+     * a Customer. Reuses `update`'s ability (same read-only gate as
+     * credit-limit/status changes) since this is itself a mutation on the
+     * Customer's own record.
+     */
+    public function attachmentsIndex(Customer $customer): JsonResponse
+    {
+        $this->authorize('view', $customer);
+
+        return $this->successResponse(
+            CustomerAttachmentResource::collection($customer->attachments()->orderBy('created_at')->get()),
+        );
+    }
+
+    public function attachmentsStore(UploadCustomerAttachmentRequest $request, Customer $customer): JsonResponse
+    {
+        $this->authorize('update', $customer);
+
+        $attachment = DB::transaction(function () use ($request, $customer) {
+            $stored = $this->documents->storeUploadedFile($request->file('file'), $customer->tenant, 'customer_attachments');
+
+            $attachment = $customer->attachments()->create([
+                'uploaded_by_user_id' => $request->user()->id,
+                'file_path' => $stored['path'],
+                'original_filename' => $stored['original_filename'],
+                'mime_type' => $stored['mime_type'],
+                'file_size' => $stored['size'],
+                'description' => $request->validated('description'),
+            ]);
+
+            $this->auditLog->record(
+                AuditAction::Created,
+                'customer_attachment',
+                $attachment->id,
+                $request->user(),
+            );
+
+            return $attachment;
+        });
+
+        return $this->successResponse(new CustomerAttachmentResource($attachment), 'Attachment uploaded successfully', 201);
     }
 
     public function checkDuplicate(CheckCustomerDuplicateRequest $request): JsonResponse

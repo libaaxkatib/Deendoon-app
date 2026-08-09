@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-06 |
 | **Document Title** | Database Design |
-| **Version** | 1.7 |
-| **Status** | Reopened — Section 6.1 (`roles`) amended by the RBAC Architecture Amendment; Section 6.10 added by the Subscription & Storage Self-Service Catch-Up |
+| **Version** | 1.8 |
+| **Status** | Reopened — Section 6.1 (`roles`) amended by the RBAC Architecture Amendment; Section 6.10 added by the Subscription & Storage Self-Service Catch-Up; Section 6.2 (`customers`) amended by the Client Visit Navigate Address Amendment |
 | **State** | Frozen (pending re-freeze) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-08-08 |
+| **Last Updated** | 2026-08-09 |
 | **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.13 — **Module 12 still awaiting its original approval**, see 03's Revision History 1.5) · `04_Business_Rules.md` (Reopened v1.9) · `05_UI_UX_Specification.md` (Reopened, v1.7) |
 
 ---
@@ -26,6 +26,7 @@
 | 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02`, `03`, `04`, and `05` (previously stale). No table, column, relationship, constraint, or approved schema content changed — including `customers.risk_level`, whose database representation is separately tracked as a deferred Database Architecture Decision (`deendoon/docs/Known_Backend_Issues.md` §3.9), explicitly out of scope for this correction. | Claude |
 | 1.6 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4), `03` (v1.10), `04` (v1.6), and `05` (Reopened, v1.3) following those documents' own updates. No table, column, or schema content changed. | Claude |
 | 1.7 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Added **Section 6.10 — Subscription & Storage Self-Service**: `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons` — every column, constraint, and index transcribed directly from the implemented migrations, not designed fresh. Amended Section 6.2's `customers` table to add the `is_read_only` column (implemented Phase 3.1, previously undocumented here). Added a "Subscription & Storage" group to Section 5 and six new entities to the Section 4 ERD. Added the two new partial unique indexes (`subscription_change_requests_one_pending_per_tenant`, `storage_addons_one_pending_per_tenant`) to Section 8's Business Rule Enforcement table. Added six new rows to Section 7's Relationship Definitions and Section 12's Traceability Matrix. Section 13's Decisions Required gains a note cross-referencing the confirmed Storage Add-on expiration gap already recorded as DD-047 in `04_Business_Rules.md`. Scope Baseline updated to cite `03` v1.13, `04` v1.9, `05` v1.7. No existing table, column, relationship, or constraint was altered. | Claude |
+| 1.8 | 2026-08-09 | **Client Visit Navigate Address Amendment (Product Owner-approved decision).** Amended Section 6.2's `customers` table to add an `address VARCHAR(500) NULLABLE` column, positioned after `phone` — a free-text street address so the mobile app's Client Visit reminder "Navigate" action can open a real location instead of a text search on the customer's name alone (previously no address field existed anywhere on Customer). `03_Functional_Requirements.md` FR-007 amended alongside this to list `address` as an optional Customer field. No other table, column, relationship, or constraint changed. | Claude |
 
 ---
 
@@ -277,6 +278,7 @@ Seeded with exactly two rows at deployment; no FR provides a create/edit/delete 
 | `tenant_id` | `CHAR(26)` | FK → `tenants.id`, NOT NULL | — | |
 | `name` | `VARCHAR(255)` | NOT NULL | — | FR-007 |
 | `phone` | `VARCHAR(30)` | NOT NULL | — | FR-007; matching sensitivity for duplicate detection is DD-003 |
+| `address` | `VARCHAR(500)` | NULLABLE | NULL | *(added — Client Visit Navigate Address Amendment, v1.8)* Free-text street address; FR-007. Used by the mobile app's Client Visit reminder "Navigate" action to open a real location instead of a name-only text search. |
 | `customer_status` | `VARCHAR(20)` | NOT NULL, `CHECK (customer_status IN ('active','good_standing','late_payer','high_risk','in_collection','recovered','blocked'))` | `'active'` | BRL-014, 7 approved values — fixed, approved set (unlike Risk Level) |
 | `credit_limit` | `NUMERIC(12,2)` | NOT NULL | tenant's `system_settings.default_credit_limit` at creation | BRL-012 |
 | `outstanding_balance` | `NUMERIC(12,2)` | NOT NULL | `0.00` | Derived: Σ `debts.remaining_balance` for this customer's open debts (BRL-017); maintained by application logic on Debt/Payment write, not user-editable |

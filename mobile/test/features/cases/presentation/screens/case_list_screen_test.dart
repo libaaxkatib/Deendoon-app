@@ -21,6 +21,7 @@ const _case = CollectionCase(
   assignedOfficerUserId: null,
   caseStatus: 'open',
   closureOutcome: null,
+  notes: null,
   lastActivityAt: '2026-07-28T10:00:00.000000Z',
   createdAt: '2026-07-01T10:00:00.000000Z',
   closedAt: null,

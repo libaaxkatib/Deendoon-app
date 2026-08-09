@@ -137,6 +137,63 @@ class CollectionCaseTest extends TestCase
         $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->assertStatus(404);
     }
 
+    // --- Related Case (mobile Item 12) ---
+
+    public function test_admin_can_view_the_related_case_for_a_debt(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+
+        $this->getJson("/api/v1/debts/{$debt->id}/collection-case")
+            ->assertStatus(200)
+            ->assertJsonPath('data.id', $caseId);
+    }
+
+    public function test_related_case_returns_404_for_a_debt_with_no_case(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson("/api/v1/debts/{$debt->id}/collection-case")
+            ->assertStatus(404)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_related_case_returns_the_most_recent_case_when_a_debt_has_more_than_one(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $firstCaseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+        $this->postJson("/api/v1/collection-cases/{$firstCaseId}/close", ['closure_outcome' => 'Paid in full']);
+        $secondCaseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+
+        $this->getJson("/api/v1/debts/{$debt->id}/collection-case")
+            ->assertStatus(200)
+            ->assertJsonPath('data.id', $secondCaseId);
+    }
+
+    public function test_related_case_returns_404_for_another_tenants_debt(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $debtB = $this->makeDebt($tenantB);
+        $this->actingAsTenantUser($tenantA);
+
+        $this->getJson("/api/v1/debts/{$debtB->id}/collection-case")->assertStatus(404);
+    }
+
+    public function test_related_case_requires_authentication(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+
+        $this->getJson("/api/v1/debts/{$debt->id}/collection-case")->assertStatus(401);
+    }
+
     // --- Details / Listing (FR-042) ---
 
     public function test_admin_can_view_a_collection_case(): void
@@ -166,6 +223,38 @@ class CollectionCaseTest extends TestCase
         $ids = collect($response->json('data.collection_cases'))->pluck('id');
         $this->assertTrue($ids->contains($caseA->id));
         $this->assertCount(1, $ids);
+    }
+
+    public function test_index_can_filter_by_customer_id(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customerA = Customer::factory()->for($tenant, 'tenant')->create();
+        $customerB = Customer::factory()->for($tenant, 'tenant')->create();
+        $debtA = Debt::factory()->for($tenant, 'tenant')->for($customerA, 'customer')->create();
+        $debtB = Debt::factory()->for($tenant, 'tenant')->for($customerB, 'customer')->create();
+        $caseA = CollectionCase::factory()->for($tenant, 'tenant')->for($debtA, 'debt')->create();
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debtB, 'debt')->create();
+
+        $this->actingAsTenantUser($tenant);
+        $response = $this->getJson("/api/v1/collection-cases?customer_id={$customerA->id}");
+
+        $ids = collect($response->json('data.collection_cases'))->pluck('id');
+        $this->assertEquals([$caseA->id], $ids->all());
+    }
+
+    public function test_index_customer_id_filter_composes_with_status(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create();
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create();
+        $openCase = CollectionCase::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create(['case_status' => 'open']);
+        CollectionCase::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create(['case_status' => 'closed']);
+
+        $this->actingAsTenantUser($tenant);
+        $response = $this->getJson("/api/v1/collection-cases?customer_id={$customer->id}&status=open");
+
+        $ids = collect($response->json('data.collection_cases'))->pluck('id');
+        $this->assertEquals([$openCase->id], $ids->all());
     }
 
     public function test_show_returns_404_for_another_tenants_case(): void

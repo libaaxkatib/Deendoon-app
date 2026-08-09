@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/network/api_exception.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/unavailable_section.dart';
 import '../../../customers/presentation/providers/customer_detail_providers.dart';
@@ -13,12 +14,14 @@ import '../../../debts/presentation/widgets/debt_documents_section.dart';
 import '../../../debts/presentation/widgets/debt_payment_history.dart';
 import '../../../debts/presentation/widgets/debt_summary_card.dart';
 import '../../../debts/presentation/widgets/promise_to_pay_sheet.dart';
-import '../../../professional_collection/presentation/providers/professional_collection_actions.dart';
+import '../../../professional_collection/presentation/widgets/submit_professional_collection_sheet.dart';
+import '../../../reminders/domain/reminder_entity_preset.dart';
 import '../providers/case_detail_providers.dart';
 import '../widgets/case_summary_card.dart';
 import '../widgets/case_timeline_section.dart';
 import '../widgets/close_case_sheet.dart';
 import '../widgets/collection_stage_card.dart';
+import '../widgets/edit_case_notes_sheet.dart';
 import '../widgets/record_activity_sheet.dart';
 
 /// Case Detail — Customer Summary and Debt Summary/Related
@@ -26,30 +29,29 @@ import '../widgets/record_activity_sheet.dart';
 /// (Sprint 11) and Debts (Sprint 12) modules via the case's own
 /// `customerId`/`debtId` — zero duplicated fetch logic. Collection Stage
 /// reads `Debt.recoveryStage`. Timeline doubles as Follow-up History (one
-/// real endpoint backs both, see `case_timeline_section.dart`). Notes has
-/// no dedicated backend field/endpoint on a Collection Case — kept as an
-/// honest `UnavailableSection` rather than removed, per this sprint's
-/// explicit "keep the structure" instruction.
+/// real endpoint backs both, see `case_timeline_section.dart`). Notes is a
+/// real, editable field (`PUT /collection-cases/{id}`, see
+/// `edit_case_notes_sheet.dart`) — editable regardless of Case status,
+/// matching `CollectionCasePolicy::manage`, which gates on role and the
+/// Customer's read-only state only, not `case_status`.
 class CaseDetailScreen extends ConsumerWidget {
   final String caseId;
 
   const CaseDetailScreen({super.key, required this.caseId});
 
-  /// BRL-078: the backend 409s if the case already has an active
-  /// (non-terminal) Professional Collection Request — surfaced as a
-  /// snackbar with the exact backend message, same pattern as every other
-  /// conflict-handling action in the app. On success, navigates straight
-  /// to the new Request's Detail screen (the backend returns it directly,
-  /// unlike Open Case which has no such deep-link).
+  /// Opens the submission sheet (Reason for Transfer, Requested Services,
+  /// Notes, Client Declaration — FR-072/BRL-078). The sheet handles its
+  /// own field validation and inline error display (including the
+  /// backend's 409 when the case already has an active Request); it only
+  /// pops with a non-null Request on real success. On success, navigates
+  /// straight to the new Request's Detail screen.
   Future<void> _submitProfessionalCollection(BuildContext context, WidgetRef ref, String caseId) async {
-    final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
-    try {
-      final request = await ref.read(professionalCollectionActionsProvider).submit(caseId);
+    final messenger = ScaffoldMessenger.of(context);
+    final request = await showSubmitProfessionalCollectionSheet(context, caseId);
+    if (request != null) {
       messenger.showSnackBar(const SnackBar(content: Text('Professional Collection Request submitted successfully')));
       router.push('/professional-requests/${request.id}');
-    } on ApiException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -199,12 +201,58 @@ class CaseDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 CaseTimelineSection(caseId: caseId),
                 const SizedBox(height: 24),
-                const Text('Notes', style: AppTypography.heading),
-                const SizedBox(height: 12),
-                const UnavailableSection(
-                  reason: 'Not available yet — a Collection Case has no dedicated Notes field or endpoint. '
-                      'Free-text details from individual activities are visible in the Timeline above.',
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Notes', style: AppTypography.heading),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit Notes',
+                      onPressed: () => showEditCaseNotesSheet(context, caseId, currentNotes: collectionCase.notes),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 4),
+                AppCard(
+                  child: (collectionCase.notes != null && collectionCase.notes!.trim().isNotEmpty)
+                      ? Text(collectionCase.notes!, style: AppTypography.body)
+                      : Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: AppColors.textSecondary, size: 20),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text('No notes yet.', style: AppTypography.caption),
+                            ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 24),
+                OutlinedButton(
+                  onPressed: () => context.push('/cases/$caseId/attachments'),
+                  child: const Text('Attachments'),
+                ),
+                if (customerId != null) ...[
+                  const SizedBox(height: 12),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final isReadOnly = ref.watch(customerDetailProvider(customerId)).valueOrNull?.isReadOnly ?? false;
+                      return OutlinedButton.icon(
+                        onPressed: isReadOnly
+                            ? null
+                            : () => context.push(
+                                  '/reminders/new',
+                                  extra: ReminderEntityPreset(
+                                    type: 'collection_case',
+                                    id: caseId,
+                                    label: 'Case ${collectionCase.referenceNumber}',
+                                  ),
+                                ),
+                        icon: const Icon(Icons.add_alarm_outlined),
+                        label: const Text('Add Reminder'),
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: 24),
                 const Text('Related Documents', style: AppTypography.heading),
                 const SizedBox(height: 12),

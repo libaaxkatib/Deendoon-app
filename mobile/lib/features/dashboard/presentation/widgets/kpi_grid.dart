@@ -7,23 +7,35 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/dashboard_providers.dart';
+import '../providers/kpi_period_provider.dart';
 import 'kpi_card.dart';
 import 'kpi_period_selector.dart';
 
 /// §4.2 KPI Cards — "KPI Overview" header (with a real period selector,
 /// Section 10's own UI state — see `kpi_period_provider.dart`) and a 2x2
-/// grid: Total Outstanding, Collected This Month, Overdue Amount, High
-/// Risk Customers. Each card navigates to its real destination: Total
+/// grid: Total Outstanding, Collected (selected period), Overdue Amount,
+/// High Risk Customers. Each card navigates to its real destination: Total
 /// Outstanding and Overdue Amount open the tenant-wide Debts report
-/// (Overdue pre-filtered to `status=overdue`), Collected This Month opens
-/// the Analytics tab, and High Risk Customers opens the Cases tab
+/// (Overdue pre-filtered to `status=overdue`), Collected opens the
+/// Analytics tab, and High Risk Customers opens the Cases tab
 /// pre-filtered to the `high_risk` tab.
+///
+/// Only "Collected" is period-scoped — `ReportingService::dashboardKpis()`
+/// computes Total Outstanding, Overdue Amount, and High Risk Customers as
+/// current-state snapshots (right now), not historical reconstructions;
+/// there's no point-in-time history retained anywhere in the schema for
+/// them (`ReportingService::collectionsTrend()`'s own doc comment says the
+/// same about outstanding/risk data), so the period selector correctly
+/// leaves those three unchanged and only re-sums "Collected" for the
+/// selected period. The card's label reflects the selected period so this
+/// reads as intentional, not stale.
 class KpiGrid extends ConsumerWidget {
   const KpiGrid({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final kpis = ref.watch(dashboardKpisProvider);
+    final periodLabel = ref.watch(kpiPeriodProvider).label;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -57,7 +69,7 @@ class KpiGrid extends ConsumerWidget {
               ),
               KpiCard(
                 icon: Icons.savings_outlined,
-                label: 'Collected This Month',
+                label: 'Collected ($periodLabel)',
                 value: data.totalCollectedPeriod,
                 onTap: () => context.go(RoutePaths.analytics),
               ),

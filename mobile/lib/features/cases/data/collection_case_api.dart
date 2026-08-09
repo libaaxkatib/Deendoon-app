@@ -11,20 +11,22 @@ final collectionCaseApiProvider = Provider<CollectionCaseApi>((ref) => Collectio
 /// Thin wrapper around `GET/PATCH/PUT/POST /collection-cases*` — mirrors
 /// `App\Http\Controllers\CollectionCaseController` exactly.
 ///
-/// `GET /collection-cases` supports exactly two filters: `status`
-/// (`open`/`closed`, not used by this sprint's UI) and `tab` (`all`,
-/// `high_risk`, `follow_up`, `promise_due` — the four approved filter
-/// chips). There is no `search` parameter at all (see the Sprint 13
-/// summary's "Missing Backend Support Required").
+/// `GET /collection-cases` supports `status` (`open`/`closed`, not used by
+/// this sprint's UI), `tab` (`all`, `high_risk`, `follow_up`,
+/// `promise_due` — the four approved filter chips), and `customer_id`
+/// (scopes to a single customer's cases, composable with the other two).
+/// There is no `search` parameter at all (see the Sprint 13 summary's
+/// "Missing Backend Support Required").
 class CollectionCaseApi {
   final Dio _dio;
 
   const CollectionCaseApi(this._dio);
 
-  Future<CollectionCasePage> list({required int page, String? tab}) async {
+  Future<CollectionCasePage> list({required int page, String? tab, String? customerId}) async {
     final response = await _dio.get('collection-cases', queryParameters: {
       'page': page,
       'tab': ?tab,
+      'customer_id': ?customerId,
     });
     return CollectionCasePage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
@@ -53,5 +55,13 @@ class CollectionCaseApi {
   Future<CaseHistory> history(String caseId) async {
     final response = await _dio.get('collection-cases/$caseId/history');
     return CaseHistory.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// `UpdateCollectionCaseRequest`: `notes` is the only editable field, a
+  /// nullable free-text case annotation distinct from the Timeline's
+  /// per-activity details.
+  Future<CollectionCase> updateNotes({required String caseId, String? notes}) async {
+    final response = await _dio.put('collection-cases/$caseId', data: {'notes': notes});
+    return CollectionCase.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 }

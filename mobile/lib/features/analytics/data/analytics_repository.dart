@@ -35,8 +35,24 @@ class AnalyticsRepository {
   Future<CustomerPage> fetchReportCustomers({required int page, String? customerStatus, String? riskLevel}) =>
       _guard(() => _api.reportCustomers(page: page, customerStatus: customerStatus, riskLevel: riskLevel));
 
-  Future<DebtPage> fetchReportDebts({required int page, String? status}) =>
-      _guard(() => _api.reportDebts(page: page, status: status));
+  Future<DebtPage> fetchReportDebts({
+    required int page,
+    String? status,
+    String? dateFrom,
+    String? dateTo,
+    String? paidDateFrom,
+    String? paidDateTo,
+    int? perPage,
+  }) =>
+      _guard(() => _api.reportDebts(
+            page: page,
+            status: status,
+            dateFrom: dateFrom,
+            dateTo: dateTo,
+            paidDateFrom: paidDateFrom,
+            paidDateTo: paidDateTo,
+            perPage: perPage,
+          ));
 
   Future<CollectionCasePage> fetchReportCollectionCases({required int page, String? status}) =>
       _guard(() => _api.reportCollectionCases(page: page, status: status));

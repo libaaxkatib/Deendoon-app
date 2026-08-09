@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditAction;
+use App\Exports\ReportExport;
 use App\Http\Requests\CommitCustomerImportRequest;
 use App\Http\Requests\ImportCustomersRequest;
 use App\Imports\CustomerImportSheet;
@@ -18,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class CustomerImportController extends Controller
@@ -29,6 +31,26 @@ class CustomerImportController extends Controller
         private readonly AuditLogService $auditLog,
         private readonly CustomerReadOnlyService $customerReadOnly,
     ) {}
+
+    /**
+     * Final Product Completion Roadmap, P2.1 (Product Owner-approved
+     * decision) — FR-016 doesn't specify a template, but the Flutter app
+     * already presents a "download sample template" action, so this
+     * closes that real gap. Same `import` ability as the rest of this
+     * controller. Reuses the existing generic `ReportExport` class
+     * (rows + headings) rather than introducing a dedicated Export class
+     * for what is structurally the same concern — one example row shows
+     * the expected format without inventing any new field.
+     */
+    public function template(): BinaryFileResponse
+    {
+        $this->authorize('import', Customer::class);
+
+        $headings = ['Name', 'Phone', 'Credit Limit'];
+        $exampleRow = collect([['Jane Trader', '+254712345678', '5000']]);
+
+        return Excel::download(new ReportExport($exampleRow, $headings), 'customer-import-template.xlsx');
+    }
 
     /**
      * FR-016 Main Flow steps 1-4: upload, parse, validate each row, and

@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../customers/domain/customer.dart';
+import '../../domain/reminder_entity_preset.dart';
 import '../providers/reminder_actions.dart';
 import '../providers/reminder_detail_providers.dart';
 import '../widgets/customer_picker_sheet.dart';
@@ -51,7 +53,12 @@ const _deliveryMethodLabels = <String, String>{
 class ReminderScheduleScreen extends ConsumerStatefulWidget {
   final String? reminderId;
 
-  const ReminderScheduleScreen({super.key, this.reminderId});
+  /// Entity-Aware Reminder Creation (P2.4): when set (only meaningful for
+  /// bare creation, `reminderId == null`), "Related To" is pre-filled and
+  /// locked to this entity instead of showing the generic customer-picker.
+  final ReminderEntityPreset? entityPreset;
+
+  const ReminderScheduleScreen({super.key, this.reminderId, this.entityPreset});
 
   @override
   ConsumerState<ReminderScheduleScreen> createState() => _ReminderScheduleScreenState();
@@ -59,6 +66,7 @@ class ReminderScheduleScreen extends ConsumerStatefulWidget {
 
 class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen> {
   bool get _isEdit => widget.reminderId != null;
+  bool get _hasEntityPreset => widget.entityPreset != null;
 
   bool _prefilled = false;
   String? _type;
@@ -128,7 +136,7 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
       setState(() => _error = 'Select a reminder type.');
       return;
     }
-    if (!_isEdit && _selectedCustomer == null) {
+    if (!_isEdit && !_hasEntityPreset && _selectedCustomer == null) {
       setState(() => _error = 'Select a customer.');
       return;
     }
@@ -168,8 +176,8 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
       } else {
         await ref.read(reminderActionsProvider).create(
               type: _type!,
-              relatedEntityType: 'customer',
-              relatedEntityId: _selectedCustomer!.id,
+              relatedEntityType: _hasEntityPreset ? widget.entityPreset!.type : 'customer',
+              relatedEntityId: _hasEntityPreset ? widget.entityPreset!.id : _selectedCustomer!.id,
               dueDate: _isoOf(_dueDate!),
               amountDue: carriesAmount && amount.isNotEmpty ? amount : null,
               timingRule: _timingRule,
@@ -241,10 +249,13 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
             const SizedBox(height: 20),
             const Text('Related To', style: AppTypography.heading),
             const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: _pickCustomer,
-              child: Text(_selectedCustomer?.name ?? 'Select Customer'),
-            ),
+            if (_hasEntityPreset)
+              Text(widget.entityPreset!.label, style: AppTypography.body)
+            else
+              OutlinedButton(
+                onPressed: _pickCustomer,
+                child: Text(_selectedCustomer?.name ?? 'Select Customer'),
+              ),
           ] else ...[
             const Text('Type', style: AppTypography.heading),
             const SizedBox(height: 8),
@@ -259,7 +270,7 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () => _pickDateTime(initial: _dueDate, onPicked: (dt) => setState(() => _dueDate = dt)),
-            child: Text(_dueDate == null ? 'Select Due Date' : _dueDate!.toIso8601String()),
+            child: Text(_dueDate == null ? 'Select Due Date' : formatFriendlyDateTime(_dueDate!)),
           ),
           if (carriesAmount) ...[
             const SizedBox(height: 20),
@@ -290,7 +301,7 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () => _pickDateTime(initial: _customFireAt, onPicked: (dt) => setState(() => _customFireAt = dt)),
-              child: Text(_customFireAt == null ? 'Select Custom Fire Time' : _customFireAt!.toIso8601String()),
+              child: Text(_customFireAt == null ? 'Select Custom Fire Time' : formatFriendlyDateTime(_customFireAt!)),
             ),
           ],
           const SizedBox(height: 20),

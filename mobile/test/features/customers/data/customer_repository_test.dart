@@ -109,7 +109,7 @@ void main() {
 
   test('createCustomer delegates every field to the api and returns the save result', () async {
     const result = (customer: _customer, warning: null);
-    when(() => mockApi.store(name: 'Somali Builders', phone: '+252612345678', creditLimit: '5000.00'))
+    when(() => mockApi.store(name: 'Somali Builders', phone: '+252612345678', address: null, creditLimit: '5000.00'))
         .thenAnswer((_) async => result);
 
     final saved = await repository.createCustomer(
@@ -129,7 +129,7 @@ void main() {
       matchedCustomerId: '99',
     );
     const result = (customer: _customer, warning: warning);
-    when(() => mockApi.store(name: 'Somali Builders', phone: '+252612345678', creditLimit: '5000.00'))
+    when(() => mockApi.store(name: 'Somali Builders', phone: '+252612345678', address: null, creditLimit: '5000.00'))
         .thenAnswer((_) async => result);
 
     final saved = await repository.createCustomer(
@@ -143,7 +143,13 @@ void main() {
 
   test('updateCustomer delegates every field to the api', () async {
     const result = (customer: _customer, warning: null);
-    when(() => mockApi.update(id: '1', name: 'Somali Builders', phone: '+252612345678', creditLimit: '6000.00'))
+    when(() => mockApi.update(
+          id: '1',
+          name: 'Somali Builders',
+          phone: '+252612345678',
+          address: null,
+          creditLimit: '6000.00',
+        ))
         .thenAnswer((_) async => result);
 
     final saved = await repository.updateCustomer(
@@ -154,6 +160,30 @@ void main() {
     );
 
     expect(saved.customer, _customer);
+  });
+
+  test('createCustomer passes a real address through when given one (Item 13)', () async {
+    const result = (customer: _customer, warning: null);
+    when(() => mockApi.store(
+          name: 'Somali Builders',
+          phone: '+252612345678',
+          address: '123 Market Street',
+          creditLimit: '5000.00',
+        )).thenAnswer((_) async => result);
+
+    await repository.createCustomer(
+      name: 'Somali Builders',
+      phone: '+252612345678',
+      address: '123 Market Street',
+      creditLimit: '5000.00',
+    );
+
+    verify(() => mockApi.store(
+          name: 'Somali Builders',
+          phone: '+252612345678',
+          address: '123 Market Street',
+          creditLimit: '5000.00',
+        )).called(1);
   });
 
   test('archiveCustomer delegates to the api', () async {
@@ -178,6 +208,33 @@ void main() {
     final result = await repository.updateCreditLimit(id: '1', creditLimit: '7000.00');
 
     expect(result, _customer);
+  });
+
+  test('updateStatus delegates to the api', () async {
+    when(() => mockApi.updateStatus(id: '1', customerStatus: 'high_risk')).thenAnswer((_) async => _customer);
+
+    final result = await repository.updateStatus(id: '1', customerStatus: 'high_risk');
+
+    expect(result, _customer);
+  });
+
+  test('updateStatus throws ApiException on a read-only customer (403)', () async {
+    when(() => mockApi.updateStatus(id: '1', customerStatus: 'high_risk')).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(path: '/customers/1/status'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/customers/1/status'),
+          statusCode: 403,
+          data: {'success': false, 'message': 'This action is unauthorized.', 'data': null, 'errors': null},
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(
+      () => repository.updateStatus(id: '1', customerStatus: 'high_risk'),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+    );
   });
 
   test('checkDuplicateCustomer delegates to the api', () async {

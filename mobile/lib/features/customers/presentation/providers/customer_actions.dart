@@ -25,9 +25,11 @@ class CustomerActions {
   Future<CustomerSaveResult> create({
     required String name,
     required String phone,
+    String? address,
     required String creditLimit,
   }) async {
-    final result = await _repository.createCustomer(name: name, phone: phone, creditLimit: creditLimit);
+    final result =
+        await _repository.createCustomer(name: name, phone: phone, address: address, creditLimit: creditLimit);
     _ref.invalidate(customerListProvider);
     return result;
   }
@@ -36,9 +38,16 @@ class CustomerActions {
     required String id,
     required String name,
     required String phone,
+    String? address,
     required String creditLimit,
   }) async {
-    final result = await _repository.updateCustomer(id: id, name: name, phone: phone, creditLimit: creditLimit);
+    final result = await _repository.updateCustomer(
+      id: id,
+      name: name,
+      phone: phone,
+      address: address,
+      creditLimit: creditLimit,
+    );
     _ref.invalidate(customerDetailProvider(id));
     _ref.invalidate(customerListProvider);
     return result;
@@ -62,6 +71,12 @@ class CustomerActions {
 
   Future<void> updateCreditLimit({required String id, required String creditLimit}) async {
     await _repository.updateCreditLimit(id: id, creditLimit: creditLimit);
+    _ref.invalidate(customerDetailProvider(id));
+    _ref.invalidate(customerListProvider);
+  }
+
+  Future<void> updateStatus({required String id, required String customerStatus}) async {
+    await _repository.updateStatus(id: id, customerStatus: customerStatus);
     _ref.invalidate(customerDetailProvider(id));
     _ref.invalidate(customerListProvider);
   }

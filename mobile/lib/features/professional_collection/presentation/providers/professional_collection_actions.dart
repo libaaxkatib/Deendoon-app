@@ -21,8 +21,20 @@ class ProfessionalCollectionActions {
 
   ProfessionalCollectionRepository get _repository => _ref.read(professionalCollectionRepositoryProvider);
 
-  Future<ProfessionalCollectionRequest> submit(String caseId) async {
-    final request = await _repository.submit(caseId);
+  Future<ProfessionalCollectionRequest> submit({
+    required String caseId,
+    required List<String> reasons,
+    required List<String> services,
+    String? notes,
+    required bool declarationAccepted,
+  }) async {
+    final request = await _repository.submit(
+      caseId: caseId,
+      reasons: reasons,
+      services: services,
+      notes: notes,
+      declarationAccepted: declarationAccepted,
+    );
     _ref.invalidate(professionalCollectionListProvider);
     return request;
   }
@@ -31,5 +43,14 @@ class ProfessionalCollectionActions {
     final message = await _repository.postMessage(id: requestId, content: content);
     _ref.invalidate(professionalCollectionMessagesProvider(requestId));
     return message;
+  }
+
+  Future<void> uploadAttachment({
+    required String requestId,
+    required String filePath,
+    required String fileName,
+  }) async {
+    await _repository.uploadAttachment(id: requestId, filePath: filePath, fileName: fileName);
+    _ref.invalidate(professionalCollectionAttachmentsProvider(requestId));
   }
 }

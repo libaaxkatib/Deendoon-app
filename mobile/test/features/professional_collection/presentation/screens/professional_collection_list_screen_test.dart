@@ -17,6 +17,11 @@ const _request = ProfessionalCollectionRequest(
   status: 'need_more_information',
   submittedByUserId: '01USER',
   actionedByUserId: null,
+  reasons: [],
+  notes: null,
+  requestedServices: [],
+  declarationAcceptedAt: null,
+  declarationAcceptedBy: null,
   createdAt: '2026-08-01T00:00:00.000000Z',
   closedAt: null,
 );

@@ -21,8 +21,12 @@ class DashboardApi {
     return BusinessHealth.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
-  Future<DashboardKpis> kpis({String period = 'month'}) async {
-    final response = await _dio.get('dashboard/kpis', queryParameters: {'period': period});
+  Future<DashboardKpis> kpis({String period = 'month', String? dateFrom, String? dateTo}) async {
+    final response = await _dio.get('dashboard/kpis', queryParameters: {
+      'period': period,
+      'date_from': ?dateFrom,
+      'date_to': ?dateTo,
+    });
     return DashboardKpis.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 

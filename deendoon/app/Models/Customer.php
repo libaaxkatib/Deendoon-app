@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * also deliberately excluded from Fillable so no other write path can
  * ever set it directly.
  */
-#[Fillable(['name', 'phone', 'credit_limit', 'customer_status'])]
+#[Fillable(['name', 'phone', 'address', 'credit_limit', 'customer_status'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
@@ -68,6 +68,11 @@ class Customer extends Model
     public function statements(): HasMany
     {
         return $this->hasMany(Statement::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(CustomerAttachment::class);
     }
 
     /**

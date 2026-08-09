@@ -71,11 +71,13 @@ class CustomerApi {
   Future<CustomerSaveResult> store({
     required String name,
     required String phone,
+    String? address,
     required String creditLimit,
   }) async {
     final response = await _dio.post('customers', data: {
       'name': name,
       'phone': phone,
+      'address': address,
       'credit_limit': creditLimit,
     });
     return _saveResultFrom(response.data['data'] as Map<String, dynamic>);
@@ -85,11 +87,13 @@ class CustomerApi {
     required String id,
     required String name,
     required String phone,
+    String? address,
     required String creditLimit,
   }) async {
     final response = await _dio.put('customers/$id', data: {
       'name': name,
       'phone': phone,
+      'address': address,
       'credit_limit': creditLimit,
     });
     return _saveResultFrom(response.data['data'] as Map<String, dynamic>);
@@ -108,6 +112,14 @@ class CustomerApi {
 
   Future<Customer> updateCreditLimit({required String id, required String creditLimit}) async {
     final response = await _dio.patch('customers/$id/credit-limit', data: {'credit_limit': creditLimit});
+    return Customer.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// `UpdateCustomerStatusRequest`: `customer_status` required, one of the
+  /// real 7-value CHECK constraint set — same as `CustomerPolicy::update`
+  /// (blocked when the customer is already read-only).
+  Future<Customer> updateStatus({required String id, required String customerStatus}) async {
+    final response = await _dio.patch('customers/$id/status', data: {'customer_status': customerStatus});
     return Customer.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 

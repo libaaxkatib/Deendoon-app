@@ -26,6 +26,7 @@ const _reminderOne = Reminder(
   createdAt: '2026-07-25T09:00:00.000000Z',
   updatedAt: '2026-07-25T09:00:00.000000Z',
   completedAt: null,
+  checkedInAt: null,
 );
 
 const _reminderTwo = Reminder(
@@ -46,6 +47,7 @@ const _reminderTwo = Reminder(
   createdAt: '2026-07-20T09:00:00.000000Z',
   updatedAt: '2026-07-20T09:00:00.000000Z',
   completedAt: null,
+  checkedInAt: null,
 );
 
 void main() {
@@ -158,6 +160,7 @@ void main() {
       createdAt: '2026-07-25T09:00:00.000000Z',
       updatedAt: '2026-07-25T09:00:00.000000Z',
       completedAt: '2026-07-28T10:00:00.000000Z',
+      checkedInAt: null,
     );
 
     container.read(reminderListProvider.notifier).replaceReminder(completed);

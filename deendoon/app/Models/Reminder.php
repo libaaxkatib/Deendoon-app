@@ -28,7 +28,7 @@ use RuntimeException;
 #[Fillable([
     'created_by_user_id', 'type', 'related_entity_type', 'related_entity_id',
     'related_case_id', 'due_date', 'amount_due', 'timing_rule', 'custom_fire_at',
-    'delivery_methods', 'notes', 'completed_at',
+    'delivery_methods', 'notes', 'completed_at', 'checked_in_at',
 ])]
 class Reminder extends Model
 {
@@ -44,6 +44,7 @@ class Reminder extends Model
             'custom_fire_at' => 'datetime',
             'delivery_methods' => 'array',
             'completed_at' => 'datetime',
+            'checked_in_at' => 'datetime',
         ];
     }
 

@@ -5,6 +5,7 @@ import '../../domain/business_health.dart';
 import '../../domain/dashboard_kpis.dart';
 import '../../domain/recent_case.dart';
 import '../../domain/todays_overview.dart';
+import 'kpi_period_provider.dart';
 
 /// Four independent providers, one per Home Dashboard component
 /// (§4.1/§4.2/§4.3/§4.5), matching the frozen spec's requirement that each
@@ -16,9 +17,17 @@ final businessHealthProvider = FutureProvider<BusinessHealth>(
   (ref) => ref.watch(dashboardRepositoryProvider).fetchBusinessHealth(),
 );
 
-final dashboardKpisProvider = FutureProvider<DashboardKpis>(
-  (ref) => ref.watch(dashboardRepositoryProvider).fetchKpis(),
-);
+/// Watches `kpiPeriodProvider` directly — selecting a different period
+/// (`KpiPeriodSelector`) re-runs this provider with the new real
+/// `period`/`date_from`/`date_to` query parameters, not just a label swap.
+final dashboardKpisProvider = FutureProvider<DashboardKpis>((ref) {
+  final selection = ref.watch(kpiPeriodProvider);
+  return ref.watch(dashboardRepositoryProvider).fetchKpis(
+        period: selection.key,
+        dateFrom: selection.dateFrom,
+        dateTo: selection.dateTo,
+      );
+});
 
 final todaysOverviewProvider = FutureProvider<TodaysOverview>(
   (ref) => ref.watch(dashboardRepositoryProvider).fetchTodaysOverview(),

@@ -71,11 +71,21 @@ class CustomerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  customer.name,
-                  style: AppTypography.body,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        customer.name,
+                        style: AppTypography.body,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (customer.isReadOnly) ...[
+                      const SizedBox(width: 6),
+                      const Icon(Icons.lock_outline, size: 14, color: AppColors.warning),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(

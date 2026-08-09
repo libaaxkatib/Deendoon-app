@@ -350,6 +350,70 @@ class ReportingTest extends TestCase
         $this->getJson('/api/v1/dashboard/kpis?period=fortnight')->assertStatus(422);
     }
 
+    // --- Dashboard KPI Period Selector (mobile Item 8) ---
+
+    public function test_last_month_only_counts_payments_from_the_fully_elapsed_previous_month(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')
+            ->create(['amount' => 150, 'payment_date' => now()->subMonthsNoOverflow()->startOfMonth()->toDateString()]);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')
+            ->create(['amount' => 300, 'payment_date' => now()->toDateString()]);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis?period=last_month');
+
+        $response->assertJsonPath('data.total_collected_period', '150.00');
+    }
+
+    public function test_this_year_and_year_alias_return_the_same_figures(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')
+            ->create(['amount' => 500, 'payment_date' => now()->toDateString()]);
+        $this->actingAsTenantUser($tenant);
+
+        $thisYear = $this->getJson('/api/v1/dashboard/kpis?period=this_year')->json('data.total_collected_period');
+        $legacyYear = $this->getJson('/api/v1/dashboard/kpis?period=year')->json('data.total_collected_period');
+
+        $this->assertSame('500.00', $thisYear);
+        $this->assertSame($thisYear, $legacyYear);
+    }
+
+    public function test_custom_period_sums_payments_within_the_given_date_range(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')
+            ->create(['amount' => 250, 'payment_date' => '2026-01-15']);
+        Payment::factory()->for($tenant, 'tenant')->for($debt, 'debt')
+            ->create(['amount' => 999, 'payment_date' => '2026-03-01']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/dashboard/kpis?period=custom&date_from=2026-01-01&date_to=2026-01-31');
+
+        $response->assertJsonPath('data.total_collected_period', '250.00');
+    }
+
+    public function test_custom_period_without_date_range_is_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/dashboard/kpis?period=custom')->assertStatus(422);
+    }
+
+    public function test_custom_period_with_date_to_before_date_from_is_rejected(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $this->getJson('/api/v1/dashboard/kpis?period=custom&date_from=2026-02-01&date_to=2026-01-01')
+            ->assertStatus(422);
+    }
+
     // --- Aging Analysis (FR-054) ---
 
     public function test_admin_can_view_aging_analysis(): void
@@ -549,6 +613,37 @@ class ReportingTest extends TestCase
         $this->actingAsTenantUser($tenant);
 
         $response = $this->getJson('/api/v1/reports/debts?status=pending');
+
+        $this->assertCount(1, $response->json('data.debts'));
+    }
+
+    public function test_debts_report_can_be_filtered_to_debts_paid_within_a_period(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $paidInRange = $this->makeDebt($tenant, ['debt_status' => 'paid', 'remaining_balance' => 0]);
+        Payment::factory()->for($tenant, 'tenant')->for($paidInRange, 'debt')
+            ->create(['payment_date' => '2026-01-15']);
+        $paidOutsideRange = $this->makeDebt($tenant, ['debt_status' => 'paid', 'remaining_balance' => 0]);
+        Payment::factory()->for($tenant, 'tenant')->for($paidOutsideRange, 'debt')
+            ->create(['payment_date' => '2026-03-01']);
+        $stillOpen = $this->makeDebt($tenant, ['debt_status' => 'pending']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/debts?paidDateFrom=2026-01-01&paidDateTo=2026-01-31');
+
+        $ids = collect($response->json('data.debts'))->pluck('id');
+        $this->assertEquals([$paidInRange->id], $ids->all());
+        $this->assertFalse($ids->contains($paidOutsideRange->id));
+        $this->assertFalse($ids->contains($stillOpen->id));
+    }
+
+    public function test_debts_report_paid_date_from_without_paid_date_to_is_ignored(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->makeDebt($tenant, ['debt_status' => 'pending']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson('/api/v1/reports/debts?paidDateFrom=2026-01-01');
 
         $this->assertCount(1, $response->json('data.debts'));
     }

@@ -20,6 +20,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // This is an API-only backend (routes/web.php has no login page,
+        // no `login` named route exists anywhere) but the framework's own
+        // ApplicationBuilder::withMiddleware() unconditionally defaults
+        // every guard's unauthenticated-redirect to
+        // `redirectGuestsTo(fn () => route('login'))` before this closure
+        // runs. Authenticate::unauthenticated() only skips calling that
+        // callback when $request->expectsJson() is true, which depends on
+        // the client sending an `Accept: application/json` header — not
+        // guaranteed for every API consumer. When it's absent, redirectTo()
+        // calls route('login'), which throws RouteNotFoundException before
+        // AuthenticationException is even constructed, so it never reaches
+        // the JSON-envelope render() callback registered below and
+        // surfaces as an unhandled 500 instead of a clean 401. Overriding
+        // it to null here means there is never a redirect target to
+        // resolve, regardless of what the client sends.
+        $middleware->redirectGuestsTo(fn () => null);
+
         // Product Owner Decision (Phase 14): Sanctum sliding idle timeout.
         // Prepended to the GLOBAL middleware stack — must run before
         // anything that can resolve $request->user() (not just

@@ -368,6 +368,21 @@ class ReportController extends Controller
             $query->where('remaining_balance', '<=', $request->input('outstandingAmountMax'));
         }
 
+        // Analytics' Average Days detail view (mobile Item 10): the debts
+        // that actually fed that calculation — reuses
+        // ReportingService::debtsPaidWithin() so this is always exactly
+        // the same population, not a due_date-based approximation of it.
+        // Distinct param names from dateFrom/dateTo above (those filter by
+        // due_date; these filter by payment date) so both can never be
+        // confused with each other.
+        if ($request->filled('paidDateFrom') && $request->filled('paidDateTo')) {
+            $ids = $this->reporting->debtsPaidWithin(
+                $request->date('paidDateFrom')->toDateString(),
+                $request->date('paidDateTo')->toDateString(),
+            )->pluck('id');
+            $query->whereIn('id', $ids);
+        }
+
         return $query;
     }
 

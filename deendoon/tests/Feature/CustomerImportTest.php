@@ -397,4 +397,33 @@ class CustomerImportTest extends TestCase
 
         $this->postJson('/api/v1/customers/import', ['file' => $file])->assertStatus(403);
     }
+
+    // --- Template download (P2.1) ---
+
+    public function test_admin_can_download_the_sample_import_template(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->get('/api/v1/customers/import/template');
+
+        $response->assertStatus(200);
+        $response->assertHeader(
+            'content-type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+    }
+
+    public function test_unauthenticated_template_download_is_rejected(): void
+    {
+        $this->getJson('/api/v1/customers/import/template')->assertStatus(401);
+    }
+
+    public function test_user_without_admin_role_cannot_download_the_template(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $this->actingAsTenantUser($tenant, null);
+
+        $this->getJson('/api/v1/customers/import/template')->assertStatus(403);
+    }
 }

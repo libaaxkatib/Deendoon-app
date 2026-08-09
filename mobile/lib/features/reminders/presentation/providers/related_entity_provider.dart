@@ -9,15 +9,16 @@ import '../../../debts/data/debt_repository.dart';
 /// `related_entity_id` pair. This is a polymorphic-by-convention pair on
 /// the backend (not a real Eloquent morphTo, and not validated with an
 /// `exists:` rule) — `ReminderResource` never embeds the related entity's
-/// display data, so the client resolves it. `resolved: false` covers two
-/// real, honest cases: `promise_to_pay` (no `GET` endpoint exists to
-/// fetch an individual promise by id — see the Sprint 12/14 summaries),
-/// and a genuinely dangling reference (the id doesn't exist, a 404).
+/// display data, so the client resolves it. `resolved: false` covers one
+/// real, honest case: a genuinely dangling reference (the id doesn't
+/// exist, a 404).
 class RelatedEntitySummary {
   final String name;
   final bool resolved;
+  final String? phone;
+  final String? address;
 
-  const RelatedEntitySummary({required this.name, required this.resolved});
+  const RelatedEntitySummary({required this.name, required this.resolved, this.phone, this.address});
 }
 
 /// Keyed by `"type:id"` rather than the `Reminder` object itself, so
@@ -32,16 +33,19 @@ final relatedEntityProvider = FutureProvider.family<RelatedEntitySummary, String
     switch (type) {
       case 'customer':
         final customer = await ref.watch(customerRepositoryProvider).fetchCustomer(id);
-        return RelatedEntitySummary(name: customer.name, resolved: true);
+        return RelatedEntitySummary(name: customer.name, resolved: true, phone: customer.phone, address: customer.address);
       case 'debt':
         final debt = await ref.watch(debtRepositoryProvider).fetchDebt(id);
         final customer = await ref.watch(customerRepositoryProvider).fetchCustomer(debt.customerId);
-        return RelatedEntitySummary(name: customer.name, resolved: true);
+        return RelatedEntitySummary(name: customer.name, resolved: true, phone: customer.phone, address: customer.address);
       case 'collection_case':
         final collectionCase = await ref.watch(collectionCaseRepositoryProvider).fetchCase(id);
         return RelatedEntitySummary(name: collectionCase.customerName ?? 'Unknown customer', resolved: true);
       case 'promise_to_pay':
-        return const RelatedEntitySummary(name: 'Promise to Pay', resolved: false);
+        final promise = await ref.watch(debtRepositoryProvider).fetchPromiseToPayById(id);
+        final debt = await ref.watch(debtRepositoryProvider).fetchDebt(promise.debtId);
+        final customer = await ref.watch(customerRepositoryProvider).fetchCustomer(debt.customerId);
+        return RelatedEntitySummary(name: customer.name, resolved: true, phone: customer.phone, address: customer.address);
       default:
         return RelatedEntitySummary(name: type, resolved: false);
     }

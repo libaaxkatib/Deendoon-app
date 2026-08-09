@@ -7,8 +7,11 @@ use App\Enums\DemandLetterTemplate;
 use App\Enums\DocumentEventType;
 use App\Enums\DocumentType;
 use App\Enums\NotificationType;
+use App\Models\CollectionCaseAttachment;
 use App\Models\Customer;
+use App\Models\CustomerAttachment;
 use App\Models\Debt;
+use App\Models\DebtAttachment;
 use App\Models\DemandLetter;
 use App\Models\DocumentEvent;
 use App\Models\Invoice;
@@ -401,6 +404,8 @@ class DocumentService
      * of truth used to enforce the quota those uploads go through
      * (storeUploadedFile()/assertCanUpload()), so usage accounting never
      * drifts from enforcement.
+     * Final Product Completion Roadmap, P1.6: also includes Customer/
+     * Debt/CollectionCase attachments' file_size, folded in the same way.
      * `total_bytes`/`used_percentage` are deliberately left untouched —
      * still the pre-existing flat env-var quota, not
      * {@see StorageAddonService::totalStorageAllowance()} — since
@@ -419,6 +424,9 @@ class DocumentService
                 'request',
                 fn ($q) => $q->where('tenant_id', $tenant->id),
             )->sum('file_size')
+            + (int) CustomerAttachment::where('tenant_id', $tenant->id)->sum('file_size')
+            + (int) DebtAttachment::where('tenant_id', $tenant->id)->sum('file_size')
+            + (int) CollectionCaseAttachment::where('tenant_id', $tenant->id)->sum('file_size')
             + $this->logoBytes($tenant);
 
         $totalBytes = (int) env('DOCUMENT_STORAGE_QUOTA_BYTES', 10 * 1024 * 1024 * 1024);

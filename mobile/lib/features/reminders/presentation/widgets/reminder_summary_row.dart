@@ -12,9 +12,12 @@ import '../providers/reminder_list_provider.dart';
 /// (Visits, Calls, Payments) and an Overdue count." Loads and errors
 /// independently of the list below it, per the section's own "each
 /// component loads independently" rule. Each mini-stat is also a
-/// shortcut into the matching filter chip below (Visits/Calls/Payments
-/// are client-side `Reminder.type` filters, Overdue is the real backend
-/// `tab=overdue`) rather than a second, separate navigation target.
+/// shortcut into the matching filter chip below (Client Visits/Follow-ups/
+/// Payments are client-side `Reminder.type` filters, Overdue is the real
+/// backend `tab=overdue`) rather than a second, separate navigation
+/// target. Labels renamed (Deendoon V1 Reminder Workflow Update) to match
+/// the filter chips below — same underlying `client_visit`/`follow_up_call`
+/// type filters, label-only change.
 class ReminderSummaryRow extends ConsumerWidget {
   const ReminderSummaryRow({super.key});
 
@@ -47,7 +50,7 @@ class ReminderSummaryRow extends ConsumerWidget {
             children: [
               Expanded(
                 child: _MiniStat(
-                  label: 'Visits',
+                  label: 'Client Visits',
                   value: summary.clientVisits,
                   onTap: () => ref.read(reminderListProvider.notifier).filterByType('client_visit'),
                 ),
@@ -55,7 +58,7 @@ class ReminderSummaryRow extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _MiniStat(
-                  label: 'Calls',
+                  label: 'Follow-ups',
                   value: summary.followUpCalls,
                   onTap: () => ref.read(reminderListProvider.notifier).filterByType('follow_up_call'),
                 ),

@@ -1,5 +1,10 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -8,21 +13,49 @@ import '../../../../core/widgets/coming_soon.dart';
 
 /// Profile screen's "About Deendoon" section. Version and build number are
 /// real, read from the installed app bundle via `package_info_plus` — never
-/// hardcoded, so they can't drift from what's actually installed. Privacy
-/// Policy, Terms & Conditions, Contact Support, and Rate the App have no
-/// real destination yet (no CMS/store listing exists), so each uses the
-/// app's existing `showComingSoon` convention rather than a fake screen or
-/// a dead link — the same honest pattern already used for Global Search
-/// and the Business Profile/Settings gaps.
+/// hardcoded, so they can't drift from what's actually installed.
+///
+/// Of the four "KUWA KALE" rows: Privacy Policy and Terms & Conditions push
+/// a real in-app `LegalContentScreen` (local static copy — no CMS exists,
+/// so there is nothing to fetch); Rate the App opens the real Play Store
+/// listing for this app's actual package id on Android (constructed from
+/// `package_info_plus`, not invented) — iOS shows an honest "not yet
+/// published" message until an App Store ID is assigned post-submission.
+/// Contact Support stays on the app's `showComingSoon` convention: no real
+/// support email/phone/WhatsApp number exists anywhere in this project yet,
+/// and wiring one up would mean inventing a destination nobody actually
+/// monitors — this is a pending Product Owner decision, not a build gap.
 ///
 /// The brand mark is the real logo asset (`assets/deendoon_logo.png`,
 /// declared in `pubspec.yaml`) rather than a text wordmark or placeholder.
 /// Content (Somali) below it is the Product Owner's approved copy —
-/// intro, benefits, and closing — laid out per the approved reference;
-/// only the four Privacy/Terms/Contact/Rate rows below are untouched,
-/// pre-existing structure.
+/// intro, benefits, and closing — laid out per the approved reference.
 class AboutDeendoonSection extends StatelessWidget {
   const AboutDeendoonSection({super.key});
+
+  /// Opens the real Play Store listing for this app's actual installed
+  /// package id. iOS has no assigned App Store ID yet (only issued after
+  /// first submission to App Store Connect), so it shows an honest status
+  /// message instead of a fabricated store link.
+  Future<void> _rateApp(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final isIOS = !kIsWeb && (Platform.isIOS || defaultTargetPlatform == TargetPlatform.iOS);
+    if (isIOS) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Deendoon is not yet published on the App Store.')));
+      return;
+    }
+
+    final info = await PackageInfo.fromPlatform();
+    final uri = Uri.parse('https://play.google.com/store/apps/details?id=${info.packageName}');
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Could not open the Play Store.')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,12 +190,12 @@ class AboutDeendoonSection extends StatelessWidget {
             _AboutRow(
               icon: Icons.privacy_tip_outlined,
               label: 'Privacy Policy',
-              onTap: () => showComingSoon(context, 'Privacy Policy'),
+              onTap: () => context.push('/account/privacy-policy'),
             ),
             _AboutRow(
               icon: Icons.description_outlined,
               label: 'Terms & Conditions',
-              onTap: () => showComingSoon(context, 'Terms & Conditions'),
+              onTap: () => context.push('/account/terms-conditions'),
             ),
             _AboutRow(
               icon: Icons.support_agent_outlined,
@@ -172,7 +205,7 @@ class AboutDeendoonSection extends StatelessWidget {
             _AboutRow(
               icon: Icons.star_outline,
               label: 'Rate the App',
-              onTap: () => showComingSoon(context, 'Rate the App'),
+              onTap: () => _rateApp(context),
               isLast: true,
             ),
           ],

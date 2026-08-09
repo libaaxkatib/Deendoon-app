@@ -92,12 +92,105 @@ void main() {
   });
 
   test('promiseToPay delegates to the api', () async {
-    const promise = PromiseToPay(id: '1', debtId: '1', promisedDate: '2026-08-01', status: 'open');
+    const promise = PromiseToPay(
+      id: '1',
+      debtId: '1',
+      promisedDate: '2026-08-01',
+      status: 'open',
+      createdAt: '2026-07-28T10:00:00.000000Z',
+    );
     when(() => mockApi.promiseToPay(debtId: '1', promisedDate: '2026-08-01')).thenAnswer((_) async => promise);
 
     final result = await repository.promiseToPay(debtId: '1', promisedDate: '2026-08-01');
 
     expect(result, promise);
+  });
+
+  test('fetchPromiseToPayHistory delegates to the api', () async {
+    const promise = PromiseToPay(
+      id: '1',
+      debtId: '1',
+      promisedDate: '2026-08-01',
+      status: 'open',
+      createdAt: '2026-07-28T10:00:00.000000Z',
+    );
+    when(() => mockApi.promiseToPayHistory('1')).thenAnswer((_) async => [promise]);
+
+    final result = await repository.fetchPromiseToPayHistory('1');
+
+    expect(result, [promise]);
+  });
+
+  test('fetchPromiseToPayById delegates to the api (Item 14)', () async {
+    const promise = PromiseToPay(
+      id: '1',
+      debtId: '1',
+      promisedDate: '2026-08-01',
+      status: 'open',
+      createdAt: '2026-07-28T10:00:00.000000Z',
+    );
+    when(() => mockApi.showPromiseToPay('1')).thenAnswer((_) async => promise);
+
+    final result = await repository.fetchPromiseToPayById('1');
+
+    expect(result, promise);
+  });
+
+  test('fetchRelatedCase returns the case straight through on success', () async {
+    const collectionCase = CollectionCase(
+      id: '01CASE',
+      debtId: '1',
+      customerId: '01CUST',
+      customerName: 'Somali Builders',
+      outstandingAmount: '1000.00',
+      riskLevel: 'high',
+      referenceNumber: 'COL-0001',
+      assignedOfficerUserId: null,
+      caseStatus: 'open',
+      closureOutcome: null,
+      notes: null,
+      lastActivityAt: '2026-08-01T10:00:00.000000Z',
+      createdAt: '2026-08-01T10:00:00.000000Z',
+      closedAt: null,
+    );
+    when(() => mockApi.relatedCase('1')).thenAnswer((_) async => collectionCase);
+
+    expect(await repository.fetchRelatedCase('1'), collectionCase);
+  });
+
+  test('fetchRelatedCase returns null on a 404 (no case yet) instead of throwing', () async {
+    when(() => mockApi.relatedCase('1')).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(path: '/debts/1/collection-case'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/debts/1/collection-case'),
+          statusCode: 404,
+          data: {'success': false, 'message': 'This debt has no collection case.', 'data': null, 'errors': null},
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(await repository.fetchRelatedCase('1'), isNull);
+  });
+
+  test('fetchRelatedCase rethrows a non-404 failure as ApiException', () async {
+    when(() => mockApi.relatedCase('1')).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(path: '/debts/1/collection-case'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/debts/1/collection-case'),
+          statusCode: 403,
+          data: {'success': false, 'message': 'This action is unauthorized.', 'data': null, 'errors': null},
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(
+      () => repository.fetchRelatedCase('1'),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+    );
   });
 
   test('openCase delegates to the api and returns the created case', () async {
@@ -112,6 +205,7 @@ void main() {
       assignedOfficerUserId: null,
       caseStatus: 'open',
       closureOutcome: null,
+      notes: null,
       lastActivityAt: '2026-08-01T10:00:00.000000Z',
       createdAt: '2026-08-01T10:00:00.000000Z',
       closedAt: null,

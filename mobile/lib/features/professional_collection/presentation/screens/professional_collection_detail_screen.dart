@@ -7,17 +7,20 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/unavailable_section.dart';
 import '../providers/professional_collection_detail_providers.dart';
 
 /// Professional Collection Request Detail — reference number, status,
-/// submitted/closed dates, a link back to the originating Collection
-/// Case, and a "View Messages" entry point. "Submitted By"/"Actioned By"
-/// are shown as raw user ids — there is no endpoint reachable by the
-/// Business Owner role to resolve an arbitrary user id to a name (same
-/// gap as Assigned Officer on Collection Cases, Created By on Reminders).
-/// No Status Transition / Close action here — both are Deendoon-
-/// Platform-Administrator-only (`ProfessionalCollectionRequestPolicy`),
-/// out of Sprint 20 Unit 1 scope.
+/// submitted/closed dates, the Reasons for Transfer/Requested
+/// Services/Notes/Client Declaration record collected at submission
+/// (FR-072/FR-074), a link back to the originating Collection Case, and a
+/// "View Messages" entry point. "Submitted By"/"Actioned By"/"Declaration
+/// Accepted By" are shown as raw user ids — there is no endpoint reachable
+/// by the Business Owner role to resolve an arbitrary user id to a name
+/// (same gap as Assigned Officer on Collection Cases, Created By on
+/// Reminders). No Status Transition / Close action here — both are
+/// Deendoon-Platform-Administrator-only
+/// (`ProfessionalCollectionRequestPolicy`).
 class ProfessionalCollectionDetailScreen extends ConsumerWidget {
   final String requestId;
 
@@ -73,13 +76,76 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                       _InfoRow(label: 'Closed On', value: request.closedAt!.split('T').first),
                     ],
+                    if (request.declarationAcceptedAt != null) ...[
+                      const SizedBox(height: 12),
+                      _InfoRow(
+                        label: 'Declaration Accepted',
+                        value: request.declarationAcceptedAt!.split('T').first,
+                      ),
+                    ],
+                    if (request.declarationAcceptedBy != null) ...[
+                      const SizedBox(height: 12),
+                      _InfoRow(label: 'Declaration Accepted By', value: request.declarationAcceptedBy!),
+                    ],
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
+              const Text('Reasons for Transfer', style: AppTypography.heading),
+              const SizedBox(height: 12),
+              if (request.reasons.isEmpty)
+                const UnavailableSection(reason: 'No reasons recorded for this Request.')
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [for (final reason in request.reasons) Chip(label: Text(reason))],
+                ),
+              const SizedBox(height: 24),
+              const Text('Requested Services', style: AppTypography.heading),
+              const SizedBox(height: 12),
+              if (request.requestedServices.isEmpty)
+                const UnavailableSection(reason: 'No requested services recorded for this Request.')
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [for (final service in request.requestedServices) Chip(label: Text(service))],
+                ),
+              const SizedBox(height: 24),
+              const Text('Notes', style: AppTypography.heading),
+              const SizedBox(height: 12),
+              if (request.notes == null || request.notes!.trim().isEmpty)
+                const UnavailableSection(reason: 'No notes were added to this Request.')
+              else
+                AppCard(child: Text(request.notes!, style: AppTypography.body)),
               const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: () => context.push('/cases/${request.collectionCaseId}'),
                 child: const Text('View Collection Case'),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.push('/professional-requests/$requestId/documents'),
+                      child: const Text('Documents'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.push('/professional-requests/$requestId/attachments'),
+                      child: const Text('Attachments'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.push('/professional-requests/$requestId/timeline'),
+                child: const Text('View Timeline'),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -106,7 +172,14 @@ class _InfoRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: AppTypography.caption),
-        Text(value, style: AppTypography.body.copyWith(color: AppColors.primary)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTypography.body.copyWith(color: AppColors.primary),
+            textAlign: TextAlign.right,
+          ),
+        ),
       ],
     );
   }

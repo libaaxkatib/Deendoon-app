@@ -25,6 +25,21 @@ const _customer = Customer(
   archivedAt: null,
 );
 
+const _readOnlyCustomer = Customer(
+  id: '1',
+  name: 'Somali Builders',
+  phone: '+252612345678',
+  customerStatus: 'good_standing',
+  creditLimit: '5000.00',
+  outstandingBalance: '800.00',
+  remainingCredit: '4200.00',
+  riskLevel: 'low',
+  creditScore: 720,
+  creditScoreBand: 'good',
+  isReadOnly: true,
+  archivedAt: null,
+);
+
 final _payment = Payment(
   id: '01PAY',
   debtId: '01DEBT',
@@ -148,6 +163,41 @@ void main() {
       expect(find.text('Customer Documents Screen'), findsOneWidget);
     });
 
+    testWidgets('Cases opens the customer-scoped Cases screen', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
+          GoRoute(path: '/customers/1/cases', builder: (_, _) => const Text('Customer Cases Screen')),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Cases'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Customer Cases Screen'), findsOneWidget);
+    });
+
+    testWidgets('Attachments opens the customer-scoped Attachments screen with canUpload true', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
+          GoRoute(
+            path: '/customers/1/attachments',
+            builder: (_, state) => Text('Attachments Screen — canUpload=${state.extra}'),
+          ),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Attachments'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Attachments Screen — canUpload=true'), findsOneWidget);
+    });
+
     testWidgets('Archive asks for confirmation, calls the real endpoint, and pops back on success', (tester) async {
       final router = GoRouter(
         initialLocation: '/',
@@ -212,6 +262,27 @@ void main() {
       verify(() => mockRepository.updateCreditLimit(id: '1', creditLimit: '6000.00')).called(1);
     });
 
+    testWidgets('changing the Customer Status opens the sheet and calls the dedicated endpoint', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
+        ],
+      );
+      when(() => mockRepository.updateStatus(id: '1', customerStatus: 'high_risk')).thenAnswer((_) async => _customer);
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.byTooltip('Change Customer Status'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(RadioListTile<String>, 'High Risk'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockRepository.updateStatus(id: '1', customerStatus: 'high_risk')).called(1);
+    });
+
     testWidgets('Generate Statement calls the real endpoint and shows a success snackbar', (tester) async {
       final router = GoRouter(
         initialLocation: '/',
@@ -234,6 +305,86 @@ void main() {
 
       verify(() => mockRepository.generateStatement('1')).called(1);
       expect(find.text('Statement generated successfully'), findsOneWidget);
+    });
+
+    testWidgets(
+      'a read-only customer shows the banner, disables Edit/Archive/Generate Statement/Credit Limit edit',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
+            GoRoute(path: '/account/subscription', builder: (_, _) => const Text('Subscription Screen')),
+          ],
+        );
+        tester.view.physicalSize = const Size(400, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _readOnlyCustomer);
+        when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Read-only Customer'), findsOneWidget);
+
+        final editButton = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.edit_outlined));
+        expect(editButton.onPressed, isNull);
+        final archiveButton = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.archive_outlined));
+        expect(archiveButton.onPressed, isNull);
+
+        expect(find.widgetWithText(OutlinedButton, 'Generate Statement'), findsOneWidget);
+        final generateStatementButton =
+            tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Generate Statement'));
+        expect(generateStatementButton.onPressed, isNull);
+
+        // Credit Limit's and Customer Status's edit icons are both hidden
+        // entirely when their callbacks are null.
+        expect(find.byTooltip('Edit Credit Limit'), findsNothing);
+        expect(find.byTooltip('Change Customer Status'), findsNothing);
+
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Upgrade Plan'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Subscription Screen'), findsOneWidget);
+      },
+    );
+
+    testWidgets('a read-only customer navigates to Attachments with canUpload false', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
+          GoRoute(
+            path: '/customers/1/attachments',
+            builder: (_, state) => Text('Attachments Screen — canUpload=${state.extra}'),
+          ),
+        ],
+      );
+      when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _readOnlyCustomer);
+      when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
+      tester.view.physicalSize = const Size(400, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Attachments'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Attachments Screen — canUpload=false'), findsOneWidget);
     });
   });
 }

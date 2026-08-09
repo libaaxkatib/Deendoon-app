@@ -30,6 +30,7 @@ const _reminder = Reminder(
   createdAt: '2026-07-25T09:00:00.000000Z',
   updatedAt: '2026-07-25T09:00:00.000000Z',
   completedAt: null,
+  checkedInAt: null,
 );
 
 void main() {
@@ -122,6 +123,12 @@ void main() {
     when(() => mockApi.complete('1')).thenAnswer((_) async => _reminder);
 
     expect(await repository.completeReminder('1'), _reminder);
+  });
+
+  test('checkInReminder delegates to the api', () async {
+    when(() => mockApi.checkIn('1')).thenAnswer((_) async => _reminder);
+
+    expect(await repository.checkInReminder('1'), _reminder);
   });
 
   test('deleteReminder delegates to the api', () async {

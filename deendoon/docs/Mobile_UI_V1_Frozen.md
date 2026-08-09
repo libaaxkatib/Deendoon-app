@@ -2687,11 +2687,17 @@ copyright; tap any of the four Other rows.
 
 **Business Rules:** The descriptive copy is the Product Owner's approved
 text. Version and Build Number are read from the installed app bundle at
-runtime (never hardcoded), and Copyright shows the current year. The four
-Other rows (Privacy Policy, Terms & Conditions, Contact Support, Rate the
-App) have no live destination in Version 1 — each shows an honest
-"coming soon" acknowledgement rather than a fabricated screen or a dead
-link, since no content source or store listing exists for them yet.
+runtime (never hardcoded), and Copyright shows the current year. Amended
+2026-08-09: Privacy Policy and Terms & Conditions now open a real in-app
+content screen (local static copy — no CMS exists, so there is nothing to
+fetch); this interim copy has not yet been reviewed by legal counsel.
+Rate the App opens the real Play Store listing for the app's actual
+package id on Android; iOS shows an honest "not yet published" message
+until an App Store ID is assigned post-submission. Contact Support still
+shows an honest "coming soon" acknowledgement — no real support email,
+phone, or WhatsApp number exists anywhere in the project yet, and this is
+a pending Product Owner decision on which channel/address to use, not a
+build gap.
 
 **Required APIs:** None — all content is static app copy or read from the
 local app bundle.

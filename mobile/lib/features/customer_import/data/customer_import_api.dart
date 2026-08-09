@@ -7,16 +7,26 @@ import '../domain/import_preview.dart';
 
 final customerImportApiProvider = Provider<CustomerImportApi>((ref) => CustomerImportApi(ref.read(dioProvider)));
 
-/// Thin wrapper around `POST /customers/import` and
-/// `POST /customers/import/{batch}/commit` — mirrors
-/// `App\Http\Controllers\CustomerImportController` exactly. There is no
-/// third endpoint: no sample-template download, no progress-polling
-/// endpoint (the backend parses and commits synchronously, no queue job
-/// backs this).
+/// Thin wrapper around `GET /customers/import/template`,
+/// `POST /customers/import`, and `POST /customers/import/{batch}/commit`
+/// — mirrors `App\Http\Controllers\CustomerImportController` exactly.
+/// There is no progress-polling endpoint (the backend parses and commits
+/// synchronously, no queue job backs this).
 class CustomerImportApi {
   final Dio _dio;
 
   const CustomerImportApi(this._dio);
+
+  /// Streams the raw `.xlsx` bytes — same non-JSON-envelope shape as
+  /// `DocumentApi.download()` (`CustomerImportController::template()`
+  /// returns `Excel::download()`'s raw binary response directly).
+  Future<List<int>> downloadTemplate() async {
+    final response = await _dio.get<List<int>>(
+      'customers/import/template',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return response.data!;
+  }
 
   /// `ImportCustomersRequest` accepts only `mimes:xlsx,xls` — the backend
   /// does not accept `.csv` despite it being a common import format.

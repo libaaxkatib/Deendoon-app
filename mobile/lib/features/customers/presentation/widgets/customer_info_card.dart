@@ -10,14 +10,15 @@ import '../../domain/customer.dart';
 
 /// Customer Information + Contact Details + Outstanding Balance + Credit
 /// Limit + Risk Level — everything `GET /customers/{id}` (`CustomerResource`)
-/// actually returns, in one card. [onEditCreditLimit] is optional so this
-/// card can still be reused read-only elsewhere (e.g. `CaseDetailScreen`'s
-/// Customer Summary).
+/// actually returns, in one card. [onEditCreditLimit]/[onEditStatus] are
+/// optional so this card can still be reused read-only elsewhere (e.g.
+/// `CaseDetailScreen`'s Customer Summary).
 class CustomerInfoCard extends StatelessWidget {
   final Customer customer;
   final VoidCallback? onEditCreditLimit;
+  final VoidCallback? onEditStatus;
 
-  const CustomerInfoCard({super.key, required this.customer, this.onEditCreditLimit});
+  const CustomerInfoCard({super.key, required this.customer, this.onEditCreditLimit, this.onEditStatus});
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +37,34 @@ class CustomerInfoCard extends StatelessWidget {
                     Text(customer.name, style: AppTypography.subheading),
                     const SizedBox(height: 4),
                     Text(customer.phone, style: AppTypography.caption),
+                    if (customer.address != null && customer.address!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        customer.address!,
+                        style: AppTypography.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  StatusBadge(status: customer.customerStatus),
+                  Row(
+                    children: [
+                      StatusBadge(status: customer.customerStatus),
+                      if (onEditStatus != null)
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          tooltip: 'Change Customer Status',
+                          onPressed: onEditStatus,
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.only(left: 6),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 6),
                   RiskBadge(riskLevel: customer.riskLevel),
                 ],

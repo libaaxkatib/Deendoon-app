@@ -9,7 +9,10 @@ import '../providers/dashboard_providers.dart';
 import '../../../../core/widgets/app_card.dart';
 
 /// §4.3 Today's Overview — four rows: Reminders Due Today, Payments Due,
-/// Client Visits, Follow-up Calls. All four open the real Reminder
+/// Client Visits, Follow-ups (Deendoon V1 Reminder Workflow Update:
+/// renamed from "Follow-up Calls" — label only, same
+/// `data.followUpCalls` count and same `?filter=calls` route). All four
+/// open the real Reminder
 /// Center (Sprint 14) with the matching filter chip already selected via
 /// the `?filter=` query param (`ReminderListScreen.initialFilter`) — a
 /// client-side deep link only, since `GET /reminders` itself still has
@@ -59,7 +62,7 @@ class TodaysOverviewList extends ConsumerWidget {
           _OverviewRow(
             icon: Icons.call_outlined,
             iconColor: AppColors.warning,
-            label: 'Follow-up Calls',
+            label: 'Follow-ups',
             count: data.followUpCalls,
             onTap: () => context.go('/reminders?filter=calls'),
           ),

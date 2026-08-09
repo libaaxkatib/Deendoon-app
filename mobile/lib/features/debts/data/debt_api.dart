@@ -87,6 +87,30 @@ class DebtApi {
     return PromiseToPay.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
+  /// Debt Detail's "Promise to Pay History" (mobile Item 11).
+  Future<List<PromiseToPay>> promiseToPayHistory(String debtId) async {
+    final response = await _dio.get('debts/$debtId/promise-to-pay');
+    final data = response.data['data'] as List<dynamic>;
+    return data.map((e) => PromiseToPay.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Standalone `GET /promises-to-pay/{id}` (mobile Item 14) — resolves a
+  /// Reminder's `related_entity_type == 'promise_to_pay'` to its real
+  /// Promise (and, via `debt_id`, its Customer) instead of a generic
+  /// "Promise to Pay" label.
+  Future<PromiseToPay> showPromiseToPay(String id) async {
+    final response = await _dio.get('promises-to-pay/$id');
+    return PromiseToPay.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// Debt Detail's "Related Case" (mobile Item 12) —
+  /// `CollectionCaseController::forDebt`. A 404 (no case yet) is a real,
+  /// expected state, handled by the repository, not here.
+  Future<CollectionCase> relatedCase(String debtId) async {
+    final response = await _dio.get('debts/$debtId/collection-case');
+    return CollectionCase.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
   /// `EscalateDebtRequest` takes no fields — opening a case is a bare
   /// confirm-and-submit action. Returns the created case (the `store()`
   /// response already includes it via `CollectionCaseResource`) so callers

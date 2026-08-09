@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
-import '../../../../core/widgets/unavailable_section.dart';
+import '../../../attachments/data/attachment_repository.dart';
+import '../../../attachments/presentation/providers/attachment_providers.dart';
 import '../../../customers/presentation/providers/customer_detail_providers.dart';
 import '../../../customers/presentation/widgets/customer_info_card.dart';
+import '../../../reminders/domain/reminder_entity_preset.dart';
 import '../providers/debt_actions.dart';
 import '../providers/debt_detail_providers.dart';
 import '../widgets/debt_documents_section.dart';
@@ -15,8 +17,10 @@ import '../widgets/debt_payment_history.dart';
 import '../widgets/debt_summary_card.dart';
 import '../widgets/debt_timeline_section.dart';
 import '../widgets/log_reminder_sheet.dart';
+import '../widgets/promise_to_pay_history_section.dart';
 import '../widgets/promise_to_pay_sheet.dart';
 import '../widgets/record_payment_sheet.dart';
+import '../widgets/related_case_section.dart';
 
 /// Debt Details — Customer Information (reused from the Customers module),
 /// Debt Summary + Collection Status, Log Reminder (FR-030 Manual Reminder —
@@ -32,14 +36,10 @@ import '../widgets/record_payment_sheet.dart';
 /// scheduled for the later module where document-generation workflows are
 /// intentionally implemented (Professional Collection / Reports).
 ///
-/// Two sections keep their structural slot but show an honest
-/// "not available" note rather than being removed — per Sprint 12's
-/// explicit instruction — because no backend endpoint exists to fetch
-/// them scoped to a single debt:
-/// - Promise to Pay History: only `POST /debts/{id}/promise-to-pay`
-///   (create) exists; there is no GET to list past promises.
-/// - Related Case: only `POST /debts/{id}/collection-cases` (escalate/
-///   create) exists; there is no GET to fetch an existing case for a debt.
+/// Promise to Pay History (`GET /debts/{id}/promise-to-pay`,
+/// `PromiseToPayController::index`) and Related Case
+/// (`GET /debts/{id}/collection-case`, `CollectionCaseController::forDebt`)
+/// are both real, backend-supported sections (mobile Items 11/12).
 class DebtDetailScreen extends ConsumerWidget {
   final String debtId;
 
@@ -65,6 +65,36 @@ class DebtDetailScreen extends ConsumerWidget {
     }
   }
 
+  /// Scan Invoice (P2.6) / Upload Invoice (P2.7). V1 scope only: capture or
+  /// pick a file -> upload as a plain Debt Attachment (the same real,
+  /// backend-supported `POST /debts/{id}/attachments` endpoint P1.6 built)
+  /// — no OCR, no invoice-data extraction, no manual invoice metadata
+  /// form. Tagged with `description: 'Invoice'` purely as a client-side
+  /// label so it reads clearly in the Attachments list; the backend has no
+  /// dedicated invoice-attachment type to set.
+  Future<void> _attachInvoice(
+    BuildContext context,
+    WidgetRef ref,
+    Future<PickedAttachmentFile?> Function() pick,
+  ) async {
+    final file = await pick();
+    if (file == null || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(attachmentRepositoryProvider).uploadAttachment(
+            entityPathPrefix: 'debts/$debtId',
+            filePath: file.path,
+            fileName: file.name,
+            description: 'Invoice',
+          );
+      ref.invalidate(attachmentsProvider('debts/$debtId'));
+      messenger.showSnackBar(const SnackBar(content: Text('Invoice attached successfully')));
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final debtAsync = ref.watch(debtDetailProvider(debtId));
@@ -86,6 +116,8 @@ class DebtDetailScreen extends ConsumerWidget {
           ref.invalidate(debtPaymentsProvider(debtId));
           ref.invalidate(debtDocumentsProvider(debtId));
           ref.invalidate(debtTimelineProvider(debtId));
+          ref.invalidate(debtPromiseToPayHistoryProvider(debtId));
+          ref.invalidate(debtRelatedCaseProvider(debtId));
           await ref.read(debtDetailProvider(debtId).future);
         },
         child: debtAsync.when(
@@ -180,6 +212,21 @@ class DebtDetailScreen extends ConsumerWidget {
                   onPressed: () => showLogReminderSheet(context, debtId, 'call'),
                   child: const Text('Log Call'),
                 ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: customerAsync.valueOrNull?.isReadOnly ?? false
+                      ? null
+                      : () => context.push(
+                            '/reminders/new',
+                            extra: ReminderEntityPreset(
+                              type: 'debt',
+                              id: debtId,
+                              label: 'Debt ${debt.referenceNumber}',
+                            ),
+                          ),
+                  icon: const Icon(Icons.add_alarm_outlined),
+                  label: const Text('Add Reminder'),
+                ),
                 const SizedBox(height: 24),
                 const Text('Payment History', style: AppTypography.heading),
                 const SizedBox(height: 12),
@@ -191,10 +238,7 @@ class DebtDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 const Text('Promise to Pay History', style: AppTypography.heading),
                 const SizedBox(height: 12),
-                const UnavailableSection(
-                  reason: 'Not available yet — the backend has no endpoint to list past '
-                      'promises for a debt (only creating a new one is supported).',
-                ),
+                PromiseToPayHistorySection(debtId: debtId),
                 const SizedBox(height: 24),
                 const Text('Generate Documents', style: AppTypography.heading),
                 const SizedBox(height: 12),
@@ -212,12 +256,34 @@ class DebtDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 DebtDocumentsSection(debtId: debtId),
                 const SizedBox(height: 24),
+                OutlinedButton(
+                  onPressed: () => context.push('/debts/$debtId/attachments'),
+                  child: const Text('Attachments'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _attachInvoice(context, ref, ref.read(attachmentCameraProvider)),
+                        icon: const Icon(Icons.camera_alt_outlined),
+                        label: const Text('Scan Invoice'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _attachInvoice(context, ref, ref.read(attachmentFilePickerProvider)),
+                        icon: const Icon(Icons.upload_file_outlined),
+                        label: const Text('Upload Invoice'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
                 const Text('Related Case', style: AppTypography.heading),
                 const SizedBox(height: 12),
-                const UnavailableSection(
-                  reason: 'Not available yet — the backend has no endpoint to fetch an '
-                      'existing case for a debt (only opening a new one is supported).',
-                ),
+                RelatedCaseSection(debtId: debtId),
               ],
             );
           },

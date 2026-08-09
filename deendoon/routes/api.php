@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
         Route::get('customers', [CustomerController::class, 'index']);
         Route::post('customers', [CustomerController::class, 'store']);
         Route::post('customers/check-duplicate', [CustomerController::class, 'checkDuplicate']);
+        Route::get('customers/import/template', [CustomerImportController::class, 'template']);
         Route::post('customers/import', [CustomerImportController::class, 'store']);
         Route::post('customers/import/{batch}/commit', [CustomerImportController::class, 'commit']);
         Route::post('customers/{customer}/restore', [CustomerController::class, 'restore'])->withTrashed();
@@ -60,6 +61,8 @@ Route::prefix('v1')->group(function () {
         Route::get('customers/{customer}/payments', [PaymentController::class, 'forCustomer']);
         Route::get('customers/{customer}/documents', [DocumentController::class, 'forCustomer']);
         Route::post('customers/{customer}/statements', [StatementController::class, 'storeForCustomer']);
+        Route::get('customers/{customer}/attachments', [CustomerController::class, 'attachmentsIndex']);
+        Route::post('customers/{customer}/attachments', [CustomerController::class, 'attachmentsStore']);
 
         Route::get('debts', [DebtController::class, 'index']);
         Route::get('debts/{debt}', [DebtController::class, 'show'])->withTrashed();
@@ -74,13 +77,18 @@ Route::prefix('v1')->group(function () {
         Route::post('debts/{debt}/reminders/sms', [ReminderController::class, 'sms']);
         Route::post('debts/{debt}/reminders/call', [ReminderController::class, 'call']);
         Route::post('debts/{debt}/promise-to-pay', [PromiseToPayController::class, 'store']);
+        Route::get('debts/{debt}/promise-to-pay', [PromiseToPayController::class, 'index']);
+        Route::get('promises-to-pay/{promise}', [PromiseToPayController::class, 'show']);
         Route::post('debts/{debt}/payments', [PaymentController::class, 'store']);
         Route::get('debts/{debt}/payments', [PaymentController::class, 'index']);
         Route::post('debts/{debt}/collection-cases', [CollectionCaseController::class, 'store']);
+        Route::get('debts/{debt}/collection-case', [CollectionCaseController::class, 'forDebt']);
         Route::post('debts/{debt}/demand-letters', [DemandLetterController::class, 'store']);
         Route::post('debts/{debt}/invoices', [InvoiceController::class, 'store']);
         Route::post('debts/{debt}/statements', [StatementController::class, 'storeForDebt']);
         Route::get('debts/{debt}/documents', [DocumentController::class, 'forDebt']);
+        Route::get('debts/{debt}/attachments', [DebtController::class, 'attachmentsIndex']);
+        Route::post('debts/{debt}/attachments', [DebtController::class, 'attachmentsStore']);
 
         Route::get('collection-cases', [CollectionCaseController::class, 'index']);
         Route::get('collection-cases/{case}', [CollectionCaseController::class, 'show']);
@@ -88,6 +96,8 @@ Route::prefix('v1')->group(function () {
         Route::post('collection-cases/{case}/activities', [CollectionCaseController::class, 'recordActivity']);
         Route::post('collection-cases/{case}/close', [CollectionCaseController::class, 'close']);
         Route::get('collection-cases/{case}/history', [CollectionCaseController::class, 'history']);
+        Route::get('collection-cases/{case}/attachments', [CollectionCaseController::class, 'attachmentsIndex']);
+        Route::post('collection-cases/{case}/attachments', [CollectionCaseController::class, 'attachmentsStore']);
         Route::post('collection-cases/{case}/professional-requests', [ProfessionalCollectionRequestController::class, 'store']);
 
         Route::get('professional-requests', [ProfessionalCollectionRequestController::class, 'index']);
@@ -171,6 +181,7 @@ Route::prefix('v1')->group(function () {
         Route::put('reminders/{reminder}', [ReminderCenterController::class, 'update']);
         Route::delete('reminders/{reminder}', [ReminderCenterController::class, 'destroy']);
         Route::patch('reminders/{reminder}/complete', [ReminderCenterController::class, 'complete']);
+        Route::patch('reminders/{reminder}/check-in', [ReminderCenterController::class, 'checkIn']);
         Route::post('reminders/{reminder}/send', [ReminderCenterController::class, 'send']);
 
         Route::get('message-templates', [MessageController::class, 'templates']);

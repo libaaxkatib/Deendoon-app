@@ -15,7 +15,7 @@ class ReminderTypeIcon extends StatelessWidget {
   const ReminderTypeIcon({super.key, required this.type, this.size = 40});
 
   static (IconData, Color) _iconAndColor(String type) => switch (type) {
-        'client_visit' => (Icons.person_outline, AppColors.accent),
+        'client_visit' => (Icons.location_on_outlined, AppColors.accent),
         'follow_up_call' => (Icons.call_outlined, AppColors.warning),
         'payment_due' => (Icons.payments_outlined, AppColors.success),
         'contract_renewal' => (Icons.description_outlined, AppColors.info),

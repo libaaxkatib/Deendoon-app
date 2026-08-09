@@ -18,6 +18,7 @@ class CollectionCase {
   final String? assignedOfficerUserId;
   final String caseStatus;
   final String? closureOutcome;
+  final String? notes;
   final String lastActivityAt;
   final String createdAt;
   final String? closedAt;
@@ -33,6 +34,7 @@ class CollectionCase {
     required this.assignedOfficerUserId,
     required this.caseStatus,
     required this.closureOutcome,
+    required this.notes,
     required this.lastActivityAt,
     required this.createdAt,
     required this.closedAt,
@@ -49,6 +51,7 @@ class CollectionCase {
         assignedOfficerUserId: json['assigned_officer_user_id']?.toString(),
         caseStatus: json['case_status'] as String,
         closureOutcome: json['closure_outcome'] as String?,
+        notes: json['notes'] as String?,
         lastActivityAt: json['last_activity_at'] as String,
         createdAt: json['created_at'] as String,
         closedAt: json['closed_at'] as String?,

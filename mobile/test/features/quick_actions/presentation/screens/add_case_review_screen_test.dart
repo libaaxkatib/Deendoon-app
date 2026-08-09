@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/network/api_exception.dart';
+import 'package:mobile/features/attachments/data/attachment_repository.dart';
+import 'package:mobile/features/attachments/domain/attachment.dart';
 import 'package:mobile/features/cases/domain/collection_case.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
@@ -17,6 +19,19 @@ import 'package:mocktail/mocktail.dart';
 class _MockCustomerRepository extends Mock implements CustomerRepository {}
 
 class _MockDebtRepository extends Mock implements DebtRepository {}
+
+class _MockAttachmentRepository extends Mock implements AttachmentRepository {}
+
+const _uploadedInvoice = Attachment(
+  id: '1',
+  entityId: '01DEBT',
+  uploadedByUserId: '01USER',
+  originalFilename: 'invoice.jpg',
+  mimeType: 'image/jpeg',
+  fileSize: 5000,
+  description: 'Invoice',
+  createdAt: '2026-08-01T00:00:00.000000Z',
+);
 
 const _existingCustomer = Customer(
   id: '01CUST',
@@ -69,6 +84,7 @@ const _collectionCase = CollectionCase(
   assignedOfficerUserId: null,
   caseStatus: 'open',
   closureOutcome: null,
+  notes: null,
   lastActivityAt: '2026-08-01T10:00:00.000000Z',
   createdAt: '2026-08-01T10:00:00.000000Z',
   closedAt: null,
@@ -81,6 +97,7 @@ Future<void> _pumpScreen(
   required AddCaseReviewInput input,
   required _MockCustomerRepository customerRepository,
   required _MockDebtRepository debtRepository,
+  List<Override> extraOverrides = const [],
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -97,6 +114,7 @@ Future<void> _pumpScreen(
       overrides: [
         customerRepositoryProvider.overrideWithValue(customerRepository),
         debtRepositoryProvider.overrideWithValue(debtRepository),
+        ...extraOverrides,
       ],
       child: MaterialApp.router(routerConfig: router),
     ),
@@ -223,5 +241,73 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Debt Detail 01DEBT'), findsOneWidget);
+  });
+
+  group('deferred invoice upload (picked in the Debt Details step)', () {
+    const draftWithInvoice = DebtDraft(
+      amount: '500.00',
+      dueDate: '2026-08-15',
+      invoiceFile: (path: '/tmp/invoice.jpg', name: 'invoice.jpg'),
+    );
+
+    testWidgets('uploads the picked invoice to the newly created debt id before opening the Case', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockDebtRepository.createDebt(customerId: '01CUST', amount: '500.00', dueDate: '2026-08-15', notes: null))
+          .thenAnswer((_) async => (debt: _debt, warning: null));
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/01DEBT',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).thenAnswer((_) async => _uploadedInvoice);
+      when(() => mockDebtRepository.openCase('01DEBT')).thenAnswer((_) async => _collectionCase);
+
+      await _pumpScreen(
+        tester,
+        input: const AddCaseReviewInput(existingCustomer: _existingCustomer, debtDraft: draftWithInvoice),
+        customerRepository: mockCustomerRepository,
+        debtRepository: mockDebtRepository,
+        extraOverrides: [attachmentRepositoryProvider.overrideWithValue(mockAttachmentRepository)],
+      );
+
+      expect(find.text('Invoice: invoice.jpg'), findsOneWidget);
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/01DEBT',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).called(1);
+      expect(find.text('Case Detail 01CASE'), findsOneWidget);
+    });
+
+    testWidgets('a failed invoice upload does not block Debt/Case creation (best-effort)', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockDebtRepository.createDebt(customerId: '01CUST', amount: '500.00', dueDate: '2026-08-15', notes: null))
+          .thenAnswer((_) async => (debt: _debt, warning: null));
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/01DEBT',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).thenThrow(const ApiException(message: 'Storage limit reached.', statusCode: 422));
+      when(() => mockDebtRepository.openCase('01DEBT')).thenAnswer((_) async => _collectionCase);
+
+      await _pumpScreen(
+        tester,
+        input: const AddCaseReviewInput(existingCustomer: _existingCustomer, debtDraft: draftWithInvoice),
+        customerRepository: mockCustomerRepository,
+        debtRepository: mockDebtRepository,
+        extraOverrides: [attachmentRepositoryProvider.overrideWithValue(mockAttachmentRepository)],
+      );
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockDebtRepository.openCase('01DEBT')).called(1);
+      expect(find.text('Case Detail 01CASE'), findsOneWidget);
+    });
   });
 }

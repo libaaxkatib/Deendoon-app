@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/features/attachments/data/attachment_repository.dart';
+import 'package:mobile/features/attachments/domain/attachment.dart';
+import 'package:mobile/features/attachments/presentation/providers/attachment_providers.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
 import 'package:mobile/features/debts/domain/credit_limit_warning.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
@@ -10,6 +13,19 @@ import 'package:mobile/features/quick_actions/domain/debt_draft.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockDebtRepository extends Mock implements DebtRepository {}
+
+class _MockAttachmentRepository extends Mock implements AttachmentRepository {}
+
+const _uploadedInvoice = Attachment(
+  id: '1',
+  entityId: '1',
+  uploadedByUserId: '01USER',
+  originalFilename: 'invoice.jpg',
+  mimeType: 'image/jpeg',
+  fileSize: 5000,
+  description: 'Invoice',
+  createdAt: '2026-08-01T00:00:00.000000Z',
+);
 
 const _existingDebt = Debt(
   id: '1',
@@ -28,7 +44,13 @@ Future<void> _pumpScreen(
   required _MockDebtRepository repository,
   String? customerId,
   String? debtId,
+  List<Override> extraOverrides = const [],
 }) async {
+  tester.view.physicalSize = const Size(400, 2200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
   final router = GoRouter(
     initialLocation: '/',
     routes: [
@@ -42,7 +64,7 @@ Future<void> _pumpScreen(
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [debtRepositoryProvider.overrideWithValue(repository)],
+      overrides: [debtRepositoryProvider.overrideWithValue(repository), ...extraOverrides],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
@@ -248,6 +270,189 @@ void main() {
             notes: any(named: 'notes'),
           ));
       expect(find.text('Draft: 500.00'), findsOneWidget);
+    });
+
+    testWidgets('a picked invoice travels inside the popped DebtDraft (no upload here — no debt id yet)',
+        (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      tester.view.physicalSize = const Size(400, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      DebtDraft? popped;
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  popped = await context.push<DebtDraft>('/draft');
+                },
+                child: Text(popped == null ? 'Open Draft Form' : 'Draft invoice: ${popped!.invoiceFile?.name}'),
+              ),
+            ),
+          ),
+          GoRoute(path: '/draft', builder: (_, _) => const AddEditDebtScreen(deferSubmit: true)),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            debtRepositoryProvider.overrideWithValue(mockRepository),
+            attachmentCameraProvider.overrideWithValue(() async => (path: '/tmp/invoice.jpg', name: 'invoice.jpg')),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.tap(find.text('Open Draft Form'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '500.00');
+      await tester.tap(find.text('Select Due Date'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('15'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Scan Invoice'));
+      await tester.pumpAndSettle();
+      expect(find.text('invoice.jpg'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Draft invoice: invoice.jpg'), findsOneWidget);
+      verifyNever(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: any(named: 'entityPathPrefix'),
+            filePath: any(named: 'filePath'),
+            fileName: any(named: 'fileName'),
+            description: any(named: 'description'),
+          ));
+    });
+  });
+
+  group('Invoice attachment (P2.6/P2.7)', () {
+    testWidgets('Add mode: a picked invoice is uploaded to the newly created debt id', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockRepository.createDebt(
+            customerId: '01CUST',
+            amount: '500.00',
+            dueDate: any(named: 'dueDate'),
+            notes: null,
+          )).thenAnswer((_) async => (debt: _existingDebt, warning: null));
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).thenAnswer((_) async => _uploadedInvoice);
+
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        customerId: '01CUST',
+        extraOverrides: [
+          attachmentRepositoryProvider.overrideWithValue(mockAttachmentRepository),
+          attachmentCameraProvider.overrideWithValue(() async => (path: '/tmp/invoice.jpg', name: 'invoice.jpg')),
+        ],
+      );
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '500.00');
+      await tester.tap(find.text('Select Due Date'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('15'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Scan Invoice'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Add Debt'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          )).called(1);
+    });
+
+    testWidgets('Edit mode: a picked invoice is uploaded to the existing debt id after saving', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockRepository.fetchDebt('1')).thenAnswer((_) async => _existingDebt);
+      when(() => mockRepository.updateDebt(debtId: '1', dueDate: any(named: 'dueDate'), notes: 'Call before 5pm'))
+          .thenAnswer((_) async => _existingDebt);
+      when(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.pdf',
+            fileName: 'invoice.pdf',
+            description: 'Invoice',
+          )).thenAnswer((_) async => _uploadedInvoice);
+
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        debtId: '1',
+        extraOverrides: [
+          attachmentRepositoryProvider.overrideWithValue(mockAttachmentRepository),
+          attachmentFilePickerProvider.overrideWithValue(() async => (path: '/tmp/invoice.pdf', name: 'invoice.pdf')),
+        ],
+      );
+
+      await tester.tap(find.text('Upload Invoice'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.pdf',
+            fileName: 'invoice.pdf',
+            description: 'Invoice',
+          )).called(1);
+    });
+
+    testWidgets('not picking an invoice uploads nothing', (tester) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
+      when(() => mockRepository.createDebt(
+            customerId: '01CUST',
+            amount: '500.00',
+            dueDate: any(named: 'dueDate'),
+            notes: null,
+          )).thenAnswer((_) async => (debt: _existingDebt, warning: null));
+
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        customerId: '01CUST',
+        extraOverrides: [attachmentRepositoryProvider.overrideWithValue(mockAttachmentRepository)],
+      );
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '500.00');
+      await tester.tap(find.text('Select Due Date'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('15'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Add Debt'));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: any(named: 'entityPathPrefix'),
+            filePath: any(named: 'filePath'),
+            fileName: any(named: 'fileName'),
+            description: any(named: 'description'),
+          ));
     });
   });
 }

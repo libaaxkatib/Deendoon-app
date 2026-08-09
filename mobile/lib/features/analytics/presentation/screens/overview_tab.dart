@@ -97,12 +97,6 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
 
   const _CollectionAnalyticsRow({required this.range});
 
-  void _showUnavailable(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Detailed view is not available yet.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final analyticsAsync = ref.watch(collectionAnalyticsProvider);
@@ -126,7 +120,7 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
               child: KpiCard(
                 label: 'Collection Rate',
                 value: '${analytics.collectionRate.toStringAsFixed(1)}%',
-                onTap: () => _showUnavailable(context),
+                onTap: () => context.push('/analytics/collection-rate-detail'),
               ),
             ),
             const SizedBox(width: 10),
@@ -142,7 +136,7 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
               child: KpiCard(
                 label: 'Average Days',
                 value: analytics.averageDays?.toStringAsFixed(1) ?? '—',
-                onTap: () => _showUnavailable(context),
+                onTap: () => context.push('/analytics/average-days-detail'),
               ),
             ),
           ],

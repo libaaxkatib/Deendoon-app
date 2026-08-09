@@ -26,6 +26,15 @@ class RecoveryWorkflowTest extends TestCase
 
     private function actingAsTenantUser(Tenant $tenant, ?string $role = 'admin'): User
     {
+        // Sanctum's RequestGuard memoizes the resolved user on first
+        // access and AuthManager caches the guard instance for the test's
+        // whole lifetime — switching the Authorization header alone isn't
+        // enough when this helper is called more than once in the same
+        // test (e.g. creating data as one tenant, then reading it back as
+        // another to assert a 404). forgetGuards() forces fresh
+        // resolution against the new token on the next request.
+        app('auth')->forgetGuards();
+
         $user = User::factory()->create();
         $user->tenant()->associate($tenant);
         $user->save();
@@ -186,6 +195,93 @@ class RecoveryWorkflowTest extends TestCase
         $this->postJson("/api/v1/debts/{$debt->id}/promise-to-pay", [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['promised_date']);
+    }
+
+    // --- Promise to Pay History (mobile Item 11) ---
+
+    public function test_admin_can_list_promise_to_pay_history_newest_first(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/promise-to-pay", ['promised_date' => now()->addDays(3)->toDateString()]);
+        $this->postJson("/api/v1/debts/{$debt->id}/promise-to-pay", ['promised_date' => now()->addDays(10)->toDateString()]);
+
+        $response = $this->getJson("/api/v1/debts/{$debt->id}/promise-to-pay");
+
+        $response->assertStatus(200);
+        $dates = collect($response->json('data'))->pluck('promised_date');
+        $this->assertEquals([now()->addDays(10)->toDateString(), now()->addDays(3)->toDateString()], $dates->all());
+    }
+
+    public function test_promise_to_pay_history_is_empty_for_a_debt_with_no_promises(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+
+        $response = $this->getJson("/api/v1/debts/{$debt->id}/promise-to-pay");
+
+        $response->assertStatus(200)->assertJsonPath('data', []);
+    }
+
+    public function test_promise_to_pay_history_returns_404_for_another_tenants_debt(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $debtB = $this->makeDebt($tenantB);
+        $this->actingAsTenantUser($tenantA);
+
+        $this->getJson("/api/v1/debts/{$debtB->id}/promise-to-pay")->assertStatus(404);
+    }
+
+    public function test_promise_to_pay_history_requires_authentication(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+
+        $this->getJson("/api/v1/debts/{$debt->id}/promise-to-pay")->assertStatus(401);
+    }
+
+    // --- Promise to Pay standalone show (mobile Item 14) ---
+
+    public function test_admin_can_view_a_single_promise_to_pay_by_id(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $this->actingAsTenantUser($tenant);
+        $promiseId = $this->postJson("/api/v1/debts/{$debt->id}/promise-to-pay", [
+            'promised_date' => now()->addDays(3)->toDateString(),
+        ])->json('data.id');
+
+        $this->getJson("/api/v1/promises-to-pay/{$promiseId}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.id', $promiseId)
+            ->assertJsonPath('data.debt_id', $debt->id);
+    }
+
+    public function test_single_promise_to_pay_returns_404_for_another_tenants_promise(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Tenant A']);
+        $tenantB = Tenant::create(['business_name' => 'Tenant B']);
+        $debtB = $this->makeDebt($tenantB);
+        $this->actingAsTenantUser($tenantB);
+        $promiseId = $this->postJson("/api/v1/debts/{$debtB->id}/promise-to-pay", [
+            'promised_date' => now()->addDays(3)->toDateString(),
+        ])->json('data.id');
+
+        $this->actingAsTenantUser($tenantA);
+        $this->getJson("/api/v1/promises-to-pay/{$promiseId}")->assertStatus(404);
+    }
+
+    public function test_single_promise_to_pay_requires_authentication(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $promise = PromiseToPay::factory()->for($tenant, 'tenant')->for($debt, 'debt')->create();
+
+        $this->getJson("/api/v1/promises-to-pay/{$promise->id}")->assertStatus(401);
     }
 
     // --- Promise Broken (lazy transition + event + stage advancement) ---

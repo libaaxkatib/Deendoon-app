@@ -6,6 +6,7 @@ import 'package:mobile/features/dashboard/domain/dashboard_kpis.dart';
 import 'package:mobile/features/dashboard/domain/recent_case.dart';
 import 'package:mobile/features/dashboard/domain/todays_overview.dart';
 import 'package:mobile/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:mobile/features/dashboard/presentation/providers/kpi_period_provider.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockDashboardRepository extends Mock implements DashboardRepository {}
@@ -38,7 +39,7 @@ void main() {
 
   test('each provider resolves independently — one failure does not affect the others', () async {
     when(() => mockRepository.fetchBusinessHealth()).thenAnswer((_) async => _health);
-    when(() => mockRepository.fetchKpis()).thenAnswer((_) async => _kpis);
+    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
     when(() => mockRepository.fetchTodaysOverview()).thenThrow(Exception('network down'));
     when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
 
@@ -67,7 +68,7 @@ void main() {
       return _health;
     });
     var kpisCallCount = 0;
-    when(() => mockRepository.fetchKpis()).thenAnswer((_) async {
+    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async {
       kpisCallCount++;
       return _kpis;
     });
@@ -92,5 +93,46 @@ void main() {
 
     expect(healthCallCount, 2);
     expect(kpisCallCount, 2);
+  });
+
+  test('dashboardKpisProvider watches kpiPeriodProvider — changing it refetches with the new period', () async {
+    const lastWeekKpis = DashboardKpis(
+      totalOutstandingAmount: '800.00',
+      totalCollectedPeriod: '50.00',
+      highRiskCustomers: 2,
+      overdueCount: 2,
+      overdueValue: '400.00',
+      customersOverCreditLimit: 1,
+      activeCollectionCases: 3,
+    );
+    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null))
+        .thenAnswer((_) async => _kpis);
+    when(() => mockRepository.fetchKpis(period: 'last_week', dateFrom: null, dateTo: null))
+        .thenAnswer((_) async => lastWeekKpis);
+
+    final initial = await container.read(dashboardKpisProvider.future);
+    expect(initial, _kpis);
+
+    container.read(kpiPeriodProvider.notifier).state =
+        const KpiPeriodSelection(key: 'last_week', label: 'Last Week');
+    final afterChange = await container.read(dashboardKpisProvider.future);
+
+    expect(afterChange, lastWeekKpis);
+    verify(() => mockRepository.fetchKpis(period: 'last_week', dateFrom: null, dateTo: null)).called(1);
+  });
+
+  test('dashboardKpisProvider forwards a custom range\'s date_from/date_to', () async {
+    when(() => mockRepository.fetchKpis(period: 'custom', dateFrom: '2026-01-01', dateTo: '2026-01-31'))
+        .thenAnswer((_) async => _kpis);
+
+    container.read(kpiPeriodProvider.notifier).state = const KpiPeriodSelection(
+      key: 'custom',
+      label: '2026-01-01 – 2026-01-31',
+      dateFrom: '2026-01-01',
+      dateTo: '2026-01-31',
+    );
+    final result = await container.read(dashboardKpisProvider.future);
+
+    expect(result, _kpis);
   });
 }

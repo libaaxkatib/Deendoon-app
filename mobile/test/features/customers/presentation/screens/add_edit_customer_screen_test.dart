@@ -73,6 +73,7 @@ void main() {
       verifyNever(() => mockRepository.createCustomer(
             name: any(named: 'name'),
             phone: any(named: 'phone'),
+            address: any(named: 'address'),
             creditLimit: any(named: 'creditLimit'),
           ));
     });
@@ -80,7 +81,12 @@ void main() {
     testWidgets('submits the entered fields and pops on success', (tester) async {
       when(() => mockRepository.checkDuplicateCustomer(name: any(named: 'name'), phone: any(named: 'phone')))
           .thenAnswer((_) async => null);
-      when(() => mockRepository.createCustomer(name: 'New Customer', phone: '+252611111111', creditLimit: '1000.00'))
+      when(() => mockRepository.createCustomer(
+            name: 'New Customer',
+            phone: '+252611111111',
+            address: null,
+            creditLimit: '1000.00',
+          ))
           .thenAnswer((_) async => (customer: _existingCustomer, warning: null));
 
       await _pumpScreen(tester, repository: mockRepository);
@@ -96,6 +102,7 @@ void main() {
       verify(() => mockRepository.createCustomer(
             name: 'New Customer',
             phone: '+252611111111',
+            address: null,
             creditLimit: '1000.00',
           )).called(1);
       // Popped back to the router's home route (no Add Customer screen left).
@@ -131,7 +138,12 @@ void main() {
       );
       when(() => mockRepository.checkDuplicateCustomer(name: any(named: 'name'), phone: any(named: 'phone')))
           .thenAnswer((_) async => null);
-      when(() => mockRepository.createCustomer(name: 'New Customer', phone: '+252611111111', creditLimit: '1000.00'))
+      when(() => mockRepository.createCustomer(
+            name: 'New Customer',
+            phone: '+252611111111',
+            address: null,
+            creditLimit: '1000.00',
+          ))
           .thenAnswer((_) async => (customer: _existingCustomer, warning: warning));
 
       await _pumpScreen(tester, repository: mockRepository);
@@ -176,6 +188,7 @@ void main() {
             id: '1',
             name: 'Somali Builders',
             phone: '+252612345678',
+            address: null,
             creditLimit: '9000.00',
           )).thenAnswer((_) async => (customer: _existingCustomer, warning: null));
 
@@ -190,6 +203,7 @@ void main() {
             id: '1',
             name: 'Somali Builders',
             phone: '+252612345678',
+            address: null,
             creditLimit: '9000.00',
           )).called(1);
       verifyNever(() => mockRepository.checkDuplicateCustomer(name: any(named: 'name'), phone: any(named: 'phone')));
@@ -247,6 +261,7 @@ void main() {
       verifyNever(() => mockRepository.createCustomer(
             name: any(named: 'name'),
             phone: any(named: 'phone'),
+            address: any(named: 'address'),
             creditLimit: any(named: 'creditLimit'),
           ));
       expect(find.text('Draft: New Customer'), findsOneWidget);

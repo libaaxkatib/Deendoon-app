@@ -1,12 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/unavailable_section.dart';
+import '../../data/customer_import_repository.dart';
 import '../../domain/customer_import_state.dart';
 import '../../domain/import_commit_result.dart';
 import '../../domain/import_preview_row.dart';
@@ -48,9 +53,7 @@ class BulkImportScreen extends ConsumerWidget {
         children: [
           Text('Sample Template', style: AppTypography.subheading),
           const SizedBox(height: 8),
-          const UnavailableSection(
-            reason: 'Sample template download is not available yet — no backend endpoint exists for this.',
-          ),
+          const _SampleTemplateSection(),
           const SizedBox(height: 24),
           Text('Upload File', style: AppTypography.subheading),
           const SizedBox(height: 8),
@@ -236,6 +239,56 @@ class _FailedRowCard extends StatelessWidget {
             for (final error in errors!) Text(error, style: AppTypography.caption.copyWith(color: AppColors.danger)),
         ],
       ),
+    );
+  }
+}
+
+/// `GET /customers/import/template` — downloads the real backend-generated
+/// `.xlsx` template and saves it to the app's own documents directory,
+/// same `path_provider` pattern as `DocumentActions.saveToDevice` (no
+/// extra file-picker/permission package needed on either platform).
+class _SampleTemplateSection extends ConsumerStatefulWidget {
+  const _SampleTemplateSection();
+
+  @override
+  ConsumerState<_SampleTemplateSection> createState() => _SampleTemplateSectionState();
+}
+
+class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> {
+  bool _isDownloading = false;
+  String? _error;
+
+  Future<void> _download() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _isDownloading = true;
+      _error = null;
+    });
+
+    try {
+      final bytes = await ref.read(customerImportRepositoryProvider).downloadTemplate();
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/customer-import-template.xlsx');
+      await file.writeAsBytes(bytes, flush: true);
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text('Saved to ${file.path}')));
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_error != null) ...[
+          Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          const SizedBox(height: 8),
+        ],
+        PrimaryButton(label: 'Download Sample Template', isLoading: _isDownloading, onPressed: _download),
+      ],
     );
   }
 }

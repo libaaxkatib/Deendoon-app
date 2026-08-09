@@ -123,6 +123,11 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
                   tooltip: 'Share',
                   onPressed: () => context.push('/documents/${widget.documentId}/share'),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.history_outlined),
+                  tooltip: 'History',
+                  onPressed: () => context.push('/documents/${widget.documentId}/history'),
+                ),
               ],
       ),
       body: documentAsync.when(

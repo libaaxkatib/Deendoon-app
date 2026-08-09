@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/features/analytics/data/analytics_repository.dart';
 import 'package:mobile/features/analytics/domain/aging_analysis.dart';
 import 'package:mobile/features/analytics/domain/collection_analytics.dart';
 import 'package:mobile/features/analytics/domain/collections_trend.dart';
 import 'package:mobile/features/analytics/domain/risk_distribution.dart';
 import 'package:mobile/features/analytics/presentation/screens/overview_tab.dart';
+import 'package:mobile/features/debts/domain/debt_page.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockAnalyticsRepository extends Mock implements AnalyticsRepository {}
@@ -75,23 +77,71 @@ void main() {
     expect(find.text('Risk Distribution'), findsOneWidget);
   });
 
-  testWidgets('tapping Collection Rate shows the "not available yet" message, not fake navigation', (tester) async {
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+  group('KPI card navigation (with a real router)', () {
+    Future<void> pumpWithRouter(WidgetTester tester, GoRouter router) async {
+      tester.view.physicalSize = const Size(400, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.tap(find.text('Collection Rate'));
-    await tester.pumpAndSettle();
+      when(() => mockRepository.fetchCollectionAnalytics(dateFrom: any(named: 'dateFrom'), dateTo: any(named: 'dateTo')))
+          .thenAnswer((_) async => _analytics);
+      when(() => mockRepository.fetchAgingAnalysis()).thenAnswer((_) async => _aging);
+      when(() => mockRepository.fetchRiskDistribution()).thenAnswer((_) async => _riskDistribution);
+      when(() => mockRepository.fetchCollectionsTrend(dateFrom: any(named: 'dateFrom'), dateTo: any(named: 'dateTo')))
+          .thenAnswer((_) async => _trend);
+      when(() => mockRepository.fetchReportDebts(
+            page: any(named: 'page'),
+            dateFrom: any(named: 'dateFrom'),
+            dateTo: any(named: 'dateTo'),
+            perPage: any(named: 'perPage'),
+          )).thenAnswer((_) async => const DebtPage(debts: [], currentPage: 1, lastPage: 1, total: 0));
+      when(() => mockRepository.fetchReportDebts(
+            page: any(named: 'page'),
+            paidDateFrom: any(named: 'paidDateFrom'),
+            paidDateTo: any(named: 'paidDateTo'),
+            perPage: any(named: 'perPage'),
+          )).thenAnswer((_) async => const DebtPage(debts: [], currentPage: 1, lastPage: 1, total: 0));
 
-    expect(find.text('Detailed view is not available yet.'), findsOneWidget);
-  });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [analyticsRepositoryProvider.overrideWithValue(mockRepository)],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
 
-  testWidgets('tapping Average Days shows the "not available yet" message', (tester) async {
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+    testWidgets('Collection Rate opens the real Collection Rate detail screen', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const Scaffold(body: OverviewTab())),
+          GoRoute(path: '/analytics/collection-rate-detail', builder: (_, _) => const Text('Collection Rate Detail')),
+        ],
+      );
+      await pumpWithRouter(tester, router);
 
-    await tester.tap(find.text('Average Days'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Collection Rate'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Detailed view is not available yet.'), findsOneWidget);
+      expect(find.text('Collection Rate Detail'), findsOneWidget);
+    });
+
+    testWidgets('Average Days opens the real Average Days detail screen', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const Scaffold(body: OverviewTab())),
+          GoRoute(path: '/analytics/average-days-detail', builder: (_, _) => const Text('Average Days Detail')),
+        ],
+      );
+      await pumpWithRouter(tester, router);
+
+      await tester.tap(find.text('Average Days'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Average Days Detail'), findsOneWidget);
+    });
   });
 }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../attachments/data/attachment_repository.dart';
 import '../../../customers/domain/customer.dart';
 import '../../../customers/presentation/providers/customer_actions.dart';
 import '../../../debts/domain/debt.dart';
@@ -14,14 +15,19 @@ import '../../domain/add_case_review_input.dart';
 /// Add Case wizard's final step. Reviews everything collected, then on
 /// confirm chains the real mutations as one business workflow:
 /// (`POST /customers` if New Customer) -> `POST /customers/{id}/debts` ->
-/// `POST /debts/{id}/collection-cases`.
+/// (`POST /debts/{id}/attachments` if an invoice was picked in the Debt
+/// Details step) -> `POST /debts/{id}/collection-cases`.
 ///
 /// No rollback is attempted on a mid-chain failure — confirmed with the
 /// Product Owner that neither `archive()` endpoint reverses a created
 /// record's financial impact (it's a pure soft-delete flag; the customer's
 /// `outstanding_balance` recalculation explicitly still counts archived
 /// debts). A failure after a real record was created surfaces the exact
-/// error plus a direct link to that record instead of hiding it.
+/// error plus a direct link to that record instead of hiding it. The
+/// invoice attach step follows the same philosophy but even more
+/// leniently: it's best-effort and its failure is silent (the Debt and
+/// Case still get created normally) since losing an optional attachment
+/// shouldn't block the wizard's primary outcome.
 class AddCaseReviewScreen extends ConsumerStatefulWidget {
   final AddCaseReviewInput input;
 
@@ -83,6 +89,7 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
         final result = await ref.read(customerActionsProvider).create(
               name: draft.name,
               phone: draft.phone,
+              address: draft.address,
               creditLimit: draft.creditLimit,
             );
         customer = result.customer;
@@ -110,6 +117,23 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
         });
       }
       return;
+    }
+
+    final invoiceFile = debtDraft.invoiceFile;
+    if (invoiceFile != null) {
+      try {
+        await ref.read(attachmentRepositoryProvider).uploadAttachment(
+              entityPathPrefix: 'debts/${debt.id}',
+              filePath: invoiceFile.path,
+              fileName: invoiceFile.name,
+              description: 'Invoice',
+            );
+      } on ApiException {
+        // Best-effort, same "no rollback on a later failure" convention as
+        // the rest of this chain — the Debt itself was created
+        // successfully, so a failed invoice attach doesn't block Case
+        // creation below.
+      }
     }
 
     try {
@@ -152,6 +176,7 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
             Text('Amount: ${debtDraft.amount}', style: AppTypography.body),
             Text('Due Date: ${debtDraft.dueDate}', style: AppTypography.body),
             if (debtDraft.notes != null) Text('Notes: ${debtDraft.notes}', style: AppTypography.caption),
+            if (debtDraft.invoiceFile != null) Text('Invoice: ${debtDraft.invoiceFile!.name}', style: AppTypography.caption),
             const SizedBox(height: 32),
             _buildStateSection(context),
           ],

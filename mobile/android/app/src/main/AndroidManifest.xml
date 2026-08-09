@@ -37,10 +37,37 @@
          https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <!-- Reminder Workflow Update: Client Visit "Navigate" (maps search) and
+         Follow-up "Call" (dialer, non-debt fallback) launch external apps
+         via url_launcher — required on Android 11+ package visibility
+         restrictions so launchUrl can resolve https/tel intents.
+
+         WhatsApp/SMS "Send" buttons (Message Preview screen) work the same
+         way: sms is added here so launchUrl can resolve the default SMS
+         app with the recipient/body pre-filled. WhatsApp's own
+         `whatsapp://send` app intent is queried explicitly (opens the
+         installed app directly, never a browser); https (wa.me) stays as
+         the fallback for when WhatsApp isn't installed. -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="whatsapp"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO"/>
+            <data android:scheme="sms"/>
         </intent>
     </queries>
 </manifest>

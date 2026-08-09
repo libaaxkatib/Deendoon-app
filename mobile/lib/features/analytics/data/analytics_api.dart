@@ -70,10 +70,23 @@ class AnalyticsApi {
     return CustomerPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
-  Future<DebtPage> reportDebts({required int page, String? status}) async {
+  Future<DebtPage> reportDebts({
+    required int page,
+    String? status,
+    String? dateFrom,
+    String? dateTo,
+    String? paidDateFrom,
+    String? paidDateTo,
+    int? perPage,
+  }) async {
     final response = await _dio.get('reports/debts', queryParameters: {
       'page': page,
       'status': ?status,
+      'dateFrom': ?dateFrom,
+      'dateTo': ?dateTo,
+      'paidDateFrom': ?paidDateFrom,
+      'paidDateTo': ?paidDateTo,
+      'perPage': ?perPage,
     });
     return DebtPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
