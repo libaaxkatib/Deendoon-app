@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required at runtime (not just for the Flutter tool's debug/profile
+         hot-reload connection) so the app can call the Laravel API — the
+         debug/profile manifests declare it separately for their own
+         purposes, but a release build only merges this main manifest. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="mobile"
         android:name="${applicationName}"
