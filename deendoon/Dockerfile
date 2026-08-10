@@ -52,4 +52,4 @@ RUN composer install --no-dev --no-interaction --optimize-autoloader \
 # is a safe no-op on every boot after the first successful run — never
 # `migrate:fresh`/`migrate:refresh`, never drops or resets anything.
 EXPOSE 8000
-CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --force && php artisan config:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
