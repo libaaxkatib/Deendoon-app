@@ -17,7 +17,7 @@ COPY public ./public
 RUN npm install --ignore-scripts && npm run build
 
 # ---- Stage 2: PHP application -----------------------------------------------
-FROM php:8.3-cli-alpine
+FROM php:8.4-cli-alpine
 
 RUN apk add --no-cache postgresql-dev libzip-dev icu-dev oniguruma-dev libpng-dev libjpeg-turbo-dev freetype-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
