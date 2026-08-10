@@ -42,7 +42,14 @@ RUN composer install --no-dev --no-interaction --optimize-autoloader \
 # "/" route is a closure, which route:cache cannot serialize — running it
 # would break the container on every boot.
 #
-# Database migrations are intentionally NOT run here — they remain a
-# separate, explicit, approved step against the Render Postgres instance.
+# `migrate --force` runs first, before config:cache/view:cache/serve —
+# see deendoon/RENDER_DEPLOYMENT.md's "Migrations" section for why this
+# replaced the earlier manual-step design (SESSION_DRIVER=database and
+# CACHE_STORE=database mean nearly every request touches the database,
+# so a freshly-provisioned Postgres instance with no tables applied
+# produces a 500 on every request until migrations run). `migrate` only
+# applies migrations not yet recorded in the `migrations` table, so this
+# is a safe no-op on every boot after the first successful run — never
+# `migrate:fresh`/`migrate:refresh`, never drops or resets anything.
 EXPOSE 8000
-CMD ["sh", "-c", "php artisan config:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]

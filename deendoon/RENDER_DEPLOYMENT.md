@@ -65,8 +65,9 @@ directory:
    throw a Vite-manifest error; the API itself doesn't depend on it.
 2. Installs PHP 8.3 with `pdo_pgsql` and the other required extensions.
 3. Runs `composer install --no-dev --optimize-autoloader`.
-4. At container start: `config:cache` + `view:cache`, then
-   `php artisan serve --host=0.0.0.0 --port=$PORT`.
+4. At container start: `migrate --force`, then `config:cache` +
+   `view:cache`, then `php artisan serve --host=0.0.0.0 --port=$PORT` —
+   see "Migrations" below for why the migrate step was added.
 
 `route:cache` is deliberately **not** run — `routes/web.php`'s stub `/`
 route is a closure, which `route:cache` cannot serialize; running it would
@@ -76,13 +77,46 @@ break every container boot.
 reliable option for a few-day demo. This is a deliberate simplification,
 not a production recommendation — revisit before any extended deployment.
 
-## Migrations — explicit, manual step (not automated)
+## Migrations — run automatically at container start (`migrate --force`)
 
-The `Dockerfile` does **not** run `php artisan migrate` at build or start
-time. Once the Render Postgres instance and Web Service exist and env vars
-are configured, migrations must be run as a separate, explicitly-approved
-step (e.g. via Render's Shell/one-off job feature), not automatically on
-every deploy.
+**Incident record:** the original design here ran migrations as a manual,
+separate step. In practice this was forgotten after the first successful
+deploy — the Render Postgres instance had no tables applied, and because
+`SESSION_DRIVER=database`/`CACHE_STORE=database` are this app's actual
+defaults, nearly every request (including the bare `/` route) touches the
+database, so the app returned HTTP 500
+(`SQLSTATE[42P01]: Undefined table: relation "sessions" does not exist`)
+on every request until this was diagnosed. Render Free also has no Shell
+access to run `php artisan migrate` as a one-off command, which made the
+manual-step design worse in practice than intended. The `Dockerfile`'s
+`CMD` now runs `php artisan migrate --force` before `config:cache`/
+`view:cache`/`serve`, so this cannot be forgotten again.
+
+This is safe to run on every boot/restart/redeploy, not just the first:
+- `php artisan migrate` only applies migrations not yet recorded in the
+  `migrations` table — a no-op (fast, no schema change) once everything
+  is already applied. It is never `migrate:fresh`/`migrate:refresh` and
+  never drops, resets, or wipes anything.
+- Every migration in `database/migrations/` is additive-only in its
+  `up()` method (create table / add column / add constraint) — verified
+  by inspecting all 71 files; none contain `dropColumn`, `dropIfExists`,
+  `truncate`, or destructive raw SQL in `up()`.
+- The one migration that inserts data
+  (`2026_08_21_090800_seed_platform_owned_subscription_and_storage_rejection_reasons.php`)
+  is hand-written idempotent (existence-check then insert-or-update, by
+  its own docblock) specifically so it's safe to be part of the
+  always-runs-on-migrate path.
+- `--force` is required and correct here because `APP_ENV=production`
+  blocks `migrate` without it — this was already anticipated, not a new
+  risk introduced by automating the step.
+
+Trade-off accepted knowingly: this couples container boot to migration
+success (a failing migration would now block `serve` from starting,
+where previously it would have failed as an isolated, separately-run
+step). Given every current migration is additive-only and this project's
+Render deployment is single-instance (Free tier, no autoscaling), this
+was judged an acceptable trade against the demonstrated real-world risk
+of the manual step being forgotten.
 
 ## Worker / Redis / Cron
 
