@@ -19,8 +19,9 @@ RUN npm install --ignore-scripts && npm run build
 # ---- Stage 2: PHP application -----------------------------------------------
 FROM php:8.3-cli-alpine
 
-RUN apk add --no-cache postgresql-dev libzip-dev icu-dev oniguruma-dev \
-    && docker-php-ext-install pdo pdo_pgsql pgsql zip bcmath intl mbstring
+RUN apk add --no-cache postgresql-dev libzip-dev icu-dev oniguruma-dev libpng-dev libjpeg-turbo-dev freetype-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql pgsql zip bcmath intl mbstring gd
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
