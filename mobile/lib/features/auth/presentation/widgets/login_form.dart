@@ -88,6 +88,13 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             isLoading: isLoading,
             onPressed: _submit,
           ),
+          const SizedBox(height: 16),
+          Center(
+            child: TextButton(
+              onPressed: () => context.push(RoutePaths.register),
+              child: const Text('Don\'t have an account? Create Account'),
+            ),
+          ),
         ],
       ),
     );

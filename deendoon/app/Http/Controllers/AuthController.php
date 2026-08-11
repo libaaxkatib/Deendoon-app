@@ -87,6 +87,7 @@ class AuthController extends Controller
             $user = new User([
                 'name' => $request->validated('name'),
                 'email' => $request->validated('email'),
+                'phone' => $request->validated('phone'),
                 'password' => $request->validated('password'),
             ]);
             $user->tenant_id = $tenant->id;

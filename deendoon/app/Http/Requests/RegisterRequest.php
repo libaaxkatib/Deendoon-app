@@ -26,6 +26,7 @@ class RegisterRequest extends FormRequest
     {
         $this->merge([
             'email' => Str::lower(trim((string) $this->input('email'))),
+            'phone' => trim((string) $this->input('phone')),
         ]);
     }
 
@@ -37,6 +38,7 @@ class RegisterRequest extends FormRequest
         return [
             'business_name' => ['required', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:30'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ];

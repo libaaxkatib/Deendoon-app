@@ -25,6 +25,7 @@ import '../../features/customer_import/presentation/screens/bulk_import_screen.d
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/cases/presentation/screens/case_detail_screen.dart';
 import '../../features/cases/presentation/screens/case_list_screen.dart';
@@ -74,6 +75,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: RoutePaths.splash, builder: (_, _) => const SplashScreen()),
       GoRoute(path: RoutePaths.login, builder: (_, _) => const LoginScreen()),
+      GoRoute(path: RoutePaths.register, builder: (_, _) => const RegisterScreen()),
       GoRoute(path: RoutePaths.forgotPassword, builder: (_, _) => const ForgotPasswordScreen()),
       GoRoute(path: RoutePaths.resetPassword, builder: (_, _) => const ResetPasswordScreen()),
       GoRoute(
@@ -284,6 +286,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 /// reached while already logged in, same as /login already did).
 const _publicRoutes = {
   RoutePaths.login,
+  RoutePaths.register,
   RoutePaths.forgotPassword,
   RoutePaths.resetPassword,
 };

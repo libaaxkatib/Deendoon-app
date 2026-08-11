@@ -37,6 +37,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Asad Trading Co.',
             'name' => 'Asad Mohamed',
+            'phone' => '+252612345678',
             'email' => 'asad@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
@@ -49,7 +50,7 @@ class RegisterTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'message',
-                'data' => ['user' => ['id', 'name', 'email'], 'token'],
+                'data' => ['user' => ['id', 'name', 'email', 'phone'], 'token'],
                 'errors',
             ]);
 
@@ -68,6 +69,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Asad Trading Co.',
             'name' => 'Asad Mohamed',
+            'phone' => '+252612345678',
             'email' => 'asad@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
@@ -94,6 +96,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Asad Trading Co.',
             'name' => 'Asad Mohamed',
+            'phone' => '+252612345678',
             'email' => 'asad@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
@@ -121,6 +124,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Asad Trading Co.',
             'name' => 'Asad Mohamed',
+            'phone' => '+252612345678',
             'email' => '  Asad@Example.COM  ',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
@@ -132,11 +136,45 @@ class RegisterTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => '  Asad@Example.COM  ']);
     }
 
+    public function test_registration_saves_and_returns_phone_number(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'business_name' => 'Asad Trading Co.',
+            'name' => 'Asad Mohamed',
+            'phone' => '  +252612345678  ',
+            'email' => 'asad@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.user.phone', '+252612345678');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'asad@example.com',
+            'phone' => '+252612345678',
+        ]);
+    }
+
+    public function test_registration_fails_without_phone(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'business_name' => 'Asad Trading Co.',
+            'name' => 'Asad Mohamed',
+            'email' => 'asad@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['phone']);
+    }
+
     public function test_registration_is_rate_limited(): void
     {
         $payload = fn (int $i): array => [
             'business_name' => "Business {$i}",
             'name' => "User {$i}",
+            'phone' => '+25261234567'.$i,
             'email' => "user{$i}@example.com",
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
@@ -157,7 +195,7 @@ class RegisterTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJson(['success' => false])
-            ->assertJsonValidationErrors(['business_name', 'name', 'email', 'password']);
+            ->assertJsonValidationErrors(['business_name', 'name', 'phone', 'email', 'password']);
     }
 
     public function test_registration_fails_with_duplicate_email(): void
@@ -167,6 +205,7 @@ class RegisterTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Another Business',
             'name' => 'Another User',
+            'phone' => '+252612345678',
             'email' => 'duplicate@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',

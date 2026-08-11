@@ -22,6 +22,28 @@ class AuthApi {
     return _parseAuthPayload(response.data);
   }
 
+  /// `App\Http\Controllers\AuthController::register` — creates a Tenant,
+  /// the first Business Owner user, and logs them straight in, matching
+  /// `RegisterRequest`'s fields exactly.
+  Future<(User, String)> register({
+    required String businessName,
+    required String name,
+    required String phone,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final response = await _dio.post(ApiEndpoints.register, data: {
+      'business_name': businessName,
+      'name': name,
+      'phone': phone,
+      'email': email,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+    });
+    return _parseAuthPayload(response.data);
+  }
+
   Future<(User, String)> refresh() async {
     final response = await _dio.post(ApiEndpoints.refresh);
     return _parseAuthPayload(response.data);

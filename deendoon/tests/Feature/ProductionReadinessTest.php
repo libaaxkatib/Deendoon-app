@@ -52,6 +52,7 @@ class ProductionReadinessTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Acme Co',
             'name' => 'Asad Mohamed',
+            'phone' => '+252612345678',
             'email' => 'ok-pw@example.com',
             'password' => 'TwelveChars1',
             'password_confirmation' => 'TwelveChars1',

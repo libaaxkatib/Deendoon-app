@@ -58,6 +58,32 @@ class AuthRepository {
     }
   }
 
+  /// Registration logs the user straight in — same session-persistence
+  /// side effect as `login`, so callers never need a separate login step.
+  Future<Authenticated> register({
+    required String businessName,
+    required String name,
+    required String phone,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final (user, token) = await _api.register(
+        businessName: businessName,
+        name: name,
+        phone: phone,
+        email: email,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      );
+      await _storage.saveSession(token: token, userJson: jsonEncode(user.toJson()));
+      return Authenticated(user: user, token: token);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
   /// Best-effort server-side revocation, always followed by clearing local
   /// storage regardless of whether the network call succeeded.
   Future<void> logout() async {

@@ -342,6 +342,7 @@ class AdministrationTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Acme Co',
             'name' => 'Jane Owner',
+            'phone' => '+252612345678',
             'email' => 'jane@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
@@ -364,6 +365,7 @@ class AdministrationTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'business_name' => 'Acme Co',
             'name' => 'Jane Owner',
+            'phone' => '+252612345678',
             'email' => 'jane2@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',

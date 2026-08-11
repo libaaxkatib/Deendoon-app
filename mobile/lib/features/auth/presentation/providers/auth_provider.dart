@@ -46,6 +46,29 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<void> register({
+    required String businessName,
+    required String name,
+    required String phone,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    state = const Authenticating();
+    try {
+      state = await _repository.register(
+        businessName: businessName,
+        name: name,
+        phone: phone,
+        email: email,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      );
+    } on ApiException catch (e) {
+      state = AuthError(e.message);
+    }
+  }
+
   /// Invoked both by an explicit "log out" action and by the Dio
   /// interceptor when an already-authenticated request comes back 401.
   Future<void> forceLogout() async {
