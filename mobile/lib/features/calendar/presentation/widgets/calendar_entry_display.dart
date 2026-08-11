@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../domain/calendar_entry.dart';
 
 /// `follow_up` entries carry the real `FollowUpHistory.action_type` value
@@ -17,12 +18,12 @@ const _followUpLabels = {
 /// One icon/color per real `CalendarEntry.type` aggregation bucket
 /// (`due_date`, `promise_to_pay`, `follow_up`, `reminder`) — distinct from
 /// `ReminderTypeIcon`, which is keyed by a `Reminder`'s own `type` field.
-(IconData, Color) calendarEntryIconAndColor(String type) => switch (type) {
+(IconData, Color) calendarEntryIconAndColor(BuildContext context, String type) => switch (type) {
       'due_date' => (Icons.event_outlined, AppColors.danger),
       'promise_to_pay' => (Icons.handshake_outlined, AppColors.primary),
       'follow_up' => (Icons.call_outlined, AppColors.warning),
       'reminder' => (Icons.notifications_outlined, AppColors.info),
-      _ => (Icons.circle_outlined, AppColors.textSecondary),
+      _ => (Icons.circle_outlined, context.colors.textSecondary),
     };
 
 /// A short, honest title for the agenda row. Never invents a customer or

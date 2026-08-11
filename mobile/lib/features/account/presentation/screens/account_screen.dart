@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../auth/domain/auth_state.dart';
@@ -46,14 +47,17 @@ class AccountScreen extends ConsumerWidget {
                     children: [
                       Text(
                         name.isEmpty ? '—' : name,
-                        style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800),
+                        style: AppTypography.subheading.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: context.colors.textPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 3),
                       Text(
                         email.isEmpty ? '—' : email,
-                        style: AppTypography.caption,
+                        style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -61,14 +65,18 @@ class AccountScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.chevron_right, size: 22, color: AppColors.textSecondary),
+                Icon(Icons.chevron_right, size: 22, color: context.colors.textSecondary),
               ],
             ),
           ),
           const SizedBox(height: 20),
           Text(
             'ACCOUNT',
-            style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+            style: AppTypography.caption.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: context.colors.textSecondary,
+            ),
           ),
           const SizedBox(height: 8),
           _MenuGroup(
@@ -141,7 +149,7 @@ class _MenuGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(AppCard.radius),
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.4),
@@ -150,7 +158,8 @@ class _MenuGroup extends StatelessWidget {
         children: [
           for (final tile in children) ...[
             tile,
-            if (!tile.isLast) const Divider(height: 1, indent: 56, color: Colors.white12),
+            if (!tile.isLast)
+              Divider(height: 1, indent: 56, color: context.colors.textSecondary.withValues(alpha: 0.12)),
           ],
         ],
       ),
@@ -174,10 +183,10 @@ class _AccountMenuTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.textPrimary, size: 21),
+            Icon(icon, color: context.colors.textPrimary, size: 21),
             const SizedBox(width: 16),
-            Expanded(child: Text(label, style: AppTypography.body)),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.textSecondary),
+            Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
+            Icon(Icons.chevron_right, size: 20, color: context.colors.textSecondary),
           ],
         ),
       ),

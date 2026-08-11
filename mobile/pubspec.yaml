@@ -61,6 +61,31 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.6
+
+# Generates mipmap-*/ic_launcher.png from the existing approved Deendoon
+# logo (assets/deendoon_logo.png) — run `dart run flutter_launcher_icons`
+# after changing this. Adaptive icon background uses AppColors.background
+# (#121417), the same brand dark surface used throughout the app, not an
+# invented color.
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/deendoon_logo.png"
+  adaptive_icon_background: "#121417"
+  adaptive_icon_foreground: "assets/deendoon_logo.png"
+
+# Generates the native splash screen (both launch_background.xml variants)
+# from the same approved logo, on the same brand background color, so the
+# native splash matches the in-app dark theme instead of Flutter's default
+# white flash. Run `dart run flutter_native_splash:create` after changing
+# this.
+flutter_native_splash:
+  color: "#121417"
+  image: "assets/deendoon_logo.png"
+  android: true
+  ios: false
+  web: false
 
 # jni 1.0.1 (pulled transitively via flutter_secure_storage_windows ->
 # path_provider -> path_provider_android) ships an Android Gradle script

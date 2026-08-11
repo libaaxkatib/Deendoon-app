@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 
 const _weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -40,7 +41,7 @@ class CalendarMonthGrid extends StatelessWidget {
             for (final label in _weekdayLabels)
               Expanded(
                 child: Center(
-                  child: Text(label, style: AppTypography.caption),
+                  child: Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
                 ),
               ),
           ],
@@ -94,7 +95,7 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color? background = isSelected ? AppColors.primary : (isToday ? AppColors.primary.withValues(alpha: 0.15) : null);
-    final Color textColor = isSelected ? AppColors.background : AppColors.textPrimary;
+    final Color textColor = isSelected ? context.colors.background : context.colors.textPrimary;
 
     return InkWell(
       onTap: onTap,

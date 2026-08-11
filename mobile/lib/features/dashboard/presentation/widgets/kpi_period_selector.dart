@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../providers/kpi_period_provider.dart';
 
 /// A real, interactive period selector next to "KPI Overview" — opens a
@@ -40,7 +41,7 @@ class KpiPeriodSelector extends ConsumerWidget {
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Consumer(
         builder: (context, ref, _) {
@@ -57,16 +58,19 @@ class KpiPeriodSelector extends ConsumerWidget {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: context.colors.textSecondary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Select Period', style: AppTypography.subheading),
+                      child: Text(
+                        'Select Period',
+                        style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                      ),
                     ),
                   ),
                   Flexible(
@@ -147,7 +151,7 @@ class _PeriodRow extends StatelessWidget {
                   period,
                   style: selected
                       ? AppTypography.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)
-                      : AppTypography.body,
+                      : AppTypography.body.copyWith(color: context.colors.textPrimary),
                 ),
               ),
               if (selected) const Icon(Icons.check, color: AppColors.primary, size: 20),

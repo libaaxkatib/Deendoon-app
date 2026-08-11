@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_typography.dart';
+import '../theme/deendoon_colors.dart';
 
 /// "Screen X — coming soon" body reused by all 5 bottom-nav tabs until each
 /// module's real content is built in its own follow-up sprint.
@@ -15,7 +16,10 @@ class PlaceholderScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title), actions: actions),
       body: Center(
-        child: Text('$title — coming soon', style: AppTypography.subheading),
+        child: Text(
+          '$title — coming soon',
+          style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+        ),
       ),
     );
   }

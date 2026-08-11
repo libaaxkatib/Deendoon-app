@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../domain/debt.dart';
@@ -27,7 +28,7 @@ class DebtSummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   debt.referenceNumber,
-                  style: AppTypography.subheading,
+                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -36,7 +37,7 @@ class DebtSummaryCard extends StatelessWidget {
               StatusBadge(status: debt.debtStatus),
             ],
           ),
-          const Divider(height: 32, color: AppColors.background),
+          Divider(height: 32, color: context.colors.background),
           _InfoRow(label: 'Original Amount', value: debt.amount),
           const SizedBox(height: 12),
           _InfoRow(label: 'Remaining Balance', value: debt.remainingBalance),
@@ -52,9 +53,9 @@ class DebtSummaryCard extends StatelessWidget {
           ],
           if (debt.notes != null && debt.notes!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Notes', style: AppTypography.caption),
+            Text('Notes', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
             const SizedBox(height: 4),
-            Text(debt.notes!, style: AppTypography.body),
+            Text(debt.notes!, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
           ],
         ],
       ),
@@ -74,7 +75,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         Text(value, style: AppTypography.body.copyWith(color: valueColor ?? AppColors.primary)),
       ],
     );

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../auth/domain/auth_state.dart';
@@ -85,7 +86,12 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
               ),
               data: (messages) {
                 if (messages.isEmpty) {
-                  return const Center(child: Text('No messages yet', style: AppTypography.body));
+                  return Center(
+                    child: Text(
+                      'No messages yet',
+                      style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                    ),
+                  );
                 }
 
                 return ListView.separated(
@@ -102,11 +108,11 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
             ),
           ),
           if (isTerminal)
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'This Professional Collection Request is closed — new messages are not accepted.',
-                style: AppTypography.caption,
+                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             )
@@ -168,14 +174,17 @@ class _MessageBubble extends StatelessWidget {
               children: [
                 Text(
                   isOwnMessage ? 'You' : 'Deendoon Team',
-                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 ),
                 const SizedBox(height: 4),
-                Text(message.content, style: AppTypography.body),
+                Text(
+                  message.content,
+                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   message.createdAt.split('T').first,
-                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 ),
               ],
             ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../subscription/presentation/providers/subscription_providers.dart';
 import 'overview_tab.dart';
@@ -64,8 +65,8 @@ class _AnalyticsTabs extends StatelessWidget {
               indicatorPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
               dividerColor: Colors.transparent,
               splashBorderRadius: BorderRadius.circular(20),
-              labelColor: AppColors.background,
-              unselectedLabelColor: AppColors.textSecondary,
+              labelColor: context.colors.background,
+              unselectedLabelColor: context.colors.textSecondary,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
               tabs: const [
@@ -114,11 +115,11 @@ class _AnalyticsLockedState extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Analytics and Reports are not included in your current plan. '
                 'Upgrade your plan to unlock KPIs, Aging Analysis, Risk Distribution, '
                 'Collections Trend, and every Report category.',
-                style: AppTypography.body,
+                style: AppTypography.body.copyWith(color: context.colors.textPrimary),
               ),
               const SizedBox(height: 12),
               ElevatedButton(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/document_detail_providers.dart';
@@ -31,21 +32,21 @@ class StorageUsageCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Storage Usage', style: AppTypography.body),
+            Text('Storage Usage', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
                 value: (usage.usedPercentage / 100).clamp(0.0, 1.0),
                 minHeight: 8,
-                backgroundColor: AppColors.background,
+                backgroundColor: context.colors.background,
                 valueColor: const AlwaysStoppedAnimation(AppColors.primary),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               '${formatFileSize(usage.usedBytes)} of ${formatFileSize(usage.totalBytes)} used',
-              style: AppTypography.caption,
+              style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
             ),
           ],
         ),

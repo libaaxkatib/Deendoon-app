@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -101,7 +102,7 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                         state.status == null
                             ? 'No Professional Collection Requests yet'
                             : 'No requests match this filter',
-                        style: AppTypography.body,
+                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );
                   }
@@ -129,11 +130,14 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(request.referenceNumber, style: AppTypography.body),
+                                    Text(
+                                      request.referenceNumber,
+                                      style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                                    ),
                                     const SizedBox(height: 4),
                                     Text(
                                       request.createdAt.split('T').first,
-                                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                                     ),
                                   ],
                                 ),
@@ -170,8 +174,8 @@ class _StatusFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : AppColors.textSecondary),
-      backgroundColor: AppColors.surface,
+      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );
   }

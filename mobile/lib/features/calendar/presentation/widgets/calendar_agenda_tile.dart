@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../domain/calendar_entry.dart';
 import 'calendar_entry_display.dart';
@@ -27,7 +27,7 @@ class CalendarAgendaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = calendarEntryIconAndColor(entry.type);
+    final (icon, color) = calendarEntryIconAndColor(context, entry.type);
     final destination = _destination;
 
     return AppCard(
@@ -45,12 +45,15 @@ class CalendarAgendaTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(calendarEntryTitle(entry), style: AppTypography.body),
-                Text(entry.relatedEntityType, style: AppTypography.caption),
+                Text(
+                  calendarEntryTitle(entry),
+                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                ),
+                Text(entry.relatedEntityType, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
               ],
             ),
           ),
-          if (destination != null) const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          if (destination != null) Icon(Icons.chevron_right, color: context.colors.textSecondary),
         ],
       ),
     );

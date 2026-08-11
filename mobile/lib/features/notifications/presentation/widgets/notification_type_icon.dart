@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 
 /// Client-side rendering for the 9 real `NotificationType` enum values
 /// (`deendoon/app/Enums/NotificationType.php`) — the backend resource
@@ -13,7 +14,7 @@ class NotificationTypeIcon extends StatelessWidget {
 
   const NotificationTypeIcon({super.key, required this.type, this.size = 40});
 
-  static (IconData, Color) _iconAndColor(String type) => switch (type) {
+  static (IconData, Color) _iconAndColor(BuildContext context, String type) => switch (type) {
         'credit_limit_reached' => (Icons.warning_amber_outlined, AppColors.danger),
         'payment_received' => (Icons.payments_outlined, AppColors.success),
         'document_available' => (Icons.description_outlined, AppColors.info),
@@ -23,12 +24,12 @@ class NotificationTypeIcon extends StatelessWidget {
         'professional_collection_request_update' => (Icons.support_agent_outlined, AppColors.accent),
         'subscription_request_update' => (Icons.card_membership_outlined, AppColors.accent),
         'storage_request_update' => (Icons.storage_outlined, AppColors.accent),
-        _ => (Icons.notifications_outlined, AppColors.textSecondary),
+        _ => (Icons.notifications_outlined, context.colors.textSecondary),
       };
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = _iconAndColor(type);
+    final (icon, color) = _iconAndColor(context, type);
     return Container(
       width: size,
       height: size,

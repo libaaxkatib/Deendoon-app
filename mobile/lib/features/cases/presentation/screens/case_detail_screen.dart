@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/unavailable_section.dart';
@@ -88,7 +88,10 @@ class CaseDetailScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Text('Customer Summary', style: AppTypography.heading),
+                Text(
+                  'Customer Summary',
+                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                ),
                 const SizedBox(height: 12),
                 if (customerId == null)
                   const UnavailableSection(reason: 'This case has no associated customer to display.')
@@ -110,7 +113,10 @@ class CaseDetailScreen extends ConsumerWidget {
                     },
                   ),
                 const SizedBox(height: 24),
-                const Text('Debt Summary', style: AppTypography.heading),
+                Text(
+                  'Debt Summary',
+                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                ),
                 const SizedBox(height: 12),
                 debtAsync.when(
                   loading: () => const Padding(
@@ -131,7 +137,10 @@ class CaseDetailScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Case Summary', style: AppTypography.heading),
+                Text(
+                  'Case Summary',
+                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                ),
                 const SizedBox(height: 12),
                 CaseSummaryCard(collectionCase: collectionCase),
                 const SizedBox(height: 24),
@@ -197,14 +206,20 @@ class CaseDetailScreen extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(height: 24),
-                const Text('Timeline', style: AppTypography.heading),
+                Text(
+                  'Timeline',
+                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                ),
                 const SizedBox(height: 12),
                 CaseTimelineSection(caseId: caseId),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Notes', style: AppTypography.heading),
+                    Text(
+                      'Notes',
+                      style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined),
                       tooltip: 'Edit Notes',
@@ -215,13 +230,19 @@ class CaseDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 AppCard(
                   child: (collectionCase.notes != null && collectionCase.notes!.trim().isNotEmpty)
-                      ? Text(collectionCase.notes!, style: AppTypography.body)
+                      ? Text(
+                          collectionCase.notes!,
+                          style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        )
                       : Row(
                           children: [
-                            const Icon(Icons.info_outline, color: AppColors.textSecondary, size: 20),
+                            Icon(Icons.info_outline, color: context.colors.textSecondary, size: 20),
                             const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text('No notes yet.', style: AppTypography.caption),
+                            Expanded(
+                              child: Text(
+                                'No notes yet.',
+                                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                              ),
                             ),
                           ],
                         ),
@@ -254,11 +275,17 @@ class CaseDetailScreen extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(height: 24),
-                const Text('Related Documents', style: AppTypography.heading),
+                Text(
+                  'Related Documents',
+                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                ),
                 const SizedBox(height: 12),
                 DebtDocumentsSection(debtId: collectionCase.debtId),
                 const SizedBox(height: 24),
-                const Text('Related Payments', style: AppTypography.heading),
+                Text(
+                  'Related Payments',
+                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                ),
                 const SizedBox(height: 12),
                 DebtPaymentHistory(debtId: collectionCase.debtId),
               ],

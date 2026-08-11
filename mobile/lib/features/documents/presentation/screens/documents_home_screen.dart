@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/document_list_provider.dart';
 import '../widgets/document_card.dart';
@@ -104,8 +105,12 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
-                  child: Text('Recent Documents', style: AppTypography.heading, overflow: TextOverflow.ellipsis),
+                Expanded(
+                  child: Text(
+                    'Recent Documents',
+                    style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TextButton(
                   // The pushed screen watches the same shared
@@ -132,7 +137,10 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                       ? const _StatementsEmptyState()
                       : Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Text(_emptyMessages[state.type] ?? 'No documents yet', style: AppTypography.body),
+                          child: Text(
+                            _emptyMessages[state.type] ?? 'No documents yet',
+                            style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                          ),
                         );
                 }
 
@@ -170,11 +178,11 @@ class _StatementsEmptyState extends StatelessWidget {
         children: [
           const DocumentTypeIcon(documentType: 'statement', size: 56),
           const SizedBox(height: 16),
-          const Text('No statements yet', style: AppTypography.body),
+          Text('No statements yet', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 4),
           Text(
             'Account statements will appear here once generated.',
-            style: AppTypography.caption,
+            style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -197,8 +205,8 @@ class _TabFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : AppColors.textSecondary),
-      backgroundColor: AppColors.surface,
+      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );
   }

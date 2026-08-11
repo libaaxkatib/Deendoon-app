@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../domain/aging_analysis.dart';
@@ -88,7 +89,10 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: AppTypography.heading.copyWith(fontSize: 18));
+    return Text(
+      title,
+      style: AppTypography.heading.copyWith(fontSize: 18, color: context.colors.textPrimary),
+    );
   }
 }
 
@@ -266,7 +270,7 @@ class _RiskDistributionSection extends ConsumerWidget {
                   DonutSegment(
                     label: _riskLabels[segment.riskLevel] ?? segment.riskLevel,
                     value: segment.customerCount.toDouble(),
-                    color: _riskColors[segment.riskLevel] ?? AppColors.textSecondary,
+                    color: _riskColors[segment.riskLevel] ?? context.colors.textSecondary,
                   ),
               ],
             ),
@@ -277,7 +281,7 @@ class _RiskDistributionSection extends ConsumerWidget {
                 children: [
                   for (final segment in distribution.segments)
                     DonutLegendRow(
-                      color: _riskColors[segment.riskLevel] ?? AppColors.textSecondary,
+                      color: _riskColors[segment.riskLevel] ?? context.colors.textSecondary,
                       label: _riskLabels[segment.riskLevel] ?? segment.riskLevel,
                       value: '${segment.customerCount} customer${segment.customerCount == 1 ? '' : 's'}',
                       percentage: segment.percentage,

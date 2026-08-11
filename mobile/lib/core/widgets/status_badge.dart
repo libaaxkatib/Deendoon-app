@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/deendoon_colors.dart';
 
 /// Generic status pill, shared across every module. Real, distinct status
 /// vocabularies feed it today:
@@ -48,44 +48,44 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, label) = switch (status) {
       // customer_status
-      'active' => (AppColors.success, 'Active'),
-      'good_standing' => (AppColors.success, 'Good Standing'),
-      'late_payer' => (AppColors.warning, 'Late Payer'),
-      'high_risk' => (AppColors.danger, 'High Risk'),
-      'in_collection' => (AppColors.danger, 'In Collection'),
-      'recovered' => (AppColors.success, 'Recovered'),
-      'blocked' => (AppColors.textSecondary, 'Blocked'),
+      'active' => (context.colors.success, 'Active'),
+      'good_standing' => (context.colors.success, 'Good Standing'),
+      'late_payer' => (context.colors.warning, 'Late Payer'),
+      'high_risk' => (context.colors.danger, 'High Risk'),
+      'in_collection' => (context.colors.danger, 'In Collection'),
+      'recovered' => (context.colors.success, 'Recovered'),
+      'blocked' => (context.colors.textSecondary, 'Blocked'),
       // debt_status
-      'draft' => (AppColors.textSecondary, 'Draft'),
-      'pending' => (AppColors.info, 'Pending'),
-      'overdue' => (AppColors.danger, 'Overdue'),
-      'partial_paid' => (AppColors.warning, 'Partially Paid'),
-      'paid' => (AppColors.success, 'Paid'),
-      'cancelled' => (AppColors.textSecondary, 'Cancelled'),
-      'written_off' => (AppColors.textSecondary, 'Written Off'),
+      'draft' => (context.colors.textSecondary, 'Draft'),
+      'pending' => (context.colors.info, 'Pending'),
+      'overdue' => (context.colors.danger, 'Overdue'),
+      'partial_paid' => (context.colors.warning, 'Partially Paid'),
+      'paid' => (context.colors.success, 'Paid'),
+      'cancelled' => (context.colors.textSecondary, 'Cancelled'),
+      'written_off' => (context.colors.textSecondary, 'Written Off'),
       // case_status
-      'open' => (AppColors.info, 'Open'),
-      'closed' => (AppColors.textSecondary, 'Closed'),
+      'open' => (context.colors.info, 'Open'),
+      'closed' => (context.colors.textSecondary, 'Closed'),
       // reminder status
-      'today' => (AppColors.warning, 'Today'),
-      'upcoming' => (AppColors.info, 'Upcoming'),
-      'completed' => (AppColors.success, 'Completed'),
+      'today' => (context.colors.warning, 'Today'),
+      'upcoming' => (context.colors.info, 'Upcoming'),
+      'completed' => (context.colors.success, 'Completed'),
       // professional_collection_request status (submitted/under_review/
       // need_more_information/accepted/assigned/in_progress only —
       // recovered/closed are already mapped above and reused as-is)
-      'submitted' => (AppColors.info, 'Submitted'),
-      'under_review' => (AppColors.info, 'Under Review'),
-      'need_more_information' => (AppColors.warning, 'Need More Information'),
-      'accepted' => (AppColors.info, 'Accepted'),
-      'assigned' => (AppColors.info, 'Assigned'),
-      'in_progress' => (AppColors.info, 'In Progress'),
+      'submitted' => (context.colors.info, 'Submitted'),
+      'under_review' => (context.colors.info, 'Under Review'),
+      'need_more_information' => (context.colors.warning, 'Need More Information'),
+      'accepted' => (context.colors.info, 'Accepted'),
+      'assigned' => (context.colors.info, 'Assigned'),
+      'in_progress' => (context.colors.info, 'In Progress'),
       // promise_to_pay status (open reuses case_status's mapping above)
-      'fulfilled' => (AppColors.success, 'Fulfilled'),
-      'broken' => (AppColors.danger, 'Broken'),
+      'fulfilled' => (context.colors.success, 'Fulfilled'),
+      'broken' => (context.colors.danger, 'Broken'),
       // subscription_status (active reuses customer_status's mapping above)
-      'trialing' => (AppColors.info, 'Trial'),
-      'expired' => (AppColors.danger, 'Expired'),
-      _ => (AppColors.textSecondary, status),
+      'trialing' => (context.colors.info, 'Trial'),
+      'expired' => (context.colors.danger, 'Expired'),
+      _ => (context.colors.textSecondary, status),
     };
 
     return Container(

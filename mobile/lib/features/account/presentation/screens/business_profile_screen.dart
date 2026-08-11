@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/network/api_exception.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
@@ -235,16 +235,16 @@ class _LogoPicker extends StatelessWidget {
             height: 96,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: context.colors.background,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white24),
+              border: Border.all(color: context.colors.textSecondary.withValues(alpha: 0.24)),
             ),
             child: pickedLogo != null
                 ? Image.file(File(pickedLogo!.path), fit: BoxFit.cover)
                 : Icon(
                     hasExistingLogo ? Icons.business_outlined : Icons.add_photo_alternate_outlined,
                     size: 36,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
           ),
         ),
@@ -253,7 +253,7 @@ class _LogoPicker extends StatelessWidget {
           pickedLogo != null
               ? 'New logo selected'
               : (hasExistingLogo ? 'Logo on file — tap to replace' : 'Tap to add a logo'),
-          style: AppTypography.caption,
+          style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
         ),
         if (error != null) ...[
           const SizedBox(height: 4),

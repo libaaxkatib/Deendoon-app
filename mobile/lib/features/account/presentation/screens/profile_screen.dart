@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../auth/domain/auth_state.dart';
@@ -34,22 +34,33 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   user?.name ?? '—',
-                  style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800),
+                  style: AppTypography.subheading.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 3),
-                Text(user?.email ?? '—', style: AppTypography.caption),
+                Text(
+                  user?.email ?? '—',
+                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           AppCard(
             onTap: () => context.push('/account/change-password'),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.lock_outline, color: AppColors.textPrimary),
-                SizedBox(width: 14),
-                Expanded(child: Text('Change Password', style: AppTypography.body)),
-                Icon(Icons.chevron_right, size: 20, color: AppColors.textSecondary),
+                Icon(Icons.lock_outline, color: context.colors.textPrimary),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    'Change Password',
+                    style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  ),
+                ),
+                Icon(Icons.chevron_right, size: 20, color: context.colors.textSecondary),
               ],
             ),
           ),

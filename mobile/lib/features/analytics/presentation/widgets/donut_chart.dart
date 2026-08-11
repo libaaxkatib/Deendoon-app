@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 
 class DonutSegment {
   final String label;
@@ -44,7 +44,7 @@ class DonutChart extends StatelessWidget {
         children: [
           CustomPaint(
             size: Size(size, size),
-            painter: _DonutPainter(segments: segments),
+            painter: _DonutPainter(segments: segments, neutralColor: context.colors.textSecondary),
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -53,7 +53,7 @@ class DonutChart extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   centerValue,
-                  style: AppTypography.subheading.copyWith(fontSize: 15),
+                  style: AppTypography.subheading.copyWith(fontSize: 15, color: context.colors.textPrimary),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -63,7 +63,7 @@ class DonutChart extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   centerLabel,
-                  style: AppTypography.caption.copyWith(fontSize: 10),
+                  style: AppTypography.caption.copyWith(fontSize: 10, color: context.colors.textSecondary),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -79,8 +79,9 @@ class DonutChart extends StatelessWidget {
 
 class _DonutPainter extends CustomPainter {
   final List<DonutSegment> segments;
+  final Color neutralColor;
 
-  const _DonutPainter({required this.segments});
+  const _DonutPainter({required this.segments, required this.neutralColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -97,7 +98,7 @@ class _DonutPainter extends CustomPainter {
       // legend always sit inside one) — using the same surface color here
       // would render an invisible ring on top of an identical background.
       final paint = Paint()
-        ..color = AppColors.textSecondary.withValues(alpha: 0.25)
+        ..color = neutralColor.withValues(alpha: 0.25)
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth;
       canvas.drawArc(arcRect, 0, 2 * pi, false, paint);
@@ -119,7 +120,8 @@ class _DonutPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DonutPainter oldDelegate) => oldDelegate.segments != segments;
+  bool shouldRepaint(covariant _DonutPainter oldDelegate) =>
+      oldDelegate.segments != segments || oldDelegate.neutralColor != neutralColor;
 }
 
 /// One tappable legend row — color dot, label + de-emphasized value on one
@@ -160,13 +162,13 @@ class DonutLegendRow extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+                    style: AppTypography.body.copyWith(fontWeight: FontWeight.w600, color: context.colors.textPrimary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     value,
-                    style: AppTypography.caption,
+                    style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -176,7 +178,7 @@ class DonutLegendRow extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               '${percentage.toStringAsFixed(0)}%',
-              style: AppTypography.body.copyWith(fontWeight: FontWeight.w700),
+              style: AppTypography.body.copyWith(fontWeight: FontWeight.w700, color: context.colors.textPrimary),
             ),
           ],
         ),

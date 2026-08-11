@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../debts/presentation/widgets/debt_card.dart';
 import '../providers/report_debts_provider.dart';
@@ -113,7 +114,12 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
                 ),
                 data: (state) {
                   if (state.debts.isEmpty) {
-                    return const Center(child: Text('No debts match this filter', style: AppTypography.body));
+                    return Center(
+                      child: Text(
+                        'No debts match this filter',
+                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                      ),
+                    );
                   }
 
                   return RefreshIndicator(
@@ -158,8 +164,8 @@ class _FilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : AppColors.textSecondary),
-      backgroundColor: AppColors.surface,
+      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );
   }

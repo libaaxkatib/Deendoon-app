@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/premium_empty_state.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../cases/presentation/widgets/case_card.dart';
@@ -112,18 +113,18 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               autofocus: true,
               onChanged: _onChanged,
               onSubmitted: _runSearch,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: context.colors.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Search customers, debts, payments, documents, cases',
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
                 suffixIcon: _controller.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                        icon: Icon(Icons.close, color: context.colors.textSecondary),
                         onPressed: _clearSearch,
                       ),
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: context.colors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -207,8 +208,8 @@ class _CategoryChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : AppColors.textSecondary),
-      backgroundColor: AppColors.background,
+      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      backgroundColor: context.colors.background,
       side: BorderSide.none,
     );
   }
@@ -251,7 +252,7 @@ class _RecentSearchesView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Recent Searches', style: AppTypography.subheading),
+                Text('Recent Searches', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
                 TextButton(
                   onPressed: () => ref.read(recentSearchesProvider.notifier).clearAll(),
                   child: const Text('Clear'),
@@ -262,8 +263,8 @@ class _RecentSearchesView extends ConsumerWidget {
             for (final query in recent)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.history, color: AppColors.textSecondary),
-                title: Text(query, style: AppTypography.body),
+                leading: Icon(Icons.history, color: context.colors.textSecondary),
+                title: Text(query, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
                 onTap: () => onSearch(query),
               ),
           ],
@@ -345,7 +346,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(title, style: AppTypography.subheading),
+      child: Text(title, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -189,8 +190,8 @@ class _StorageOverviewCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Storage Overview', style: AppTypography.subheading),
-          const Divider(height: 32, color: AppColors.background),
+          Text('Storage Overview', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+          Divider(height: 32, color: context.colors.background),
           _InfoRow(label: 'Storage Used', value: _formatFileSize(storage.storageUsageBytes)),
           const SizedBox(height: 12),
           _InfoRow(label: 'Base Storage Allowance', value: baseStorageText),
@@ -219,9 +220,9 @@ class _ActiveAddonsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (addons.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text('No active storage add-ons.', style: AppTypography.body),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text('No active storage add-ons.', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
       );
     }
     return Column(
@@ -249,11 +250,14 @@ class _AddonCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(_packageLabel(addon.storagePackage), style: AppTypography.subheading),
+              Text(
+                _packageLabel(addon.storagePackage),
+                style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+              ),
               StatusBadge(status: addon.status),
             ],
           ),
-          const Divider(height: 24, color: AppColors.background),
+          Divider(height: 24, color: context.colors.background),
           _InfoRow(label: 'Size', value: '${addon.storageSize} GB'),
           const SizedBox(height: 8),
           _InfoRow(label: 'Monthly Price', value: addon.monthlyPrice),
@@ -292,7 +296,7 @@ class _PendingAddonCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${_packageLabel(addon.storagePackage)} Storage Add-on',
-                  style: AppTypography.subheading,
+                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -301,7 +305,7 @@ class _PendingAddonCard extends StatelessWidget {
               StatusBadge(status: addon.status),
             ],
           ),
-          const Divider(height: 24, color: AppColors.background),
+          Divider(height: 24, color: context.colors.background),
           _InfoRow(label: 'Monthly Price', value: addon.monthlyPrice),
           const SizedBox(height: 8),
           _InfoRow(label: 'Payment Reference', value: addon.paymentReference),
@@ -331,8 +335,8 @@ class _AvailablePackagesSection extends StatelessWidget {
             selected: selectedPackage == storagePackage,
             onSelected: (_) => onSelect(storagePackage),
             selectedColor: AppColors.primary.withValues(alpha: 0.2),
-            labelStyle: TextStyle(color: selectedPackage == storagePackage ? AppColors.primary : AppColors.textSecondary),
-            backgroundColor: AppColors.surface,
+            labelStyle: TextStyle(color: selectedPackage == storagePackage ? AppColors.primary : context.colors.textSecondary),
+            backgroundColor: context.colors.surface,
             side: BorderSide.none,
           ),
       ],
@@ -351,7 +355,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         Expanded(
           child: Text(
             value,

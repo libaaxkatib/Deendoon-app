@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/deendoon_colors.dart';
 
 /// Shared card container — consistent corner radius/background/padding/
 /// elevation across every card-style section in the app (Home Dashboard's
@@ -29,7 +29,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(radius),
       elevation: elevation,
       shadowColor: Colors.black.withValues(alpha: 0.4),

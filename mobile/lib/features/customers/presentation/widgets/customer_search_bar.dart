@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 
 /// Debounces keystrokes before firing a real `GET /customers?search=...`
 /// call (via [onChanged]) — the debounce only delays *when* the network
@@ -45,14 +45,14 @@ class _CustomerSearchBarState extends State<CustomerSearchBar> {
     return TextField(
       controller: _controller,
       onChanged: _onChanged,
-      style: const TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: context.colors.textPrimary),
       decoration: InputDecoration(
         hintText: 'Search by name or phone',
-        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+        prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
         suffixIcon: _controller.text.isEmpty
             ? null
             : IconButton(
-                icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                icon: Icon(Icons.close, color: context.colors.textSecondary),
                 onPressed: () {
                   _controller.clear();
                   _debounce?.cancel();
@@ -61,7 +61,7 @@ class _CustomerSearchBarState extends State<CustomerSearchBar> {
                 },
               ),
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: context.colors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

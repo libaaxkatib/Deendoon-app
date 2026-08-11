@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/notification_list_provider.dart';
 import '../widgets/notification_card.dart';
@@ -126,7 +127,7 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
                       state.type == null
                           ? 'No notifications yet'
                           : 'No ${notificationTypeLabel(state.type!)} notifications',
-                      style: AppTypography.body,
+                      style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                     ),
                   );
                 }
@@ -181,8 +182,8 @@ class _NotificationTypeChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : AppColors.textSecondary),
-      backgroundColor: AppColors.surface,
+      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../domain/collections_trend.dart';
 
 String _formatAxisValue(double value) {
@@ -41,14 +42,27 @@ class TrendLineChart extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(_formatAxisValue(safeMax), style: AppTypography.caption),
-                    Text(_formatAxisValue(safeMax / 2), style: AppTypography.caption),
-                    const Text('0', style: AppTypography.caption),
+                    Text(
+                      _formatAxisValue(safeMax),
+                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                    ),
+                    Text(
+                      _formatAxisValue(safeMax / 2),
+                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                    ),
+                    Text('0', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(child: CustomPaint(painter: _TrendPainter(values: values))),
+              Expanded(
+                child: CustomPaint(
+                  painter: _TrendPainter(
+                    values: values,
+                    gridColor: context.colors.surface,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -59,8 +73,8 @@ class TrendLineChart extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(series.first.date, style: AppTypography.caption),
-                Text(series.last.date, style: AppTypography.caption),
+                Text(series.first.date, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                Text(series.last.date, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
               ],
             ),
           ),
@@ -72,13 +86,14 @@ class TrendLineChart extends StatelessWidget {
 
 class _TrendPainter extends CustomPainter {
   final List<double> values;
+  final Color gridColor;
 
-  const _TrendPainter({required this.values});
+  const _TrendPainter({required this.values, required this.gridColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = AppColors.surface
+      ..color = gridColor
       ..strokeWidth = 1;
     canvas.drawLine(Offset(0, 0), Offset(size.width, 0), gridPaint);
     canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), gridPaint);
@@ -123,5 +138,6 @@ class _TrendPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _TrendPainter oldDelegate) => oldDelegate.values != values;
+  bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
+      oldDelegate.values != values || oldDelegate.gridColor != gridColor;
 }

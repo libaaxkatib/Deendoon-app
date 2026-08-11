@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 
 /// §2.5 "Every entity type and reminder/document type is represented by a
 /// dedicated icon on a colored, rounded-square or circular background...
@@ -14,18 +15,18 @@ class ReminderTypeIcon extends StatelessWidget {
 
   const ReminderTypeIcon({super.key, required this.type, this.size = 40});
 
-  static (IconData, Color) _iconAndColor(String type) => switch (type) {
+  static (IconData, Color) _iconAndColor(BuildContext context, String type) => switch (type) {
         'client_visit' => (Icons.location_on_outlined, AppColors.accent),
         'follow_up_call' => (Icons.call_outlined, AppColors.warning),
         'payment_due' => (Icons.payments_outlined, AppColors.success),
         'contract_renewal' => (Icons.description_outlined, AppColors.info),
         'promise_to_pay' => (Icons.handshake_outlined, AppColors.primary),
-        _ => (Icons.notifications_outlined, AppColors.textSecondary),
+        _ => (Icons.notifications_outlined, context.colors.textSecondary),
       };
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = _iconAndColor(type);
+    final (icon, color) = _iconAndColor(context, type);
     return Container(
       width: size,
       height: size,

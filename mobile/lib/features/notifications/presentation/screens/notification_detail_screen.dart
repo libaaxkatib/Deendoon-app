@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../domain/app_notification.dart';
 import '../widgets/notification_type_icon.dart';
@@ -52,7 +53,10 @@ class NotificationDetailScreen extends StatelessWidget {
                 NotificationTypeIcon(type: notification.type, size: 48),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(notificationTypeLabel(notification.type), style: AppTypography.heading),
+                  child: Text(
+                    notificationTypeLabel(notification.type),
+                    style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                  ),
                 ),
               ],
             ),
@@ -70,7 +74,7 @@ class NotificationDetailScreen extends StatelessWidget {
                   _DetailRow(
                     label: 'Status',
                     value: notification.isRead ? 'Read' : 'Unread',
-                    valueColor: notification.isRead ? AppColors.textSecondary : AppColors.primary,
+                    valueColor: notification.isRead ? context.colors.textSecondary : AppColors.primary,
                   ),
                 ],
               ),
@@ -104,7 +108,7 @@ class _DetailRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 100, child: Text(label, style: AppTypography.caption)),
+        SizedBox(width: 100, child: Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary))),
         Expanded(
           child: Text(
             value,

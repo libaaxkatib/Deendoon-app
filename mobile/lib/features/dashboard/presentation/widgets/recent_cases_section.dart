@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/risk_badge.dart';
 import '../providers/dashboard_providers.dart';
@@ -42,9 +42,12 @@ class RecentCasesSection extends ConsumerWidget {
           ),
           data: (data) {
             if (data.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('No recent activity', style: AppTypography.body),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No recent activity',
+                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                ),
               );
             }
             return Column(
@@ -63,7 +66,10 @@ class RecentCasesSection extends ConsumerWidget {
                             children: [
                               Text(
                                 recentCase.customerName,
-                                style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+                                style: AppTypography.body.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: context.colors.textPrimary,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -71,7 +77,7 @@ class RecentCasesSection extends ConsumerWidget {
                               Text(
                                 recentCase.outstandingAmount,
                                 style: AppTypography.caption.copyWith(
-                                  color: AppColors.textSecondary,
+                                  color: context.colors.textSecondary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -210,11 +211,17 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(reminder.title, style: AppTypography.subheading),
+                        Text(reminder.title, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
                         const SizedBox(height: 2),
-                        Text(relatedAsync.valueOrNull?.name ?? '…', style: AppTypography.caption),
+                        Text(
+                          relatedAsync.valueOrNull?.name ?? '…',
+                          style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                        ),
                         const SizedBox(height: 2),
-                        Text(formatFriendlyDateTimeFromIso(reminder.dueDate), style: AppTypography.caption),
+                        Text(
+                          formatFriendlyDateTimeFromIso(reminder.dueDate),
+                          style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                        ),
                       ],
                     ),
                   ),
@@ -248,12 +255,12 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text('Notes', style: AppTypography.heading),
+              Text('Notes', style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
               const SizedBox(height: 12),
               AppCard(
                 child: Text(
                   (reminder.notes?.trim().isNotEmpty ?? false) ? reminder.notes! : 'No notes added',
-                  style: AppTypography.body,
+                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                 ),
               ),
               const SizedBox(height: 24),
@@ -424,7 +431,7 @@ class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Log Visit Outcome', style: AppTypography.heading),
+          Text('Log Visit Outcome', style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 16),
           TextField(
             controller: _outcomeController,
@@ -512,7 +519,7 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Snooze Reminder', style: AppTypography.heading),
+          Text('Snooze Reminder', style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 16),
           if (_isSaving)
             const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
@@ -559,12 +566,12 @@ class _InfoRow extends StatelessWidget {
     final row = Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: AppTypography.body.copyWith(color: onTap != null ? AppColors.primary : AppColors.textPrimary),
+            style: AppTypography.body.copyWith(color: onTap != null ? AppColors.primary : context.colors.textPrimary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

@@ -1,7 +1,24 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Release signing identity — deendoon-release.jks + android/key.properties,
+// both gitignored (android/.gitignore already covers key.properties,
+// **/*.keystore, **/*.jks). Falls back to the debug key only when
+// key.properties is genuinely absent (e.g. a fresh checkout that hasn't
+// been given the real keystore yet), so `flutter run`/debug builds keep
+// working everywhere; any release build without the real keystore present
+// is intentionally still debug-signed rather than failing outright, since
+// CI/local debug workflows must not be blocked by this.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
 android {
@@ -15,7 +32,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.deendoon.mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -25,11 +41,23 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Real upload keystore (android/key.properties + the .jks it
+            // points at) when present; falls back to the debug key only
+            // if that file is genuinely missing (see comment above).
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
             // Without this, app/proguard-rules.pro is never picked up by R8 —
             // Flutter's own default/consumer rules are applied automatically,
             // but this project's own rules are not unless wired explicitly here.

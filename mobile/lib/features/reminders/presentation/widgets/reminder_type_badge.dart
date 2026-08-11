@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 
 /// Small type-label pill for the Reminder List cards (Deendoon V1 Reminder
 /// Workflow Update — final polish). Distinct from `StatusBadge`: this
@@ -14,18 +15,18 @@ class ReminderTypeBadge extends StatelessWidget {
 
   const ReminderTypeBadge({super.key, required this.type});
 
-  static (Color, String) _colorAndLabel(String type) => switch (type) {
+  static (Color, String) _colorAndLabel(BuildContext context, String type) => switch (type) {
         'client_visit' => (AppColors.accent, 'VISIT'),
         'follow_up_call' => (AppColors.warning, 'FOLLOW-UP'),
         'payment_due' => (AppColors.success, 'PAYMENT'),
         'contract_renewal' => (AppColors.info, 'RENEWAL'),
         'promise_to_pay' => (AppColors.primary, 'PROMISE'),
-        _ => (AppColors.textSecondary, type.toUpperCase()),
+        _ => (context.colors.textSecondary, type.toUpperCase()),
       };
 
   @override
   Widget build(BuildContext context) {
-    final (color, label) = _colorAndLabel(type);
+    final (color, label) = _colorAndLabel(context, type);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),

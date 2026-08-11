@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../auth/domain/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -32,16 +32,21 @@ class DashboardGreeting extends ConsumerWidget {
           children: [
             Text(
               _greeting(DateTime.now().hour),
-              style: AppTypography.caption.copyWith(fontSize: 11, height: 1),
+              style: AppTypography.caption.copyWith(fontSize: 11, height: 1, color: context.colors.textSecondary),
             ),
             Text(
               '$name 👋',
-              style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800, fontSize: 17, height: 1.15),
+              style: AppTypography.subheading.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                height: 1.15,
+                color: context.colors.textPrimary,
+              ),
             ),
           ],
         ),
         const SizedBox(width: 2),
-        const Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary),
+        Icon(Icons.chevron_right, size: 18, color: context.colors.textSecondary),
       ],
     );
   }

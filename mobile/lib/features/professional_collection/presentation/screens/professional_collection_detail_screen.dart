@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -60,11 +61,14 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(request.referenceNumber, style: AppTypography.subheading),
+                        Text(
+                          request.referenceNumber,
+                          style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                        ),
                         StatusBadge(status: request.status),
                       ],
                     ),
-                    const Divider(height: 32, color: AppColors.background),
+                    Divider(height: 32, color: context.colors.background),
                     _InfoRow(label: 'Submitted By', value: request.submittedByUserId),
                     if (request.actionedByUserId != null) ...[
                       const SizedBox(height: 12),
@@ -91,7 +95,10 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text('Reasons for Transfer', style: AppTypography.heading),
+              Text(
+                'Reasons for Transfer',
+                style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+              ),
               const SizedBox(height: 12),
               if (request.reasons.isEmpty)
                 const UnavailableSection(reason: 'No reasons recorded for this Request.')
@@ -102,7 +109,10 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                   children: [for (final reason in request.reasons) Chip(label: Text(reason))],
                 ),
               const SizedBox(height: 24),
-              const Text('Requested Services', style: AppTypography.heading),
+              Text(
+                'Requested Services',
+                style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+              ),
               const SizedBox(height: 12),
               if (request.requestedServices.isEmpty)
                 const UnavailableSection(reason: 'No requested services recorded for this Request.')
@@ -113,12 +123,20 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                   children: [for (final service in request.requestedServices) Chip(label: Text(service))],
                 ),
               const SizedBox(height: 24),
-              const Text('Notes', style: AppTypography.heading),
+              Text(
+                'Notes',
+                style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+              ),
               const SizedBox(height: 12),
               if (request.notes == null || request.notes!.trim().isEmpty)
                 const UnavailableSection(reason: 'No notes were added to this Request.')
               else
-                AppCard(child: Text(request.notes!, style: AppTypography.body)),
+                AppCard(
+                  child: Text(
+                    request.notes!,
+                    style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  ),
+                ),
               const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: () => context.push('/cases/${request.collectionCaseId}'),
@@ -171,7 +189,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

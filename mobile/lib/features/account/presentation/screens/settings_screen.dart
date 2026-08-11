@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/biometrics/biometric_auth_service.dart';
 import '../../../../core/localization/locale_provider.dart';
 import '../../../../core/network/api_exception.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
+import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
@@ -152,6 +153,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SectionHeader(title: l10n.sectionGeneral),
           const SizedBox(height: 8),
           const _LanguageCard(),
+          const SizedBox(height: 12),
+          const _AppearanceCard(),
           const SizedBox(height: 24),
           SectionHeader(title: l10n.sectionSecurity),
           const SizedBox(height: 8),
@@ -159,8 +162,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => context.push('/account/change-password'),
             child: Row(
               children: [
-                Expanded(child: Text(l10n.changePassword, style: AppTypography.body)),
-                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                Expanded(
+                  child: Text(
+                    l10n.changePassword,
+                    style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: context.colors.textSecondary),
               ],
             ),
           ),
@@ -189,24 +197,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         children: [
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text(l10n.pushNotifications, style: AppTypography.body),
+                            title: Text(
+                              l10n.pushNotifications,
+                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                            ),
                             value: _pushEnabled,
                             onChanged: (value) => setState(() => _pushEnabled = value),
                           ),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text(l10n.reminderNotifications, style: AppTypography.body),
+                            title: Text(
+                              l10n.reminderNotifications,
+                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                            ),
                             value: _reminderEnabled,
                             onChanged: (value) => setState(() => _reminderEnabled = value),
                           ),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text(l10n.paymentNotifications, style: AppTypography.body),
+                            title: Text(
+                              l10n.paymentNotifications,
+                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                            ),
                             value: _paymentEnabled,
                             onChanged: (value) => setState(() => _paymentEnabled = value),
                           ),
                           const SizedBox(height: 4),
-                          Text(l10n.notificationsDisclosure, style: AppTypography.caption),
+                          Text(
+                            l10n.notificationsDisclosure,
+                            style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                          ),
                         ],
                       ),
                     ),
@@ -233,7 +253,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text(l10n.creditLimitReminderEnabled, style: AppTypography.body),
+                            title: Text(
+                              l10n.creditLimitReminderEnabled,
+                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                            ),
                             value: _creditLimitReminderEnabled,
                             onChanged: (value) => setState(() => _creditLimitReminderEnabled = value),
                           ),
@@ -333,7 +356,9 @@ class _LanguageCard extends ConsumerWidget {
     return AppCard(
       child: Row(
         children: [
-          Expanded(child: Text(l10n.language, style: AppTypography.body)),
+          Expanded(
+            child: Text(l10n.language, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+          ),
           DropdownButton<String>(
             value: locale.languageCode,
             underline: const SizedBox.shrink(),
@@ -353,6 +378,37 @@ class _LanguageCard extends ConsumerWidget {
   }
 }
 
+class _AppearanceCard extends ConsumerWidget {
+  const _AppearanceCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
+    return AppCard(
+      child: Row(
+        children: [
+          const Expanded(child: Text('Appearance', style: AppTypography.body)),
+          DropdownButton<ThemeMode>(
+            value: themeMode,
+            underline: const SizedBox.shrink(),
+            items: const [
+              DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
+              DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+              DropdownMenuItem(value: ThemeMode.system, child: Text('System Default')),
+            ],
+            onChanged: (mode) {
+              if (mode != null) {
+                ref.read(themeModeProvider.notifier).setThemeMode(mode);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BiometricLoginTile extends ConsumerWidget {
   const _BiometricLoginTile();
 
@@ -363,15 +419,18 @@ class _BiometricLoginTile extends ConsumerWidget {
 
     return supportedAsync.when(
       loading: () => const AppCard(child: SizedBox(height: 24, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))),
-      error: (_, _) => _unsupportedCard(l10n),
+      error: (_, _) => _unsupportedCard(context, l10n),
       data: (supported) {
-        if (!supported) return _unsupportedCard(l10n);
+        if (!supported) return _unsupportedCard(context, l10n);
 
         final enabledAsync = ref.watch(biometricEnabledProvider);
         return AppCard(
           child: SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text(l10n.biometricLogin, style: AppTypography.body),
+            title: Text(
+              l10n.biometricLogin,
+              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+            ),
             value: enabledAsync.value ?? false,
             onChanged: enabledAsync.isLoading
                 ? null
@@ -393,12 +452,14 @@ class _BiometricLoginTile extends ConsumerWidget {
     );
   }
 
-  Widget _unsupportedCard(AppLocalizations l10n) {
+  Widget _unsupportedCard(BuildContext context, AppLocalizations l10n) {
     return AppCard(
       child: Row(
         children: [
-          Expanded(child: Text(l10n.biometricLogin, style: AppTypography.body)),
-          Text(l10n.comingSoon, style: AppTypography.caption),
+          Expanded(
+            child: Text(l10n.biometricLogin, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+          ),
+          Text(l10n.comingSoon, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         ],
       ),
     );

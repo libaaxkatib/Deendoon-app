@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 
 /// §2.5 "Every entity type and reminder/document type is represented by
 /// a dedicated icon on a colored, rounded-square or circular background."
@@ -12,17 +13,17 @@ class DocumentTypeIcon extends StatelessWidget {
 
   const DocumentTypeIcon({super.key, required this.documentType, this.size = 40});
 
-  static (IconData, Color) _iconAndColor(String documentType) => switch (documentType) {
+  static (IconData, Color) _iconAndColor(BuildContext context, String documentType) => switch (documentType) {
         'invoice' => (Icons.receipt_long_outlined, AppColors.info),
         'receipt' => (Icons.receipt_outlined, AppColors.success),
         'demand_letter' => (Icons.mail_outline, AppColors.danger),
         'statement' => (Icons.description_outlined, AppColors.accent),
-        _ => (Icons.insert_drive_file_outlined, AppColors.textSecondary),
+        _ => (Icons.insert_drive_file_outlined, context.colors.textSecondary),
       };
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = _iconAndColor(documentType);
+    final (icon, color) = _iconAndColor(context, documentType);
     return Container(
       width: size,
       height: size,

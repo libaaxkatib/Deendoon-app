@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../theme/deendoon_colors.dart';
 
 /// Shared "not yet connected" illustration — a soft tinted circular badge
 /// around the icon instead of a bare icon, reused by Business Profile and
@@ -29,17 +29,24 @@ class PremiumEmptyState extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [AppColors.primary.withValues(alpha: 0.16), AppColors.primary.withValues(alpha: 0.03)],
+                  colors: [
+                    context.colors.primary.withValues(alpha: 0.16),
+                    context.colors.primary.withValues(alpha: 0.03),
+                  ],
                 ),
               ),
-              child: Icon(icon, size: 36, color: AppColors.primary.withValues(alpha: 0.85)),
+              child: Icon(icon, size: 36, color: context.colors.primary.withValues(alpha: 0.85)),
             ),
             const SizedBox(height: 20),
-            Text(title, style: AppTypography.subheading, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: AppTypography.caption,
+              style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],

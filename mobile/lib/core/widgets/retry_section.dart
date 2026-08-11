@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_typography.dart';
+import '../theme/deendoon_colors.dart';
 
 /// Per-component error state with a retry affordance — reused by every
 /// Home Dashboard section per the frozen spec's "a retry affordance
@@ -50,7 +51,11 @@ class SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(title, style: AppTypography.heading, overflow: TextOverflow.ellipsis),
+          child: Text(
+            title,
+            style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         ?trailing,
       ],

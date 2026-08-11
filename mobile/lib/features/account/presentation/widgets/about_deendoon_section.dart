@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/coming_soon.dart';
 
@@ -64,7 +65,11 @@ class AboutDeendoonSection extends StatelessWidget {
       children: [
         Text(
           'ABOUT',
-          style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+          style: AppTypography.caption.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: context.colors.textSecondary,
+          ),
         ),
         const SizedBox(height: 8),
         AppCard(
@@ -77,9 +82,9 @@ class AboutDeendoonSection extends StatelessWidget {
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Kaaliyaha Casriga ah ee\nSoo Celinta Deymaha',
-                style: AppTypography.caption,
+                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -96,7 +101,7 @@ class AboutDeendoonSection extends StatelessWidget {
                 'DEENDOON waa app kaa caawinaya inaad si fudud u maamusho '
                 'deymaha macaamiishaada oo aad u soo ceshato lacagta aad ku '
                 'leedahay.',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
               ),
               const SizedBox(height: 12),
               Text(
@@ -106,7 +111,7 @@ class AboutDeendoonSection extends StatelessWidget {
                 'xasuusinnada muhiimka ah. App-ku wuxuu kuu sheegayaa cidda '
                 'la xiriirkeedu gaaray iyo tallaabada xigta ee aad qaadi '
                 'lahayd si aan deyn loo illoobin.',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
               ),
               const SizedBox(height: 12),
               Text(
@@ -115,7 +120,7 @@ class AboutDeendoonSection extends StatelessWidget {
                 'xirfadlayaasha Deendoon inay si sharci ah oo xirfad leh kuu '
                 'metelaan, ula xiriiraan deyn-bixiyaha, ugana shaqeeyaan soo '
                 'celinta lacagtaada.',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
               ),
             ],
           ),
@@ -149,7 +154,7 @@ class AboutDeendoonSection extends StatelessWidget {
                 'DEENDOON waa kaaliye casri ah oo kuu fududeynaya maamulka '
                 'deymaha, xoojiyana la socodka macaamiisha, si ganacsigaagu u '
                 'helo lacagtiisa waqtigeeda.',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
               ),
             ],
           ),
@@ -182,7 +187,11 @@ class AboutDeendoonSection extends StatelessWidget {
         const SizedBox(height: 20),
         Text(
           'KUWA KALE',
-          style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+          style: AppTypography.caption.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: context.colors.textSecondary,
+          ),
         ),
         const SizedBox(height: 8),
         _MenuGroup(
@@ -223,7 +232,7 @@ class _MenuGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(AppCard.radius),
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.4),
@@ -232,7 +241,8 @@ class _MenuGroup extends StatelessWidget {
         children: [
           for (final row in children) ...[
             row,
-            if (!row.isLast) const Divider(height: 1, indent: 56, color: Colors.white12),
+            if (!row.isLast)
+              Divider(height: 1, indent: 56, color: context.colors.textSecondary.withValues(alpha: 0.12)),
           ],
         ],
       ),
@@ -256,10 +266,10 @@ class _AboutRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.textSecondary, size: 20),
+            Icon(icon, color: context.colors.textSecondary, size: 20),
             const SizedBox(width: 16),
-            Expanded(child: Text(label, style: AppTypography.body)),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.textSecondary),
+            Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
+            Icon(Icons.chevron_right, size: 20, color: context.colors.textSecondary),
           ],
         ),
       ),
@@ -289,7 +299,13 @@ class _SectionHeader extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(title, style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w700)),
+          child: Text(
+            title,
+            style: AppTypography.subheading.copyWith(
+              fontWeight: FontWeight.w700,
+              color: context.colors.textPrimary,
+            ),
+          ),
         ),
       ],
     );
@@ -318,7 +334,7 @@ class _BulletItem extends StatelessWidget {
             child: const Icon(Icons.check, color: Colors.white, size: 13),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(text, style: AppTypography.body.copyWith(color: AppColors.textSecondary))),
+          Expanded(child: Text(text, style: AppTypography.body.copyWith(color: context.colors.textSecondary))),
         ],
       ),
     );
@@ -338,9 +354,13 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
+        Text(label, style: AppTypography.body.copyWith(color: context.colors.textSecondary)),
         Flexible(
-          child: Text(value, style: AppTypography.body, textAlign: TextAlign.right),
+          child: Text(
+            value,
+            style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+            textAlign: TextAlign.right,
+          ),
         ),
       ],
     );

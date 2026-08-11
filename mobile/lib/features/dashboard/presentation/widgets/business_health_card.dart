@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/dashboard_providers.dart';
@@ -29,7 +30,6 @@ const _statusColors = <String, Color>{
   'healthy': AppColors.success,
   'needs_attention': AppColors.warning,
   'at_risk': AppColors.danger,
-  'neutral_baseline': AppColors.textSecondary,
 };
 
 /// §4.1 Business Health — "a status label, a short encouraging subtext,
@@ -54,11 +54,11 @@ class BusinessHealthCard extends ConsumerWidget {
       onTap: () => context.go(RoutePaths.analytics),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
       child: healthAsync.when(
-        loading: () => const _BusinessHealthContent(
+        loading: () => _BusinessHealthContent(
           label: 'Business Health',
           subtext: 'Loading...',
           score: null,
-          color: AppColors.textSecondary,
+          color: context.colors.textSecondary,
           isLoading: true,
         ),
         error: (error, _) => Row(
@@ -75,7 +75,7 @@ class BusinessHealthCard extends ConsumerWidget {
           label: _statusLabels[health.status] ?? health.status,
           subtext: _statusSubtext[health.status] ?? '',
           score: health.score,
-          color: _statusColors[health.status] ?? AppColors.textSecondary,
+          color: _statusColors[health.status] ?? context.colors.textSecondary,
           isLoading: false,
         ),
       ),
@@ -108,7 +108,11 @@ class _BusinessHealthContent extends StatelessWidget {
             children: [
               Text(
                 'Business Health',
-                style: AppTypography.caption.copyWith(letterSpacing: 0.3, fontWeight: FontWeight.w600),
+                style: AppTypography.caption.copyWith(
+                  letterSpacing: 0.3,
+                  fontWeight: FontWeight.w600,
+                  color: context.colors.textSecondary,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -116,7 +120,7 @@ class _BusinessHealthContent extends StatelessWidget {
                 style: AppTypography.heading.copyWith(color: color, fontSize: 19, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 1),
-              Text(subtext, style: AppTypography.caption),
+              Text(subtext, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
             ],
           ),
         ),
@@ -148,11 +152,15 @@ class _HealthGauge extends StatelessWidget {
         children: [
           CustomPaint(
             size: const Size(size, size),
-            painter: _GaugePainter(percentage: isLoading ? null : score, color: color),
+            painter: _GaugePainter(
+              percentage: isLoading ? null : score,
+              color: color,
+              trackColor: context.colors.textSecondary.withValues(alpha: 0.08),
+            ),
           ),
           Text(
             score != null ? '$score%' : '—',
-            style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800),
+            style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800, color: context.colors.textPrimary),
           ),
         ],
       ),
@@ -163,8 +171,9 @@ class _HealthGauge extends StatelessWidget {
 class _GaugePainter extends CustomPainter {
   final int? percentage;
   final Color color;
+  final Color trackColor;
 
-  const _GaugePainter({required this.percentage, required this.color});
+  const _GaugePainter({required this.percentage, required this.color, required this.trackColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -174,7 +183,7 @@ class _GaugePainter extends CustomPainter {
     final arcRect = Rect.fromCircle(center: center, radius: radius);
 
     final trackPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawArc(arcRect, 0, 2 * math.pi, false, trackPaint);

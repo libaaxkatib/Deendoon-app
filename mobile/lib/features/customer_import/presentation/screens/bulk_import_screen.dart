@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
@@ -51,15 +52,15 @@ class BulkImportScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Sample Template', style: AppTypography.subheading),
+          Text('Sample Template', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 8),
           const _SampleTemplateSection(),
           const SizedBox(height: 24),
-          Text('Upload File', style: AppTypography.subheading),
+          Text('Upload File', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 8),
           Text(
             'Accepted formats: .xlsx, .xls',
-            style: AppTypography.caption,
+            style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
           ),
           const SizedBox(height: 12),
           switch (state) {
@@ -104,12 +105,14 @@ class _UploadFilePrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       onTap: onTap,
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.upload_file_outlined, color: AppColors.primary, size: 22),
-          SizedBox(width: 12),
-          Expanded(child: Text('Select Excel file', style: AppTypography.body)),
-          Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+          const Icon(Icons.upload_file_outlined, color: AppColors.primary, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text('Select Excel file', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+          ),
+          Icon(Icons.chevron_right, color: context.colors.textSecondary, size: 20),
         ],
       ),
     );
@@ -134,13 +137,19 @@ class _SelectedFileCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(fileName, style: AppTypography.body, maxLines: 1, overflow: TextOverflow.ellipsis),
-                if (fileSize != null) Text(_formatFileSize(fileSize!), style: AppTypography.caption),
+                Text(
+                  fileName,
+                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (fileSize != null)
+                  Text(_formatFileSize(fileSize!), style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
               ],
             ),
           ),
           if (onRemove != null)
-            IconButton(icon: const Icon(Icons.close, color: AppColors.textSecondary), onPressed: onRemove),
+            IconButton(icon: Icon(Icons.close, color: context.colors.textSecondary), onPressed: onRemove),
         ],
       ),
     );
@@ -166,7 +175,7 @@ class _ImportSummarySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Import Summary', style: AppTypography.subheading),
+        Text('Import Summary', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
         const SizedBox(height: 8),
         AppCard(
           child: Column(
@@ -179,16 +188,16 @@ class _ImportSummarySection extends StatelessWidget {
               _SummaryRow(label: 'Failed', value: failedRows.length, color: AppColors.danger),
               if (result.message.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                const Divider(height: 1, color: Colors.white12),
+                Divider(height: 1, color: context.colors.textSecondary.withValues(alpha: 0.12)),
                 const SizedBox(height: 12),
-                Text(result.message, style: AppTypography.caption),
+                Text(result.message, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
               ],
             ],
           ),
         ),
         if (failedRows.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Failed Rows', style: AppTypography.subheading),
+          Text('Failed Rows', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 8),
           for (final row in failedRows) ...[
             _FailedRowCard(
@@ -215,7 +224,7 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.body),
+        Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
         Text('$value', style: AppTypography.body.copyWith(color: color, fontWeight: FontWeight.w700)),
       ],
     );
@@ -234,7 +243,10 @@ class _FailedRowCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Row $rowNumber', style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            'Row $rowNumber',
+            style: AppTypography.body.copyWith(color: context.colors.textPrimary, fontWeight: FontWeight.w700),
+          ),
           if (errors != null)
             for (final error in errors!) Text(error, style: AppTypography.caption.copyWith(color: AppColors.danger)),
         ],

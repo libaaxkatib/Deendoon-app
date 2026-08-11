@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../theme/deendoon_colors.dart';
 import 'app_card.dart';
 
 /// Keeps a section's structural slot in the approved layout even when no
@@ -21,10 +21,10 @@ class UnavailableSection extends StatelessWidget {
     return AppCard(
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: AppColors.textSecondary, size: 20),
+          Icon(Icons.info_outline, color: context.colors.textSecondary, size: 20),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(reason, style: AppTypography.caption),
+            child: Text(reason, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
           ),
         ],
       ),

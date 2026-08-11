@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -43,9 +44,12 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
           ),
           data: (summary) {
             if (summary.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('No cases submitted to Deendoon yet', style: AppTypography.body),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No cases submitted to Deendoon yet',
+                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                ),
               );
             }
 
@@ -67,7 +71,7 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
                     ],
                   ),
                   if (summary.latestRequest != null) ...[
-                    const Divider(height: 24, color: AppColors.background),
+                    Divider(height: 24, color: context.colors.background),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -75,9 +79,15 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Latest Request', style: AppTypography.caption),
+                              Text(
+                                'Latest Request',
+                                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                              ),
                               const SizedBox(height: 2),
-                              Text(summary.latestRequest!.referenceNumber, style: AppTypography.body),
+                              Text(
+                                summary.latestRequest!.referenceNumber,
+                                style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                              ),
                             ],
                           ),
                         ),
@@ -108,7 +118,7 @@ class _StatColumn extends StatelessWidget {
       children: [
         Text('$value', style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 20)),
         const SizedBox(height: 2),
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
       ],
     );
   }

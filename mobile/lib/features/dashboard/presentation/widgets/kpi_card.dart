@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 
 /// A single KPI card (§4.2): label, primary value, and an optional trend
@@ -42,12 +43,12 @@ class KpiCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 12, color: (valueColor ?? AppColors.textSecondary).withValues(alpha: 0.85)),
+              Icon(icon, size: 12, color: (valueColor ?? context.colors.textSecondary).withValues(alpha: 0.85)),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   label,
-                  style: AppTypography.caption.copyWith(fontSize: 11),
+                  style: AppTypography.caption.copyWith(fontSize: 11, color: context.colors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -57,7 +58,7 @@ class KpiCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: AppTypography.heading.copyWith(color: valueColor ?? AppColors.textPrimary, fontSize: 19),
+            style: AppTypography.heading.copyWith(color: valueColor ?? context.colors.textPrimary, fontSize: 19),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

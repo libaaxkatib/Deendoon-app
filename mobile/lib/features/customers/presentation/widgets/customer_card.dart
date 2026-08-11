@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../../core/widgets/risk_badge.dart';
@@ -42,12 +43,12 @@ class CustomerCard extends StatelessWidget {
                 children: [
                   Text(
                     customer.name,
-                    style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                    style: AppTypography.body.copyWith(color: context.colors.textSecondary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  Text(customer.phone, style: AppTypography.caption),
+                  Text(customer.phone, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
                   const SizedBox(height: 8),
                   const _ArchivedBadge(),
                 ],
@@ -76,7 +77,7 @@ class CustomerCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         customer.name,
-                        style: AppTypography.body,
+                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -90,7 +91,7 @@ class CustomerCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   customer.phone,
-                  style: AppTypography.caption,
+                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -123,10 +124,10 @@ class _ArchivedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.colors.background,
         borderRadius: BorderRadius.circular(6),
       ),
-      child: const Text('Archived', style: AppTypography.caption),
+      child: Text('Archived', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -188,7 +189,7 @@ class _CurrentSubscriptionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   subscription.planName ?? 'No Plan',
-                  style: AppTypography.subheading,
+                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -199,7 +200,7 @@ class _CurrentSubscriptionCard extends StatelessWidget {
               ],
             ],
           ),
-          const Divider(height: 32, color: AppColors.background),
+          Divider(height: 32, color: context.colors.background),
           _InfoRow(label: 'Monthly Price', value: subscription.planPrice ?? '—'),
           if (subscription.onTrial) ...[
             const SizedBox(height: 12),
@@ -259,10 +260,10 @@ class _ReadOnlyBanner extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "You've reached your current plan's customer limit, so adding new customers is blocked. "
             'Your existing data remains fully accessible. Upgrade your plan to add more customers.',
-            style: AppTypography.body,
+            style: AppTypography.body.copyWith(color: context.colors.textPrimary),
           ),
           const SizedBox(height: 12),
           ElevatedButton(onPressed: onUpgradeTap, child: const Text('Upgrade Plan')),
@@ -291,9 +292,9 @@ class _AvailablePlansSection extends ConsumerWidget {
       ),
       data: (plans) {
         if (plans.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('No plans available.', style: AppTypography.body),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text('No plans available.', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
           );
         }
         return Column(
@@ -338,7 +339,12 @@ class _PlanCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(plan.name, style: AppTypography.subheading, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    plan.name,
+                    style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 if (isCurrent)
                   Container(
@@ -356,7 +362,7 @@ class _PlanCard extends StatelessWidget {
                   const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
               ],
             ),
-            const Divider(height: 24, color: AppColors.background),
+            Divider(height: 24, color: context.colors.background),
             _InfoRow(label: 'Monthly Price', value: plan.monthlyPrice),
             const SizedBox(height: 8),
             _InfoRow(label: 'Customer Limit', value: plan.customerLimit?.toString() ?? 'Unlimited'),
@@ -382,7 +388,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         Expanded(
           child: Text(
             value,
@@ -429,9 +435,12 @@ class _ChangeRequestHistorySection extends ConsumerWidget {
       ),
       data: (state) {
         if (state.changeRequests.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('No subscription change requests yet.', style: AppTypography.body),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'No subscription change requests yet.',
+              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+            ),
           );
         }
         return Column(
@@ -485,7 +494,7 @@ class _ChangeRequestCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   request.requestedPlan?.name ?? '—',
-                  style: AppTypography.subheading,
+                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -494,7 +503,7 @@ class _ChangeRequestCard extends StatelessWidget {
               StatusBadge(status: request.status),
             ],
           ),
-          const Divider(height: 24, color: AppColors.background),
+          Divider(height: 24, color: context.colors.background),
           _InfoRow(label: 'From', value: request.currentPlan?.name ?? '—'),
           const SizedBox(height: 8),
           _InfoRow(label: 'Payment Reference', value: request.paymentReference),

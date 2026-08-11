@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/dashboard_providers.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -107,14 +108,20 @@ class _OverviewRow extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: 15),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: AppTypography.body)),
-          Text('$count', style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800)),
+          Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
+          Text(
+            '$count',
+            style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800, color: context.colors.textPrimary),
+          ),
           const SizedBox(width: 6),
           Container(
             width: 22,
             height: 22,
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
-            child: const Icon(Icons.chevron_right, size: 16, color: AppColors.textSecondary),
+            decoration: BoxDecoration(
+              color: context.colors.textSecondary.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.chevron_right, size: 16, color: context.colors.textSecondary),
           ),
         ],
       ),

@@ -5,7 +5,7 @@
          purposes, but a release build only merges this main manifest. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="mobile"
+        android:label="Deendoon"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:networkSecurityConfig="@xml/network_security_config">

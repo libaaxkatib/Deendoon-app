@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../domain/collection_case.dart';
@@ -30,7 +31,7 @@ class CaseSummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   collectionCase.referenceNumber,
-                  style: AppTypography.subheading,
+                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -39,7 +40,7 @@ class CaseSummaryCard extends StatelessWidget {
               StatusBadge(status: collectionCase.caseStatus),
             ],
           ),
-          const Divider(height: 32, color: AppColors.background),
+          Divider(height: 32, color: context.colors.background),
           _InfoRow(label: 'Outstanding Amount', value: collectionCase.outstandingAmount ?? '—'),
           const SizedBox(height: 12),
           _InfoRow(label: 'Assigned Officer', value: officerId == null ? 'Unassigned' : 'Officer $officerId'),
@@ -66,7 +67,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         Expanded(
           child: Text(
             value,

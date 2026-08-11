@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/case_list_provider.dart';
 import '../widgets/case_card.dart';
@@ -115,7 +116,7 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
                     return Center(
                       child: Text(
                         state.tab == null ? 'No collection cases yet' : 'No cases match this filter',
-                        style: AppTypography.body,
+                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );
                   }
@@ -166,8 +167,8 @@ class _TabFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : AppColors.textSecondary),
-      backgroundColor: AppColors.surface,
+      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );
   }

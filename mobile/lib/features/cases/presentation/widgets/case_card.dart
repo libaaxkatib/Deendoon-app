@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../../core/widgets/risk_badge.dart';
@@ -43,14 +44,14 @@ class CaseCard extends StatelessWidget {
                   children: [
                     Text(
                       collectionCase.customerName ?? 'Unknown customer',
-                      style: AppTypography.body,
+                      style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       collectionCase.referenceNumber,
-                      style: AppTypography.caption,
+                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -72,7 +73,7 @@ class CaseCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Outstanding', style: AppTypography.caption),
+              Text('Outstanding', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
               Text(
                 collectionCase.outstandingAmount ?? '—',
                 style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 16),
@@ -85,10 +86,10 @@ class CaseCard extends StatelessWidget {
               Icon(
                 assigned ? Icons.person : Icons.person_outline,
                 size: 16,
-                color: assigned ? AppColors.primary : AppColors.textSecondary,
+                color: assigned ? AppColors.primary : context.colors.textSecondary,
               ),
               const SizedBox(width: 4),
-              Text(assigned ? 'Assigned' : 'Unassigned', style: AppTypography.caption),
+              Text(assigned ? 'Assigned' : 'Unassigned', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
               if (activeTab == 'follow_up') ...[
                 const SizedBox(width: 10),
                 _Tag(label: 'Follow Up', color: AppColors.warning),
@@ -101,7 +102,7 @@ class CaseCard extends StatelessWidget {
                 child: Text(
                   collectionCase.lastActivityAt,
                   textAlign: TextAlign.end,
-                  style: AppTypography.caption,
+                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../providers/debt_detail_providers.dart';
@@ -67,7 +68,7 @@ class _StageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = completed ? AppColors.success : AppColors.textSecondary;
+    final color = completed ? AppColors.success : context.colors.textSecondary;
     return Row(
       children: [
         Icon(
@@ -76,8 +77,9 @@ class _StageRow extends StatelessWidget {
           size: 18,
         ),
         const SizedBox(width: 10),
-        Expanded(child: Text(label, style: AppTypography.body)),
-        if (occurredAt != null) Text(occurredAt!, style: AppTypography.caption),
+        Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
+        if (occurredAt != null)
+          Text(occurredAt!, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
       ],
     );
   }

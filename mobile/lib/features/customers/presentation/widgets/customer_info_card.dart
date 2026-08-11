@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../../core/widgets/risk_badge.dart';
@@ -34,14 +35,19 @@ class CustomerInfoCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(customer.name, style: AppTypography.subheading),
+                    Text(
+                      customer.name,
+                      style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 4),
-                    Text(customer.phone, style: AppTypography.caption),
+                    Text(customer.phone, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
                     if (customer.address != null && customer.address!.trim().isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         customer.address!,
-                        style: AppTypography.caption,
+                        style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -71,7 +77,7 @@ class CustomerInfoCard extends StatelessWidget {
               ),
             ],
           ),
-          const Divider(height: 32, color: AppColors.background),
+          Divider(height: 32, color: context.colors.background),
           _InfoRow(label: 'Outstanding Balance', value: customer.outstandingBalance),
           const SizedBox(height: 12),
           Row(
@@ -114,7 +120,7 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
         Text(value, style: AppTypography.body.copyWith(color: AppColors.primary)),
       ],
     );
