@@ -42,13 +42,25 @@ void main() {
 
   group('User', () {
     test('fromJson/toJson round-trip matches UserResource shape', () {
-      final json = {'id': 1, 'name': 'Test User', 'email': 'test@example.com'};
+      final json = {'id': 1, 'name': 'Test User', 'email': 'test@example.com', 'phone': '+252612345678'};
       final user = User.fromJson(json);
 
       expect(user.id, '1');
       expect(user.name, 'Test User');
       expect(user.email, 'test@example.com');
-      expect(user.toJson(), {'id': '1', 'name': 'Test User', 'email': 'test@example.com'});
+      expect(user.phone, '+252612345678');
+      expect(
+        user.toJson(),
+        {'id': '1', 'name': 'Test User', 'email': 'test@example.com', 'phone': '+252612345678'},
+      );
+    });
+
+    test('tolerates a null phone (accounts registered before the phone field existed)', () {
+      final json = {'id': 1, 'name': 'Test User', 'email': 'test@example.com', 'phone': null};
+      final user = User.fromJson(json);
+
+      expect(user.phone, isNull);
+      expect(user.toJson(), {'id': '1', 'name': 'Test User', 'email': 'test@example.com', 'phone': null});
     });
   });
 }

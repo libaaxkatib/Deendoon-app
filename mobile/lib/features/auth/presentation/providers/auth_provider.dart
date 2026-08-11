@@ -42,7 +42,7 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       state = await _repository.login(email, password);
     } on ApiException catch (e) {
-      state = AuthError(e.message);
+      state = AuthError(e.detailedMessage);
     }
   }
 
@@ -65,7 +65,7 @@ class AuthNotifier extends Notifier<AuthState> {
         passwordConfirmation: passwordConfirmation,
       );
     } on ApiException catch (e) {
-      state = AuthError(e.message);
+      state = AuthError(e.detailedMessage);
     }
   }
 

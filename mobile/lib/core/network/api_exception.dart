@@ -38,6 +38,21 @@ class ApiException implements Exception {
     );
   }
 
+  /// Combines the generic top-level `message` with any field-specific
+  /// validation errors from the `errors` map (Laravel keeps them
+  /// separate: `message` is a generic "The given data was invalid.",
+  /// `errors` has the actual per-field reasons like "The email has
+  /// already been taken."). Auth forms show a single error `Text`
+  /// widget rather than per-field inline errors, so this is what they
+  /// display instead of the uninformative generic message alone.
+  String get detailedMessage {
+    if (fieldErrors == null || fieldErrors!.isEmpty) return message;
+    final details = fieldErrors!.values
+        .expand((v) => v is List ? v.map((e) => e.toString()) : [v.toString()])
+        .join('\n');
+    return details.isEmpty ? message : details;
+  }
+
   @override
   String toString() => message;
 }
