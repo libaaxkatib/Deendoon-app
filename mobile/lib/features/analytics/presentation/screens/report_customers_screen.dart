@@ -6,27 +6,28 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../customers/presentation/widgets/customer_card.dart';
 import '../providers/report_customers_provider.dart';
 import '../widgets/export_action.dart';
 
-const _statusFilters = <String?, String>{
-  null: 'All',
-  'active': 'Active',
-  'good_standing': 'Good Standing',
-  'late_payer': 'Late Payer',
-  'high_risk': 'High Risk',
-  'in_collection': 'In Collection',
-  'recovered': 'Recovered',
-  'blocked': 'Blocked',
-};
+Map<String?, String> _statusFilters(AppLocalizations l10n) => {
+      null: l10n.debtListFilterAll,
+      'active': l10n.statusActive,
+      'good_standing': l10n.statusGoodStanding,
+      'late_payer': l10n.statusLatePayer,
+      'high_risk': l10n.statusHighRisk,
+      'in_collection': l10n.statusInCollection,
+      'recovered': l10n.statusRecovered,
+      'blocked': l10n.statusBlocked,
+    };
 
-const _riskFilters = <String?, String>{
-  null: 'All Risk',
-  'high': 'High',
-  'medium': 'Medium',
-  'low': 'Low',
-};
+Map<String?, String> _riskFilters(AppLocalizations l10n) => {
+      null: l10n.reportRiskFilterAll,
+      'high': l10n.riskHigh,
+      'medium': l10n.riskMedium,
+      'low': l10n.riskLow,
+    };
 
 /// §5.2 Reports — Customers category. `initialRiskLevel` pre-applies the
 /// risk filter when reached via §5.6's Risk Distribution drill-through
@@ -71,15 +72,18 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final customersAsync = ref.watch(reportCustomersProvider);
+    final statusFilters = _statusFilters(l10n);
+    final riskFilters = _riskFilters(l10n);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customers Report'),
+        title: Text(l10n.reportCustomersTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share),
-            tooltip: 'Export',
+            tooltip: l10n.reportExportTooltip,
             onPressed: () => showExportSheet(
               context,
               ref,
@@ -103,7 +107,7 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _statusFilters.entries) ...[
+                  for (final entry in statusFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
                       selected: customersAsync.valueOrNull?.customerStatus == entry.key,
@@ -120,7 +124,7 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _riskFilters.entries) ...[
+                  for (final entry in riskFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
                       selected: customersAsync.valueOrNull?.riskLevel == entry.key,
@@ -137,7 +141,7 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load customers.',
+                    message: l10n.customerListLoadError,
                     onRetry: () => ref.invalidate(reportCustomersProvider),
                   ),
                 ),
@@ -145,7 +149,7 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
                   if (state.customers.isEmpty) {
                     return Center(
                       child: Text(
-                        'No customers match this filter',
+                        l10n.reportCustomersEmptyState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

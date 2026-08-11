@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/customer_actions.dart';
 
 /// FR-012/SCR-008 — Change Customer Status. `UpdateCustomerStatusRequest`:
@@ -10,15 +11,15 @@ import '../providers/customer_actions.dart';
 /// set (not a free-text field) — same modal-bottom-sheet pattern as
 /// `credit_limit_sheet.dart`, a `RadioListTile` group instead of a text
 /// field since the value set is fixed and small.
-const customerStatusOptions = <String, String>{
-  'active': 'Active',
-  'good_standing': 'Good Standing',
-  'late_payer': 'Late Payer',
-  'high_risk': 'High Risk',
-  'in_collection': 'In Collection',
-  'recovered': 'Recovered',
-  'blocked': 'Blocked',
-};
+Map<String, String> customerStatusOptions(AppLocalizations l10n) => <String, String>{
+      'active': l10n.statusActive,
+      'good_standing': l10n.statusGoodStanding,
+      'late_payer': l10n.statusLatePayer,
+      'high_risk': l10n.statusHighRisk,
+      'in_collection': l10n.statusInCollection,
+      'recovered': l10n.statusRecovered,
+      'blocked': l10n.statusBlocked,
+    };
 
 Future<void> showCustomerStatusSheet(BuildContext context, String customerId, String currentStatus) {
   return showModalBottomSheet(
@@ -61,6 +62,7 @@ class _CustomerStatusSheetState extends ConsumerState<_CustomerStatusSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -72,14 +74,14 @@ class _CustomerStatusSheetState extends ConsumerState<_CustomerStatusSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Customer Status', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.customerStatusSheetTitle, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           RadioGroup<String>(
             groupValue: _selected,
             onChanged: (value) => setState(() => _selected = value!),
             child: Column(
               children: [
-                for (final entry in customerStatusOptions.entries)
+                for (final entry in customerStatusOptions(l10n).entries)
                   RadioListTile<String>(
                     contentPadding: EdgeInsets.zero,
                     title: Text(entry.value),
@@ -93,7 +95,7 @@ class _CustomerStatusSheetState extends ConsumerState<_CustomerStatusSheet> {
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 12),
-          PrimaryButton(label: 'Save', isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(label: l10n.commonSave, isLoading: _isLoading, onPressed: _submit),
         ],
       ),
     );

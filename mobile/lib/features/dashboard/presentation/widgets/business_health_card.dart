@@ -10,20 +10,23 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/dashboard_providers.dart';
 
-const _statusLabels = <String, String>{
-  'healthy': 'Healthy',
-  'needs_attention': 'Needs Attention',
-  'at_risk': 'At Risk',
-  'neutral_baseline': 'Neutral Baseline',
+String _statusLabel(AppLocalizations l10n, String status) => switch (status) {
+  'healthy' => l10n.statusHealthy,
+  'needs_attention' => l10n.statusNeedsAttention,
+  'at_risk' => l10n.statusAtRisk,
+  'neutral_baseline' => l10n.statusNeutralBaseline,
+  _ => status,
 };
 
-const _statusSubtext = <String, String>{
-  'healthy': 'You are doing great!',
-  'needs_attention': 'Some areas need review.',
-  'at_risk': 'Immediate attention recommended.',
-  'neutral_baseline': 'Not enough data yet.',
+String _statusSubtext(AppLocalizations l10n, String status) => switch (status) {
+  'healthy' => l10n.businessHealthSubtextHealthy,
+  'needs_attention' => l10n.businessHealthSubtextNeedsAttention,
+  'at_risk' => l10n.businessHealthSubtextAtRisk,
+  'neutral_baseline' => l10n.businessHealthSubtextNeutralBaseline,
+  _ => '',
 };
 
 const _statusColors = <String, Color>{
@@ -48,6 +51,7 @@ class BusinessHealthCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final healthAsync = ref.watch(businessHealthProvider);
 
     return AppCard(
@@ -55,8 +59,8 @@ class BusinessHealthCard extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
       child: healthAsync.when(
         loading: () => _BusinessHealthContent(
-          label: 'Business Health',
-          subtext: 'Loading...',
+          label: l10n.dashboardBusinessHealthTitle,
+          subtext: l10n.commonLoading,
           score: null,
           color: context.colors.textSecondary,
           isLoading: true,
@@ -65,15 +69,15 @@ class BusinessHealthCard extends ConsumerWidget {
           children: [
             Expanded(
               child: RetrySection(
-                message: 'Could not load Business Health.',
+                message: l10n.businessHealthLoadError,
                 onRetry: () => ref.invalidate(businessHealthProvider),
               ),
             ),
           ],
         ),
         data: (health) => _BusinessHealthContent(
-          label: _statusLabels[health.status] ?? health.status,
-          subtext: _statusSubtext[health.status] ?? '',
+          label: _statusLabel(l10n, health.status),
+          subtext: _statusSubtext(l10n, health.status),
           score: health.score,
           color: _statusColors[health.status] ?? context.colors.textSecondary,
           isLoading: false,
@@ -100,6 +104,7 @@ class _BusinessHealthContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
@@ -107,7 +112,7 @@ class _BusinessHealthContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Business Health',
+                l10n.dashboardBusinessHealthTitle,
                 style: AppTypography.caption.copyWith(
                   letterSpacing: 0.3,
                   fontWeight: FontWeight.w600,

@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/dashboard/data/dashboard_repository.dart';
 import 'package:mobile/features/dashboard/domain/business_health.dart';
 import 'package:mobile/features/dashboard/presentation/widgets/business_health_card.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
+
+const _localizationsDelegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 class _MockDashboardRepository extends Mock implements DashboardRepository {}
 
@@ -20,7 +32,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [dashboardRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: Scaffold(body: BusinessHealthCard())),
+        child: const MaterialApp(
+          locale: Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+          home: Scaffold(body: BusinessHealthCard()),
+        ),
       ),
     );
   }
@@ -118,7 +135,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [dashboardRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+        ),
       ),
     );
     await tester.pumpAndSettle();

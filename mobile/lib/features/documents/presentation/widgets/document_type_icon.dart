@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/deendoon_colors.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// §2.5 "Every entity type and reminder/document type is represented by
 /// a dedicated icon on a colored, rounded-square or circular background."
@@ -33,20 +34,27 @@ class DocumentTypeIcon extends StatelessWidget {
   }
 }
 
-const documentTypeLabels = <String, String>{
-  'invoice': 'Invoice',
-  'receipt': 'Receipt',
-  'demand_letter': 'Demand Letter',
-  'statement': 'Statement',
-};
+String documentTypeLabel(BuildContext context, String documentType) {
+  final l10n = AppLocalizations.of(context);
+  return switch (documentType) {
+    'invoice' => l10n.documentTypeInvoice,
+    'receipt' => l10n.documentTypeReceipt,
+    'demand_letter' => l10n.documentTypeDemandLetter,
+    'statement' => l10n.documentTypeStatement,
+    _ => documentType,
+  };
+}
 
 /// Bytes → a short human-readable label (`KB`/`MB`/`GB`). `fileSize` is
 /// nullable on the real resource (confirmed in the Sprint 12 audit); a
 /// null value renders as "—" rather than a fabricated size.
-String formatFileSize(int? bytes) {
+String formatFileSize(BuildContext context, int? bytes) {
   if (bytes == null) return '—';
-  if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-  if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  final l10n = AppLocalizations.of(context);
+  if (bytes < 1024) return '$bytes ${l10n.documentSizeUnitBytes}';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} ${l10n.documentSizeUnitKb}';
+  if (bytes < 1024 * 1024 * 1024) {
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ${l10n.documentSizeUnitMb}';
+  }
+  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} ${l10n.documentSizeUnitGb}';
 }

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/case_list_provider.dart';
 import '../widgets/case_card.dart';
 
@@ -31,12 +32,7 @@ class CaseListScreen extends ConsumerStatefulWidget {
 class _CaseListScreenState extends ConsumerState<CaseListScreen> {
   final _scrollController = ScrollController();
 
-  static const _tabFilters = <String?, String>{
-    null: 'All',
-    'high_risk': 'High Risk',
-    'follow_up': 'Follow Up',
-    'promise_due': 'Promise Due',
-  };
+  static const _tabKeys = <String?>[null, 'high_risk', 'follow_up', 'promise_due'];
 
   @override
   void initState() {
@@ -62,20 +58,27 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final casesAsync = ref.watch(caseListProvider);
+    final tabLabels = <String?, String>{
+      null: l10n.debtListFilterAll,
+      'high_risk': l10n.caseListTabHighRisk,
+      'follow_up': l10n.caseListTabFollowUp,
+      'promise_due': l10n.caseListTabPromiseDue,
+    };
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cases'),
+        title: Text(l10n.navCases),
         actions: [
           IconButton(
             icon: const Icon(Icons.people_outline),
-            tooltip: 'Browse Customers',
+            tooltip: l10n.caseListBrowseCustomersTooltip,
             onPressed: () => context.push('/customers'),
           ),
           IconButton(
             icon: const Icon(Icons.assignment_outlined),
-            tooltip: 'Professional Collection Requests',
+            tooltip: l10n.caseListProfessionalRequestsTooltip,
             onPressed: () => context.push('/professional-requests'),
           ),
         ],
@@ -90,11 +93,11 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _tabFilters.entries) ...[
+                  for (final key in _tabKeys) ...[
                     _TabFilterChip(
-                      label: entry.value,
-                      selected: casesAsync.valueOrNull?.tab == entry.key,
-                      onTap: () => ref.read(caseListProvider.notifier).filterByTab(entry.key),
+                      label: tabLabels[key]!,
+                      selected: casesAsync.valueOrNull?.tab == key,
+                      onTap: () => ref.read(caseListProvider.notifier).filterByTab(key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -107,7 +110,7 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load cases.',
+                    message: l10n.customerCasesLoadError,
                     onRetry: () => ref.invalidate(caseListProvider),
                   ),
                 ),
@@ -115,7 +118,7 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
                   if (state.cases.isEmpty) {
                     return Center(
                       child: Text(
-                        state.tab == null ? 'No collection cases yet' : 'No cases match this filter',
+                        state.tab == null ? l10n.customerCasesEmptyState : l10n.caseListEmptyFilteredState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

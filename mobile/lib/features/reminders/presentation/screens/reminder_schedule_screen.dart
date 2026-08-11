@@ -6,35 +6,51 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../customers/domain/customer.dart';
 import '../../domain/reminder_entity_preset.dart';
 import '../providers/reminder_actions.dart';
 import '../providers/reminder_detail_providers.dart';
 import '../widgets/customer_picker_sheet.dart';
 
-const _reminderTypes = <String, String>{
-  'client_visit': 'Client Visit',
-  'follow_up_call': 'Follow-up Call',
-  'payment_due': 'Payment Due',
-  'contract_renewal': 'Contract Renewal',
-  'promise_to_pay': 'Promise to Pay',
-};
+const _reminderTypeKeys = <String>[
+  'client_visit',
+  'follow_up_call',
+  'payment_due',
+  'contract_renewal',
+  'promise_to_pay',
+];
+
+String _reminderTypeLabel(AppLocalizations l10n, String type) => switch (type) {
+      'client_visit' => l10n.reminderTypeClientVisit,
+      'follow_up_call' => l10n.reminderTypeFollowUpCall,
+      'payment_due' => l10n.reminderTypePaymentDue,
+      'contract_renewal' => l10n.reminderTypeContractRenewal,
+      'promise_to_pay' => l10n.promiseToPayTitle,
+      _ => type,
+    };
 
 const _amountDueTypes = {'payment_due', 'promise_to_pay'};
 
-const _timingRules = <String, String>{
-  'one_day_before': '1 day before',
-  'same_day': 'Same day',
-  'one_hour_before': '1 hour before',
-  'custom': 'Custom time',
-};
+const _timingRuleKeys = <String>['one_day_before', 'same_day', 'one_hour_before', 'custom'];
 
-const _deliveryMethodLabels = <String, String>{
-  'in_app': 'In-App Notification',
-  'push': 'Push Notification',
-  'whatsapp': 'WhatsApp Message',
-  'sms': 'SMS Message',
-};
+String _timingRuleLabel(AppLocalizations l10n, String rule) => switch (rule) {
+      'one_day_before' => l10n.reminderTimingOneDayBefore,
+      'same_day' => l10n.reminderTimingSameDay,
+      'one_hour_before' => l10n.reminderTimingOneHourBefore,
+      'custom' => l10n.reminderTimingCustomTime,
+      _ => rule,
+    };
+
+const _deliveryMethodKeys = <String>['in_app', 'push', 'whatsapp', 'sms'];
+
+String _deliveryMethodLabel(AppLocalizations l10n, String method) => switch (method) {
+      'in_app' => l10n.reminderDeliveryInApp,
+      'push' => l10n.reminderDeliveryPush,
+      'whatsapp' => l10n.reminderDeliveryWhatsApp,
+      'sms' => l10n.reminderDeliverySms,
+      _ => method,
+    };
 
 /// Reminder Scheduling (§7.5) — one screen, two entry points: bare
 /// creation (from the "+" icon on the Reminders tab; `reminderId` null)
@@ -131,29 +147,30 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
 
   Future<void> _save() async {
     setState(() => _error = null);
+    final l10n = AppLocalizations.of(context);
 
     if (!_isEdit && _type == null) {
-      setState(() => _error = 'Select a reminder type.');
+      setState(() => _error = l10n.reminderScheduleTypeRequiredValidator);
       return;
     }
     if (!_isEdit && !_hasEntityPreset && _selectedCustomer == null) {
-      setState(() => _error = 'Select a customer.');
+      setState(() => _error = l10n.reminderScheduleCustomerRequiredValidator);
       return;
     }
     if (_dueDate == null) {
-      setState(() => _error = 'Select a due date.');
+      setState(() => _error = l10n.addEditDebtDueDateRequiredError);
       return;
     }
     if (_timingRule == 'custom' && _customFireAt == null) {
-      setState(() => _error = 'Select a custom fire date/time.');
+      setState(() => _error = l10n.reminderScheduleCustomFireRequiredValidator);
       return;
     }
     if (_timingRule == 'custom' && _customFireAt != null && _customFireAt!.isAfter(_dueDate!)) {
-      setState(() => _error = 'Custom fire time must be on or before the due date.');
+      setState(() => _error = l10n.reminderScheduleCustomFireBeforeDueValidator);
       return;
     }
     if (_deliveryMethods.isEmpty) {
-      setState(() => _error = 'Select at least one delivery method.');
+      setState(() => _error = l10n.reminderScheduleDeliveryMethodRequiredValidator);
       return;
     }
 
@@ -196,13 +213,17 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isEdit) {
       final reminderAsync = ref.watch(reminderDetailProvider(widget.reminderId!));
       return reminderAsync.when(
-        loading: () => Scaffold(appBar: AppBar(title: const Text('Reschedule')), body: const Center(child: CircularProgressIndicator())),
+        loading: () => Scaffold(
+          appBar: AppBar(title: Text(l10n.reminderScheduleRescheduleLoadingTitle)),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
         error: (error, _) => Scaffold(
-          appBar: AppBar(title: const Text('Reschedule')),
-          body: const Center(child: Text('Could not load this reminder.', style: AppTypography.body)),
+          appBar: AppBar(title: Text(l10n.reminderScheduleRescheduleLoadingTitle)),
+          body: Center(child: Text(l10n.reminderDetailLoadError, style: AppTypography.body)),
         ),
         data: (reminder) {
           _prefillFromExisting(reminder);
@@ -214,11 +235,12 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
   }
 
   Widget _buildForm(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final carriesAmount = _type != null && _amountDueTypes.contains(_type);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Reschedule Reminder' : 'Schedule Reminder'),
+        title: Text(_isEdit ? l10n.reminderScheduleRescheduleTitle : l10n.reminderScheduleTitle),
         actions: [
           IconButton(
             icon: _isSaving
@@ -232,68 +254,68 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
         padding: const EdgeInsets.all(16),
         children: [
           if (!_isEdit) ...[
-            const Text('Reminder Type', style: AppTypography.heading),
+            Text(l10n.reminderScheduleTypeHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final entry in _reminderTypes.entries)
+                for (final typeKey in _reminderTypeKeys)
                   ChoiceChip(
-                    label: Text(entry.value),
-                    selected: _type == entry.key,
-                    onSelected: (_) => setState(() => _type = entry.key),
+                    label: Text(_reminderTypeLabel(l10n, typeKey)),
+                    selected: _type == typeKey,
+                    onSelected: (_) => setState(() => _type = typeKey),
                   ),
               ],
             ),
             const SizedBox(height: 20),
-            const Text('Related To', style: AppTypography.heading),
+            Text(l10n.reminderScheduleRelatedToHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             if (_hasEntityPreset)
               Text(widget.entityPreset!.label, style: AppTypography.body)
             else
               OutlinedButton(
                 onPressed: _pickCustomer,
-                child: Text(_selectedCustomer?.name ?? 'Select Customer'),
+                child: Text(_selectedCustomer?.name ?? l10n.customerListSelectTitle),
               ),
           ] else ...[
-            const Text('Type', style: AppTypography.heading),
+            Text(l10n.reminderDetailTypeLabel, style: AppTypography.heading),
             const SizedBox(height: 8),
-            Text(_reminderTypes[_type] ?? _type ?? '', style: AppTypography.body),
+            Text(_type != null ? _reminderTypeLabel(l10n, _type!) : '', style: AppTypography.body),
             const SizedBox(height: 12),
-            const Text('Related To', style: AppTypography.caption),
+            Text(l10n.reminderScheduleRelatedToHeading, style: AppTypography.caption),
             const SizedBox(height: 4),
             Text(_relatedEntityLabel ?? '', style: AppTypography.body),
           ],
           const SizedBox(height: 20),
-          const Text('Due Date', style: AppTypography.heading),
+          Text(l10n.addEditDebtDueDateHeading, style: AppTypography.heading),
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () => _pickDateTime(initial: _dueDate, onPicked: (dt) => setState(() => _dueDate = dt)),
-            child: Text(_dueDate == null ? 'Select Due Date' : formatFriendlyDateTime(_dueDate!)),
+            child: Text(_dueDate == null ? l10n.addEditDebtSelectDueDateButton : formatFriendlyDateTime(_dueDate!)),
           ),
           if (carriesAmount) ...[
             const SizedBox(height: 20),
-            const Text('Amount Due', style: AppTypography.heading),
+            Text(l10n.reminderDetailAmountDueLabel, style: AppTypography.heading),
             const SizedBox(height: 12),
             TextField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(hintText: '0.00'),
+              decoration: InputDecoration(hintText: l10n.creditLimitHint),
             ),
           ],
           const SizedBox(height: 20),
-          const Text('When should this reminder be sent?', style: AppTypography.heading),
+          Text(l10n.reminderScheduleTimingHeading, style: AppTypography.heading),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final entry in _timingRules.entries)
+              for (final ruleKey in _timingRuleKeys)
                 ChoiceChip(
-                  label: Text(entry.value),
-                  selected: _timingRule == entry.key,
-                  onSelected: (_) => setState(() => _timingRule = entry.key),
+                  label: Text(_timingRuleLabel(l10n, ruleKey)),
+                  selected: _timingRule == ruleKey,
+                  onSelected: (_) => setState(() => _timingRule = ruleKey),
                 ),
             ],
           ),
@@ -301,39 +323,39 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () => _pickDateTime(initial: _customFireAt, onPicked: (dt) => setState(() => _customFireAt = dt)),
-              child: Text(_customFireAt == null ? 'Select Custom Fire Time' : formatFriendlyDateTime(_customFireAt!)),
+              child: Text(_customFireAt == null ? l10n.reminderScheduleSelectCustomFireTimeButton : formatFriendlyDateTime(_customFireAt!)),
             ),
           ],
           const SizedBox(height: 20),
-          const Text('Delivery Methods', style: AppTypography.heading),
+          Text(l10n.reminderScheduleDeliveryMethodsHeading, style: AppTypography.heading),
           const SizedBox(height: 12),
-          for (final entry in _deliveryMethodLabels.entries)
+          for (final methodKey in _deliveryMethodKeys)
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(entry.value),
-              value: _deliveryMethods.contains(entry.key),
+              title: Text(_deliveryMethodLabel(l10n, methodKey)),
+              value: _deliveryMethods.contains(methodKey),
               onChanged: (checked) => setState(() {
                 if (checked ?? false) {
-                  _deliveryMethods.add(entry.key);
+                  _deliveryMethods.add(methodKey);
                 } else {
-                  _deliveryMethods.remove(entry.key);
+                  _deliveryMethods.remove(methodKey);
                 }
               }),
             ),
           const SizedBox(height: 20),
-          const Text('Notes', style: AppTypography.heading),
+          Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading),
           const SizedBox(height: 12),
           TextField(
             controller: _notesController,
             maxLines: 3,
-            decoration: const InputDecoration(hintText: 'Optional notes'),
+            decoration: InputDecoration(hintText: l10n.addEditDebtNotesHint),
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 20),
-          PrimaryButton(label: 'Save', isLoading: _isSaving, onPressed: _save),
+          PrimaryButton(label: l10n.commonSave, isLoading: _isSaving, onPressed: _save),
         ],
       ),
     );

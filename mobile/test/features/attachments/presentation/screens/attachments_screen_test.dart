@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/attachments/data/attachment_repository.dart';
 import 'package:mobile/features/attachments/domain/attachment.dart';
 import 'package:mobile/features/attachments/presentation/providers/attachment_providers.dart';
 import 'package:mobile/features/attachments/presentation/screens/attachments_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockAttachmentRepository extends Mock implements AttachmentRepository {}
@@ -40,6 +43,16 @@ void main() {
           attachmentFilePickerProvider.overrideWithValue(() async => pickedFile),
         ],
         child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            SomaliMaterialLocalizationsDelegate(),
+            SomaliCupertinoLocalizationsDelegate(),
+          ],
           home: AttachmentsScreen(entityPathPrefix: 'customers/01CUST', canUpload: canUpload),
         ),
       ),

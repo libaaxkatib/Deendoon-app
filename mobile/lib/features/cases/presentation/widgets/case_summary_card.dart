@@ -5,6 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/collection_case.dart';
 
 /// Case Summary + Assigned Officer — everything `GET
@@ -19,6 +20,7 @@ class CaseSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final officerId = collectionCase.assignedOfficerUserId;
 
     return AppCard(
@@ -41,14 +43,17 @@ class CaseSummaryCard extends StatelessWidget {
             ],
           ),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: 'Outstanding Amount', value: collectionCase.outstandingAmount ?? '—'),
+          _InfoRow(label: l10n.caseSummaryOutstandingAmountLabel, value: collectionCase.outstandingAmount ?? '—'),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Assigned Officer', value: officerId == null ? 'Unassigned' : 'Officer $officerId'),
+          _InfoRow(
+            label: l10n.caseSummaryAssignedOfficerLabel,
+            value: officerId == null ? l10n.caseUnassignedLabel : l10n.caseSummaryOfficerLabel(officerId),
+          ),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Last Activity', value: collectionCase.lastActivityAt),
+          _InfoRow(label: l10n.caseSummaryLastActivityLabel, value: collectionCase.lastActivityAt),
           if (collectionCase.closureOutcome != null) ...[
             const SizedBox(height: 12),
-            _InfoRow(label: 'Closure Outcome', value: collectionCase.closureOutcome!),
+            _InfoRow(label: l10n.closeCaseSheetReasonLabel, value: collectionCase.closureOutcome!),
           ],
         ],
       ),

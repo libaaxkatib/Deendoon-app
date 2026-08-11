@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/dashboard/data/dashboard_repository.dart';
 import 'package:mobile/features/dashboard/domain/business_health.dart';
 import 'package:mobile/features/dashboard/domain/dashboard_kpis.dart';
@@ -10,7 +12,17 @@ import 'package:mobile/features/dashboard/domain/todays_overview.dart';
 import 'package:mobile/features/dashboard/presentation/screens/home_dashboard_screen.dart';
 import 'package:mobile/features/professional_collection/data/professional_collection_repository.dart';
 import 'package:mobile/features/professional_collection/domain/professional_collection_summary.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
+
+const _localizationsDelegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 class _MockDashboardRepository extends Mock implements DashboardRepository {}
 
@@ -59,6 +71,7 @@ Future<void> _pumpScreen(
   WidgetTester tester, {
   required _MockDashboardRepository mockRepository,
   required _MockProfessionalCollectionRepository mockPcrRepository,
+  Locale locale = const Locale('en'),
 }) async {
   // The dashboard's ListView is taller than the default 800x600 test
   // surface — a phone-shaped viewport keeps every section actually built
@@ -74,7 +87,12 @@ Future<void> _pumpScreen(
         dashboardRepositoryProvider.overrideWithValue(mockRepository),
         professionalCollectionRepositoryProvider.overrideWithValue(mockPcrRepository),
       ],
-      child: const MaterialApp(home: HomeDashboardScreen()),
+      child: MaterialApp(
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: _localizationsDelegates,
+        home: const HomeDashboardScreen(),
+      ),
     ),
   );
 }
@@ -137,6 +155,39 @@ void main() {
     expect(find.text('Record Payment'), findsOneWidget);
     expect(find.text('Add Reminder'), findsOneWidget);
     expect(find.text('Global Search'), findsOneWidget);
+  });
+
+  testWidgets('selecting Somali localizes the Home Dashboard, not just Settings', (tester) async {
+    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
+    when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
+    when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
+
+    await _pumpScreen(
+      tester,
+      mockRepository: mockRepository,
+      mockPcrRepository: mockPcrRepository,
+      locale: const Locale('so'),
+    );
+    await tester.pumpAndSettle();
+
+    // Section headings, KPI labels, and Quick Actions all render in Somali —
+    // proof the locale change reaches beyond the Settings screen.
+    expect(find.text('Guudmarka Maanta'), findsOneWidget); // Today's Overview
+    expect(find.text('Ficillada Degdegga ah'), findsOneWidget); // Quick Actions
+    expect(find.text('Wadarta Hadhaysa'), findsOneWidget); // Total Outstanding
+    expect(find.text('Lacagta Dib u Dhacday'), findsOneWidget); // Overdue Amount
+    expect(find.text('Macaamiisha Khatarta Sare'), findsOneWidget); // High Risk Customers
+    expect(find.text('Ku Dar Kiis'), findsOneWidget); // Add Case
+    expect(find.text('Diiwaan Geli Lacag-bixin'), findsOneWidget); // Record Payment
+    expect(find.text('Ku Dar Xasuusin'), findsOneWidget); // Add Reminder
+    expect(find.text('Raadinta Guud'), findsOneWidget); // Global Search
+    expect(find.text('Kiisaska Dhawaan'), findsOneWidget); // Recent Cases
+    expect(find.text('Wax dhaqdhaqaaq ah lama arag'), findsOneWidget); // No recent activity
+
+    // No stray English string leaked through for the strings we just
+    // asserted in Somali above.
+    expect(find.text("Today's Overview"), findsNothing);
+    expect(find.text('Quick Actions'), findsNothing);
   });
 
   testWidgets('shows the explicit empty state when there are no recent cases', (tester) async {
@@ -209,7 +260,12 @@ void main() {
             dashboardRepositoryProvider.overrideWithValue(mockRepository),
             professionalCollectionRepositoryProvider.overrideWithValue(mockPcrRepository),
           ],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+          ),
         ),
       );
       await tester.pumpAndSettle();

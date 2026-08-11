@@ -6,18 +6,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_detail_providers.dart';
-
-const _stageLabels = {
-  'debt_created': 'Debt Created',
-  'whatsapp_reminder': 'WhatsApp Reminder',
-  'sms_reminder': 'SMS Reminder',
-  'phone_call': 'Phone Call',
-  'promise_to_pay': 'Promise to Pay',
-  'payment': 'Payment',
-  'professional_collection': 'Professional Collection',
-  'recovered': 'Recovered',
-};
 
 /// Follow-up Timeline — `GET /debts/{id}/timeline`, the real FR-024
 /// progression: 8 fixed stages, each genuinely `pending` until a real
@@ -29,7 +19,18 @@ class DebtTimelineSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final timelineAsync = ref.watch(debtTimelineProvider(debtId));
+    final stageLabels = <String, String>{
+      'debt_created': l10n.debtTimelineStageDebtCreated,
+      'whatsapp_reminder': l10n.debtTimelineStageWhatsappReminder,
+      'sms_reminder': l10n.debtTimelineStageSmsReminder,
+      'phone_call': l10n.debtTimelineStagePhoneCall,
+      'promise_to_pay': l10n.promiseToPayTitle,
+      'payment': l10n.debtTimelineStagePayment,
+      'professional_collection': l10n.professionalCollectionTitle,
+      'recovered': l10n.statusRecovered,
+    };
 
     return timelineAsync.when(
       loading: () => const Padding(
@@ -37,7 +38,7 @@ class DebtTimelineSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load the follow-up timeline.',
+        message: l10n.debtTimelineLoadError,
         onRetry: () => ref.invalidate(debtTimelineProvider(debtId)),
       ),
       data: (timeline) => AppCard(
@@ -46,7 +47,7 @@ class DebtTimelineSection extends ConsumerWidget {
           children: [
             for (final stage in timeline.stages) ...[
               _StageRow(
-                label: _stageLabels[stage.event] ?? stage.event,
+                label: stageLabels[stage.event] ?? stage.event,
                 completed: stage.status == 'completed',
                 occurredAt: stage.occurredAt,
               ),

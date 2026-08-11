@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/documents/data/document_repository.dart';
 import 'package:mobile/features/documents/domain/document_page.dart';
 import 'package:mobile/features/documents/presentation/screens/document_list_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockDocumentRepository extends Mock implements DocumentRepository {}
@@ -33,7 +36,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [documentRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: DocumentListScreen()),
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            SomaliMaterialLocalizationsDelegate(),
+            SomaliCupertinoLocalizationsDelegate(),
+          ],
+          home: const DocumentListScreen(),
+        ),
       ),
     );
   }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/cases/data/collection_case_repository.dart';
 import 'package:mobile/features/cases/domain/case_history.dart';
@@ -15,6 +17,7 @@ import 'package:mobile/features/professional_collection/data/professional_collec
 import 'package:mobile/features/professional_collection/data/reference_data_repository.dart';
 import 'package:mobile/features/professional_collection/domain/professional_collection_request.dart';
 import 'package:mobile/features/professional_collection/domain/reference_data_item.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCollectionCaseRepository extends Mock implements CollectionCaseRepository {}
@@ -130,7 +133,19 @@ Future<void> _pumpScreen(
         customerRepositoryProvider.overrideWithValue(customerRepository),
         debtRepositoryProvider.overrideWithValue(debtRepository),
       ],
-      child: const MaterialApp(home: CaseDetailScreen(caseId: '01CASE')),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: const CaseDetailScreen(caseId: '01CASE'),
+      ),
     ),
   );
 }
@@ -243,7 +258,19 @@ void main() {
           customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
           debtRepositoryProvider.overrideWithValue(mockDebtRepository),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            SomaliMaterialLocalizationsDelegate(),
+            SomaliCupertinoLocalizationsDelegate(),
+          ],
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -395,7 +422,19 @@ void main() {
             professionalCollectionRepositoryProvider.overrideWithValue(mockProfessionalCollectionRepository),
             referenceDataRepositoryProvider.overrideWithValue(mockReferenceDataRepository),
           ],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              SomaliMaterialLocalizationsDelegate(),
+              SomaliCupertinoLocalizationsDelegate(),
+            ],
+          ),
         ),
       );
       await tester.pumpAndSettle();

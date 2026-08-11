@@ -5,6 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/risk_badge.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/debt.dart';
 
 /// Premium debt card for the Debt List — reference number, original
@@ -21,6 +22,7 @@ class DebtCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final overdueDays = debt.daysOverdue();
 
     return AppCard(
@@ -53,9 +55,9 @@ class DebtCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _AmountColumn(label: 'Original Amount', value: debt.amount)),
+              Expanded(child: _AmountColumn(label: l10n.debtOriginalAmountLabel, value: debt.amount)),
               const SizedBox(width: 8),
-              Expanded(child: _AmountColumn(label: 'Remaining Balance', value: debt.remainingBalance)),
+              Expanded(child: _AmountColumn(label: l10n.debtRemainingBalanceLabel, value: debt.remainingBalance)),
             ],
           ),
           const SizedBox(height: 12),
@@ -63,7 +65,7 @@ class DebtCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Due ${debt.dueDate}',
+                  l10n.debtCardDueDateLabel(debt.dueDate),
                   style: AppTypography.caption,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -71,7 +73,7 @@ class DebtCard extends StatelessWidget {
               ),
               if (overdueDays != null)
                 Text(
-                  '$overdueDays day${overdueDays == 1 ? '' : 's'} overdue',
+                  l10n.debtCardOverdueDays(overdueDays),
                   style: AppTypography.caption.copyWith(color: AppColors.danger, fontWeight: FontWeight.w600),
                 ),
             ],

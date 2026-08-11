@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../../core/widgets/risk_badge.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/collection_case.dart';
 
 /// Premium case card for the Case List — customer name, outstanding
@@ -27,6 +28,7 @@ class CaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final assigned = collectionCase.assignedOfficerUserId != null;
 
     return AppCard(
@@ -43,7 +45,7 @@ class CaseCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      collectionCase.customerName ?? 'Unknown customer',
+                      collectionCase.customerName ?? l10n.caseCardUnknownCustomer,
                       style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -73,7 +75,7 @@ class CaseCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Outstanding', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+              Text(l10n.caseCardOutstandingLabel, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
               Text(
                 collectionCase.outstandingAmount ?? '—',
                 style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 16),
@@ -89,14 +91,17 @@ class CaseCard extends StatelessWidget {
                 color: assigned ? AppColors.primary : context.colors.textSecondary,
               ),
               const SizedBox(width: 4),
-              Text(assigned ? 'Assigned' : 'Unassigned', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+              Text(
+                assigned ? l10n.statusAssigned : l10n.caseUnassignedLabel,
+                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+              ),
               if (activeTab == 'follow_up') ...[
                 const SizedBox(width: 10),
-                _Tag(label: 'Follow Up', color: AppColors.warning),
+                _Tag(label: l10n.caseListTabFollowUp, color: AppColors.warning),
               ],
               if (activeTab == 'promise_due') ...[
                 const SizedBox(width: 10),
-                _Tag(label: 'Promise Due', color: AppColors.accent),
+                _Tag(label: l10n.caseListTabPromiseDue, color: AppColors.accent),
               ],
               Expanded(
                 child: Text(

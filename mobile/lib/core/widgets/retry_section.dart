@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../theme/app_typography.dart';
 import '../theme/deendoon_colors.dart';
 
@@ -14,12 +15,13 @@ class RetrySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(message, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         const SizedBox(height: 8),
-        OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+        OutlinedButton(onPressed: onRetry, child: Text(l10n.retry)),
       ],
     );
   }

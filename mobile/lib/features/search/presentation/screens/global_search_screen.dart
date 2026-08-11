@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/premium_empty_state.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../cases/presentation/widgets/case_card.dart';
 import '../../../customers/presentation/widgets/customer_card.dart';
 import '../../../debts/presentation/widgets/debt_card.dart';
@@ -20,13 +21,13 @@ import '../widgets/payment_result_tile.dart';
 
 enum _Category { all, customers, debts, payments, documents, cases }
 
-const _categoryLabels = {
-  _Category.all: 'All',
-  _Category.customers: 'Customers',
-  _Category.debts: 'Debts',
-  _Category.payments: 'Payments',
-  _Category.documents: 'Documents',
-  _Category.cases: 'Cases',
+Map<_Category, String> _categoryLabels(AppLocalizations l10n) => {
+  _Category.all: l10n.globalSearchCategoryAll,
+  _Category.customers: l10n.globalSearchCategoryCustomers,
+  _Category.debts: l10n.globalSearchCategoryDebts,
+  _Category.payments: l10n.globalSearchCategoryPayments,
+  _Category.documents: l10n.globalSearchCategoryDocuments,
+  _Category.cases: l10n.globalSearchCategoryCases,
 };
 
 /// Global Search (FR-063) — real `GET /search?q=...`, one unified
@@ -98,11 +99,13 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final searchAsync = ref.watch(globalSearchProvider);
     final notifier = ref.read(globalSearchProvider.notifier);
+    final categoryLabels = _categoryLabels(l10n);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Global Search')),
+      appBar: AppBar(title: Text(l10n.globalSearchTitle)),
       body: Column(
         children: [
           Padding(
@@ -115,7 +118,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               onSubmitted: _runSearch,
               style: TextStyle(color: context.colors.textPrimary),
               decoration: InputDecoration(
-                hintText: 'Search customers, debts, payments, documents, cases',
+                hintText: l10n.globalSearchHint,
                 prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
                 suffixIcon: _controller.text.isEmpty
                     ? null
@@ -142,7 +145,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 children: [
                   for (final category in _Category.values) ...[
                     _CategoryChip(
-                      label: _categoryLabels[category]!,
+                      label: categoryLabels[category]!,
                       selected: _category == category,
                       onTap: () => setState(() => _category = category),
                     ),
@@ -165,7 +168,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: RetrySection(
-                      message: error is ApiException ? error.message : 'Could not complete the search.',
+                      message: error is ApiException ? error.message : l10n.globalSearchErrorMessage,
                       onRetry: () => notifier.search(notifier.lastQuery),
                     ),
                   ),
@@ -178,8 +181,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                     child: Center(
                       child: PremiumEmptyState(
                         icon: Icons.search_off,
-                        title: 'No results found',
-                        message: 'Nothing matched "${notifier.lastQuery}". Try a different search term.',
+                        title: l10n.globalSearchNoResultsTitle,
+                        message: l10n.globalSearchNoResultsMessage(notifier.lastQuery),
                       ),
                     ),
                   );
@@ -222,18 +225,19 @@ class _RecentSearchesView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final recentAsync = ref.watch(recentSearchesProvider);
 
     // Wrapped in a scroll view, not a bare Center: the search field
     // autofocuses, so this is often the very first thing shown with the
     // keyboard already open and less height available than on a full
     // screen — without scrolling, that overflows instead of adapting.
-    const emptyState = SingleChildScrollView(
+    final emptyState = SingleChildScrollView(
       child: Center(
         child: PremiumEmptyState(
           icon: Icons.search,
-          title: 'Search Deendoon',
-          message: 'Find customers, debts, payments, documents, and cases.',
+          title: l10n.globalSearchDeendoonTitle,
+          message: l10n.globalSearchDeendoonMessage,
         ),
       ),
     );
@@ -252,10 +256,13 @@ class _RecentSearchesView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Recent Searches', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+                Text(
+                  l10n.globalSearchRecentSearchesHeading,
+                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                ),
                 TextButton(
                   onPressed: () => ref.read(recentSearchesProvider.notifier).clearAll(),
-                  child: const Text('Clear'),
+                  child: Text(l10n.globalSearchClearButton),
                 ),
               ],
             ),
@@ -284,6 +291,7 @@ class _ResultsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final customers = results.customers ?? [];
     final debts = results.debts ?? [];
     final payments = results.payments ?? [];
@@ -294,35 +302,35 @@ class _ResultsView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       children: [
         if (_show(_Category.customers) && customers.isNotEmpty) ...[
-          _SectionHeader('Customers'),
+          _SectionHeader(l10n.globalSearchCategoryCustomers),
           for (final customer in customers) ...[
             CustomerCard(customer: customer, onTap: () => context.push('/customers/${customer.id}')),
             const SizedBox(height: 8),
           ],
         ],
         if (_show(_Category.debts) && debts.isNotEmpty) ...[
-          _SectionHeader('Debts'),
+          _SectionHeader(l10n.globalSearchCategoryDebts),
           for (final debt in debts) ...[
             DebtCard(debt: debt, riskLevel: null, onTap: () => context.push('/debts/${debt.id}')),
             const SizedBox(height: 8),
           ],
         ],
         if (_show(_Category.payments) && payments.isNotEmpty) ...[
-          _SectionHeader('Payments'),
+          _SectionHeader(l10n.globalSearchCategoryPayments),
           for (final payment in payments) ...[
             PaymentResultTile(payment: payment, onTap: () => context.push('/debts/${payment.debtId}')),
             const SizedBox(height: 8),
           ],
         ],
         if (_show(_Category.documents) && documents.isNotEmpty) ...[
-          _SectionHeader('Documents'),
+          _SectionHeader(l10n.globalSearchCategoryDocuments),
           for (final document in documents) ...[
             DocumentCard(document: document, onTap: () => context.push('/documents/${document.id}')),
             const SizedBox(height: 8),
           ],
         ],
         if (_show(_Category.cases) && cases.isNotEmpty) ...[
-          _SectionHeader('Cases'),
+          _SectionHeader(l10n.globalSearchCategoryCases),
           for (final collectionCase in cases) ...[
             CaseCard(
               collectionCase: collectionCase,

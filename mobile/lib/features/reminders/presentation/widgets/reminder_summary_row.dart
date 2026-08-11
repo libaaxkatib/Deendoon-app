@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/reminder_detail_providers.dart';
 import '../providers/reminder_list_provider.dart';
 
@@ -23,12 +24,13 @@ class ReminderSummaryRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final summaryAsync = ref.watch(reminderSummaryProvider);
 
     return summaryAsync.when(
       loading: () => const SectionLoading(),
       error: (error, _) => RetrySection(
-        message: 'Could not load the summary.',
+        message: l10n.reminderSummaryLoadError,
         onRetry: () => ref.invalidate(reminderSummaryProvider),
       ),
       data: (summary) => Column(
@@ -37,7 +39,7 @@ class ReminderSummaryRow extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Due Today', style: AppTypography.caption),
+                Text(l10n.reminderSummaryDueTodayLabel, style: AppTypography.caption),
                 Text(
                   '${summary.totalDueToday}',
                   style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 20),
@@ -50,7 +52,7 @@ class ReminderSummaryRow extends ConsumerWidget {
             children: [
               Expanded(
                 child: _MiniStat(
-                  label: 'Client Visits',
+                  label: l10n.todaysOverviewClientVisits,
                   value: summary.clientVisits,
                   onTap: () => ref.read(reminderListProvider.notifier).filterByType('client_visit'),
                 ),
@@ -58,7 +60,7 @@ class ReminderSummaryRow extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _MiniStat(
-                  label: 'Follow-ups',
+                  label: l10n.todaysOverviewFollowUps,
                   value: summary.followUpCalls,
                   onTap: () => ref.read(reminderListProvider.notifier).filterByType('follow_up_call'),
                 ),
@@ -66,7 +68,7 @@ class ReminderSummaryRow extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _MiniStat(
-                  label: 'Payments',
+                  label: l10n.reminderFilterPayments,
                   value: summary.paymentsDue,
                   onTap: () => ref.read(reminderListProvider.notifier).filterByType('payment_due'),
                 ),
@@ -74,7 +76,7 @@ class ReminderSummaryRow extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _MiniStat(
-                  label: 'Overdue',
+                  label: l10n.statusOverdue,
                   value: summary.overdueCount,
                   color: AppColors.danger,
                   onTap: () => ref.read(reminderListProvider.notifier).filterByTab('overdue'),

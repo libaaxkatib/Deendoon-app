@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/risk_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/dashboard_providers.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
@@ -21,23 +22,24 @@ class RecentCasesSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final cases = ref.watch(recentCasesProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
-          title: 'Recent Cases',
+          title: l10n.recentCasesTitle,
           trailing: TextButton(
             onPressed: () => context.go(RoutePaths.cases),
-            child: const Text('View All'),
+            child: Text(l10n.commonViewAll),
           ),
         ),
         const SizedBox(height: 8),
         cases.when(
           loading: () => const SectionLoading(),
           error: (error, _) => RetrySection(
-            message: 'Could not load recent cases.',
+            message: l10n.recentCasesLoadError,
             onRetry: () => ref.invalidate(recentCasesProvider),
           ),
           data: (data) {
@@ -45,7 +47,7 @@ class RecentCasesSection extends ConsumerWidget {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
-                  'No recent activity',
+                  l10n.recentCasesEmptyState,
                   style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                 ),
               );

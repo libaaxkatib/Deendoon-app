@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../debts/presentation/widgets/debt_card.dart';
 import '../providers/collection_analytics_provider.dart';
 import '../providers/collection_rate_debts_provider.dart';
@@ -24,12 +25,13 @@ class CollectionRateDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final analyticsAsync = ref.watch(collectionAnalyticsProvider);
     final range = ref.watch(overviewDateRangeProvider);
     final debtsAsync = ref.watch(collectionRateDebtsProvider(range));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Collection Rate')),
+      appBar: AppBar(title: Text(l10n.overviewKpiCollectionRate)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(collectionAnalyticsProvider);
@@ -45,7 +47,7 @@ class CollectionRateDetailScreen extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (error, _) => RetrySection(
-                message: 'Could not load Collection Analytics.',
+                message: l10n.overviewCollectionAnalyticsLoadError,
                 onRetry: () => ref.invalidate(collectionAnalyticsProvider),
               ),
               data: (analytics) => AppCard(
@@ -55,12 +57,12 @@ class CollectionRateDetailScreen extends ConsumerWidget {
                     Text('${analytics.collectionRate.toStringAsFixed(1)}%',
                         style: AppTypography.heading.copyWith(fontSize: 32, color: AppColors.primary)),
                     const SizedBox(height: 4),
-                    const Text('Collected ÷ Amount Due in Period', style: AppTypography.caption),
+                    Text(l10n.collectionRateDetailFormulaCaption, style: AppTypography.caption),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Total Collected', style: AppTypography.body),
+                        Text(l10n.overviewKpiTotalCollected, style: AppTypography.body),
                         Text(analytics.totalCollected, style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)),
                       ],
                     ),
@@ -69,7 +71,7 @@ class CollectionRateDetailScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Text('Debts Due in This Period', style: AppTypography.heading),
+            Text(l10n.collectionRateDetailDebtsHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             debtsAsync.when(
               loading: () => const Padding(
@@ -77,12 +79,12 @@ class CollectionRateDetailScreen extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (error, _) => RetrySection(
-                message: 'Could not load debts.',
+                message: l10n.debtListLoadError,
                 onRetry: () => ref.invalidate(collectionRateDebtsProvider(range)),
               ),
               data: (debts) {
                 if (debts.isEmpty) {
-                  return const Text('No debts became due in this period.', style: AppTypography.body);
+                  return Text(l10n.collectionRateDetailEmptyState, style: AppTypography.body);
                 }
                 return Column(
                   children: [

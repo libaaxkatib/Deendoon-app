@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/subscription_plan.dart';
 import '../providers/subscription_actions.dart';
 
@@ -67,6 +68,7 @@ class _RequestPlanChangeSheetState extends ConsumerState<_RequestPlanChangeSheet
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -80,23 +82,21 @@ class _RequestPlanChangeSheetState extends ConsumerState<_RequestPlanChangeSheet
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Request Plan Change', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.subscriptionRequestPlanChangeSheetTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(
-              'You are requesting a change to ${widget.plan.name} (${widget.plan.monthlyPrice} / month). '
-              'This creates a pending request — your current plan stays active until a Platform Administrator '
-              'approves it.',
+              l10n.subscriptionRequestPlanChangeDescription(widget.plan.name, widget.plan.monthlyPrice),
               style: AppTypography.caption,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _paymentReferenceController,
               maxLength: 100,
-              decoration: const InputDecoration(labelText: 'Payment Reference'),
+              decoration: InputDecoration(labelText: l10n.subscriptionPaymentReferenceLabel),
               validator: (value) {
                 final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty) return 'Payment reference is required';
-                if (trimmed.length > 100) return 'Payment reference must be 100 characters or fewer';
+                if (trimmed.isEmpty) return l10n.subscriptionPaymentReferenceRequiredValidator;
+                if (trimmed.length > 100) return l10n.subscriptionPaymentReferenceMaxLengthValidator;
                 return null;
               },
             ),
@@ -105,7 +105,7 @@ class _RequestPlanChangeSheetState extends ConsumerState<_RequestPlanChangeSheet
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: 'Submit Request', isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(label: l10n.professionalCollectionSubmitButton, isLoading: _isLoading, onPressed: _submit),
           ],
         ),
       ),

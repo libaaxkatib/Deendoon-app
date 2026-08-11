@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/professional_collection/data/professional_collection_repository.dart';
 import 'package:mobile/features/professional_collection/presentation/screens/professional_collection_documents_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
@@ -19,7 +22,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: ProfessionalCollectionDocumentsScreen(requestId: '1')),
+        child: const MaterialApp(
+          locale: Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            SomaliMaterialLocalizationsDelegate(),
+            SomaliCupertinoLocalizationsDelegate(),
+          ],
+          home: ProfessionalCollectionDocumentsScreen(requestId: '1'),
+        ),
       ),
     );
     await tester.pumpAndSettle();

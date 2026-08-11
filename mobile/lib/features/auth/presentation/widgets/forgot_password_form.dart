@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/route_paths.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Calls `POST /forgot-password` directly through `AuthRepository` — no
@@ -46,7 +49,7 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
           .forgotPassword(_emailController.text.trim());
       setState(() => _successMessage = message);
     } on ApiException catch (e) {
-      setState(() => _errorMessage = e.message);
+      setState(() => _errorMessage = e.detailedMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -54,6 +57,7 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: Column(
@@ -64,10 +68,10 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             enabled: _successMessage == null,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: InputDecoration(labelText: l10n.authEmailLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Email is required';
-              if (!_emailPattern.hasMatch(value.trim())) return 'Enter a valid email';
+              if (value == null || value.trim().isEmpty) return l10n.authEmailRequired;
+              if (!_emailPattern.hasMatch(value.trim())) return l10n.authEmailInvalid;
               return null;
             },
           ),
@@ -84,10 +88,22 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
           ],
           const SizedBox(height: 24),
           PrimaryButton(
-            label: 'Send Reset Link',
+            label: l10n.forgotPasswordSubmitButton,
             isLoading: _isLoading,
             onPressed: _successMessage == null ? _submit : null,
           ),
+          if (_successMessage != null) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton(
+                onPressed: () => context.push(
+                  RoutePaths.resetPassword,
+                  extra: _emailController.text.trim(),
+                ),
+                child: Text(l10n.forgotPasswordHaveCodeLink),
+              ),
+            ),
+          ],
         ],
       ),
     );

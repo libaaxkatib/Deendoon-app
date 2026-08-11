@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../cases/presentation/widgets/case_card.dart';
 import '../providers/debt_detail_providers.dart';
 
@@ -17,6 +18,7 @@ class RelatedCaseSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final caseAsync = ref.watch(debtRelatedCaseProvider(debtId));
 
     return caseAsync.when(
@@ -25,14 +27,14 @@ class RelatedCaseSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load the related case.',
+        message: l10n.debtRelatedCaseLoadError,
         onRetry: () => ref.invalidate(debtRelatedCaseProvider(debtId)),
       ),
       data: (collectionCase) {
         if (collectionCase == null) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('No collection case has been opened for this debt yet', style: AppTypography.body),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(l10n.debtRelatedCaseEmptyState, style: AppTypography.body),
           );
         }
 

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/reminder_actions.dart';
 import '../providers/reminder_list_provider.dart';
 import '../widgets/reminder_card.dart';
@@ -38,18 +39,21 @@ class ReminderListScreen extends ConsumerStatefulWidget {
 /// (including `tab: null` for "All") or a client-side `type` filter over
 /// the five real `Reminder.type` values. `key` is the stable identifier
 /// used for deep-link query params (`/reminders?filter=<key>`).
+///
+/// `label` isn't stored here — it's a localized string, which can't be a
+/// `const` field value, so it's looked up from `key` via `_filterChipLabel`
+/// at build time instead.
 class _ReminderFilterChipDef {
   final String key;
-  final String label;
   final String? tab;
   final String? type;
   final bool isTab;
 
-  const _ReminderFilterChipDef.tab({required this.key, required this.label, required this.tab})
+  const _ReminderFilterChipDef.tab({required this.key, required this.tab})
       : type = null,
         isTab = true;
 
-  const _ReminderFilterChipDef.type({required this.key, required this.label, required this.type})
+  const _ReminderFilterChipDef.type({required this.key, required this.type})
       : tab = null,
         isTab = false;
 }
@@ -63,15 +67,27 @@ class _ReminderFilterChipDef {
 /// (`/reminders?filter=calls` from the Dashboard's Today's Overview)
 /// working without any router/dashboard change.
 const _reminderFilterChips = <_ReminderFilterChipDef>[
-  _ReminderFilterChipDef.tab(key: 'all', label: 'All', tab: null),
-  _ReminderFilterChipDef.tab(key: 'today', label: 'Today', tab: 'today'),
-  _ReminderFilterChipDef.type(key: 'payments', label: 'Payments', type: 'payment_due'),
-  _ReminderFilterChipDef.type(key: 'visits', label: 'Client Visits', type: 'client_visit'),
-  _ReminderFilterChipDef.type(key: 'calls', label: 'Follow-ups', type: 'follow_up_call'),
-  _ReminderFilterChipDef.tab(key: 'upcoming', label: 'Upcoming', tab: 'upcoming'),
-  _ReminderFilterChipDef.tab(key: 'overdue', label: 'Overdue', tab: 'overdue'),
-  _ReminderFilterChipDef.tab(key: 'completed', label: 'Completed', tab: 'completed'),
+  _ReminderFilterChipDef.tab(key: 'all', tab: null),
+  _ReminderFilterChipDef.tab(key: 'today', tab: 'today'),
+  _ReminderFilterChipDef.type(key: 'payments', type: 'payment_due'),
+  _ReminderFilterChipDef.type(key: 'visits', type: 'client_visit'),
+  _ReminderFilterChipDef.type(key: 'calls', type: 'follow_up_call'),
+  _ReminderFilterChipDef.tab(key: 'upcoming', tab: 'upcoming'),
+  _ReminderFilterChipDef.tab(key: 'overdue', tab: 'overdue'),
+  _ReminderFilterChipDef.tab(key: 'completed', tab: 'completed'),
 ];
+
+String _filterChipLabel(AppLocalizations l10n, String key) => switch (key) {
+      'all' => l10n.debtListFilterAll,
+      'today' => l10n.statusToday,
+      'payments' => l10n.reminderFilterPayments,
+      'visits' => l10n.todaysOverviewClientVisits,
+      'calls' => l10n.todaysOverviewFollowUps,
+      'upcoming' => l10n.statusUpcoming,
+      'overdue' => l10n.statusOverdue,
+      'completed' => l10n.statusCompleted,
+      _ => key,
+    };
 
 class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
   final _scrollController = ScrollController();
@@ -138,20 +154,21 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final remindersAsync = ref.watch(reminderListProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reminders'),
+        title: Text(l10n.navReminders),
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month_outlined),
-            tooltip: 'Calendar',
+            tooltip: l10n.reminderListCalendarTooltip,
             onPressed: () => context.push('/calendar'),
           ),
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Schedule Reminder',
+            tooltip: l10n.reminderScheduleTitle,
             onPressed: () => context.push('/reminders/new'),
           ),
         ],
@@ -170,7 +187,7 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
                 children: [
                   for (final def in _reminderFilterChips) ...[
                     _TabFilterChip(
-                      label: def.label,
+                      label: _filterChipLabel(l10n, def.key),
                       selected: def.isTab
                           ? (remindersAsync.valueOrNull?.typeFilter == null &&
                               remindersAsync.valueOrNull?.tab == def.tab)
@@ -190,7 +207,7 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load reminders.',
+                    message: l10n.reminderListLoadError,
                     onRetry: () => ref.invalidate(reminderListProvider),
                   ),
                 ),
@@ -217,7 +234,7 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
                     }
                     return Center(
                       child: Text(
-                        hasActiveFilter ? 'Nothing due in this filter' : 'Nothing due',
+                        hasActiveFilter ? l10n.reminderListEmptyFilteredState : l10n.reminderListEmptyState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

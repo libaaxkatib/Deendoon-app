@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/avatar_initial.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../auth/domain/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -18,8 +19,9 @@ class DashboardGreeting extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final auth = ref.watch(authProvider);
-    final name = auth is Authenticated ? auth.user.name : 'there';
+    final name = auth is Authenticated ? auth.user.name : l10n.dashboardGreetingFallbackName;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -31,7 +33,7 @@ class DashboardGreeting extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _greeting(DateTime.now().hour),
+              _greeting(l10n, DateTime.now().hour),
               style: AppTypography.caption.copyWith(fontSize: 11, height: 1, color: context.colors.textSecondary),
             ),
             Text(
@@ -51,9 +53,9 @@ class DashboardGreeting extends ConsumerWidget {
     );
   }
 
-  String _greeting(int hour) {
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+  String _greeting(AppLocalizations l10n, int hour) {
+    if (hour < 12) return l10n.dashboardGreetingMorning;
+    if (hour < 17) return l10n.dashboardGreetingAfternoon;
+    return l10n.dashboardGreetingEvening;
   }
 }

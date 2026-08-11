@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/deendoon_colors.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// Debounces keystrokes before firing a real `GET /customers?search=...`
 /// call (via [onChanged]) — the debounce only delays *when* the network
@@ -42,12 +43,13 @@ class _CustomerSearchBarState extends State<CustomerSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return TextField(
       controller: _controller,
       onChanged: _onChanged,
       style: TextStyle(color: context.colors.textPrimary),
       decoration: InputDecoration(
-        hintText: 'Search by name or phone',
+        hintText: l10n.customerSearchHint,
         prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
         suffixIcon: _controller.text.isEmpty
             ? null

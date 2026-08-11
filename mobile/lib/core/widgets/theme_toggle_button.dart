@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../theme/theme_mode_provider.dart';
 
 /// Compact one-tap Light/Dark toggle for the main app header — a faster
@@ -22,6 +23,7 @@ class ThemeToggleButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final mode = ref.watch(themeModeProvider);
     final platformBrightness = MediaQuery.platformBrightnessOf(context);
     final isDarkNow = switch (mode) {
@@ -32,7 +34,7 @@ class ThemeToggleButton extends ConsumerWidget {
 
     return IconButton(
       icon: Icon(isDarkNow ? Icons.wb_sunny_rounded : Icons.nightlight_round),
-      tooltip: isDarkNow ? 'Switch to light mode' : 'Switch to dark mode',
+      tooltip: isDarkNow ? l10n.themeSwitchToLight : l10n.themeSwitchToDark,
       onPressed: () {
         ref.read(themeModeProvider.notifier).setThemeMode(isDarkNow ? ThemeMode.light : ThemeMode.dark);
       },

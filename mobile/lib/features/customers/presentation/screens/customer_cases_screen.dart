@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../cases/presentation/widgets/case_card.dart';
 import '../providers/customer_detail_providers.dart';
 
@@ -19,10 +20,11 @@ class CustomerCasesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final casesAsync = ref.watch(customerCasesProvider(customerId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Cases')),
+      appBar: AppBar(title: Text(l10n.navCases)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(customerCasesProvider(customerId));
@@ -32,13 +34,13 @@ class CustomerCasesScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
             child: RetrySection(
-              message: 'Could not load cases.',
+              message: l10n.customerCasesLoadError,
               onRetry: () => ref.invalidate(customerCasesProvider(customerId)),
             ),
           ),
           data: (cases) {
             if (cases.isEmpty) {
-              return const Center(child: Text('No collection cases yet', style: AppTypography.body));
+              return Center(child: Text(l10n.customerCasesEmptyState, style: AppTypography.body));
             }
 
             return ListView.separated(

@@ -11,6 +11,7 @@ import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/business_profile_repository.dart';
 import '../../domain/business_profile.dart';
 import '../providers/business_profile_providers.dart';
@@ -64,18 +65,19 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
   }
 
   Future<void> _pickLogo() async {
+    final l10n = AppLocalizations.of(context);
     final file = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (file == null) return;
 
     final extension = file.name.split('.').last.toLowerCase();
     if (!_allowedLogoExtensions.contains(extension)) {
-      setState(() => _logoError = 'Logo must be a JPEG or PNG image.');
+      setState(() => _logoError = l10n.businessProfileLogoInvalidTypeError);
       return;
     }
 
     final sizeBytes = await file.length();
     if (sizeBytes > _maxLogoBytes) {
-      setState(() => _logoError = 'Logo must be 2MB or smaller.');
+      setState(() => _logoError = l10n.businessProfileLogoTooLargeError);
       return;
     }
 
@@ -89,6 +91,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
     if (_formKey.currentState?.validate() != true) return;
     if (_logoError != null) return;
 
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _isSaving = true;
       _error = null;
@@ -111,7 +114,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
       ref.invalidate(businessProfileProvider);
       if (!mounted) return;
       setState(() {
-        _successMessage = 'Business Profile updated successfully';
+        _successMessage = l10n.businessProfileUpdatedSuccess;
         _pickedLogo = null;
       });
     } on ApiException catch (e) {
@@ -123,15 +126,16 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final profileAsync = ref.watch(businessProfileProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Business Profile')),
+      appBar: AppBar(title: Text(l10n.businessProfileTitle)),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
           child: RetrySection(
-            message: 'Could not load your business profile.',
+            message: l10n.businessProfileLoadError,
             onRetry: () => ref.invalidate(businessProfileProvider),
           ),
         ),
@@ -155,9 +159,9 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _businessNameController,
-                    decoration: const InputDecoration(labelText: 'Company Name'),
+                    decoration: InputDecoration(labelText: l10n.businessProfileCompanyNameLabel),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) return 'Company name is required';
+                      if (value == null || value.trim().isEmpty) return l10n.businessProfileCompanyNameRequired;
                       return null;
                     },
                   ),
@@ -165,25 +169,25 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                   TextFormField(
                     controller: _contactEmailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(labelText: 'Contact Email'),
+                    decoration: InputDecoration(labelText: l10n.businessProfileContactEmailLabel),
                     validator: (value) {
                       final trimmed = value?.trim() ?? '';
                       if (trimmed.isEmpty) return null;
                       final validEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(trimmed);
-                      return validEmail ? null : 'Enter a valid email address';
+                      return validEmail ? null : l10n.businessProfileContactEmailInvalid;
                     },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _contactPhoneController,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'Contact Phone'),
+                    decoration: InputDecoration(labelText: l10n.businessProfileContactPhoneLabel),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _addressController,
                     maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'Business Address'),
+                    decoration: InputDecoration(labelText: l10n.businessProfileAddressLabel),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 16),
@@ -194,7 +198,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
                     Text(_successMessage!, style: const TextStyle(color: Colors.green)),
                   ],
                   const SizedBox(height: 24),
-                  PrimaryButton(label: 'Save Changes', isLoading: _isSaving, onPressed: _save),
+                  PrimaryButton(label: l10n.saveChanges, isLoading: _isSaving, onPressed: _save),
                 ],
               ),
             ),
@@ -225,6 +229,7 @@ class _LogoPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         InkWell(
@@ -251,8 +256,8 @@ class _LogoPicker extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           pickedLogo != null
-              ? 'New logo selected'
-              : (hasExistingLogo ? 'Logo on file — tap to replace' : 'Tap to add a logo'),
+              ? l10n.businessProfileLogoNewSelected
+              : (hasExistingLogo ? l10n.businessProfileLogoOnFile : l10n.businessProfileLogoTapToAdd),
           style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
         ),
         if (error != null) ...[

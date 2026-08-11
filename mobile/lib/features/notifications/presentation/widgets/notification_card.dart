@@ -31,7 +31,7 @@ class NotificationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  notificationTypeLabel(notification.type),
+                  notificationTypeLabel(context, notification.type),
                   style: notification.isRead
                       ? AppTypography.body
                       : AppTypography.body.copyWith(fontWeight: FontWeight.w700),

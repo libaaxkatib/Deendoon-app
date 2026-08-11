@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../theme/app_typography.dart';
 import '../theme/deendoon_colors.dart';
 
@@ -13,11 +14,12 @@ class PlaceholderScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(title), actions: actions),
       body: Center(
         child: Text(
-          '$title — coming soon',
+          l10n.comingSoonMessage(title),
           style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
         ),
       ),

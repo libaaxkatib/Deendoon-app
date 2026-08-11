@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/dashboard/presentation/widgets/quick_actions_grid.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
+
+const _localizationsDelegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 Future<void> _pumpGrid(WidgetTester tester) async {
   final router = GoRouter(
@@ -16,7 +28,12 @@ Future<void> _pumpGrid(WidgetTester tester) async {
 
   await tester.pumpWidget(
     ProviderScope(
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: _localizationsDelegates,
+      ),
     ),
   );
   await tester.pumpAndSettle();

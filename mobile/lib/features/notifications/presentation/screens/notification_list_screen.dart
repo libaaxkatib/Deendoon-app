@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/notification_list_provider.dart';
 import '../widgets/notification_card.dart';
 import '../widgets/notification_type_icon.dart';
@@ -70,16 +71,17 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final notificationsAsync = ref.watch(notificationListProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(l10n.sectionNotifications),
         actions: [
           if (notificationsAsync.valueOrNull?.hasUnread ?? false)
             TextButton(
               onPressed: () => ref.read(notificationListProvider.notifier).markAllRead(),
-              child: const Text('Mark all read'),
+              child: Text(l10n.notificationMarkAllReadButton),
             ),
         ],
       ),
@@ -94,14 +96,14 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
                 _NotificationTypeChip(
-                  label: 'All',
+                  label: l10n.notificationFilterAll,
                   selected: notificationsAsync.valueOrNull?.type == null,
                   onTap: () => ref.read(notificationListProvider.notifier).filterByType(null),
                 ),
                 const SizedBox(width: 8),
                 for (final type in _notificationTypeFilters) ...[
                   _NotificationTypeChip(
-                    label: notificationTypeLabel(type),
+                    label: notificationTypeLabel(context, type),
                     selected: notificationsAsync.valueOrNull?.type == type,
                     onTap: () => ref.read(notificationListProvider.notifier).filterByType(type),
                   ),
@@ -116,7 +118,7 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: RetrySection(
-                  message: 'Could not load notifications.',
+                  message: l10n.notificationListLoadError,
                   onRetry: () => ref.invalidate(notificationListProvider),
                 ),
               ),
@@ -125,8 +127,8 @@ class _NotificationListScreenState extends ConsumerState<NotificationListScreen>
                   return Center(
                     child: Text(
                       state.type == null
-                          ? 'No notifications yet'
-                          : 'No ${notificationTypeLabel(state.type!)} notifications',
+                          ? l10n.notificationListEmptyState
+                          : l10n.notificationListEmptyFilteredState(notificationTypeLabel(context, state.type!)),
                       style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                     ),
                   );

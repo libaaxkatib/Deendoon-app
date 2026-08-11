@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/attachments/data/attachment_repository.dart';
 import 'package:mobile/features/attachments/domain/attachment.dart';
@@ -14,6 +16,7 @@ import 'package:mobile/features/quick_actions/domain/add_case_review_input.dart'
 import 'package:mobile/features/quick_actions/domain/customer_draft.dart';
 import 'package:mobile/features/quick_actions/domain/debt_draft.dart';
 import 'package:mobile/features/quick_actions/presentation/screens/add_case_review_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCustomerRepository extends Mock implements CustomerRepository {}
@@ -116,7 +119,19 @@ Future<void> _pumpScreen(
         debtRepositoryProvider.overrideWithValue(debtRepository),
         ...extraOverrides,
       ],
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+      ),
     ),
   );
   await tester.pumpAndSettle();

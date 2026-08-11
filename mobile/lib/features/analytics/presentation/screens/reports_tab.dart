@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../l10n/generated/app_localizations.dart';
 import '../widgets/report_category_tile.dart';
 
 /// §5.2 Reports — the 5 real report categories exposed by
@@ -14,36 +15,38 @@ class ReportsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         ReportCategoryTile(
           icon: Icons.people_outline,
-          label: 'Customers',
+          label: l10n.reportCategoryCustomers,
           onTap: () => context.push('/analytics/reports/customers'),
         ),
         const SizedBox(height: 10),
         ReportCategoryTile(
           icon: Icons.receipt_long_outlined,
-          label: 'Debts',
+          label: l10n.reportCategoryDebts,
           onTap: () => context.push('/analytics/reports/debts'),
         ),
         const SizedBox(height: 10),
         ReportCategoryTile(
           icon: Icons.folder_outlined,
-          label: 'Collection Cases',
+          label: l10n.reportCategoryCollectionCases,
           onTap: () => context.push('/analytics/reports/collection-cases'),
         ),
         const SizedBox(height: 10),
         ReportCategoryTile(
           icon: Icons.payments_outlined,
-          label: 'Payments',
+          label: l10n.reportCategoryPayments,
           onTap: () => context.push('/analytics/reports/payments'),
         ),
         const SizedBox(height: 10),
         ReportCategoryTile(
           icon: Icons.shield_outlined,
-          label: 'Credit Risk',
+          label: l10n.reportCategoryCreditRisk,
           onTap: () => context.push('/analytics/reports/credit-risk'),
         ),
       ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/customer_import/data/customer_import_repository.dart';
 import 'package:mobile/features/customer_import/domain/import_commit_result.dart';
@@ -8,6 +10,7 @@ import 'package:mobile/features/customer_import/domain/import_preview.dart';
 import 'package:mobile/features/customer_import/domain/import_preview_row.dart';
 import 'package:mobile/features/customer_import/presentation/providers/import_file_picker_provider.dart';
 import 'package:mobile/features/customer_import/presentation/screens/bulk_import_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCustomerImportRepository extends Mock implements CustomerImportRepository {}
@@ -30,7 +33,19 @@ Future<void> _pumpScreen(
         customerImportRepositoryProvider.overrideWithValue(repository),
         importFilePickerProvider.overrideWithValue(picker),
       ],
-      child: const MaterialApp(home: BulkImportScreen()),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: const BulkImportScreen(),
+      ),
     ),
   );
   await tester.pumpAndSettle();

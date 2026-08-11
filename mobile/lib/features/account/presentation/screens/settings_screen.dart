@@ -383,19 +383,20 @@ class _AppearanceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeModeProvider);
 
     return AppCard(
       child: Row(
         children: [
-          const Expanded(child: Text('Appearance', style: AppTypography.body)),
+          Expanded(child: Text(l10n.appearance, style: AppTypography.body)),
           DropdownButton<ThemeMode>(
             value: themeMode,
             underline: const SizedBox.shrink(),
-            items: const [
-              DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
-              DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
-              DropdownMenuItem(value: ThemeMode.system, child: Text('System Default')),
+            items: [
+              DropdownMenuItem(value: ThemeMode.light, child: Text(l10n.appearanceLight)),
+              DropdownMenuItem(value: ThemeMode.dark, child: Text(l10n.appearanceDark)),
+              DropdownMenuItem(value: ThemeMode.system, child: Text(l10n.appearanceSystem)),
             ],
             onChanged: (mode) {
               if (mode != null) {

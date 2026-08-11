@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/core/models/payment.dart';
 import 'package:mobile/features/customers/presentation/screens/customer_detail_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCustomerRepository extends Mock implements CustomerRepository {}
+
+const _localizationsDelegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 const _customer = Customer(
   id: '1',
@@ -57,7 +69,12 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockCustomerRepository 
   await tester.pumpWidget(
     ProviderScope(
       overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
-      child: const MaterialApp(home: CustomerDetailScreen(customerId: '1')),
+      child: const MaterialApp(
+        locale: Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: _localizationsDelegates,
+        home: CustomerDetailScreen(customerId: '1'),
+      ),
     ),
   );
 }
@@ -125,7 +142,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -327,7 +349,12 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
-            child: MaterialApp.router(routerConfig: router),
+            child: MaterialApp.router(
+              routerConfig: router,
+              locale: const Locale('en'),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: _localizationsDelegates,
+            ),
           ),
         );
         await tester.pumpAndSettle();
@@ -376,7 +403,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+          ),
         ),
       );
       await tester.pumpAndSettle();

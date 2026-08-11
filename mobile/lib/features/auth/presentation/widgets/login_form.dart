@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/auth_state.dart';
 import '../providers/auth_provider.dart';
 
@@ -38,6 +39,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authProvider);
     final isLoading = authState is Authenticating;
 
@@ -50,10 +52,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: InputDecoration(labelText: l10n.authEmailLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Email is required';
-              if (!_emailPattern.hasMatch(value.trim())) return 'Enter a valid email';
+              if (value == null || value.trim().isEmpty) return l10n.authEmailRequired;
+              if (!_emailPattern.hasMatch(value.trim())) return l10n.authEmailInvalid;
               return null;
             },
           ),
@@ -61,9 +63,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           TextFormField(
             controller: _passwordController,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Password'),
+            decoration: InputDecoration(labelText: l10n.authPasswordLabel),
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Password is required';
+              if (value == null || value.isEmpty) return l10n.authPasswordRequired;
               return null;
             },
           ),
@@ -79,12 +81,12 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => context.push(RoutePaths.forgotPassword),
-              child: const Text('Forgot password?'),
+              child: Text(l10n.loginForgotPasswordLink),
             ),
           ),
           const SizedBox(height: 16),
           PrimaryButton(
-            label: 'Log In',
+            label: l10n.loginSubmitButton,
             isLoading: isLoading,
             onPressed: _submit,
           ),
@@ -92,7 +94,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           Center(
             child: TextButton(
               onPressed: () => context.push(RoutePaths.register),
-              child: const Text('Don\'t have an account? Create Account'),
+              child: Text(l10n.loginCreateAccountPrompt),
             ),
           ),
         ],

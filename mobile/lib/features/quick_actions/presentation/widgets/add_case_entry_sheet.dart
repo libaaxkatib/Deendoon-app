@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// Add Case's entry point — a bottom sheet offering the two supported
 /// starting points, same `showModalBottomSheet` pattern as
@@ -20,6 +21,7 @@ class _AddCaseEntrySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -31,18 +33,18 @@ class _AddCaseEntrySheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Add Case', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.quickActionAddCase, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
           PrimaryButton(
-            label: 'Existing Customer',
+            label: l10n.addCaseEntrySheetExistingCustomer,
             onPressed: () => Navigator.of(context).pop('existing'),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () => Navigator.of(context).pop('new'),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Text('New Customer'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Text(l10n.addCaseEntrySheetNewCustomer),
             ),
           ),
         ],

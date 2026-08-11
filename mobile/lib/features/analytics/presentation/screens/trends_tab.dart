@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/collections_trend_provider.dart';
 import '../providers/date_range_providers.dart';
 import '../widgets/date_range_field.dart';
@@ -18,6 +19,7 @@ class TrendsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final range = ref.watch(trendsDateRangeProvider);
     final trendAsync = ref.watch(collectionsTrendProvider(range));
 
@@ -36,7 +38,7 @@ class TrendsTab extends ConsumerWidget {
               child: Center(child: CircularProgressIndicator()),
             ),
             error: (error, _) => RetrySection(
-              message: 'Could not load Collections Trend.',
+              message: l10n.overviewCollectionsTrendLoadError,
               onRetry: () => ref.invalidate(collectionsTrendProvider(range)),
             ),
             data: (trend) => TrendLineChart(series: trend.series, height: 240),

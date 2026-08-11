@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../../core/widgets/risk_badge.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/customer.dart';
 
 /// Customer Information + Contact Details + Outstanding Balance + Credit
@@ -23,6 +24,7 @@ class CustomerInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,7 +66,7 @@ class CustomerInfoCard extends StatelessWidget {
                       if (onEditStatus != null)
                         IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 16),
-                          tooltip: 'Change Customer Status',
+                          tooltip: l10n.customerInfoChangeStatusTooltip,
                           onPressed: onEditStatus,
                           constraints: const BoxConstraints(),
                           padding: const EdgeInsets.only(left: 6),
@@ -78,16 +80,16 @@ class CustomerInfoCard extends StatelessWidget {
             ],
           ),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: 'Outstanding Balance', value: customer.outstandingBalance),
+          _InfoRow(label: l10n.customerInfoOutstandingBalanceLabel, value: customer.outstandingBalance),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(child: _InfoRow(label: 'Credit Limit', value: customer.creditLimit)),
+              Expanded(child: _InfoRow(label: l10n.creditLimitLabel, value: customer.creditLimit)),
               if (onEditCreditLimit != null)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 18),
-                  tooltip: 'Edit Credit Limit',
+                  tooltip: l10n.customerInfoEditCreditLimitTooltip,
                   onPressed: onEditCreditLimit,
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.only(left: 8),
@@ -95,11 +97,11 @@ class CustomerInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Remaining Credit', value: customer.remainingCredit),
+          _InfoRow(label: l10n.customerInfoRemainingCreditLabel, value: customer.remainingCredit),
           if (customer.creditScore != null) ...[
             const SizedBox(height: 12),
             _InfoRow(
-              label: 'Credit Score',
+              label: l10n.customerInfoCreditScoreLabel,
               value: '${customer.creditScore}${customer.creditScoreBand != null ? ' (${customer.creditScoreBand})' : ''}',
             ),
           ],

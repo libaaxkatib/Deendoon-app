@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/subscription/data/subscription_repository.dart';
 import 'package:mobile/features/subscription/domain/storage_addon.dart';
@@ -8,6 +10,7 @@ import 'package:mobile/features/subscription/domain/subscription.dart';
 import 'package:mobile/features/subscription/domain/subscription_plan.dart';
 import 'package:mobile/features/subscription/domain/subscription_storage.dart';
 import 'package:mobile/features/subscription/presentation/screens/storage_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockSubscriptionRepository extends Mock implements SubscriptionRepository {}
@@ -143,7 +146,19 @@ Future<void> _pumpScreen(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [subscriptionRepositoryProvider.overrideWithValue(repository)],
-      child: const MaterialApp(home: StorageScreen()),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: const StorageScreen(),
+      ),
     ),
   );
 }

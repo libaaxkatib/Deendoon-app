@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Real, wired to `POST /change-password` via `AuthRepository`. Mirrors
@@ -51,7 +52,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           );
       setState(() => _successMessage = message);
     } on ApiException catch (e) {
-      setState(() => _errorMessage = e.message);
+      setState(() => _errorMessage = e.detailedMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -59,8 +60,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Change Password')),
+      appBar: AppBar(title: Text(l10n.changePassword)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -73,9 +75,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 TextFormField(
                   controller: _currentController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Current Password'),
+                  decoration: InputDecoration(labelText: l10n.changePasswordCurrentLabel),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Current password is required';
+                    if (value == null || value.isEmpty) return l10n.changePasswordCurrentRequired;
                     return null;
                   },
                 ),
@@ -83,11 +85,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 TextFormField(
                   controller: _newController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'New Password'),
+                  decoration: InputDecoration(labelText: l10n.resetPasswordNewPasswordLabel),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'New password is required';
+                    if (value == null || value.isEmpty) return l10n.changePasswordNewRequired;
                     if (value.length < _minPasswordLength) {
-                      return 'Password must be at least $_minPasswordLength characters';
+                      return l10n.authPasswordMinLength(_minPasswordLength);
                     }
                     return null;
                   },
@@ -96,9 +98,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 TextFormField(
                   controller: _confirmController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Confirm New Password'),
+                  decoration: InputDecoration(labelText: l10n.resetPasswordConfirmLabel),
                   validator: (value) {
-                    if (value != _newController.text) return 'Passwords do not match';
+                    if (value != _newController.text) return l10n.authPasswordsMismatch;
                     return null;
                   },
                 ),
@@ -112,7 +114,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 ],
                 const SizedBox(height: 24),
                 PrimaryButton(
-                  label: 'Change Password',
+                  label: l10n.changePassword,
                   isLoading: _isLoading,
                   onPressed: _successMessage == null ? _submit : null,
                 ),

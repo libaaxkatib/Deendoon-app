@@ -9,6 +9,7 @@ import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/subscription.dart';
 import '../../domain/subscription_change_request.dart';
 import '../../domain/subscription_plan.dart';
@@ -76,22 +77,24 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   /// active — only that the request was submitted.
   Future<void> _onRequestPlanChange(SubscriptionPlan plan) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final submitted = await showRequestPlanChangeSheet(context, plan);
     if (submitted != true || !mounted) return;
 
     setState(() => _selectedPlanId = null);
     messenger.showSnackBar(
-      SnackBar(content: Text('Plan change request to ${plan.name} submitted — status: Pending.')),
+      SnackBar(content: Text(l10n.subscriptionPlanChangeRequestSubmittedMessage(plan.name))),
     );
     _scrollToHistory();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final subscriptionAsync = ref.watch(subscriptionProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Subscription')),
+      appBar: AppBar(title: Text(l10n.subscriptionTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(subscriptionProvider);
@@ -104,7 +107,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: RetrySection(
-                message: 'Could not load your subscription.',
+                message: l10n.subscriptionLoadError,
                 onRetry: () => ref.invalidate(subscriptionProvider),
               ),
             ),
@@ -119,7 +122,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => context.push('/account/storage'),
                   icon: const Icon(Icons.storage_outlined, size: 18),
-                  label: const Text('Manage Storage'),
+                  label: Text(l10n.subscriptionManageStorageButton),
                 ),
               ),
               if (subscription.readOnly) ...[
@@ -129,7 +132,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               const SizedBox(height: 24),
               KeyedSubtree(
                 key: _plansSectionKey,
-                child: SectionHeader(title: 'Available Plans'),
+                child: SectionHeader(title: l10n.subscriptionAvailablePlansHeading),
               ),
               const SizedBox(height: 8),
               _AvailablePlansSection(
@@ -146,7 +149,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                     if (selectedPlan == null) return const SizedBox.shrink();
                     return ElevatedButton(
                       onPressed: () => _onRequestPlanChange(selectedPlan),
-                      child: Text('Request Plan Change to ${selectedPlan.name}'),
+                      child: Text(l10n.subscriptionRequestPlanChangeButton(selectedPlan.name)),
                     );
                   },
                 ),
@@ -154,7 +157,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               const SizedBox(height: 24),
               KeyedSubtree(
                 key: _historySectionKey,
-                child: SectionHeader(title: 'Request History'),
+                child: SectionHeader(title: l10n.subscriptionRequestHistoryHeading),
               ),
               const SizedBox(height: 8),
               const _ChangeRequestHistorySection(),
@@ -179,6 +182,7 @@ class _CurrentSubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +192,7 @@ class _CurrentSubscriptionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  subscription.planName ?? 'No Plan',
+                  subscription.planName ?? l10n.subscriptionNoPlanLabel,
                   style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -201,31 +205,37 @@ class _CurrentSubscriptionCard extends StatelessWidget {
             ],
           ),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: 'Monthly Price', value: subscription.planPrice ?? '—'),
+          _InfoRow(label: l10n.subscriptionMonthlyPriceLabel, value: subscription.planPrice ?? '—'),
           if (subscription.onTrial) ...[
             const SizedBox(height: 12),
-            _InfoRow(label: 'Trial Ends', value: _formatDate(subscription.trialEndsAt)),
+            _InfoRow(label: l10n.subscriptionTrialEndsLabel, value: _formatDate(subscription.trialEndsAt)),
           ],
           const SizedBox(height: 12),
-          _InfoRow(label: 'Start Date', value: _formatDate(subscription.startedAt)),
+          _InfoRow(label: l10n.subscriptionStartDateLabel, value: _formatDate(subscription.startedAt)),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Expiry Date', value: _formatDate(subscription.expiresAt)),
-          const SizedBox(height: 12),
-          _InfoRow(
-            label: 'Customers',
-            value: '${subscription.customerUsage} / ${subscription.customerLimit?.toString() ?? 'Unlimited'}',
-          ),
-          const SizedBox(height: 12),
-          _InfoRow(label: 'Storage Used', value: _formatFileSize(subscription.storageUsageBytes)),
+          _InfoRow(label: l10n.subscriptionExpiryDateLabel, value: _formatDate(subscription.expiresAt)),
           const SizedBox(height: 12),
           _InfoRow(
-            label: 'Storage Limit',
-            value: subscription.storageLimit == null ? 'Unlimited' : '${subscription.storageLimit} GB',
+            label: l10n.subscriptionCustomersLabel,
+            value: '${subscription.customerUsage} / ${subscription.customerLimit?.toString() ?? l10n.subscriptionUnlimitedLabel}',
           ),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Analytics', value: subscription.analyticsEnabled ? 'Included' : 'Not Included'),
+          _InfoRow(label: l10n.storageUsedLabel, value: _formatFileSize(subscription.storageUsageBytes)),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Account Status', value: subscription.readOnly ? 'Read-only' : 'Normal'),
+          _InfoRow(
+            label: l10n.subscriptionStorageLimitLabel,
+            value: subscription.storageLimit == null ? l10n.subscriptionUnlimitedLabel : '${subscription.storageLimit} GB',
+          ),
+          const SizedBox(height: 12),
+          _InfoRow(
+            label: l10n.subscriptionAnalyticsLabel,
+            value: subscription.analyticsEnabled ? l10n.subscriptionIncludedLabel : l10n.subscriptionNotIncludedLabel,
+          ),
+          const SizedBox(height: 12),
+          _InfoRow(
+            label: l10n.subscriptionAccountStatusLabel,
+            value: subscription.readOnly ? l10n.subscriptionReadOnlyValueLabel : l10n.subscriptionNormalValueLabel,
+          ),
         ],
       ),
     );
@@ -243,30 +253,30 @@ class _ReadOnlyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.lock_outline, color: AppColors.warning, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.lock_outline, color: AppColors.warning, size: 20),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Customer Limit Reached',
-                  style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
+                  l10n.subscriptionCustomerLimitReachedTitle,
+                  style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            "You've reached your current plan's customer limit, so adding new customers is blocked. "
-            'Your existing data remains fully accessible. Upgrade your plan to add more customers.',
+            l10n.subscriptionCustomerLimitReachedMessage,
             style: AppTypography.body.copyWith(color: context.colors.textPrimary),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: onUpgradeTap, child: const Text('Upgrade Plan')),
+          ElevatedButton(onPressed: onUpgradeTap, child: Text(l10n.customerReadOnlyBannerUpgradeButton)),
         ],
       ),
     );
@@ -282,19 +292,20 @@ class _AvailablePlansSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final plansAsync = ref.watch(subscriptionPlansProvider);
 
     return plansAsync.when(
       loading: () => const SectionLoading(),
       error: (error, _) => RetrySection(
-        message: 'Could not load subscription plans.',
+        message: l10n.subscriptionPlansLoadError,
         onRetry: () => ref.invalidate(subscriptionPlansProvider),
       ),
       data: (plans) {
         if (plans.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text('No plans available.', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            child: Text(l10n.subscriptionNoPlansAvailable, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
           );
         }
         return Column(
@@ -325,6 +336,7 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppCard.radius),
@@ -353,9 +365,9 @@ class _PlanCard extends StatelessWidget {
                       color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text(
-                      'Current Plan',
-                      style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600),
+                    child: Text(
+                      l10n.subscriptionCurrentPlanBadge,
+                      style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   )
                 else if (isSelected)
@@ -363,13 +375,19 @@ class _PlanCard extends StatelessWidget {
               ],
             ),
             Divider(height: 24, color: context.colors.background),
-            _InfoRow(label: 'Monthly Price', value: plan.monthlyPrice),
+            _InfoRow(label: l10n.subscriptionMonthlyPriceLabel, value: plan.monthlyPrice),
             const SizedBox(height: 8),
-            _InfoRow(label: 'Customer Limit', value: plan.customerLimit?.toString() ?? 'Unlimited'),
+            _InfoRow(label: l10n.subscriptionPlanCustomerLimitLabel, value: plan.customerLimit?.toString() ?? l10n.subscriptionUnlimitedLabel),
             const SizedBox(height: 8),
-            _InfoRow(label: 'Storage Limit', value: plan.storageLimit == null ? 'Unlimited' : '${plan.storageLimit} GB'),
+            _InfoRow(
+              label: l10n.subscriptionStorageLimitLabel,
+              value: plan.storageLimit == null ? l10n.subscriptionUnlimitedLabel : '${plan.storageLimit} GB',
+            ),
             const SizedBox(height: 8),
-            _InfoRow(label: 'Analytics', value: plan.analyticsEnabled ? 'Included' : 'Not Included'),
+            _InfoRow(
+              label: l10n.subscriptionAnalyticsLabel,
+              value: plan.analyticsEnabled ? l10n.subscriptionIncludedLabel : l10n.subscriptionNotIncludedLabel,
+            ),
           ],
         ),
       ),
@@ -415,9 +433,10 @@ class _ChangeRequestHistorySection extends ConsumerWidget {
 
   Future<void> _cancel(BuildContext context, WidgetRef ref, String id) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     try {
       await ref.read(subscriptionActionsProvider).cancelChangeRequest(id);
-      messenger.showSnackBar(const SnackBar(content: Text('Subscription Change Request cancelled.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.subscriptionChangeRequestCancelledMessage)));
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -425,12 +444,13 @@ class _ChangeRequestHistorySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final listAsync = ref.watch(subscriptionChangeRequestListProvider);
 
     return listAsync.when(
       loading: () => const SectionLoading(),
       error: (error, _) => RetrySection(
-        message: 'Could not load your subscription change request history.',
+        message: l10n.subscriptionChangeRequestHistoryLoadError,
         onRetry: () => ref.invalidate(subscriptionChangeRequestListProvider),
       ),
       data: (state) {
@@ -438,7 +458,7 @@ class _ChangeRequestHistorySection extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              'No subscription change requests yet.',
+              l10n.subscriptionNoChangeRequestsMessage,
               style: AppTypography.body.copyWith(color: context.colors.textPrimary),
             ),
           );
@@ -462,7 +482,7 @@ class _ChangeRequestHistorySection extends ConsumerWidget {
                       )
                     : OutlinedButton(
                         onPressed: () => ref.read(subscriptionChangeRequestListProvider.notifier).loadMore(),
-                        child: const Text('Load More'),
+                        child: Text(l10n.subscriptionLoadMoreButton),
                       ),
               ),
             ],
@@ -481,6 +501,7 @@ class _ChangeRequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final rejectionReasons = request.rejectionReasons;
     final hasRejectionReasons = rejectionReasons != null && rejectionReasons.isNotEmpty;
 
@@ -504,25 +525,25 @@ class _ChangeRequestCard extends StatelessWidget {
             ],
           ),
           Divider(height: 24, color: context.colors.background),
-          _InfoRow(label: 'From', value: request.currentPlan?.name ?? '—'),
+          _InfoRow(label: l10n.subscriptionFromLabel, value: request.currentPlan?.name ?? '—'),
           const SizedBox(height: 8),
-          _InfoRow(label: 'Payment Reference', value: request.paymentReference),
+          _InfoRow(label: l10n.subscriptionPaymentReferenceLabel, value: request.paymentReference),
           const SizedBox(height: 8),
-          _InfoRow(label: 'Requested On', value: _formatDate(request.requestedAt)),
+          _InfoRow(label: l10n.subscriptionRequestedOnLabel, value: _formatDate(request.requestedAt)),
           if (request.reviewedAt != null) ...[
             const SizedBox(height: 8),
-            _InfoRow(label: 'Reviewed On', value: _formatDate(request.reviewedAt)),
+            _InfoRow(label: l10n.subscriptionReviewedOnLabel, value: _formatDate(request.reviewedAt)),
           ],
           if (hasRejectionReasons) ...[
             const SizedBox(height: 8),
-            _InfoRow(label: 'Rejection Reason', value: rejectionReasons.join(', ')),
+            _InfoRow(label: l10n.subscriptionRejectionReasonLabel, value: rejectionReasons.join(', ')),
           ] else if (request.rejectionReason != null) ...[
             const SizedBox(height: 8),
-            _InfoRow(label: 'Rejection Reason', value: request.rejectionReason!),
+            _InfoRow(label: l10n.subscriptionRejectionReasonLabel, value: request.rejectionReason!),
           ],
           if (onCancel != null) ...[
             const SizedBox(height: 12),
-            OutlinedButton(onPressed: onCancel, child: const Text('Cancel Request')),
+            OutlinedButton(onPressed: onCancel, child: Text(l10n.subscriptionCancelRequestButton)),
           ],
         ],
       ),

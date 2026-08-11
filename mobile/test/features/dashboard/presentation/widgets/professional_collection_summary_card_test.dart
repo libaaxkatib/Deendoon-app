@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/dashboard/presentation/widgets/professional_collection_summary_card.dart';
 import 'package:mobile/features/professional_collection/data/professional_collection_repository.dart';
 import 'package:mobile/features/professional_collection/domain/professional_collection_request.dart';
 import 'package:mobile/features/professional_collection/domain/professional_collection_summary.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
+
+const _localizationsDelegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
 
@@ -71,7 +83,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: Scaffold(body: ProfessionalCollectionSummaryCard())),
+        child: const MaterialApp(
+          locale: Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+          home: Scaffold(body: ProfessionalCollectionSummaryCard()),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -85,7 +102,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: Scaffold(body: ProfessionalCollectionSummaryCard())),
+        child: const MaterialApp(
+          locale: Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+          home: Scaffold(body: ProfessionalCollectionSummaryCard()),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -112,7 +134,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -137,7 +164,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -154,7 +186,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: Scaffold(body: ProfessionalCollectionSummaryCard())),
+        child: const MaterialApp(
+          locale: Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+          home: Scaffold(body: ProfessionalCollectionSummaryCard()),
+        ),
       ),
     );
     await tester.pumpAndSettle();

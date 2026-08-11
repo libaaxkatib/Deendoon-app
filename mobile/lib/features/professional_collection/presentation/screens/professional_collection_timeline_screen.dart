@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/professional_collection_detail_providers.dart';
 
 /// Professional Collection Request's "Timeline" destination —
@@ -19,10 +20,11 @@ class ProfessionalCollectionTimelineScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final timelineAsync = ref.watch(professionalCollectionTimelineProvider(requestId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Timeline')),
+      appBar: AppBar(title: Text(l10n.professionalCollectionTimelineTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(professionalCollectionTimelineProvider(requestId));
@@ -32,13 +34,13 @@ class ProfessionalCollectionTimelineScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
             child: RetrySection(
-              message: 'Could not load the timeline.',
+              message: l10n.professionalCollectionTimelineLoadError,
               onRetry: () => ref.invalidate(professionalCollectionTimelineProvider(requestId)),
             ),
           ),
           data: (events) {
             if (events.isEmpty) {
-              return const Center(child: Text('No timeline events yet', style: AppTypography.body));
+              return Center(child: Text(l10n.professionalCollectionTimelineEmptyState, style: AppTypography.body));
             }
 
             return ListView.separated(
@@ -65,7 +67,7 @@ class ProfessionalCollectionTimelineScreen extends ConsumerWidget {
                       if (event.outcome != null && event.outcome!.trim().isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
-                          'Outcome: ${event.outcome}',
+                          l10n.professionalCollectionTimelineOutcomeLabel(event.outcome!),
                           style: AppTypography.caption.copyWith(color: AppColors.primary),
                         ),
                       ],

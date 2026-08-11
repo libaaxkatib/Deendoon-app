@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/case_actions.dart';
 
 /// Backs Add Follow-up, Mark Contacted, and Record Visit — all three are
@@ -68,6 +69,7 @@ class _RecordActivitySheetState extends ConsumerState<_RecordActivitySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -85,14 +87,14 @@ class _RecordActivitySheetState extends ConsumerState<_RecordActivitySheet> {
             controller: _detailsController,
             maxLength: 1000,
             maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Notes (optional)'),
+            decoration: InputDecoration(labelText: l10n.recordPaymentNotesLabel),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 12),
-          PrimaryButton(label: 'Save', isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(label: l10n.commonSave, isLoading: _isLoading, onPressed: _submit),
         ],
       ),
     );

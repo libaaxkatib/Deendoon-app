@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
 import '../../../../core/widgets/risk_badge.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/customer.dart';
 
 /// Premium customer card — avatar initial, name, phone, outstanding
@@ -30,6 +31,7 @@ class CustomerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (customer.isArchived) {
       return AppCard(
         child: Row(
@@ -50,12 +52,12 @@ class CustomerCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(customer.phone, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
                   const SizedBox(height: 8),
-                  const _ArchivedBadge(),
+                  _ArchivedBadge(label: l10n.customerCardArchivedBadge),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            OutlinedButton(onPressed: onRestore, child: const Text('Restore')),
+            OutlinedButton(onPressed: onRestore, child: Text(l10n.customerCardRestoreButton)),
           ],
         ),
       );
@@ -117,7 +119,9 @@ class CustomerCard extends StatelessWidget {
 }
 
 class _ArchivedBadge extends StatelessWidget {
-  const _ArchivedBadge();
+  final String label;
+
+  const _ArchivedBadge({required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +131,7 @@ class _ArchivedBadge extends StatelessWidget {
         color: context.colors.background,
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text('Archived', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+      child: Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
     );
   }
 }

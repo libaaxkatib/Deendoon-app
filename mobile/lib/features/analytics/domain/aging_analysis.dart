@@ -1,3 +1,4 @@
+import '../../../l10n/generated/app_localizations.dart';
 import '../../debts/domain/debt.dart';
 
 /// Mirrors `ReportingService::agingBuckets()` — always exactly 5 buckets,
@@ -70,10 +71,10 @@ class AgingAnalysis {
 /// rows, so the two never drift out of sync.
 const agingBucketOrder = <String>['current', '1_30', '31_60', '61_90', 'over_90'];
 
-const agingBucketLabels = <String, String>{
-  'current': 'Current',
-  '1_30': '1–30 Days',
-  '31_60': '31–60 Days',
-  '61_90': '61–90 Days',
-  'over_90': 'Over 90 Days',
-};
+Map<String, String> agingBucketLabels(AppLocalizations l10n) => {
+      'current': l10n.agingBucketCurrentLabel,
+      '1_30': l10n.agingBucket1To30Label,
+      '31_60': l10n.agingBucket31To60Label,
+      '61_90': l10n.agingBucket61To90Label,
+      'over_90': l10n.agingBucketOver90Label,
+    };

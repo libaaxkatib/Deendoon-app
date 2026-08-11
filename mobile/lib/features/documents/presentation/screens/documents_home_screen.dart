@@ -6,26 +6,27 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/document_list_provider.dart';
 import '../widgets/document_card.dart';
 import '../widgets/document_type_icon.dart';
 import '../widgets/storage_usage_card.dart';
 
-const _tabFilters = <String?, String>{
-  null: 'All',
-  'invoices': 'Invoices',
-  'receipts': 'Receipts',
-  'letters': 'Letters',
-  'other': 'Other',
-};
+Map<String?, String> _tabFilters(AppLocalizations l10n) => {
+      null: l10n.documentTabAll,
+      'invoices': l10n.documentTabInvoices,
+      'receipts': l10n.documentTabReceipts,
+      'letters': l10n.documentTabLetters,
+      'other': l10n.documentTabOther,
+    };
 
-const _emptyMessages = <String?, String>{
-  null: 'No documents yet',
-  'invoices': 'No invoices yet',
-  'receipts': 'No receipts yet',
-  'letters': 'No letters yet',
-  'other': 'No statements yet',
-};
+Map<String?, String> _emptyMessages(AppLocalizations l10n) => {
+      null: l10n.customerDocumentsEmptyState,
+      'invoices': l10n.documentEmptyInvoices,
+      'receipts': l10n.documentEmptyReceipts,
+      'letters': l10n.documentEmptyLetters,
+      'other': l10n.documentEmptyStatements,
+    };
 
 /// Documents Center (§8.1 "All Documents") — the real content of the
 /// Documents tab. Header search icon toggles a real, debounced search
@@ -55,6 +56,7 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final documentsAsync = ref.watch(documentListProvider);
 
     return Scaffold(
@@ -63,10 +65,10 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(hintText: 'Search documents...'),
+                decoration: InputDecoration(hintText: l10n.documentSearchHint),
                 onChanged: (value) => ref.read(documentListProvider.notifier).search(value),
               )
-            : const Text('Documents'),
+            : Text(l10n.navDocuments),
         actions: [
           IconButton(
             icon: Icon(_searching ? Icons.close : Icons.search),
@@ -90,7 +92,7 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _tabFilters.entries) ...[
+                  for (final entry in _tabFilters(l10n).entries) ...[
                     _TabFilterChip(
                       label: entry.value,
                       selected: documentsAsync.valueOrNull?.type == entry.key,
@@ -107,7 +109,7 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Recent Documents',
+                    l10n.documentRecentDocumentsHeading,
                     style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -117,7 +119,7 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                   // `documentListProvider`, already reflecting whichever
                   // tab/search is active here — no query params needed.
                   onPressed: () => context.push('/documents/list'),
-                  child: const Text('View All'),
+                  child: Text(l10n.commonViewAll),
                 ),
               ],
             ),
@@ -128,7 +130,7 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (error, _) => RetrySection(
-                message: 'Could not load documents.',
+                message: l10n.customerDocumentsLoadError,
                 onRetry: () => ref.invalidate(documentListProvider),
               ),
               data: (state) {
@@ -138,7 +140,7 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                       : Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(
-                            _emptyMessages[state.type] ?? 'No documents yet',
+                            _emptyMessages(l10n)[state.type] ?? l10n.customerDocumentsEmptyState,
                             style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                           ),
                         );
@@ -172,16 +174,17 @@ class _StatementsEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
           const DocumentTypeIcon(documentType: 'statement', size: 56),
           const SizedBox(height: 16),
-          Text('No statements yet', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+          Text(l10n.documentEmptyStatements, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 4),
           Text(
-            'Account statements will appear here once generated.',
+            l10n.documentEmptyStatementsCaption,
             style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
             textAlign: TextAlign.center,
           ),

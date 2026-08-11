@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/case_actions.dart';
 
 /// Edit Notes — `PUT /collection-cases/{id}` (`UpdateCollectionCaseRequest`:
@@ -63,6 +64,7 @@ class _EditCaseNotesSheetState extends ConsumerState<_EditCaseNotesSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -76,11 +78,11 @@ class _EditCaseNotesSheetState extends ConsumerState<_EditCaseNotesSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Edit Notes', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.caseNotesEditTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
-              decoration: const InputDecoration(labelText: 'Notes'),
+              decoration: InputDecoration(labelText: l10n.addEditDebtNotesHeading),
               maxLines: 5,
               minLines: 3,
             ),
@@ -89,7 +91,7 @@ class _EditCaseNotesSheetState extends ConsumerState<_EditCaseNotesSheet> {
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: 'Save Notes', isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(label: l10n.editCaseNotesSaveButton, isLoading: _isLoading, onPressed: _submit),
           ],
         ),
       ),

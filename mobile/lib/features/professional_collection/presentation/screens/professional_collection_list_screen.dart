@@ -8,19 +8,20 @@ import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/professional_collection_list_provider.dart';
 
-const _statusFilters = <String?, String>{
-  null: 'All',
-  'submitted': 'Submitted',
-  'under_review': 'Under Review',
-  'need_more_information': 'Need More Information',
-  'accepted': 'Accepted',
-  'assigned': 'Assigned',
-  'in_progress': 'In Progress',
-  'recovered': 'Recovered',
-  'closed': 'Closed',
-};
+Map<String?, String> _statusFilters(AppLocalizations l10n) => <String?, String>{
+      null: l10n.debtListFilterAll,
+      'submitted': l10n.statusSubmitted,
+      'under_review': l10n.statusUnderReview,
+      'need_more_information': l10n.statusNeedMoreInformation,
+      'accepted': l10n.statusAccepted,
+      'assigned': l10n.statusAssigned,
+      'in_progress': l10n.statusInProgress,
+      'recovered': l10n.statusRecovered,
+      'closed': l10n.statusClosed,
+    };
 
 /// Professional Collection Requests List — tenant-wide, reached from the
 /// Cases tab (mirrors the existing "Browse Customers" icon pattern on
@@ -60,10 +61,11 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final requestsAsync = ref.watch(professionalCollectionListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Professional Collection Requests')),
+      appBar: AppBar(title: Text(l10n.caseListProfessionalRequestsTooltip)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -74,7 +76,7 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _statusFilters.entries) ...[
+                  for (final entry in _statusFilters(l10n).entries) ...[
                     _StatusFilterChip(
                       label: entry.value,
                       selected: requestsAsync.valueOrNull?.status == entry.key,
@@ -91,7 +93,7 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load Professional Collection Requests.',
+                    message: l10n.professionalCollectionListLoadError,
                     onRetry: () => ref.invalidate(professionalCollectionListProvider),
                   ),
                 ),
@@ -100,8 +102,8 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                     return Center(
                       child: Text(
                         state.status == null
-                            ? 'No Professional Collection Requests yet'
-                            : 'No requests match this filter',
+                            ? l10n.professionalCollectionListEmptyState
+                            : l10n.professionalCollectionListEmptyFilteredState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

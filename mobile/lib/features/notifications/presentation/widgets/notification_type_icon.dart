@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/deendoon_colors.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// Client-side rendering for the 9 real `NotificationType` enum values
 /// (`deendoon/app/Enums/NotificationType.php`) — the backend resource
@@ -42,15 +43,18 @@ class NotificationTypeIcon extends StatelessWidget {
 /// The corresponding human-readable label for each type, used everywhere
 /// [NotificationTypeIcon] appears since the backend never sends display
 /// text for a notification.
-String notificationTypeLabel(String type) => switch (type) {
-      'credit_limit_reached' => 'Credit Limit Reached',
-      'payment_received' => 'Payment Received',
-      'document_available' => 'Document Available',
-      'collection_assignment' => 'Collection Assignment',
-      'reminder_sent' => 'Reminder Sent',
-      'promise_to_pay_due' => 'Promise to Pay Due',
-      'professional_collection_request_update' => 'Collection Request Update',
-      'subscription_request_update' => 'Subscription Update',
-      'storage_request_update' => 'Storage Add-on Update',
-      _ => 'Notification',
-    };
+String notificationTypeLabel(BuildContext context, String type) {
+  final l10n = AppLocalizations.of(context);
+  return switch (type) {
+    'credit_limit_reached' => l10n.notificationTypeCreditLimitReached,
+    'payment_received' => l10n.notificationTypePaymentReceived,
+    'document_available' => l10n.notificationTypeDocumentAvailable,
+    'collection_assignment' => l10n.notificationTypeCollectionAssignment,
+    'reminder_sent' => l10n.notificationTypeReminderSent,
+    'promise_to_pay_due' => l10n.notificationTypePromiseToPayDue,
+    'professional_collection_request_update' => l10n.notificationTypeCollectionRequestUpdate,
+    'subscription_request_update' => l10n.notificationTypeSubscriptionUpdate,
+    'storage_request_update' => l10n.notificationTypeStorageAddonUpdate,
+    _ => l10n.notificationTypeFallback,
+  };
+}

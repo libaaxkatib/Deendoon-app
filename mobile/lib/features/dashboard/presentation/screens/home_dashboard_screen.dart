@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../notifications/presentation/widgets/notification_bell_button.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/business_health_card.dart';
@@ -24,6 +26,7 @@ class HomeDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 50,
@@ -33,6 +36,7 @@ class HomeDashboardScreen extends ConsumerWidget {
           child: const DashboardGreeting(),
         ),
         actions: const [
+          ThemeToggleButton(),
           Padding(
             padding: EdgeInsets.only(right: 4),
             child: NotificationBellButton(),
@@ -43,22 +47,22 @@ class HomeDashboardScreen extends ConsumerWidget {
         onRefresh: () => refreshDashboard(ref),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          children: const [
-            BusinessHealthCard(),
-            SizedBox(height: 3),
-            KpiGrid(),
-            SizedBox(height: 3),
-            Text("Today's Overview", style: AppTypography.heading),
-            SizedBox(height: 2),
-            TodaysOverviewList(),
-            SizedBox(height: 3),
-            Text('Quick Actions', style: AppTypography.heading),
-            SizedBox(height: 2),
-            QuickActionsGrid(),
-            SizedBox(height: 16),
-            RecentCasesSection(),
-            SizedBox(height: 16),
-            ProfessionalCollectionSummaryCard(),
+          children: [
+            const BusinessHealthCard(),
+            const SizedBox(height: 3),
+            const KpiGrid(),
+            const SizedBox(height: 3),
+            Text(l10n.dashboardTodaysOverview, style: AppTypography.heading),
+            const SizedBox(height: 2),
+            const TodaysOverviewList(),
+            const SizedBox(height: 3),
+            Text(l10n.dashboardQuickActions, style: AppTypography.heading),
+            const SizedBox(height: 2),
+            const QuickActionsGrid(),
+            const SizedBox(height: 16),
+            const RecentCasesSection(),
+            const SizedBox(height: 16),
+            const ProfessionalCollectionSummaryCard(),
           ],
         ),
       ),

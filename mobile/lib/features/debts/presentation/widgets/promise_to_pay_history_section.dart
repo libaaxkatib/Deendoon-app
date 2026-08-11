@@ -5,6 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_detail_providers.dart';
 
 /// Promise to Pay History (mobile Item 11) — `GET /debts/{id}/promise-to-pay`
@@ -16,6 +17,7 @@ class PromiseToPayHistorySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final historyAsync = ref.watch(debtPromiseToPayHistoryProvider(debtId));
 
     return historyAsync.when(
@@ -24,14 +26,14 @@ class PromiseToPayHistorySection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load Promise to Pay history.',
+        message: l10n.promiseToPayHistoryLoadError,
         onRetry: () => ref.invalidate(debtPromiseToPayHistoryProvider(debtId)),
       ),
       data: (promises) {
         if (promises.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('No promises to pay recorded yet', style: AppTypography.body),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(l10n.promiseToPayHistoryEmptyState, style: AppTypography.body),
           );
         }
 
@@ -46,10 +48,10 @@ class PromiseToPayHistorySection extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Promised ${promise.promisedDate}', style: AppTypography.body),
+                          Text(l10n.promiseToPayHistoryPromisedLabel(promise.promisedDate), style: AppTypography.body),
                           const SizedBox(height: 2),
                           Text(
-                            'Recorded ${promise.createdAt.split('T').first}',
+                            l10n.promiseToPayHistoryRecordedLabel(promise.createdAt.split('T').first),
                             style: AppTypography.caption,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

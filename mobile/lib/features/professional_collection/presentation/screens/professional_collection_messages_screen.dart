@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../auth/domain/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/request_message.dart';
@@ -65,6 +66,7 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final messagesAsync = ref.watch(professionalCollectionMessagesProvider(widget.requestId));
     final requestAsync = ref.watch(professionalCollectionDetailProvider(widget.requestId));
     final authState = ref.watch(authProvider);
@@ -72,7 +74,7 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
     final isTerminal = requestAsync.valueOrNull?.isTerminal ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Messages')),
+      appBar: AppBar(title: Text(l10n.professionalCollectionMessagesTitle)),
       body: Column(
         children: [
           Expanded(
@@ -80,7 +82,7 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: RetrySection(
-                  message: 'Could not load messages.',
+                  message: l10n.professionalCollectionMessagesLoadError,
                   onRetry: () => ref.invalidate(professionalCollectionMessagesProvider(widget.requestId)),
                 ),
               ),
@@ -88,7 +90,7 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
                 if (messages.isEmpty) {
                   return Center(
                     child: Text(
-                      'No messages yet',
+                      l10n.professionalCollectionMessagesEmptyState,
                       style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                     ),
                   );
@@ -111,7 +113,7 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'This Professional Collection Request is closed — new messages are not accepted.',
+                l10n.professionalCollectionMessagesClosedNotice,
                 style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -134,7 +136,7 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
                             controller: _contentController,
                             maxLines: 3,
                             minLines: 1,
-                            decoration: const InputDecoration(hintText: 'Type a message'),
+                            decoration: InputDecoration(hintText: l10n.professionalCollectionMessageInputHint),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -164,6 +166,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
@@ -173,7 +176,9 @@ class _MessageBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOwnMessage ? 'You' : 'Deendoon Team',
+                  isOwnMessage
+                      ? l10n.professionalCollectionMessageSenderYou
+                      : l10n.professionalCollectionMessageSenderTeam,
                   style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 ),
                 const SizedBox(height: 4),

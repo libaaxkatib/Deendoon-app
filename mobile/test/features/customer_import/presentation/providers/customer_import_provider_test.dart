@@ -10,6 +10,8 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockCustomerImportRepository extends Mock implements CustomerImportRepository {}
 
+const _unsupportedFileTypeMessage = 'Unsupported file type. Only .xlsx and .xls files are supported.';
+
 void main() {
   late _MockCustomerImportRepository mockRepository;
   late ProviderContainer container;
@@ -29,7 +31,12 @@ void main() {
   test('selectFile with a supported extension moves to ImportFileSelected', () {
     container
         .read(customerImportProvider.notifier)
-        .selectFile(path: '/tmp/customers.xlsx', name: 'customers.xlsx', size: 2048);
+        .selectFile(
+          path: '/tmp/customers.xlsx',
+          name: 'customers.xlsx',
+          size: 2048,
+          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+        );
 
     final state = container.read(customerImportProvider) as ImportFileSelected;
     expect(state.fileName, 'customers.xlsx');
@@ -37,7 +44,12 @@ void main() {
   });
 
   test('selectFile with an unsupported extension moves to ImportFailed', () {
-    container.read(customerImportProvider.notifier).selectFile(path: '/tmp/customers.csv', name: 'customers.csv', size: 100);
+    container.read(customerImportProvider.notifier).selectFile(
+          path: '/tmp/customers.csv',
+          name: 'customers.csv',
+          size: 100,
+          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+        );
 
     final state = container.read(customerImportProvider) as ImportFailed;
     expect(state.message, contains('Unsupported file type'));
@@ -45,7 +57,12 @@ void main() {
 
   test('clear resets to ImportInitial', () {
     final notifier = container.read(customerImportProvider.notifier);
-    notifier.selectFile(path: '/tmp/customers.xlsx', name: 'customers.xlsx', size: 2048);
+    notifier.selectFile(
+          path: '/tmp/customers.xlsx',
+          name: 'customers.xlsx',
+          size: 2048,
+          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+        );
     notifier.clear();
 
     expect(container.read(customerImportProvider), isA<ImportInitial>());
@@ -64,7 +81,12 @@ void main() {
     when(() => mockRepository.commitImport(batchId: '01BATCH')).thenAnswer((_) async => commitResult);
 
     final notifier = container.read(customerImportProvider.notifier);
-    notifier.selectFile(path: '/tmp/customers.xlsx', name: 'customers.xlsx', size: 2048);
+    notifier.selectFile(
+          path: '/tmp/customers.xlsx',
+          name: 'customers.xlsx',
+          size: 2048,
+          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+        );
 
     await notifier.startImport();
 
@@ -79,7 +101,12 @@ void main() {
         .thenThrow(const ApiException(message: 'The uploaded file could not be read.', statusCode: 422));
 
     final notifier = container.read(customerImportProvider.notifier);
-    notifier.selectFile(path: '/tmp/customers.xlsx', name: 'customers.xlsx', size: 2048);
+    notifier.selectFile(
+          path: '/tmp/customers.xlsx',
+          name: 'customers.xlsx',
+          size: 2048,
+          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+        );
 
     await notifier.startImport();
 

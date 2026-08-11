@@ -6,11 +6,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../customers/presentation/widgets/customer_card.dart';
 import '../providers/report_credit_risk_provider.dart';
 import '../widgets/export_action.dart';
 
-const _riskFilters = <String?, String>{null: 'All', 'high': 'High', 'medium': 'Medium', 'low': 'Low'};
+Map<String?, String> _riskFilters(AppLocalizations l10n) =>
+    {null: l10n.debtListFilterAll, 'high': l10n.riskHigh, 'medium': l10n.riskMedium, 'low': l10n.riskLow};
 
 /// §5.2 Reports — Credit Risk category. Same `Customer` shape as the
 /// Customers report, ordered by `credit_score` desc server-side
@@ -46,15 +48,17 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final customersAsync = ref.watch(reportCreditRiskProvider);
+    final riskFilters = _riskFilters(l10n);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Credit Risk Report'),
+        title: Text(l10n.reportCreditRiskTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share),
-            tooltip: 'Export',
+            tooltip: l10n.reportExportTooltip,
             onPressed: () => showExportSheet(
               context,
               ref,
@@ -74,7 +78,7 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _riskFilters.entries) ...[
+                  for (final entry in riskFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
                       selected: customersAsync.valueOrNull?.riskLevel == entry.key,
@@ -91,7 +95,7 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load credit risk report.',
+                    message: l10n.reportCreditRiskLoadError,
                     onRetry: () => ref.invalidate(reportCreditRiskProvider),
                   ),
                 ),
@@ -99,7 +103,7 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
                   if (state.customers.isEmpty) {
                     return Center(
                       child: Text(
-                        'No customers match this filter',
+                        l10n.reportCustomersEmptyState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

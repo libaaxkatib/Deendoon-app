@@ -3,19 +3,32 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
-const _monthNames = <String>[
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
+List<String> _monthNames(AppLocalizations l10n) => [
+      l10n.dateRangeMonthJan,
+      l10n.dateRangeMonthFeb,
+      l10n.dateRangeMonthMar,
+      l10n.dateRangeMonthApr,
+      l10n.dateRangeMonthMay,
+      l10n.dateRangeMonthJun,
+      l10n.dateRangeMonthJul,
+      l10n.dateRangeMonthAug,
+      l10n.dateRangeMonthSep,
+      l10n.dateRangeMonthOct,
+      l10n.dateRangeMonthNov,
+      l10n.dateRangeMonthDec,
+    ];
 
 /// Sprint 16.1 polish: a friendlier "May 1 – May 31, 2026" display instead
 /// of raw ISO dates — pure presentation formatting, no new date package,
 /// no change to the underlying `DateTimeRange` value/filtering.
-String _formatRange(DateTimeRange range) {
+String _formatRange(DateTimeRange range, AppLocalizations l10n) {
   final start = range.start;
   final end = range.end;
-  final startMonth = _monthNames[start.month - 1];
-  final endMonth = _monthNames[end.month - 1];
+  final monthNames = _monthNames(l10n);
+  final startMonth = monthNames[start.month - 1];
+  final endMonth = monthNames[end.month - 1];
 
   if (start.year == end.year && start.month == end.month) {
     return '$startMonth ${start.day} – ${end.day}, ${end.year}';
@@ -47,6 +60,8 @@ class DateRangeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return AppCard(
       onTap: () => _pick(context),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -54,7 +69,7 @@ class DateRangeField extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              _formatRange(value),
+              _formatRange(value, l10n),
               style: AppTypography.subheading,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

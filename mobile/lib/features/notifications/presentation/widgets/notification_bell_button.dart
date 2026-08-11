@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/notification_list_provider.dart';
 
 /// Home header's primary action, replacing the former plain logout icon
@@ -14,10 +15,11 @@ class NotificationBellButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final hasUnread = ref.watch(notificationListProvider).valueOrNull?.hasUnread ?? false;
 
     return IconButton(
-      tooltip: 'Notifications',
+      tooltip: l10n.sectionNotifications,
       onPressed: () => context.push('/notifications'),
       icon: Stack(
         clipBehavior: Clip.none,

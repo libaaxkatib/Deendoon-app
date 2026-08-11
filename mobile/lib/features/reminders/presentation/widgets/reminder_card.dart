@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/reminder.dart';
 import '../providers/related_entity_provider.dart';
 import 'reminder_type_badge.dart';
@@ -29,6 +30,7 @@ class ReminderCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final relatedAsync = ref.watch(relatedEntityProvider('${reminder.relatedEntityType}:${reminder.relatedEntityId}'));
     final isCompleted = reminder.status == 'completed';
 
@@ -72,12 +74,12 @@ class ReminderCard extends ConsumerWidget {
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: onComplete,
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_outline, size: 16, color: AppColors.primary),
-                      SizedBox(width: 4),
-                      Text('Complete', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+                      const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      Text(l10n.reminderCardCompleteButton, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),

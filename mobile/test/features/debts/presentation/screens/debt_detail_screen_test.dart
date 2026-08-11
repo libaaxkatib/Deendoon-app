@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/models/payment.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/attachments/data/attachment_repository.dart';
@@ -16,7 +18,17 @@ import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/debts/domain/debt_timeline.dart';
 import 'package:mobile/features/debts/domain/promise_to_pay.dart';
 import 'package:mobile/features/debts/presentation/screens/debt_detail_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
+
+const _localizationsDelegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 class _MockDebtRepository extends Mock implements DebtRepository {}
 
@@ -66,7 +78,12 @@ Future<void> _pumpScreen(
         debtRepositoryProvider.overrideWithValue(debtRepository),
         customerRepositoryProvider.overrideWithValue(customerRepository),
       ],
-      child: const MaterialApp(home: DebtDetailScreen(debtId: '1')),
+      child: const MaterialApp(
+        locale: Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: _localizationsDelegates,
+        home: DebtDetailScreen(debtId: '1'),
+      ),
     ),
   );
 }
@@ -79,18 +96,37 @@ void main() {
     mockDebtRepository = _MockDebtRepository();
     mockCustomerRepository = _MockCustomerRepository();
 
-    when(() => mockDebtRepository.fetchDebt('1')).thenAnswer((_) async => _debt);
-    when(() => mockCustomerRepository.fetchCustomer('01CUST')).thenAnswer((_) async => _customer);
-    when(() => mockDebtRepository.fetchPayments('1')).thenAnswer((_) async => []);
-    when(() => mockDebtRepository.fetchDocuments('1')).thenAnswer((_) async => []);
-    when(() => mockDebtRepository.fetchTimeline('1'))
-        .thenAnswer((_) async => const DebtTimeline(debtId: '1', stages: []));
-    when(() => mockDebtRepository.fetchPromiseToPayHistory('1')).thenAnswer((_) async => []);
-    when(() => mockDebtRepository.fetchRelatedCase('1')).thenAnswer((_) async => null);
+    when(
+      () => mockDebtRepository.fetchDebt('1'),
+    ).thenAnswer((_) async => _debt);
+    when(
+      () => mockCustomerRepository.fetchCustomer('01CUST'),
+    ).thenAnswer((_) async => _customer);
+    when(
+      () => mockDebtRepository.fetchPayments('1'),
+    ).thenAnswer((_) async => []);
+    when(
+      () => mockDebtRepository.fetchDocuments('1'),
+    ).thenAnswer((_) async => []);
+    when(
+      () => mockDebtRepository.fetchTimeline('1'),
+    ).thenAnswer((_) async => const DebtTimeline(debtId: '1', stages: []));
+    when(
+      () => mockDebtRepository.fetchPromiseToPayHistory('1'),
+    ).thenAnswer((_) async => []);
+    when(
+      () => mockDebtRepository.fetchRelatedCase('1'),
+    ).thenAnswer((_) async => null);
   });
 
-  testWidgets('renders debt summary, customer info, and both section titles', (tester) async {
-    await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
+  testWidgets('renders debt summary, customer info, and both section titles', (
+    tester,
+  ) async {
+    await _pumpScreen(
+      tester,
+      debtRepository: mockDebtRepository,
+      customerRepository: mockCustomerRepository,
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('DBT-0001'), findsWidgets); // AppBar title + summary card
@@ -102,15 +138,21 @@ void main() {
     expect(find.text('Promise to Pay History'), findsOneWidget);
     expect(find.text('Related Case'), findsOneWidget);
     expect(find.text('No promises to pay recorded yet'), findsOneWidget);
-    expect(find.text('No collection case has been opened for this debt yet'), findsOneWidget);
+    expect(
+      find.text('No collection case has been opened for this debt yet'),
+      findsOneWidget,
+    );
 
     expect(find.text('Record Payment'), findsOneWidget);
     expect(find.text('Promise to Pay'), findsOneWidget);
     expect(find.text('Open Case'), findsOneWidget);
   });
 
-  testWidgets('renders real Promise to Pay History and Related Case data when present', (tester) async {
-    when(() => mockDebtRepository.fetchPromiseToPayHistory('1')).thenAnswer((_) async => const [
+  testWidgets(
+    'renders real Promise to Pay History and Related Case data when present',
+    (tester) async {
+      when(() => mockDebtRepository.fetchPromiseToPayHistory('1')).thenAnswer(
+        (_) async => const [
           PromiseToPay(
             id: '1',
             debtId: '1',
@@ -118,8 +160,10 @@ void main() {
             status: 'open',
             createdAt: '2026-08-01T10:00:00.000000Z',
           ),
-        ]);
-    when(() => mockDebtRepository.fetchRelatedCase('1')).thenAnswer((_) async => const CollectionCase(
+        ],
+      );
+      when(() => mockDebtRepository.fetchRelatedCase('1')).thenAnswer(
+        (_) async => const CollectionCase(
           id: '01CASE',
           debtId: '1',
           customerId: '01CUST',
@@ -134,26 +178,52 @@ void main() {
           lastActivityAt: '2026-08-01T10:00:00.000000Z',
           createdAt: '2026-08-01T10:00:00.000000Z',
           closedAt: null,
-        ));
+        ),
+      );
 
-    await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        debtRepository: mockDebtRepository,
+        customerRepository: mockCustomerRepository,
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Promised 2026-08-15'), findsOneWidget);
-    expect(find.text('COL-0001'), findsOneWidget);
-  });
+      expect(find.text('Promised 2026-08-15'), findsOneWidget);
+      expect(find.text('COL-0001'), findsOneWidget);
+    },
+  );
 
-  testWidgets('renders real payment history and documents when present', (tester) async {
+  testWidgets('renders real payment history and documents when present', (
+    tester,
+  ) async {
     when(() => mockDebtRepository.fetchPayments('1')).thenAnswer(
-      (_) async => const [Payment(id: '1', debtId: '1', amount: '250.00', paymentDate: '2026-07-20', paymentMethod: 'cash')],
+      (_) async => const [
+        Payment(
+          id: '1',
+          debtId: '1',
+          amount: '250.00',
+          paymentDate: '2026-07-20',
+          paymentMethod: 'cash',
+        ),
+      ],
     );
     when(() => mockDebtRepository.fetchDocuments('1')).thenAnswer(
       (_) async => const [
-        DocumentSummary(id: '1', documentType: 'receipt', referenceNumber: 'REC-0001', generatedAt: '2026-07-20', fileSize: 1024),
+        DocumentSummary(
+          id: '1',
+          documentType: 'receipt',
+          referenceNumber: 'REC-0001',
+          generatedAt: '2026-07-20',
+          fileSize: 1024,
+        ),
       ],
     );
 
-    await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
+    await _pumpScreen(
+      tester,
+      debtRepository: mockDebtRepository,
+      customerRepository: mockCustomerRepository,
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('250.00'), findsOneWidget);
@@ -161,67 +231,92 @@ void main() {
     expect(find.text('Receipt'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the debt fails to load', (tester) async {
-    when(() => mockDebtRepository.fetchDebt('1')).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the debt fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockDebtRepository.fetchDebt('1'),
+    ).thenThrow(Exception('network down'));
 
-    await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
+    await _pumpScreen(
+      tester,
+      debtRepository: mockDebtRepository,
+      customerRepository: mockCustomerRepository,
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Could not load this debt.'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('tapping Open Case calls the real endpoint, confirms, and navigates to the new Case Detail', (
-    tester,
-  ) async {
-    const collectionCase = CollectionCase(
-      id: '01CASE',
-      debtId: '1',
-      customerId: '01CUST',
-      customerName: 'Somali Builders',
-      outstandingAmount: '400.00',
-      riskLevel: 'low',
-      referenceNumber: 'COL-0001',
-      assignedOfficerUserId: null,
-      caseStatus: 'open',
-      closureOutcome: null,
-      notes: null,
-      lastActivityAt: '2026-08-01T10:00:00.000000Z',
-      createdAt: '2026-08-01T10:00:00.000000Z',
-      closedAt: null,
-    );
-    when(() => mockDebtRepository.openCase('1')).thenAnswer((_) async => collectionCase);
+  testWidgets(
+    'tapping Open Case calls the real endpoint, confirms, and navigates to the new Case Detail',
+    (tester) async {
+      const collectionCase = CollectionCase(
+        id: '01CASE',
+        debtId: '1',
+        customerId: '01CUST',
+        customerName: 'Somali Builders',
+        outstandingAmount: '400.00',
+        riskLevel: 'low',
+        referenceNumber: 'COL-0001',
+        assignedOfficerUserId: null,
+        caseStatus: 'open',
+        closureOutcome: null,
+        notes: null,
+        lastActivityAt: '2026-08-01T10:00:00.000000Z',
+        createdAt: '2026-08-01T10:00:00.000000Z',
+        closedAt: null,
+      );
+      when(
+        () => mockDebtRepository.openCase('1'),
+      ).thenAnswer((_) async => collectionCase);
 
-    tester.view.physicalSize = const Size(400, 2600);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+      tester.view.physicalSize = const Size(400, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final router = GoRouter(
-      initialLocation: '/',
-      routes: [
-        GoRoute(path: '/', builder: (_, _) => const DebtDetailScreen(debtId: '1')),
-        GoRoute(path: '/cases/:id', builder: (_, state) => Text('Case Detail Screen ${state.pathParameters['id']}')),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          debtRepositoryProvider.overrideWithValue(mockDebtRepository),
-          customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const DebtDetailScreen(debtId: '1'),
+          ),
+          GoRoute(
+            path: '/cases/:id',
+            builder: (_, state) =>
+                Text('Case Detail Screen ${state.pathParameters['id']}'),
+          ),
         ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    await tester.tap(find.text('Open Case'));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+            customerRepositoryProvider.overrideWithValue(
+              mockCustomerRepository,
+            ),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    verify(() => mockDebtRepository.openCase('1')).called(1);
-    expect(find.text('Case Detail Screen 01CASE'), findsOneWidget);
-  });
+      await tester.tap(find.text('Open Case'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockDebtRepository.openCase('1')).called(1);
+      expect(find.text('Case Detail Screen 01CASE'), findsOneWidget);
+    },
+  );
 
   testWidgets('Edit opens the Edit Debt screen', (tester) async {
     tester.view.physicalSize = const Size(400, 2600);
@@ -232,8 +327,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const DebtDetailScreen(debtId: '1')),
-        GoRoute(path: '/debts/1/edit', builder: (_, _) => const Text('Edit Debt Screen')),
+        GoRoute(
+          path: '/',
+          builder: (_, _) => const DebtDetailScreen(debtId: '1'),
+        ),
+        GoRoute(
+          path: '/debts/1/edit',
+          builder: (_, _) => const Text('Edit Debt Screen'),
+        ),
       ],
     );
 
@@ -243,7 +344,12 @@ void main() {
           debtRepositoryProvider.overrideWithValue(mockDebtRepository),
           customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -254,7 +360,9 @@ void main() {
     expect(find.text('Edit Debt Screen'), findsOneWidget);
   });
 
-  testWidgets('Attachments opens the debt-scoped Attachments screen', (tester) async {
+  testWidgets('Attachments opens the debt-scoped Attachments screen', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(400, 2600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -263,8 +371,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const DebtDetailScreen(debtId: '1')),
-        GoRoute(path: '/debts/1/attachments', builder: (_, _) => const Text('Attachments Screen')),
+        GoRoute(
+          path: '/',
+          builder: (_, _) => const DebtDetailScreen(debtId: '1'),
+        ),
+        GoRoute(
+          path: '/debts/1/attachments',
+          builder: (_, _) => const Text('Attachments Screen'),
+        ),
       ],
     );
 
@@ -274,7 +388,12 @@ void main() {
           debtRepositoryProvider.overrideWithValue(mockDebtRepository),
           customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -285,25 +404,34 @@ void main() {
     expect(find.text('Attachments Screen'), findsOneWidget);
   });
 
-  testWidgets('Generate Statement calls the real endpoint and shows a success snackbar', (tester) async {
-    const statement = DocumentSummary(
-      id: '2',
-      documentType: 'statement',
-      referenceNumber: 'STM-0001',
-      generatedAt: '2026-08-01T00:00:00.000000Z',
-      fileSize: 3000,
-    );
-    when(() => mockDebtRepository.generateStatement('1')).thenAnswer((_) async => statement);
+  testWidgets(
+    'Generate Statement calls the real endpoint and shows a success snackbar',
+    (tester) async {
+      const statement = DocumentSummary(
+        id: '2',
+        documentType: 'statement',
+        referenceNumber: 'STM-0001',
+        generatedAt: '2026-08-01T00:00:00.000000Z',
+        fileSize: 3000,
+      );
+      when(
+        () => mockDebtRepository.generateStatement('1'),
+      ).thenAnswer((_) async => statement);
 
-    await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        debtRepository: mockDebtRepository,
+        customerRepository: mockCustomerRepository,
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Generate Statement'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Generate Statement'));
+      await tester.pumpAndSettle();
 
-    verify(() => mockDebtRepository.generateStatement('1')).called(1);
-    expect(find.text('Statement generated successfully'), findsOneWidget);
-  });
+      verify(() => mockDebtRepository.generateStatement('1')).called(1);
+      expect(find.text('Statement generated successfully'), findsOneWidget);
+    },
+  );
 
   group('Scan Invoice (P2.6)', () {
     const attachment = Attachment(
@@ -331,67 +459,99 @@ void main() {
         ProviderScope(
           overrides: [
             debtRepositoryProvider.overrideWithValue(mockDebtRepository),
-            customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
-            attachmentRepositoryProvider.overrideWithValue(attachmentRepository),
-            attachmentCameraProvider.overrideWithValue(() async => capturedFile),
+            customerRepositoryProvider.overrideWithValue(
+              mockCustomerRepository,
+            ),
+            attachmentRepositoryProvider.overrideWithValue(
+              attachmentRepository,
+            ),
+            attachmentCameraProvider.overrideWithValue(
+              () async => capturedFile,
+            ),
           ],
-          child: const MaterialApp(home: DebtDetailScreen(debtId: '1')),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+            home: DebtDetailScreen(debtId: '1'),
+          ),
         ),
       );
       await tester.pumpAndSettle();
     }
 
-    testWidgets('capturing a photo uploads it as a debt attachment tagged Invoice', (tester) async {
-      final mockAttachmentRepository = _MockAttachmentRepository();
-      when(() => mockAttachmentRepository.uploadAttachment(
+    testWidgets(
+      'capturing a photo uploads it as a debt attachment tagged Invoice',
+      (tester) async {
+        final mockAttachmentRepository = _MockAttachmentRepository();
+        when(
+          () => mockAttachmentRepository.uploadAttachment(
             entityPathPrefix: 'debts/1',
             filePath: '/tmp/invoice.jpg',
             fileName: 'invoice.jpg',
             description: 'Invoice',
-          )).thenAnswer((_) async => attachment);
+          ),
+        ).thenAnswer((_) async => attachment);
+
+        await pumpWithCamera(
+          tester,
+          attachmentRepository: mockAttachmentRepository,
+          capturedFile: (path: '/tmp/invoice.jpg', name: 'invoice.jpg'),
+        );
+
+        await tester.tap(find.text('Scan Invoice'));
+        await tester.pumpAndSettle();
+
+        verify(
+          () => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          ),
+        ).called(1);
+        expect(find.text('Invoice attached successfully'), findsOneWidget);
+      },
+    );
+
+    testWidgets('dismissing the camera without a capture uploads nothing', (
+      tester,
+    ) async {
+      final mockAttachmentRepository = _MockAttachmentRepository();
 
       await pumpWithCamera(
         tester,
         attachmentRepository: mockAttachmentRepository,
-        capturedFile: (path: '/tmp/invoice.jpg', name: 'invoice.jpg'),
+        capturedFile: null,
       );
 
       await tester.tap(find.text('Scan Invoice'));
       await tester.pumpAndSettle();
 
-      verify(() => mockAttachmentRepository.uploadAttachment(
-            entityPathPrefix: 'debts/1',
-            filePath: '/tmp/invoice.jpg',
-            fileName: 'invoice.jpg',
-            description: 'Invoice',
-          )).called(1);
-      expect(find.text('Invoice attached successfully'), findsOneWidget);
+      verifyNever(
+        () => mockAttachmentRepository.uploadAttachment(
+          entityPathPrefix: any(named: 'entityPathPrefix'),
+          filePath: any(named: 'filePath'),
+          fileName: any(named: 'fileName'),
+          description: any(named: 'description'),
+        ),
+      );
     });
 
-    testWidgets('dismissing the camera without a capture uploads nothing', (tester) async {
+    testWidgets('shows the exact backend error when the upload fails', (
+      tester,
+    ) async {
       final mockAttachmentRepository = _MockAttachmentRepository();
-
-      await pumpWithCamera(tester, attachmentRepository: mockAttachmentRepository, capturedFile: null);
-
-      await tester.tap(find.text('Scan Invoice'));
-      await tester.pumpAndSettle();
-
-      verifyNever(() => mockAttachmentRepository.uploadAttachment(
-            entityPathPrefix: any(named: 'entityPathPrefix'),
-            filePath: any(named: 'filePath'),
-            fileName: any(named: 'fileName'),
-            description: any(named: 'description'),
-          ));
-    });
-
-    testWidgets('shows the exact backend error when the upload fails', (tester) async {
-      final mockAttachmentRepository = _MockAttachmentRepository();
-      when(() => mockAttachmentRepository.uploadAttachment(
-            entityPathPrefix: 'debts/1',
-            filePath: '/tmp/invoice.jpg',
-            fileName: 'invoice.jpg',
-            description: 'Invoice',
-          )).thenThrow(const ApiException(message: 'Storage limit reached.', statusCode: 422));
+      when(
+        () => mockAttachmentRepository.uploadAttachment(
+          entityPathPrefix: 'debts/1',
+          filePath: '/tmp/invoice.jpg',
+          fileName: 'invoice.jpg',
+          description: 'Invoice',
+        ),
+      ).thenThrow(
+        const ApiException(message: 'Storage limit reached.', statusCode: 422),
+      );
 
       await pumpWithCamera(
         tester,
@@ -432,67 +592,103 @@ void main() {
         ProviderScope(
           overrides: [
             debtRepositoryProvider.overrideWithValue(mockDebtRepository),
-            customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
-            attachmentRepositoryProvider.overrideWithValue(attachmentRepository),
-            attachmentFilePickerProvider.overrideWithValue(() async => pickedFile),
+            customerRepositoryProvider.overrideWithValue(
+              mockCustomerRepository,
+            ),
+            attachmentRepositoryProvider.overrideWithValue(
+              attachmentRepository,
+            ),
+            attachmentFilePickerProvider.overrideWithValue(
+              () async => pickedFile,
+            ),
           ],
-          child: const MaterialApp(home: DebtDetailScreen(debtId: '1')),
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+            home: DebtDetailScreen(debtId: '1'),
+          ),
         ),
       );
       await tester.pumpAndSettle();
     }
 
-    testWidgets('picking a file uploads it as a debt attachment tagged Invoice', (tester) async {
-      final mockAttachmentRepository = _MockAttachmentRepository();
-      when(() => mockAttachmentRepository.uploadAttachment(
+    testWidgets(
+      'picking a file uploads it as a debt attachment tagged Invoice',
+      (tester) async {
+        final mockAttachmentRepository = _MockAttachmentRepository();
+        when(
+          () => mockAttachmentRepository.uploadAttachment(
             entityPathPrefix: 'debts/1',
             filePath: '/tmp/invoice.pdf',
             fileName: 'invoice.pdf',
             description: 'Invoice',
-          )).thenAnswer((_) async => attachment);
+          ),
+        ).thenAnswer((_) async => attachment);
 
-      await pumpWithFilePicker(
-        tester,
-        attachmentRepository: mockAttachmentRepository,
-        pickedFile: (path: '/tmp/invoice.pdf', name: 'invoice.pdf'),
-      );
+        await pumpWithFilePicker(
+          tester,
+          attachmentRepository: mockAttachmentRepository,
+          pickedFile: (path: '/tmp/invoice.pdf', name: 'invoice.pdf'),
+        );
 
-      await tester.tap(find.text('Upload Invoice'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Upload Invoice'));
+        await tester.pumpAndSettle();
 
-      verify(() => mockAttachmentRepository.uploadAttachment(
+        verify(
+          () => mockAttachmentRepository.uploadAttachment(
             entityPathPrefix: 'debts/1',
             filePath: '/tmp/invoice.pdf',
             fileName: 'invoice.pdf',
             description: 'Invoice',
-          )).called(1);
-      expect(find.text('Invoice attached successfully'), findsOneWidget);
-    });
+          ),
+        ).called(1);
+        expect(find.text('Invoice attached successfully'), findsOneWidget);
+      },
+    );
 
-    testWidgets('dismissing the file picker without a selection uploads nothing', (tester) async {
-      final mockAttachmentRepository = _MockAttachmentRepository();
+    testWidgets(
+      'dismissing the file picker without a selection uploads nothing',
+      (tester) async {
+        final mockAttachmentRepository = _MockAttachmentRepository();
 
-      await pumpWithFilePicker(tester, attachmentRepository: mockAttachmentRepository, pickedFile: null);
+        await pumpWithFilePicker(
+          tester,
+          attachmentRepository: mockAttachmentRepository,
+          pickedFile: null,
+        );
 
-      await tester.tap(find.text('Upload Invoice'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Upload Invoice'));
+        await tester.pumpAndSettle();
 
-      verifyNever(() => mockAttachmentRepository.uploadAttachment(
+        verifyNever(
+          () => mockAttachmentRepository.uploadAttachment(
             entityPathPrefix: any(named: 'entityPathPrefix'),
             filePath: any(named: 'filePath'),
             fileName: any(named: 'fileName'),
             description: any(named: 'description'),
-          ));
-    });
+          ),
+        );
+      },
+    );
 
-    testWidgets('shows the exact backend error when the upload fails', (tester) async {
+    testWidgets('shows the exact backend error when the upload fails', (
+      tester,
+    ) async {
       final mockAttachmentRepository = _MockAttachmentRepository();
-      when(() => mockAttachmentRepository.uploadAttachment(
-            entityPathPrefix: 'debts/1',
-            filePath: '/tmp/invoice.pdf',
-            fileName: 'invoice.pdf',
-            description: 'Invoice',
-          )).thenThrow(const ApiException(message: 'Only PDF, JPG, PNG, DOC, or DOCX files are allowed.', statusCode: 422));
+      when(
+        () => mockAttachmentRepository.uploadAttachment(
+          entityPathPrefix: 'debts/1',
+          filePath: '/tmp/invoice.pdf',
+          fileName: 'invoice.pdf',
+          description: 'Invoice',
+        ),
+      ).thenThrow(
+        const ApiException(
+          message: 'Only PDF, JPG, PNG, DOC, or DOCX files are allowed.',
+          statusCode: 422,
+        ),
+      );
 
       await pumpWithFilePicker(
         tester,
@@ -503,63 +699,117 @@ void main() {
       await tester.tap(find.text('Upload Invoice'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Only PDF, JPG, PNG, DOC, or DOCX files are allowed.'), findsOneWidget);
+      expect(
+        find.text('Only PDF, JPG, PNG, DOC, or DOCX files are allowed.'),
+        findsOneWidget,
+      );
     });
   });
 
   group('Log Reminder', () {
-    testWidgets('Log WhatsApp opens the sheet and submits the entered details', (tester) async {
-      when(() => mockDebtRepository.logWhatsAppReminder(debtId: '1', details: 'Sent via WhatsApp'))
-          .thenAnswer((_) async => _debt);
+    testWidgets(
+      'Log WhatsApp opens the sheet and submits the entered details',
+      (tester) async {
+        when(
+          () => mockDebtRepository.logWhatsAppReminder(
+            debtId: '1',
+            details: 'Sent via WhatsApp',
+          ),
+        ).thenAnswer((_) async => _debt);
 
-      await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          debtRepository: mockDebtRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Log WhatsApp'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Log WhatsApp'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Log WhatsApp Reminder'), findsWidgets);
-      await tester.enterText(find.widgetWithText(TextField, 'Details (optional)'), 'Sent via WhatsApp');
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Log WhatsApp Reminder'));
-      await tester.pumpAndSettle();
+        expect(find.text('Log WhatsApp Reminder'), findsWidgets);
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Details (optional)'),
+          'Sent via WhatsApp',
+        );
+        await tester.tap(
+          find.widgetWithText(ElevatedButton, 'Log WhatsApp Reminder'),
+        );
+        await tester.pumpAndSettle();
 
-      verify(() => mockDebtRepository.logWhatsAppReminder(debtId: '1', details: 'Sent via WhatsApp')).called(1);
-      // Follow-up Timeline and the debt itself both refresh after a
-      // successful log — fetchTimeline/fetchDebt are called again beyond
-      // their initial load.
-      verify(() => mockDebtRepository.fetchTimeline('1')).called(2);
-      verify(() => mockDebtRepository.fetchDebt('1')).called(2);
-    });
+        verify(
+          () => mockDebtRepository.logWhatsAppReminder(
+            debtId: '1',
+            details: 'Sent via WhatsApp',
+          ),
+        ).called(1);
+        // Follow-up Timeline and the debt itself both refresh after a
+        // successful log — fetchTimeline/fetchDebt are called again beyond
+        // their initial load.
+        verify(() => mockDebtRepository.fetchTimeline('1')).called(2);
+        verify(() => mockDebtRepository.fetchDebt('1')).called(2);
+      },
+    );
 
-    testWidgets('Log SMS submits with no details when the field is left empty', (tester) async {
-      when(() => mockDebtRepository.logSmsReminder(debtId: '1', details: null)).thenAnswer((_) async => _debt);
+    testWidgets(
+      'Log SMS submits with no details when the field is left empty',
+      (tester) async {
+        when(
+          () => mockDebtRepository.logSmsReminder(debtId: '1', details: null),
+        ).thenAnswer((_) async => _debt);
 
-      await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          debtRepository: mockDebtRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Log SMS'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Log SMS'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Log SMS Reminder'));
-      await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(ElevatedButton, 'Log SMS Reminder'),
+        );
+        await tester.pumpAndSettle();
 
-      verify(() => mockDebtRepository.logSmsReminder(debtId: '1', details: null)).called(1);
-    });
+        verify(
+          () => mockDebtRepository.logSmsReminder(debtId: '1', details: null),
+        ).called(1);
+      },
+    );
 
     testWidgets('Log Call submits with the entered outcome', (tester) async {
-      when(() => mockDebtRepository.logCallReminder(debtId: '1', details: 'No answer')).thenAnswer((_) async => _debt);
+      when(
+        () => mockDebtRepository.logCallReminder(
+          debtId: '1',
+          details: 'No answer',
+        ),
+      ).thenAnswer((_) async => _debt);
 
-      await _pumpScreen(tester, debtRepository: mockDebtRepository, customerRepository: mockCustomerRepository);
+      await _pumpScreen(
+        tester,
+        debtRepository: mockDebtRepository,
+        customerRepository: mockCustomerRepository,
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Log Call'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextField, 'Details (optional)'), 'No answer');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Details (optional)'),
+        'No answer',
+      );
       await tester.tap(find.widgetWithText(ElevatedButton, 'Log Call'));
       await tester.pumpAndSettle();
 
-      verify(() => mockDebtRepository.logCallReminder(debtId: '1', details: 'No answer')).called(1);
+      verify(
+        () => mockDebtRepository.logCallReminder(
+          debtId: '1',
+          details: 'No answer',
+        ),
+      ).called(1);
     });
   });
 }

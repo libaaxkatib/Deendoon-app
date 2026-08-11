@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/report_payments_provider.dart';
 import '../widgets/date_range_field.dart';
 import '../widgets/export_action.dart';
@@ -53,16 +54,17 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final paymentsAsync = ref.watch(reportPaymentsProvider);
     final currentRange = paymentsAsync.valueOrNull?.dateRange;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payments Report'),
+        title: Text(l10n.reportPaymentsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share),
-            tooltip: 'Export',
+            tooltip: l10n.reportExportTooltip,
             onPressed: () => showExportSheet(
               context,
               ref,
@@ -92,7 +94,7 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
                 if (currentRange != null)
                   IconButton(
                     icon: const Icon(Icons.close),
-                    tooltip: 'Clear date filter',
+                    tooltip: l10n.reportPaymentsClearDateFilterTooltip,
                     onPressed: () => ref.read(reportPaymentsProvider.notifier).filterByDateRange(null),
                   ),
               ],
@@ -103,13 +105,13 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load payments.',
+                    message: l10n.reportPaymentsLoadError,
                     onRetry: () => ref.invalidate(reportPaymentsProvider),
                   ),
                 ),
                 data: (state) {
                   if (state.payments.isEmpty) {
-                    return const Center(child: Text('No payments in this range', style: AppTypography.body));
+                    return Center(child: Text(l10n.reportPaymentsEmptyState, style: AppTypography.body));
                   }
 
                   return RefreshIndicator(

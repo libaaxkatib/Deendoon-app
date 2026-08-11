@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/analytics/data/analytics_repository.dart';
 import 'package:mobile/features/analytics/domain/aging_analysis.dart';
 import 'package:mobile/features/analytics/presentation/screens/aging_bucket_debts_screen.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockAnalyticsRepository extends Mock implements AnalyticsRepository {}
@@ -59,7 +62,19 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockAnalyticsRepository
   await tester.pumpWidget(
     ProviderScope(
       overrides: [analyticsRepositoryProvider.overrideWithValue(repository)],
-      child: MaterialApp(home: AgingBucketDebtsScreen(bucket: bucket)),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: AgingBucketDebtsScreen(bucket: bucket),
+      ),
     ),
   );
 }

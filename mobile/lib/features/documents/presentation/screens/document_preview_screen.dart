@@ -7,6 +7,7 @@ import 'package:pdfx/pdfx.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/document_actions.dart';
 import '../providers/document_detail_providers.dart';
 
@@ -83,13 +84,14 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
 
   Future<void> _download(String referenceNumber) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     try {
       final bytes = await _ensureBytes();
       final path = await ref.read(documentActionsProvider).saveToDevice(
             referenceNumber: referenceNumber,
             bytes: bytes,
           );
-      messenger.showSnackBar(SnackBar(content: Text('Saved to $path')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.exportSavedToPathMessage(path))));
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -103,29 +105,30 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final documentAsync = ref.watch(documentDetailProvider(widget.documentId));
 
     return Scaffold(
       appBar: AppBar(
         title: Text(documentAsync.valueOrNull != null
             ? '${documentAsync.valueOrNull!.referenceNumber}.pdf'
-            : 'Document'),
+            : l10n.documentPreviewFallbackTitle),
         actions: documentAsync.valueOrNull == null
             ? null
             : [
                 IconButton(
                   icon: const Icon(Icons.download_outlined),
-                  tooltip: 'Download',
+                  tooltip: l10n.documentDownloadTooltip,
                   onPressed: () => _download(documentAsync.valueOrNull!.referenceNumber),
                 ),
                 IconButton(
                   icon: const Icon(Icons.share_outlined),
-                  tooltip: 'Share',
+                  tooltip: l10n.documentShareTooltip,
                   onPressed: () => context.push('/documents/${widget.documentId}/share'),
                 ),
                 IconButton(
                   icon: const Icon(Icons.history_outlined),
-                  tooltip: 'History',
+                  tooltip: l10n.documentHistoryTooltip,
                   onPressed: () => context.push('/documents/${widget.documentId}/history'),
                 ),
               ],
@@ -136,7 +139,7 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: RetrySection(
-              message: 'Could not load this document.',
+              message: l10n.documentPreviewLoadError,
               onRetry: () => ref.invalidate(documentDetailProvider(widget.documentId)),
             ),
           ),
@@ -152,7 +155,7 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: RetrySection(
-                      message: 'Could not render this document.',
+                      message: l10n.documentPreviewRenderError,
                       onRetry: () => setState(() {
                         _pdfError = null;
                         _bytesFuture = null;

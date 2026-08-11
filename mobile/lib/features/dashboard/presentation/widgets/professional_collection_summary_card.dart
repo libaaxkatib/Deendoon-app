@@ -8,6 +8,7 @@ import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../professional_collection/presentation/providers/professional_collection_summary_provider.dart';
 
 /// Home Dashboard's Professional Collection summary — `GET
@@ -23,23 +24,24 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final summaryAsync = ref.watch(professionalCollectionSummaryProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
-          title: 'Professional Collection',
+          title: l10n.professionalCollectionTitle,
           trailing: TextButton(
             onPressed: () => context.push('/professional-requests'),
-            child: const Text('View All'),
+            child: Text(l10n.commonViewAll),
           ),
         ),
         const SizedBox(height: 8),
         summaryAsync.when(
           loading: () => const SectionLoading(),
           error: (error, _) => RetrySection(
-            message: 'Could not load Professional Collection summary.',
+            message: l10n.professionalCollectionLoadError,
             onRetry: () => ref.invalidate(professionalCollectionSummaryProvider),
           ),
           data: (summary) {
@@ -47,7 +49,7 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
-                  'No cases submitted to Deendoon yet',
+                  l10n.professionalCollectionEmptyState,
                   style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                 ),
               );
@@ -63,10 +65,10 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _StatColumn(label: 'Active', value: summary.totalActive),
+                        child: _StatColumn(label: l10n.statusActive, value: summary.totalActive),
                       ),
                       Expanded(
-                        child: _StatColumn(label: 'Recovered', value: summary.totalRecovered),
+                        child: _StatColumn(label: l10n.statusRecovered, value: summary.totalRecovered),
                       ),
                     ],
                   ),
@@ -80,7 +82,7 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Latest Request',
+                                l10n.professionalCollectionLatestRequestLabel,
                                 style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                               ),
                               const SizedBox(height: 2),

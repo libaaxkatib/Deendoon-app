@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../quick_actions/presentation/add_case_flow.dart';
 import '../../../quick_actions/presentation/record_payment_flow.dart';
 
@@ -24,13 +25,14 @@ class QuickActionsGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
           child: _QuickActionTile(
             icon: Icons.add_box_outlined,
             iconColor: AppColors.primary,
-            label: 'Add Case',
+            label: l10n.quickActionAddCase,
             emphasized: true,
             onTap: () => startAddCaseFlow(context),
           ),
@@ -40,7 +42,7 @@ class QuickActionsGrid extends ConsumerWidget {
           child: _QuickActionTile(
             icon: Icons.attach_money,
             iconColor: AppColors.warning,
-            label: 'Record Payment',
+            label: l10n.quickActionRecordPayment,
             onTap: () => startRecordPaymentFlow(context),
           ),
         ),
@@ -49,7 +51,7 @@ class QuickActionsGrid extends ConsumerWidget {
           child: _QuickActionTile(
             icon: Icons.notifications_active_outlined,
             iconColor: AppColors.accent,
-            label: 'Add Reminder',
+            label: l10n.quickActionAddReminder,
             onTap: () => context.push('/reminders/new'),
           ),
         ),
@@ -58,7 +60,7 @@ class QuickActionsGrid extends ConsumerWidget {
           child: _QuickActionTile(
             icon: Icons.search,
             iconColor: AppColors.info,
-            label: 'Global Search',
+            label: l10n.quickActionGlobalSearch,
             onTap: () => context.push('/search'),
           ),
         ),

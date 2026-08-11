@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../theme/deendoon_colors.dart';
 
 /// Generic status pill, shared across every module. Real, distinct status
@@ -46,45 +47,46 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (color, label) = switch (status) {
       // customer_status
-      'active' => (context.colors.success, 'Active'),
-      'good_standing' => (context.colors.success, 'Good Standing'),
-      'late_payer' => (context.colors.warning, 'Late Payer'),
-      'high_risk' => (context.colors.danger, 'High Risk'),
-      'in_collection' => (context.colors.danger, 'In Collection'),
-      'recovered' => (context.colors.success, 'Recovered'),
-      'blocked' => (context.colors.textSecondary, 'Blocked'),
+      'active' => (context.colors.success, l10n.statusActive),
+      'good_standing' => (context.colors.success, l10n.statusGoodStanding),
+      'late_payer' => (context.colors.warning, l10n.statusLatePayer),
+      'high_risk' => (context.colors.danger, l10n.statusHighRisk),
+      'in_collection' => (context.colors.danger, l10n.statusInCollection),
+      'recovered' => (context.colors.success, l10n.statusRecovered),
+      'blocked' => (context.colors.textSecondary, l10n.statusBlocked),
       // debt_status
-      'draft' => (context.colors.textSecondary, 'Draft'),
-      'pending' => (context.colors.info, 'Pending'),
-      'overdue' => (context.colors.danger, 'Overdue'),
-      'partial_paid' => (context.colors.warning, 'Partially Paid'),
-      'paid' => (context.colors.success, 'Paid'),
-      'cancelled' => (context.colors.textSecondary, 'Cancelled'),
-      'written_off' => (context.colors.textSecondary, 'Written Off'),
+      'draft' => (context.colors.textSecondary, l10n.statusDraft),
+      'pending' => (context.colors.info, l10n.statusPending),
+      'overdue' => (context.colors.danger, l10n.statusOverdue),
+      'partial_paid' => (context.colors.warning, l10n.statusPartiallyPaid),
+      'paid' => (context.colors.success, l10n.statusPaid),
+      'cancelled' => (context.colors.textSecondary, l10n.statusCancelled),
+      'written_off' => (context.colors.textSecondary, l10n.statusWrittenOff),
       // case_status
-      'open' => (context.colors.info, 'Open'),
-      'closed' => (context.colors.textSecondary, 'Closed'),
+      'open' => (context.colors.info, l10n.statusOpen),
+      'closed' => (context.colors.textSecondary, l10n.statusClosed),
       // reminder status
-      'today' => (context.colors.warning, 'Today'),
-      'upcoming' => (context.colors.info, 'Upcoming'),
-      'completed' => (context.colors.success, 'Completed'),
+      'today' => (context.colors.warning, l10n.statusToday),
+      'upcoming' => (context.colors.info, l10n.statusUpcoming),
+      'completed' => (context.colors.success, l10n.statusCompleted),
       // professional_collection_request status (submitted/under_review/
       // need_more_information/accepted/assigned/in_progress only —
       // recovered/closed are already mapped above and reused as-is)
-      'submitted' => (context.colors.info, 'Submitted'),
-      'under_review' => (context.colors.info, 'Under Review'),
-      'need_more_information' => (context.colors.warning, 'Need More Information'),
-      'accepted' => (context.colors.info, 'Accepted'),
-      'assigned' => (context.colors.info, 'Assigned'),
-      'in_progress' => (context.colors.info, 'In Progress'),
+      'submitted' => (context.colors.info, l10n.statusSubmitted),
+      'under_review' => (context.colors.info, l10n.statusUnderReview),
+      'need_more_information' => (context.colors.warning, l10n.statusNeedMoreInformation),
+      'accepted' => (context.colors.info, l10n.statusAccepted),
+      'assigned' => (context.colors.info, l10n.statusAssigned),
+      'in_progress' => (context.colors.info, l10n.statusInProgress),
       // promise_to_pay status (open reuses case_status's mapping above)
-      'fulfilled' => (context.colors.success, 'Fulfilled'),
-      'broken' => (context.colors.danger, 'Broken'),
+      'fulfilled' => (context.colors.success, l10n.statusFulfilled),
+      'broken' => (context.colors.danger, l10n.statusBroken),
       // subscription_status (active reuses customer_status's mapping above)
-      'trialing' => (context.colors.info, 'Trial'),
-      'expired' => (context.colors.danger, 'Expired'),
+      'trialing' => (context.colors.info, l10n.statusTrial),
+      'expired' => (context.colors.danger, l10n.statusExpired),
       _ => (context.colors.textSecondary, status),
     };
 

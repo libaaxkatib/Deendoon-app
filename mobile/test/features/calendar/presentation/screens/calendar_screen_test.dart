@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/calendar/data/calendar_repository.dart';
 import 'package:mobile/features/calendar/domain/calendar_data.dart';
 import 'package:mobile/features/calendar/domain/calendar_entry.dart';
 import 'package:mobile/features/calendar/presentation/screens/calendar_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCalendarRepository extends Mock implements CalendarRepository {}
@@ -26,7 +29,19 @@ Future<void> _pumpScreen(WidgetTester tester, _MockCalendarRepository repository
   await tester.pumpWidget(
     ProviderScope(
       overrides: [calendarRepositoryProvider.overrideWithValue(repository)],
-      child: const MaterialApp(home: CalendarScreen()),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: const CalendarScreen(),
+      ),
     ),
   );
 }

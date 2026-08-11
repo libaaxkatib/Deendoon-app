@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_typography.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../customers/data/customer_repository.dart';
 import '../../../customers/domain/customer.dart';
 import '../../../customers/presentation/widgets/customer_card.dart';
@@ -66,6 +67,7 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
       minChildSize: 0.4,
@@ -76,19 +78,19 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Select Customer', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.customerListSelectTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             TextField(
               controller: _controller,
               onChanged: _onChanged,
-              decoration: const InputDecoration(hintText: 'Search by name or phone', prefixIcon: Icon(Icons.search)),
+              decoration: InputDecoration(hintText: l10n.customerSearchHint, prefixIcon: const Icon(Icons.search)),
             ),
             const SizedBox(height: 12),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : (_results?.isEmpty ?? true)
-                      ? const Center(child: Text('No customers found', style: AppTypography.body))
+                      ? Center(child: Text(l10n.customerPickerSheetEmptyState, style: AppTypography.body))
                       : ListView.separated(
                           controller: scrollController,
                           itemCount: _results!.length,

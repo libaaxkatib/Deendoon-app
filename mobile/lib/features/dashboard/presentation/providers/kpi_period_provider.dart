@@ -21,21 +21,21 @@ class KpiPeriodSelection {
 /// Range, `date_from`/`date_to`) query parameters.
 final kpiPeriodProvider = StateProvider<KpiPeriodSelection>((ref) => KpiPeriodSelection.thisMonth);
 
-/// Label -> real backend `period` value, in the order the picker sheet
-/// shows them. "Custom Date Range" isn't here — picking it opens a date
-/// range picker instead of resolving straight to a fixed key (see
-/// `KpiPeriodSelector`).
-const kpiPeriodOptions = <String, String>{
-  'Today': 'today',
-  'Yesterday': 'yesterday',
-  'This Week': 'this_week',
-  'Last Week': 'last_week',
-  'This Month': 'this_month',
-  'Last Month': 'last_month',
-  'This Quarter': 'this_quarter',
-  'Last Quarter': 'last_quarter',
-  'This Year': 'this_year',
-  'Last Year': 'last_year',
-};
-
-const kpiPeriodCustomLabel = 'Custom Date Range';
+/// Real backend `period` values, in the order the picker sheet shows them.
+/// Display labels are resolved from these keys at render time in
+/// `kpi_period_selector.dart` (which has a `BuildContext` for
+/// localization) — this file only owns state/data, not presentation text.
+/// "Custom Date Range" isn't here — picking it opens a date range picker
+/// instead of resolving straight to a fixed key (see `KpiPeriodSelector`).
+const kpiPeriodKeys = <String>[
+  'today',
+  'yesterday',
+  'this_week',
+  'last_week',
+  'this_month',
+  'last_month',
+  'this_quarter',
+  'last_quarter',
+  'this_year',
+  'last_year',
+];

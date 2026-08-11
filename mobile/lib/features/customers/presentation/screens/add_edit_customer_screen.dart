@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../quick_actions/domain/customer_draft.dart';
 import '../../domain/duplicate_warning.dart';
 import '../providers/customer_actions.dart';
@@ -106,15 +107,19 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
   /// Returns `true` if it already navigated away (to the matched existing
   /// customer) so `_save()` knows not to also pop back afterward.
   Future<bool> _showDuplicateDialog(DuplicateWarning warning) async {
+    final l10n = AppLocalizations.of(context);
     final router = GoRouter.of(context);
     final viewExisting = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Possible Duplicate'),
+        title: Text(l10n.addEditCustomerDuplicateTitle),
         content: Text(warning.message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('OK')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('View Existing Customer')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.commonOk)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.addEditCustomerViewExistingButton),
+          ),
         ],
       ),
     );
@@ -190,28 +195,31 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isEdit) {
       final customerAsync = ref.watch(customerDetailProvider(widget.customerId!));
       return customerAsync.when(
         loading: () => Scaffold(
-          appBar: AppBar(title: const Text('Edit Customer')),
+          appBar: AppBar(title: Text(l10n.customerEditTitle)),
           body: const Center(child: CircularProgressIndicator()),
         ),
         error: (error, _) => Scaffold(
-          appBar: AppBar(title: const Text('Edit Customer')),
-          body: const Center(child: Text('Could not load this customer.', style: AppTypography.body)),
+          appBar: AppBar(title: Text(l10n.customerEditTitle)),
+          body: Center(child: Text(l10n.customerDetailLoadError, style: AppTypography.body)),
         ),
         data: (customer) {
           _prefillFromExisting(customer);
-          return _buildForm(context);
+          return _buildForm(context, l10n);
         },
       );
     }
-    return _buildForm(context);
+    return _buildForm(context, l10n);
   }
 
-  Widget _buildForm(BuildContext context) {
-    final title = _isEdit ? 'Edit Customer' : (widget.deferSubmit ? 'Customer Details' : 'Add Customer');
+  Widget _buildForm(BuildContext context, AppLocalizations l10n) {
+    final title = _isEdit
+        ? l10n.customerEditTitle
+        : (widget.deferSubmit ? l10n.customerDetailsTitle : l10n.customerAddTitle);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Form(
@@ -222,17 +230,19 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
             TextFormField(
               controller: _nameController,
               maxLength: 255,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: l10n.addEditCustomerNameLabel),
               onChanged: (_) => _onIdentifyingFieldChanged(),
-              validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter the customer\'s name' : null,
+              validator: (value) =>
+                  (value == null || value.trim().isEmpty) ? l10n.addEditCustomerNameRequired : null,
             ),
             TextFormField(
               controller: _phoneController,
               maxLength: 30,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Phone'),
+              decoration: InputDecoration(labelText: l10n.addEditCustomerPhoneLabel),
               onChanged: (_) => _onIdentifyingFieldChanged(),
-              validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter a phone number' : null,
+              validator: (value) =>
+                  (value == null || value.trim().isEmpty) ? l10n.addEditCustomerPhoneRequired : null,
             ),
             if (_liveDuplicateWarning != null) ...[
               const SizedBox(height: 8),
@@ -245,18 +255,18 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
             TextFormField(
               controller: _addressController,
               maxLength: 500,
-              decoration: const InputDecoration(labelText: 'Address (Optional)'),
+              decoration: InputDecoration(labelText: l10n.addEditCustomerAddressLabel),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _creditLimitController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Credit Limit', hintText: '0.00'),
+              decoration: InputDecoration(labelText: l10n.creditLimitLabel, hintText: l10n.creditLimitHint),
               validator: (value) {
                 final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty) return 'Enter a credit limit';
+                if (trimmed.isEmpty) return l10n.creditLimitRequiredValidator;
                 final parsed = double.tryParse(trimmed);
-                if (parsed == null || parsed < 0) return 'Enter a valid credit limit';
+                if (parsed == null || parsed < 0) return l10n.creditLimitInvalidValidator;
                 return null;
               },
             ),
@@ -266,7 +276,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
             ],
             const SizedBox(height: 20),
             PrimaryButton(
-              label: _isEdit ? 'Save Changes' : (widget.deferSubmit ? 'Continue' : 'Add Customer'),
+              label: _isEdit ? l10n.saveChanges : (widget.deferSubmit ? l10n.addEditCustomerContinueButton : l10n.customerAddTitle),
               isLoading: _isSaving,
               onPressed: _save,
             ),

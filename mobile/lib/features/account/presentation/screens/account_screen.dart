@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_initial.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../auth/domain/auth_state.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -24,12 +25,13 @@ class AccountScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final auth = ref.watch(authProvider);
     final name = auth is Authenticated ? auth.user.name : '';
     final email = auth is Authenticated ? auth.user.email : '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Account')),
+      appBar: AppBar(title: Text(l10n.accountTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -71,7 +73,7 @@ class AccountScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'ACCOUNT',
+            l10n.accountSectionLabel,
             style: AppTypography.caption.copyWith(
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
@@ -83,32 +85,32 @@ class AccountScreen extends ConsumerWidget {
             children: [
               _AccountMenuTile(
                 icon: Icons.business_outlined,
-                label: 'Business Profile',
+                label: l10n.businessProfileTitle,
                 onTap: () => context.push('/account/business-profile'),
               ),
               _AccountMenuTile(
                 icon: Icons.card_membership_outlined,
-                label: 'Subscription',
+                label: l10n.subscriptionTitle,
                 onTap: () => context.push('/account/subscription'),
               ),
               _AccountMenuTile(
                 icon: Icons.settings_outlined,
-                label: 'Settings',
+                label: l10n.settingsTitle,
                 onTap: () => context.push('/account/settings'),
               ),
               _AccountMenuTile(
                 icon: Icons.notifications_outlined,
-                label: 'Notifications',
+                label: l10n.sectionNotifications,
                 onTap: () => context.push('/notifications'),
               ),
               _AccountMenuTile(
                 icon: Icons.info_outline,
-                label: 'About',
+                label: l10n.aboutTitle,
                 onTap: () => context.push('/account/about'),
               ),
               _AccountMenuTile(
                 icon: Icons.upload_file_outlined,
-                label: 'Bulk Import',
+                label: l10n.bulkImportTitle,
                 onTap: () => context.push('/account/bulk-import'),
                 isLast: true,
               ),
@@ -120,14 +122,14 @@ class AccountScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             splashColor: AppColors.danger.withValues(alpha: 0.12),
             highlightColor: AppColors.danger.withValues(alpha: 0.06),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.logout, color: AppColors.danger, size: 20),
-                SizedBox(width: 10),
+                const Icon(Icons.logout, color: AppColors.danger, size: 20),
+                const SizedBox(width: 10),
                 Text(
-                  'Logout',
-                  style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700, fontSize: 15),
+                  l10n.accountLogout,
+                  style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700, fontSize: 15),
                 ),
               ],
             ),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/notifications/domain/app_notification.dart';
 import 'package:mobile/features/notifications/presentation/screens/notification_detail_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 
 final _subscriptionNotification = AppNotification(
   id: '1',
@@ -35,7 +38,21 @@ Future<void> _pumpScreen(WidgetTester tester, AppNotification notification) asyn
     ],
   );
 
-  await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+  await tester.pumpWidget(
+    MaterialApp.router(
+      routerConfig: router,
+      locale: const Locale('en'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        SomaliMaterialLocalizationsDelegate(),
+        SomaliCupertinoLocalizationsDelegate(),
+      ],
+    ),
+  );
   await tester.pumpAndSettle();
 }
 

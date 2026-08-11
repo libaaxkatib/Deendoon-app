@@ -18,10 +18,15 @@ class CustomerImportNotifier extends Notifier<CustomerImportState> {
 
   CustomerImportRepository get _repository => ref.read(customerImportRepositoryProvider);
 
-  void selectFile({required String path, required String name, required int size}) {
+  void selectFile({
+    required String path,
+    required String name,
+    required int size,
+    required String unsupportedFileTypeMessage,
+  }) {
     final extension = name.contains('.') ? name.split('.').last.toLowerCase() : '';
     if (!importAllowedExtensions.contains(extension)) {
-      state = const ImportFailed(message: 'Unsupported file type. Only .xlsx and .xls files are supported.');
+      state = ImportFailed(message: unsupportedFileTypeMessage);
       return;
     }
     state = ImportFileSelected(filePath: path, fileName: name, fileSize: size);

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/dashboard_providers.dart';
 import '../../../../core/widgets/app_card.dart';
 
@@ -26,12 +27,13 @@ class TodaysOverviewList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final overview = ref.watch(todaysOverviewProvider);
 
     return overview.when(
       loading: () => const SectionLoading(),
       error: (error, _) => RetrySection(
-        message: "Could not load today's overview.",
+        message: l10n.todaysOverviewLoadError,
         onRetry: () => ref.invalidate(todaysOverviewProvider),
       ),
       data: (data) => Column(
@@ -39,7 +41,7 @@ class TodaysOverviewList extends ConsumerWidget {
           _OverviewRow(
             icon: Icons.notifications_outlined,
             iconColor: AppColors.info,
-            label: 'Reminders Due Today',
+            label: l10n.todaysOverviewRemindersDueToday,
             count: data.totalDueToday,
             onTap: () => context.go('/reminders?filter=today'),
           ),
@@ -47,7 +49,7 @@ class TodaysOverviewList extends ConsumerWidget {
           _OverviewRow(
             icon: Icons.payments_outlined,
             iconColor: AppColors.success,
-            label: 'Payments Due',
+            label: l10n.todaysOverviewPaymentsDue,
             count: data.paymentsDue,
             onTap: () => context.go('/reminders?filter=payments'),
           ),
@@ -55,7 +57,7 @@ class TodaysOverviewList extends ConsumerWidget {
           _OverviewRow(
             icon: Icons.person_outline,
             iconColor: AppColors.accent,
-            label: 'Client Visits',
+            label: l10n.todaysOverviewClientVisits,
             count: data.clientVisits,
             onTap: () => context.go('/reminders?filter=visits'),
           ),
@@ -63,7 +65,7 @@ class TodaysOverviewList extends ConsumerWidget {
           _OverviewRow(
             icon: Icons.call_outlined,
             iconColor: AppColors.warning,
-            label: 'Follow-ups',
+            label: l10n.todaysOverviewFollowUps,
             count: data.followUpCalls,
             onTap: () => context.go('/reminders?filter=calls'),
           ),

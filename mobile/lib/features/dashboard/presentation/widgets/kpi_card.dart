@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// A single KPI card (§4.2): label, primary value, and an optional trend
 /// delta. `trendPercentage`/`trendUp` stay `null` today — the backend does
@@ -33,6 +34,7 @@ class KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       onTap: onTap,
       elevation: 2,
@@ -74,7 +76,7 @@ class KpiCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  '$trendPercentage vs last month',
+                  l10n.kpiTrendVsLastMonth(trendPercentage!),
                   style: AppTypography.caption.copyWith(
                     fontSize: 10,
                     color: trendUp! ? AppColors.success : AppColors.danger,

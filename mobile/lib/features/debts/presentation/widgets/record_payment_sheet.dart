@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_actions.dart';
 
 /// Record Payment — `POST /debts/{id}/payments`
@@ -78,6 +79,7 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -91,22 +93,22 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Record Payment', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.quickActionRecordPayment, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             TextFormField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Amount'),
+              decoration: InputDecoration(labelText: l10n.addEditDebtAmountLabel),
               validator: (value) {
                 final amount = double.tryParse(value ?? '');
-                if (amount == null || amount <= 0) return 'Enter a valid amount';
+                if (amount == null || amount <= 0) return l10n.addEditDebtAmountInvalidValidator;
                 return null;
               },
             ),
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Payment Date'),
+              title: Text(l10n.recordPaymentDateLabel),
               subtitle: Text(_paymentDate.toIso8601String().split('T').first),
               trailing: const Icon(Icons.calendar_today, size: 18),
               onTap: _pickDate,
@@ -114,20 +116,20 @@ class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
             const SizedBox(height: 8),
             TextFormField(
               controller: _methodController,
-              decoration: const InputDecoration(labelText: 'Payment Method (optional)'),
+              decoration: InputDecoration(labelText: l10n.recordPaymentMethodLabel),
             ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _notesController,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
+              decoration: InputDecoration(labelText: l10n.recordPaymentNotesLabel),
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: 20),
-            PrimaryButton(label: 'Save Payment', isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(label: l10n.recordPaymentSaveButton, isLoading: _isLoading, onPressed: _submit),
           ],
         ),
       ),

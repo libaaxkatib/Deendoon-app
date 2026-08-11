@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_typography.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../widgets/login_form.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -8,6 +9,7 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -17,10 +19,10 @@ class LoginScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Deendoon', style: AppTypography.display, textAlign: TextAlign.center),
+                Text(l10n.loginAppName, style: AppTypography.display, textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 Text(
-                  'Smart Debt Recovery Assistant',
+                  l10n.loginTagline,
                   style: AppTypography.body,
                   textAlign: TextAlign.center,
                 ),

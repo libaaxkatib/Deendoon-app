@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:mobile/features/subscription/data/subscription_repository.dart';
 import 'package:mobile/features/subscription/domain/subscription.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
+
+const _localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 class _MockSubscriptionRepository extends Mock implements SubscriptionRepository {}
 
@@ -49,7 +61,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [subscriptionRepositoryProvider.overrideWithValue(mockRepository)],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -72,7 +89,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [subscriptionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: AnalyticsScreen()),
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+          home: const AnalyticsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -89,7 +111,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [subscriptionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(home: AnalyticsScreen()),
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: _localizationsDelegates,
+          home: const AnalyticsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

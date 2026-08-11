@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 // Reused directly from Reminders (Sprint 14) — `GET /message-templates`
 // is a generic, tenant-wide endpoint with nothing reminder-specific
 // about it; the same cross-feature provider-reuse pattern the Cases
@@ -45,13 +46,14 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
     });
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
+    final l10n = AppLocalizations.of(context);
     try {
       await ref.read(documentActionsProvider).share(
             documentId: widget.documentId,
             channel: _channel,
             templateId: _selectedTemplate!.id,
           );
-      messenger.showSnackBar(const SnackBar(content: Text('Document shared successfully')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.documentSharedSuccessMessage)));
       router.pop();
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -69,19 +71,20 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final templatesAsync = ref.watch(messageTemplatesProvider(_channel));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Share Document')),
+      appBar: AppBar(title: Text(l10n.documentShareTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'whatsapp', label: Text('WhatsApp')),
-                ButtonSegment(value: 'sms', label: Text('SMS')),
+              segments: [
+                ButtonSegment(value: 'whatsapp', label: Text(l10n.reminderDetailWhatsAppButton)),
+                ButtonSegment(value: 'sms', label: Text(l10n.reminderDetailSmsButton)),
               ],
               selected: {_channel},
               onSelectionChanged: (selection) => _switchChannel(selection.first),
@@ -91,19 +94,19 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
               child: templatesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => RetrySection(
-                  message: 'Could not load message templates.',
+                  message: l10n.messagePreviewTemplatesLoadError,
                   onRetry: () => ref.invalidate(messageTemplatesProvider(_channel)),
                 ),
                 data: (templates) {
                   if (templates.isEmpty) {
-                    return const Center(
-                      child: Text('No templates available for this channel', style: AppTypography.body),
+                    return Center(
+                      child: Text(l10n.messagePreviewEmptyTemplatesState, style: AppTypography.body),
                     );
                   }
 
                   return ListView(
                     children: [
-                      const Text('Use Template', style: AppTypography.heading),
+                      Text(l10n.messagePreviewUseTemplateHeading, style: AppTypography.heading),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -131,7 +134,9 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
               onPressed: (_selectedTemplate == null || _isSending) ? null : _send,
               child: _isSending
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_channel == 'whatsapp' ? 'Send via WhatsApp' : 'Send via SMS'),
+                  : Text(_channel == 'whatsapp'
+                      ? l10n.messagePreviewSendViaWhatsAppButton
+                      : l10n.messagePreviewSendViaSmsButton),
             ),
           ],
         ),

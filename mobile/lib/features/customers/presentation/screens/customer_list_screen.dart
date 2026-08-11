@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/customer_actions.dart';
 import '../providers/customer_list_provider.dart';
 import '../widgets/customer_card.dart';
@@ -52,10 +53,11 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   }
 
   Future<void> _restore(String customerId) async {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(customerActionsProvider).restore(customerId);
-      messenger.showSnackBar(const SnackBar(content: Text('Customer restored successfully')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.customerRestoredSuccessfully)));
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -63,15 +65,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final customersAsync = ref.watch(customerListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.selectionMode ? 'Select Customer' : 'Customers')),
+      appBar: AppBar(title: Text(widget.selectionMode ? l10n.customerListSelectTitle : l10n.customerListTitle)),
       floatingActionButton: widget.selectionMode
           ? null
           : FloatingActionButton(
               onPressed: () => context.push('/customers/new'),
-              tooltip: 'Add Customer',
+              tooltip: l10n.customerAddTitle,
               child: const Icon(Icons.add),
             ),
       body: Padding(
@@ -86,7 +89,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilterChip(
-                label: const Text('Show Archived'),
+                label: Text(l10n.customerListShowArchivedFilter),
                 selected: customersAsync.valueOrNull?.includeArchived ?? false,
                 onSelected: (_) => ref.read(customerListProvider.notifier).toggleIncludeArchived(),
               ),
@@ -97,7 +100,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load customers.',
+                    message: l10n.customerListLoadError,
                     onRetry: () => ref.invalidate(customerListProvider),
                   ),
                 ),
@@ -105,7 +108,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   if (state.customers.isEmpty) {
                     return Center(
                       child: Text(
-                        state.search.isEmpty ? 'No customers yet' : 'No customers match "${state.search}"',
+                        state.search.isEmpty
+                            ? l10n.customerListEmptyState
+                            : l10n.customerListEmptySearchState(state.search),
                         style: AppTypography.body,
                       ),
                     );

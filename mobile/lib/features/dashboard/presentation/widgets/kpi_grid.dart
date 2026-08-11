@@ -6,6 +6,7 @@ import '../../../../app/router/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/dashboard_providers.dart';
 import '../providers/kpi_period_provider.dart';
 import 'kpi_card.dart';
@@ -34,23 +35,24 @@ class KpiGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final kpis = ref.watch(dashboardKpisProvider);
-    final periodLabel = ref.watch(kpiPeriodProvider).label;
+    final periodLabel = kpiPeriodDisplayLabel(l10n, ref.watch(kpiPeriodProvider));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Row(
+        Row(
           children: [
-            Expanded(child: Text('KPI Overview', style: AppTypography.heading)),
-            KpiPeriodSelector(),
+            Expanded(child: Text(l10n.kpiOverviewTitle, style: AppTypography.heading)),
+            const KpiPeriodSelector(),
           ],
         ),
         const SizedBox(height: 4),
         kpis.when(
           loading: () => const SectionLoading(),
           error: (error, _) => RetrySection(
-            message: 'Could not load KPIs.',
+            message: l10n.kpiLoadError,
             onRetry: () => ref.invalidate(dashboardKpisProvider),
           ),
           data: (data) => GridView.count(
@@ -63,26 +65,26 @@ class KpiGrid extends ConsumerWidget {
             children: [
               KpiCard(
                 icon: Icons.account_balance_wallet_outlined,
-                label: 'Total Outstanding',
+                label: l10n.kpiTotalOutstanding,
                 value: data.totalOutstandingAmount,
                 onTap: () => context.push('/analytics/reports/debts'),
               ),
               KpiCard(
                 icon: Icons.savings_outlined,
-                label: 'Collected ($periodLabel)',
+                label: l10n.kpiCollectedPeriod(periodLabel),
                 value: data.totalCollectedPeriod,
                 onTap: () => context.go(RoutePaths.analytics),
               ),
               KpiCard(
                 icon: Icons.warning_amber_outlined,
-                label: 'Overdue Amount',
+                label: l10n.kpiOverdueAmount,
                 value: data.overdueValue,
                 valueColor: AppColors.danger,
                 onTap: () => context.push('/analytics/reports/debts?status=overdue'),
               ),
               KpiCard(
                 icon: Icons.groups_outlined,
-                label: 'High Risk Customers',
+                label: l10n.kpiHighRiskCustomers,
                 value: '${data.highRiskCustomers}',
                 onTap: () => context.go('${RoutePaths.cases}?tab=high_risk'),
               ),

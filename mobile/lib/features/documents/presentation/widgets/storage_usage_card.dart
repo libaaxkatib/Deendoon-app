@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/document_detail_providers.dart';
 import 'document_type_icon.dart';
 
@@ -20,19 +21,20 @@ class StorageUsageCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final usageAsync = ref.watch(storageUsageProvider);
 
     return usageAsync.when(
       loading: () => const SectionLoading(),
       error: (error, _) => RetrySection(
-        message: 'Could not load storage usage.',
+        message: l10n.documentStorageUsageLoadError,
         onRetry: () => ref.invalidate(storageUsageProvider),
       ),
       data: (usage) => AppCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Storage Usage', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            Text(l10n.documentStorageUsageTitle, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -45,7 +47,10 @@ class StorageUsageCard extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '${formatFileSize(usage.usedBytes)} of ${formatFileSize(usage.totalBytes)} used',
+              l10n.documentStorageUsageLabel(
+                formatFileSize(context, usage.usedBytes),
+                formatFileSize(context, usage.totalBytes),
+              ),
               style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
             ),
           ],

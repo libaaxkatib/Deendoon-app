@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../customers/presentation/providers/customer_detail_providers.dart';
 import '../providers/debt_list_provider.dart';
 import '../widgets/debt_card.dart';
@@ -35,13 +36,7 @@ class DebtListScreen extends ConsumerStatefulWidget {
 class _DebtListScreenState extends ConsumerState<DebtListScreen> {
   final _scrollController = ScrollController();
 
-  static const _statusFilters = <String?, String>{
-    null: 'All',
-    'overdue': 'Overdue',
-    'pending': 'Pending',
-    'partial_paid': 'Partially Paid',
-    'paid': 'Paid',
-  };
+  static const _statusFilterKeys = <String?>[null, 'overdue', 'pending', 'partial_paid', 'paid'];
 
   @override
   void initState() {
@@ -64,18 +59,27 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final customerAsync = ref.watch(customerDetailProvider(widget.customerId));
     final debtsAsync = ref.watch(debtListProvider(widget.customerId));
 
+    final statusFilterLabels = <String?, String>{
+      null: l10n.debtListFilterAll,
+      'overdue': l10n.statusOverdue,
+      'pending': l10n.statusPending,
+      'partial_paid': l10n.statusPartiallyPaid,
+      'paid': l10n.statusPaid,
+    };
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.selectionMode ? 'Select Debt' : (customerAsync.valueOrNull?.name ?? 'Debts')),
+        title: Text(widget.selectionMode ? l10n.debtListSelectTitle : (customerAsync.valueOrNull?.name ?? l10n.debtListTitle)),
       ),
       floatingActionButton: widget.selectionMode
           ? null
           : FloatingActionButton(
               onPressed: () => context.push('/customers/${widget.customerId}/debts/new'),
-              tooltip: 'Add Debt',
+              tooltip: l10n.addEditDebtAddTitle,
               child: const Icon(Icons.add),
             ),
       body: Padding(
@@ -88,11 +92,11 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _statusFilters.entries) ...[
+                  for (final key in _statusFilterKeys) ...[
                     _StatusFilterChip(
-                      label: entry.value,
-                      selected: debtsAsync.valueOrNull?.status == entry.key,
-                      onTap: () => ref.read(debtListProvider(widget.customerId).notifier).filterByStatus(entry.key),
+                      label: statusFilterLabels[key]!,
+                      selected: debtsAsync.valueOrNull?.status == key,
+                      onTap: () => ref.read(debtListProvider(widget.customerId).notifier).filterByStatus(key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -105,7 +109,7 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load debts.',
+                    message: l10n.debtListLoadError,
                     onRetry: () => ref.invalidate(debtListProvider(widget.customerId)),
                   ),
                 ),
@@ -113,7 +117,7 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
                   if (state.debts.isEmpty) {
                     return Center(
                       child: Text(
-                        state.status == null ? 'No debts yet' : 'No debts with this status',
+                        state.status == null ? l10n.debtListEmptyState : l10n.debtListEmptyFilteredState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

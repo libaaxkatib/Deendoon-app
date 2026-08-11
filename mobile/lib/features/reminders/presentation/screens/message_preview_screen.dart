@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/reminder_repository.dart';
 import '../../domain/message_template.dart';
 import '../providers/reminder_detail_providers.dart';
@@ -119,10 +120,11 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
   /// standard `sms:` URI, which accepts the phone number as-is.
   Future<void> _send() async {
     if (_selectedTemplate == null || _renderedText == null) return;
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final phone = _recipientPhone;
     if (phone == null || phone.trim().isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('No phone number available for this customer.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderNoPhoneNumberMessage)));
       return;
     }
 
@@ -139,7 +141,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
     if (launched) {
       navigator.pop();
     } else {
-      setState(() => _error = _channel == 'whatsapp' ? 'Could not open WhatsApp.' : 'Could not open the messaging app.');
+      setState(() => _error = _channel == 'whatsapp' ? l10n.messagePreviewWhatsAppOpenError : l10n.messagePreviewMessagingAppOpenError);
     }
   }
 
@@ -179,19 +181,20 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final templatesAsync = ref.watch(messageTemplatesProvider(_channel));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Send Reminder')),
+      appBar: AppBar(title: Text(l10n.messagePreviewTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'whatsapp', label: Text('WhatsApp')),
-                ButtonSegment(value: 'sms', label: Text('SMS')),
+              segments: [
+                ButtonSegment(value: 'whatsapp', label: Text(l10n.reminderDetailWhatsAppButton)),
+                ButtonSegment(value: 'sms', label: Text(l10n.reminderDetailSmsButton)),
               ],
               selected: {_channel},
               onSelectionChanged: (selection) => _switchChannel(selection.first),
@@ -207,7 +210,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_recipientName ?? 'Unknown recipient', style: AppTypography.body),
+                          Text(_recipientName ?? l10n.messagePreviewUnknownRecipient, style: AppTypography.body),
                           if (_recipientPhone != null) Text(_recipientPhone!, style: AppTypography.caption),
                         ],
                       ),
@@ -220,17 +223,17 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
               child: templatesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => RetrySection(
-                  message: 'Could not load message templates.',
+                  message: l10n.messagePreviewTemplatesLoadError,
                   onRetry: () => ref.invalidate(messageTemplatesProvider(_channel)),
                 ),
                 data: (templates) {
                   if (templates.isEmpty) {
-                    return const Center(child: Text('No templates available for this channel', style: AppTypography.body));
+                    return Center(child: Text(l10n.messagePreviewEmptyTemplatesState, style: AppTypography.body));
                   }
 
                   return ListView(
                     children: [
-                      const Text('Use Template', style: AppTypography.heading),
+                      Text(l10n.messagePreviewUseTemplateHeading, style: AppTypography.heading),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -262,7 +265,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
               onPressed: (_selectedTemplate == null || _renderedText == null || _isSending) ? null : _send,
               child: _isSending
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_channel == 'whatsapp' ? 'Send via WhatsApp' : 'Send via SMS'),
+                  : Text(_channel == 'whatsapp' ? l10n.messagePreviewSendViaWhatsAppButton : l10n.messagePreviewSendViaSmsButton),
             ),
           ],
         ),

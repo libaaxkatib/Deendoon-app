@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/unavailable_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/professional_collection_request.dart';
 import '../providers/professional_collection_actions.dart';
 import '../providers/reference_data_providers.dart';
@@ -50,16 +51,17 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     if (_selectedReasons.isEmpty) {
-      setState(() => _error = 'Select at least one Reason for Transfer.');
+      setState(() => _error = l10n.professionalCollectionSubmitReasonsRequiredValidator);
       return;
     }
     if (_selectedServices.isEmpty) {
-      setState(() => _error = 'Select at least one Requested Service.');
+      setState(() => _error = l10n.professionalCollectionSubmitServicesRequiredValidator);
       return;
     }
     if (!_declarationAccepted) {
-      setState(() => _error = 'You must accept the Client Declaration to submit.');
+      setState(() => _error = l10n.professionalCollectionSubmitDeclarationRequiredValidator);
       return;
     }
 
@@ -132,6 +134,7 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -144,35 +147,34 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Submit to Professional Collection', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.professionalCollectionSubmitSheetTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text(
-              'This hands the case off to the Deendoon recovery team for review. '
-              'Your current plan stays active — this is a request, not an approval.',
+            Text(
+              l10n.professionalCollectionSubmitSheetDescription,
               style: AppTypography.caption,
             ),
             const SizedBox(height: 16),
-            const Text('Reason for Transfer', style: AppTypography.heading),
+            Text(l10n.professionalCollectionReasonForTransferHeading, style: AppTypography.heading),
             const SizedBox(height: 8),
             _multiSelect(
               category: ReferenceDataCategory.transferReason,
               selected: _selectedReasons,
-              emptyReason: 'No active Reasons for Transfer are configured for this tenant yet.',
-              errorMessage: 'Could not load Reasons for Transfer.',
+              emptyReason: l10n.professionalCollectionNoActiveReasonsConfigured,
+              errorMessage: l10n.professionalCollectionReasonsLoadError,
             ),
             const SizedBox(height: 16),
-            const Text('Requested Services', style: AppTypography.heading),
+            Text(l10n.professionalCollectionRequestedServicesHeading, style: AppTypography.heading),
             const SizedBox(height: 8),
             _multiSelect(
               category: ReferenceDataCategory.requestedService,
               selected: _selectedServices,
-              emptyReason: 'No active Requested Services are configured for this tenant yet.',
-              errorMessage: 'Could not load Requested Services.',
+              emptyReason: l10n.professionalCollectionNoActiveServicesConfigured,
+              errorMessage: l10n.professionalCollectionServicesLoadError,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _notesController,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
+              decoration: InputDecoration(labelText: l10n.recordPaymentNotesLabel),
               maxLength: 2000,
               maxLines: 3,
               minLines: 2,
@@ -180,7 +182,7 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
-              title: const Text('I confirm the Client Declaration for this hand-off.'),
+              title: Text(l10n.professionalCollectionDeclarationConfirmLabel),
               value: _declarationAccepted,
               onChanged: (checked) => setState(() => _declarationAccepted = checked ?? false),
             ),
@@ -189,7 +191,7 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: 'Submit Request', isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(label: l10n.professionalCollectionSubmitButton, isLoading: _isLoading, onPressed: _submit),
           ],
         ),
       ),

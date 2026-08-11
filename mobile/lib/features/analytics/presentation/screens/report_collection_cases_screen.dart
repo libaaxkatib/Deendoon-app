@@ -6,11 +6,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../cases/presentation/widgets/case_card.dart';
 import '../providers/report_collection_cases_provider.dart';
 import '../widgets/export_action.dart';
 
-const _statusFilters = <String?, String>{null: 'All', 'open': 'Open', 'closed': 'Closed'};
+Map<String?, String> _statusFilters(AppLocalizations l10n) =>
+    {null: l10n.debtListFilterAll, 'open': l10n.statusOpen, 'closed': l10n.statusClosed};
 
 /// §5.2 Reports — Collection Cases category, filtered by real `case_status`
 /// (open/closed) — a different query param from the Cases module's own
@@ -48,15 +50,17 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final casesAsync = ref.watch(reportCollectionCasesProvider);
+    final statusFilters = _statusFilters(l10n);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Collection Cases Report'),
+        title: Text(l10n.reportCollectionCasesTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share),
-            tooltip: 'Export',
+            tooltip: l10n.reportExportTooltip,
             onPressed: () => showExportSheet(
               context,
               ref,
@@ -76,7 +80,7 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _statusFilters.entries) ...[
+                  for (final entry in statusFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
                       selected: casesAsync.valueOrNull?.status == entry.key,
@@ -93,7 +97,7 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load collection cases.',
+                    message: l10n.reportCollectionCasesLoadError,
                     onRetry: () => ref.invalidate(reportCollectionCasesProvider),
                   ),
                 ),
@@ -101,7 +105,7 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
                   if (state.cases.isEmpty) {
                     return Center(
                       child: Text(
-                        'No cases match this filter',
+                        l10n.caseListEmptyFilteredState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

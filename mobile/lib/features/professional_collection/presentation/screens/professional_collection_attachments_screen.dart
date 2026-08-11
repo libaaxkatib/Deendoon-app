@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../attachments/presentation/providers/attachment_providers.dart';
 import '../providers/professional_collection_actions.dart';
 import '../providers/professional_collection_detail_providers.dart';
@@ -60,12 +61,13 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final attachmentsAsync = ref.watch(professionalCollectionAttachmentsProvider(widget.requestId));
     final requestAsync = ref.watch(professionalCollectionDetailProvider(widget.requestId));
     final canUpload = _canUploadStatuses.contains(requestAsync.valueOrNull?.status);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Attachments')),
+      appBar: AppBar(title: Text(l10n.customerDetailAttachmentsButton)),
       body: Column(
         children: [
           Expanded(
@@ -78,13 +80,15 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load attachments.',
+                    message: l10n.professionalCollectionAttachmentsLoadError,
                     onRetry: () => ref.invalidate(professionalCollectionAttachmentsProvider(widget.requestId)),
                   ),
                 ),
                 data: (attachments) {
                   if (attachments.isEmpty) {
-                    return const Center(child: Text('No attachments yet', style: AppTypography.body));
+                    return Center(
+                      child: Text(l10n.professionalCollectionAttachmentsEmptyState, style: AppTypography.body),
+                    );
                   }
 
                   return ListView.separated(
@@ -128,16 +132,20 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
                       Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       const SizedBox(height: 8),
                     ],
-                    PrimaryButton(label: 'Upload Attachment', isLoading: _isUploading, onPressed: _pickAndUpload),
+                    PrimaryButton(
+                      label: l10n.professionalCollectionUploadAttachmentButton,
+                      isLoading: _isUploading,
+                      onPressed: _pickAndUpload,
+                    ),
                   ],
                 ),
               ),
             )
           else if (requestAsync.hasValue)
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
-                'Uploading is not available at this stage of the Request.',
+                l10n.professionalCollectionUploadUnavailableMessage,
                 style: AppTypography.caption,
                 textAlign: TextAlign.center,
               ),

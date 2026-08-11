@@ -4,22 +4,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/premium_empty_state.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/calendar_entry.dart';
 import '../providers/calendar_providers.dart';
 import '../widgets/calendar_agenda_tile.dart';
 import '../widgets/calendar_month_grid.dart';
 
-const _monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+List<String> _monthNames(AppLocalizations l10n) => [
+  l10n.monthJan,
+  l10n.monthFeb,
+  l10n.monthMar,
+  l10n.monthApr,
+  l10n.monthMay,
+  l10n.monthJun,
+  l10n.monthJul,
+  l10n.monthAug,
+  l10n.monthSep,
+  l10n.monthOct,
+  l10n.monthNov,
+  l10n.monthDec,
 ];
 
-const _weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+List<String> _weekdayNames(AppLocalizations l10n) => [
+  l10n.calendarWeekdayMonday,
+  l10n.calendarWeekdayTuesday,
+  l10n.calendarWeekdayWednesday,
+  l10n.calendarWeekdayThursday,
+  l10n.calendarWeekdayFriday,
+  l10n.calendarWeekdaySaturday,
+  l10n.calendarWeekdaySunday,
+];
 
-String _monthLabel(DateTime month) => '${_monthNames[month.month - 1]} ${month.year}';
+String _monthLabel(AppLocalizations l10n, DateTime month) => '${_monthNames(l10n)[month.month - 1]} ${month.year}';
 
-String _selectedDayLabel(DateTime date) =>
-    '${_weekdayNames[date.weekday - 1]}, ${_monthNames[date.month - 1]} ${date.day}';
+String _selectedDayLabel(AppLocalizations l10n, DateTime date) =>
+    '${_weekdayNames(l10n)[date.weekday - 1]}, ${_monthNames(l10n)[date.month - 1]} ${date.day}';
 
 String _dateKey(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -35,12 +54,13 @@ class CalendarScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final month = ref.watch(visibleMonthProvider);
     final selectedDate = ref.watch(selectedDateProvider);
     final dataAsync = ref.watch(calendarMonthProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar')),
+      appBar: AppBar(title: Text(l10n.calendarTitle)),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -51,14 +71,14 @@ class CalendarScreen extends ConsumerWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.chevron_left),
-                  tooltip: 'Previous month',
+                  tooltip: l10n.calendarPreviousMonthTooltip,
                   onPressed: () => ref.read(visibleMonthProvider.notifier).state =
                       DateTime(month.year, month.month - 1),
                 ),
-                Text(_monthLabel(month), style: AppTypography.subheading),
+                Text(_monthLabel(l10n, month), style: AppTypography.subheading),
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
-                  tooltip: 'Next month',
+                  tooltip: l10n.calendarNextMonthTooltip,
                   onPressed: () => ref.read(visibleMonthProvider.notifier).state =
                       DateTime(month.year, month.month + 1),
                 ),
@@ -70,7 +90,7 @@ class CalendarScreen extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: RetrySection(
-                  message: 'Could not load calendar data.',
+                  message: l10n.calendarLoadError,
                   onRetry: () => ref.invalidate(calendarMonthProvider),
                 ),
               ),
@@ -91,13 +111,13 @@ class CalendarScreen extends ConsumerWidget {
                       onDaySelected: (date) => ref.read(selectedDateProvider.notifier).state = date,
                     ),
                     const SizedBox(height: 16),
-                    Text(_selectedDayLabel(selectedDate), style: AppTypography.subheading),
+                    Text(_selectedDayLabel(l10n, selectedDate), style: AppTypography.subheading),
                     const SizedBox(height: 12),
                     if (dayEntries.isEmpty)
-                      const PremiumEmptyState(
+                      PremiumEmptyState(
                         icon: Icons.event_available_outlined,
-                        title: 'No events',
-                        message: 'Nothing due, promised, or scheduled on this day.',
+                        title: l10n.calendarEmptyStateTitle,
+                        message: l10n.calendarEmptyStateMessage,
                       )
                     else
                       for (final entry in dayEntries) ...[

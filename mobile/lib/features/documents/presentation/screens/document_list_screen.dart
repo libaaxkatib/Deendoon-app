@@ -4,16 +4,17 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/document_list_provider.dart';
 import '../widgets/document_card.dart';
 
-const _tabTitles = <String?, String>{
-  null: 'All Documents',
-  'invoices': 'Invoices',
-  'receipts': 'Receipts',
-  'letters': 'Letters',
-  'other': 'Other',
-};
+Map<String?, String> _tabTitles(AppLocalizations l10n) => {
+      null: l10n.documentListTitleAll,
+      'invoices': l10n.documentTabInvoices,
+      'receipts': l10n.documentTabReceipts,
+      'letters': l10n.documentTabLetters,
+      'other': l10n.documentTabOther,
+    };
 
 /// "View All" destination from Documents Home (§8.1) — the full,
 /// infinite-scroll Document List for whichever tab/search was active.
@@ -52,21 +53,22 @@ class _DocumentListScreenState extends ConsumerState<DocumentListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final documentsAsync = ref.watch(documentListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_tabTitles[documentsAsync.valueOrNull?.type] ?? 'Documents')),
+      appBar: AppBar(title: Text(_tabTitles(l10n)[documentsAsync.valueOrNull?.type] ?? l10n.navDocuments)),
       body: documentsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
           child: RetrySection(
-            message: 'Could not load documents.',
+            message: l10n.customerDocumentsLoadError,
             onRetry: () => ref.invalidate(documentListProvider),
           ),
         ),
         data: (state) {
           if (state.documents.isEmpty) {
-            return const Center(child: Text('No documents yet', style: AppTypography.body));
+            return Center(child: Text(l10n.customerDocumentsEmptyState, style: AppTypography.body));
           }
 
           return RefreshIndicator(

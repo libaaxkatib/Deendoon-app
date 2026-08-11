@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/case_actions.dart';
 
 /// Close Case — `POST /collection-cases/{id}/close`
@@ -63,6 +64,7 @@ class _CloseCaseSheetState extends ConsumerState<_CloseCaseSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -76,20 +78,21 @@ class _CloseCaseSheetState extends ConsumerState<_CloseCaseSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Close Case', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.closeCaseTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             TextFormField(
               controller: _outcomeController,
               maxLength: 50,
-              decoration: const InputDecoration(labelText: 'Closure Outcome'),
-              validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter a closure outcome' : null,
+              decoration: InputDecoration(labelText: l10n.closeCaseSheetReasonLabel),
+              validator: (value) =>
+                  (value == null || value.trim().isEmpty) ? l10n.closeCaseSheetReasonRequiredValidator : null,
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: 'Close Case', isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(label: l10n.closeCaseTitle, isLoading: _isLoading, onPressed: _submit),
           ],
         ),
       ),

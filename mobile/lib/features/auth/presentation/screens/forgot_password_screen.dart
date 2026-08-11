@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_typography.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../widgets/forgot_password_form.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {
@@ -8,8 +9,9 @@ class ForgotPasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Forgot Password')),
+      appBar: AppBar(title: Text(l10n.forgotPasswordTitle)),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -19,8 +21,7 @@ class ForgotPasswordScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Enter the email associated with your account and we\'ll '
-                  'send you a link to reset your password.',
+                  l10n.forgotPasswordInstructions,
                   style: AppTypography.body,
                 ),
                 const SizedBox(height: 24),

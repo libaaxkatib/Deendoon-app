@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../app/router/route_paths.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Calls `POST /reset-password` directly through `AuthRepository`. Mirrors
@@ -13,7 +14,9 @@ import '../providers/auth_provider.dart';
 /// the token emailed to the user is entered manually rather than parsed
 /// from a link.
 class ResetPasswordForm extends ConsumerStatefulWidget {
-  const ResetPasswordForm({super.key});
+  final String? initialEmail;
+
+  const ResetPasswordForm({super.key, this.initialEmail});
 
   @override
   ConsumerState<ResetPasswordForm> createState() => _ResetPasswordFormState();
@@ -21,7 +24,7 @@ class ResetPasswordForm extends ConsumerStatefulWidget {
 
 class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(text: widget.initialEmail);
   final _tokenController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -68,7 +71,7 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
         if (mounted) context.go(RoutePaths.login);
       }
     } on ApiException catch (e) {
-      setState(() => _errorMessage = e.message);
+      setState(() => _errorMessage = e.detailedMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -76,6 +79,7 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: Column(
@@ -85,22 +89,22 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: InputDecoration(labelText: l10n.authEmailLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Email is required';
-              if (!_emailPattern.hasMatch(value.trim())) return 'Enter a valid email';
+              if (value == null || value.trim().isEmpty) return l10n.authEmailRequired;
+              if (!_emailPattern.hasMatch(value.trim())) return l10n.authEmailInvalid;
               return null;
             },
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _tokenController,
-            decoration: const InputDecoration(
-              labelText: 'Reset Code',
-              helperText: 'The code sent to your email',
+            decoration: InputDecoration(
+              labelText: l10n.resetPasswordCodeLabel,
+              helperText: l10n.resetPasswordCodeHelper,
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Reset code is required';
+              if (value == null || value.trim().isEmpty) return l10n.resetPasswordCodeRequired;
               return null;
             },
           ),
@@ -108,11 +112,11 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
           TextFormField(
             controller: _passwordController,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'New Password'),
+            decoration: InputDecoration(labelText: l10n.resetPasswordNewPasswordLabel),
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Password is required';
+              if (value == null || value.isEmpty) return l10n.authPasswordRequired;
               if (value.length < _minPasswordLength) {
-                return 'Password must be at least $_minPasswordLength characters';
+                return l10n.authPasswordMinLength(_minPasswordLength);
               }
               return null;
             },
@@ -121,9 +125,9 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
           TextFormField(
             controller: _confirmController,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Confirm New Password'),
+            decoration: InputDecoration(labelText: l10n.resetPasswordConfirmLabel),
             validator: (value) {
-              if (value != _passwordController.text) return 'Passwords do not match';
+              if (value != _passwordController.text) return l10n.authPasswordsMismatch;
               return null;
             },
           ),
@@ -140,7 +144,7 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
           ],
           const SizedBox(height: 24),
           PrimaryButton(
-            label: 'Reset Password',
+            label: l10n.resetPasswordSubmitButton,
             isLoading: _isLoading,
             onPressed: _successMessage == null ? _submit : null,
           ),

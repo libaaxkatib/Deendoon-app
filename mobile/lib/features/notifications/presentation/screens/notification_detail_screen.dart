@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/app_notification.dart';
 import '../widgets/notification_type_icon.dart';
 
@@ -39,10 +40,11 @@ class NotificationDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final openRoute = _openRoute();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notification')),
+      appBar: AppBar(title: Text(l10n.notificationTypeFallback)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -54,7 +56,7 @@ class NotificationDetailScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    notificationTypeLabel(notification.type),
+                    notificationTypeLabel(context, notification.type),
                     style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
                   ),
                 ),
@@ -65,15 +67,18 @@ class NotificationDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _DetailRow(label: 'Related to', value: notification.relatedEntityType),
+                  _DetailRow(label: l10n.notificationDetailRelatedToLabel, value: notification.relatedEntityType),
                   const SizedBox(height: 12),
-                  _DetailRow(label: 'Reference ID', value: notification.relatedEntityId),
-                  const SizedBox(height: 12),
-                  _DetailRow(label: 'Received', value: notification.createdAt.toLocal().toString()),
+                  _DetailRow(label: l10n.notificationDetailReferenceIdLabel, value: notification.relatedEntityId),
                   const SizedBox(height: 12),
                   _DetailRow(
-                    label: 'Status',
-                    value: notification.isRead ? 'Read' : 'Unread',
+                    label: l10n.notificationDetailReceivedLabel,
+                    value: notification.createdAt.toLocal().toString(),
+                  ),
+                  const SizedBox(height: 12),
+                  _DetailRow(
+                    label: l10n.notificationDetailStatusLabel,
+                    value: notification.isRead ? l10n.notificationDetailStatusRead : l10n.notificationDetailStatusUnread,
                     valueColor: notification.isRead ? context.colors.textSecondary : AppColors.primary,
                   ),
                 ],
@@ -85,7 +90,7 @@ class NotificationDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => context.push(openRoute),
-                  child: const Text('Open'),
+                  child: Text(l10n.notificationDetailOpenButton),
                 ),
               ),
             ],

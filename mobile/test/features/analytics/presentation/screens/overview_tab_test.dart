@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/analytics/data/analytics_repository.dart';
 import 'package:mobile/features/analytics/domain/aging_analysis.dart';
 import 'package:mobile/features/analytics/domain/collection_analytics.dart';
@@ -9,7 +11,17 @@ import 'package:mobile/features/analytics/domain/collections_trend.dart';
 import 'package:mobile/features/analytics/domain/risk_distribution.dart';
 import 'package:mobile/features/analytics/presentation/screens/overview_tab.dart';
 import 'package:mobile/features/debts/domain/debt_page.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
+
+const _localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+  SomaliMaterialLocalizationsDelegate(),
+  SomaliCupertinoLocalizationsDelegate(),
+];
 
 class _MockAnalyticsRepository extends Mock implements AnalyticsRepository {}
 
@@ -53,7 +65,12 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockAnalyticsRepository
   await tester.pumpWidget(
     ProviderScope(
       overrides: [analyticsRepositoryProvider.overrideWithValue(repository)],
-      child: const MaterialApp(home: Scaffold(body: OverviewTab())),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: _localizationsDelegates,
+        home: const Scaffold(body: OverviewTab()),
+      ),
     ),
   );
 }
@@ -106,7 +123,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [analyticsRepositoryProvider.overrideWithValue(mockRepository)],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+          ),
         ),
       );
       await tester.pumpAndSettle();

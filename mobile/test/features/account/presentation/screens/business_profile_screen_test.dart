@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/account/data/business_profile_repository.dart';
 import 'package:mobile/features/account/domain/business_profile.dart';
 import 'package:mobile/features/account/presentation/screens/business_profile_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockBusinessProfileRepository extends Mock implements BusinessProfileRepository {}
@@ -27,7 +30,19 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockBusinessProfileRepo
   await tester.pumpWidget(
     ProviderScope(
       overrides: [businessProfileRepositoryProvider.overrideWithValue(repository)],
-      child: const MaterialApp(home: BusinessProfileScreen()),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: const BusinessProfileScreen(),
+      ),
     ),
   );
 }

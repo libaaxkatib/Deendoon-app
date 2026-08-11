@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/auth/domain/auth_state.dart';
 import 'package:mobile/features/auth/domain/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_provider.dart';
@@ -8,6 +10,7 @@ import 'package:mobile/features/professional_collection/data/professional_collec
 import 'package:mobile/features/professional_collection/domain/professional_collection_request.dart';
 import 'package:mobile/features/professional_collection/domain/request_message.dart';
 import 'package:mobile/features/professional_collection/presentation/screens/professional_collection_messages_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
@@ -80,7 +83,19 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockProfessionalCollect
         professionalCollectionRepositoryProvider.overrideWithValue(repository),
         authProvider.overrideWith(_FakeAuthenticatedNotifier.new),
       ],
-      child: const MaterialApp(home: ProfessionalCollectionMessagesScreen(requestId: '1')),
+      child: const MaterialApp(
+        locale: Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: ProfessionalCollectionMessagesScreen(requestId: '1'),
+      ),
     ),
   );
 }

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/aging_analysis.dart';
 import '../providers/aging_analysis_provider.dart';
 import '../providers/collection_analytics_provider.dart';
@@ -24,7 +25,11 @@ const _riskColors = <String, Color>{
   'low': AppColors.success,
 };
 
-const _riskLabels = <String, String>{'high': 'High Risk', 'medium': 'Medium Risk', 'low': 'Low Risk'};
+Map<String, String> _riskLabels(AppLocalizations l10n) => {
+      'high': l10n.overviewRiskLabelHigh,
+      'medium': l10n.overviewRiskLabelMedium,
+      'low': l10n.overviewRiskLabelLow,
+    };
 
 const _agingColors = <String, Color>{
   'current': AppColors.success,
@@ -52,6 +57,7 @@ class OverviewTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final range = ref.watch(overviewDateRangeProvider);
 
     return ListView(
@@ -62,19 +68,19 @@ class OverviewTab extends ConsumerWidget {
           onChanged: (next) => ref.read(overviewDateRangeProvider.notifier).state = next,
         ),
         const SizedBox(height: 28),
-        const _SectionTitle('Collection Analytics'),
+        _SectionTitle(l10n.overviewSectionCollectionAnalytics),
         const SizedBox(height: 14),
         _CollectionAnalyticsRow(range: range),
         const SizedBox(height: 28),
-        const _SectionTitle('Collections Trend'),
+        _SectionTitle(l10n.overviewSectionCollectionsTrend),
         const SizedBox(height: 14),
         AppCard(child: _CollectionsTrendSection(range: range)),
         const SizedBox(height: 28),
-        const _SectionTitle('Aging Analysis'),
+        _SectionTitle(l10n.overviewSectionAgingAnalysis),
         const SizedBox(height: 14),
         const AppCard(child: _AgingAnalysisSection()),
         const SizedBox(height: 28),
-        const _SectionTitle('Risk Distribution'),
+        _SectionTitle(l10n.overviewSectionRiskDistribution),
         const SizedBox(height: 14),
         const AppCard(child: _RiskDistributionSection()),
       ],
@@ -103,6 +109,7 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final analyticsAsync = ref.watch(collectionAnalyticsProvider);
 
     return analyticsAsync.when(
@@ -111,7 +118,7 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load Collection Analytics.',
+        message: l10n.overviewCollectionAnalyticsLoadError,
         onRetry: () => ref.invalidate(collectionAnalyticsProvider),
       ),
       data: (analytics) {
@@ -122,7 +129,7 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
           children: [
             Expanded(
               child: KpiCard(
-                label: 'Collection Rate',
+                label: l10n.overviewKpiCollectionRate,
                 value: '${analytics.collectionRate.toStringAsFixed(1)}%',
                 onTap: () => context.push('/analytics/collection-rate-detail'),
               ),
@@ -130,7 +137,7 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: KpiCard(
-                label: 'Total Collected',
+                label: l10n.overviewKpiTotalCollected,
                 value: analytics.totalCollected,
                 onTap: () => context.push('/analytics/reports/payments?dateFrom=$dateFrom&dateTo=$dateTo'),
               ),
@@ -138,7 +145,7 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: KpiCard(
-                label: 'Average Days',
+                label: l10n.overviewKpiAverageDays,
                 value: analytics.averageDays?.toStringAsFixed(1) ?? '—',
                 onTap: () => context.push('/analytics/average-days-detail'),
               ),
@@ -157,6 +164,7 @@ class _CollectionsTrendSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final trendAsync = ref.watch(collectionsTrendProvider(range));
 
     return trendAsync.when(
@@ -165,7 +173,7 @@ class _CollectionsTrendSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load Collections Trend.',
+        message: l10n.overviewCollectionsTrendLoadError,
         onRetry: () => ref.invalidate(collectionsTrendProvider(range)),
       ),
       data: (trend) => TrendLineChart(series: trend.series),
@@ -178,7 +186,9 @@ class _AgingAnalysisSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final agingAsync = ref.watch(agingAnalysisProvider);
+    final labels = agingBucketLabels(l10n);
 
     return agingAsync.when(
       loading: () => const Padding(
@@ -186,7 +196,7 @@ class _AgingAnalysisSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load Aging Analysis.',
+        message: l10n.overviewAgingAnalysisLoadError,
         onRetry: () => ref.invalidate(agingAnalysisProvider),
       ),
       data: (aging) {
@@ -200,11 +210,11 @@ class _AgingAnalysisSection extends ConsumerWidget {
           children: [
             DonutChart(
               centerValue: total.toStringAsFixed(2),
-              centerLabel: 'Total Outstanding',
+              centerLabel: l10n.overviewDonutTotalOutstanding,
               segments: [
                 for (final key in agingBucketOrder)
                   DonutSegment(
-                    label: agingBucketLabels[key]!,
+                    label: labels[key]!,
                     value: double.tryParse(aging.buckets[key]?.totalRemainingBalance ?? '0') ?? 0,
                     color: _agingColors[key]!,
                   ),
@@ -216,7 +226,14 @@ class _AgingAnalysisSection extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (final key in agingBucketOrder)
-                    _agingLegendRow(context, key, aging.buckets[key] ?? const AgingBucket(count: 0, totalRemainingBalance: '0.00'), total),
+                    _agingLegendRow(
+                      context,
+                      l10n,
+                      key,
+                      aging.buckets[key] ?? const AgingBucket(count: 0, totalRemainingBalance: '0.00'),
+                      total,
+                      labels,
+                    ),
                 ],
               ),
             ),
@@ -226,14 +243,21 @@ class _AgingAnalysisSection extends ConsumerWidget {
     );
   }
 
-  Widget _agingLegendRow(BuildContext context, String key, AgingBucket bucket, double total) {
+  Widget _agingLegendRow(
+    BuildContext context,
+    AppLocalizations l10n,
+    String key,
+    AgingBucket bucket,
+    double total,
+    Map<String, String> labels,
+  ) {
     final value = double.tryParse(bucket.totalRemainingBalance) ?? 0;
     final percentage = total > 0 ? (value / total) * 100 : 0.0;
 
     return DonutLegendRow(
       color: _agingColors[key]!,
-      label: agingBucketLabels[key]!,
-      value: '${bucket.count} debt${bucket.count == 1 ? '' : 's'} · ${bucket.totalRemainingBalance}',
+      label: labels[key]!,
+      value: l10n.overviewAgingLegendValue(bucket.count, bucket.totalRemainingBalance),
       percentage: percentage,
       onTap: () => context.push('/analytics/reports/debts/aging/$key'),
     );
@@ -245,7 +269,9 @@ class _RiskDistributionSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final riskAsync = ref.watch(riskDistributionProvider);
+    final riskLabels = _riskLabels(l10n);
 
     return riskAsync.when(
       loading: () => const Padding(
@@ -253,7 +279,7 @@ class _RiskDistributionSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load Risk Distribution.',
+        message: l10n.overviewRiskDistributionLoadError,
         onRetry: () => ref.invalidate(riskDistributionProvider),
       ),
       data: (distribution) {
@@ -264,11 +290,11 @@ class _RiskDistributionSection extends ConsumerWidget {
           children: [
             DonutChart(
               centerValue: '$totalCustomers',
-              centerLabel: 'Classified Customers',
+              centerLabel: l10n.overviewDonutClassifiedCustomers,
               segments: [
                 for (final segment in distribution.segments)
                   DonutSegment(
-                    label: _riskLabels[segment.riskLevel] ?? segment.riskLevel,
+                    label: riskLabels[segment.riskLevel] ?? segment.riskLevel,
                     value: segment.customerCount.toDouble(),
                     color: _riskColors[segment.riskLevel] ?? context.colors.textSecondary,
                   ),
@@ -282,8 +308,8 @@ class _RiskDistributionSection extends ConsumerWidget {
                   for (final segment in distribution.segments)
                     DonutLegendRow(
                       color: _riskColors[segment.riskLevel] ?? context.colors.textSecondary,
-                      label: _riskLabels[segment.riskLevel] ?? segment.riskLevel,
-                      value: '${segment.customerCount} customer${segment.customerCount == 1 ? '' : 's'}',
+                      label: riskLabels[segment.riskLevel] ?? segment.riskLevel,
+                      value: l10n.overviewRiskLegendValue(segment.customerCount),
                       percentage: segment.percentage,
                       onTap: () => context.push('/analytics/reports/customers?riskLevel=${segment.riskLevel}'),
                     ),

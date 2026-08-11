@@ -5,14 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/professional_collection_detail_providers.dart';
 
-const _documentTypeLabels = {
-  'receipt': 'Receipt',
-  'demand_letter': 'Demand Letter',
-  'statement': 'Statement',
-  'invoice': 'Invoice',
-};
+Map<String, String> _documentTypeLabels(AppLocalizations l10n) => {
+      'receipt': l10n.documentTypeReceipt,
+      'demand_letter': l10n.documentTypeDemandLetter,
+      'statement': l10n.documentTypeStatement,
+      'invoice': l10n.documentTypeInvoice,
+    };
 
 /// Professional Collection Request's "Documents" destination —
 /// `GET /professional-requests/{id}/documents` — the existing Receipt/
@@ -27,10 +28,11 @@ class ProfessionalCollectionDocumentsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final documentsAsync = ref.watch(professionalCollectionDocumentsProvider(requestId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Documents')),
+      appBar: AppBar(title: Text(l10n.navDocuments)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(professionalCollectionDocumentsProvider(requestId));
@@ -40,13 +42,15 @@ class ProfessionalCollectionDocumentsScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
             child: RetrySection(
-              message: 'Could not load documents.',
+              message: l10n.customerDocumentsLoadError,
               onRetry: () => ref.invalidate(professionalCollectionDocumentsProvider(requestId)),
             ),
           ),
           data: (documents) {
             if (documents.isEmpty) {
-              return const Center(child: Text('No documents linked to this Request yet', style: AppTypography.body));
+              return Center(
+                child: Text(l10n.professionalCollectionDocumentsEmptyState, style: AppTypography.body),
+              );
             }
 
             return ListView.separated(
@@ -66,7 +70,7 @@ class ProfessionalCollectionDocumentsScreen extends ConsumerWidget {
                           Text(document.referenceNumber, style: AppTypography.body),
                           const SizedBox(height: 2),
                           Text(
-                            _documentTypeLabels[document.documentType] ?? document.documentType,
+                            _documentTypeLabels(l10n)[document.documentType] ?? document.documentType,
                             style: AppTypography.caption,
                           ),
                         ],

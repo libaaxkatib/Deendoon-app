@@ -8,6 +8,7 @@ import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/storage_addon.dart';
 import '../../domain/subscription_storage.dart';
 import '../providers/subscription_actions.dart';
@@ -66,6 +67,7 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
   /// still-pending request).
   Future<void> _onRequestAddon(String storagePackage) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final label = _packageLabel(storagePackage);
     final addon = await showRequestStorageAddonSheet(context, storagePackage, label);
     if (addon == null || !mounted) return;
@@ -75,7 +77,7 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
       _pendingAddon = addon;
     });
     messenger.showSnackBar(
-      SnackBar(content: Text('Storage Add-on request for $label submitted — pending Platform Administrator approval.')),
+      SnackBar(content: Text(l10n.storageAddonRequestSubmittedMessage(label))),
     );
   }
 
@@ -84,10 +86,11 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
     if (addon == null) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     try {
       await ref.read(subscriptionActionsProvider).cancelStorageAddon(addon.id);
       if (mounted) setState(() => _pendingAddon = null);
-      messenger.showSnackBar(const SnackBar(content: Text('Storage Add-on request cancelled.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.storageAddonRequestCancelledMessage)));
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -114,11 +117,12 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     ref.listen(subscriptionStorageProvider, (previous, next) => _reconcilePendingAddon(next));
     final storageAsync = ref.watch(subscriptionStorageProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Storage')),
+      appBar: AppBar(title: Text(l10n.storageTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(subscriptionStorageProvider);
@@ -131,7 +135,7 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: RetrySection(
-                message: 'Could not load your storage usage.',
+                message: l10n.storageLoadError,
                 onRetry: () => ref.invalidate(subscriptionStorageProvider),
               ),
             ),
@@ -141,7 +145,7 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
             children: [
               _StorageOverviewCard(storage: storage),
               const SizedBox(height: 24),
-              SectionHeader(title: 'Active Storage Add-ons'),
+              SectionHeader(title: l10n.storageActiveAddonsHeading),
               const SizedBox(height: 8),
               _ActiveAddonsSection(addons: storage.purchasedAddons),
               if (_pendingAddon != null) ...[
@@ -149,14 +153,14 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
                 _PendingAddonCard(addon: _pendingAddon!, onCancel: _onCancelPendingAddon),
               ],
               const SizedBox(height: 24),
-              SectionHeader(title: 'Available Storage Packages'),
+              SectionHeader(title: l10n.storageAvailablePackagesHeading),
               const SizedBox(height: 8),
               _AvailablePackagesSection(selectedPackage: _selectedPackage, onSelect: _onPackageSelected),
               if (_selectedPackage != null) ...[
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _onRequestAddon(_selectedPackage!),
-                  child: Text('Request Storage Add-on (${_packageLabel(_selectedPackage!)})'),
+                  child: Text(l10n.storageRequestAddonButton(_packageLabel(_selectedPackage!))),
                 ),
               ],
             ],
@@ -174,12 +178,13 @@ class _StorageOverviewCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final subscriptionAsync = ref.watch(subscriptionProvider);
 
     final String baseStorageText;
     if (subscriptionAsync.hasValue) {
       final baseLimit = subscriptionAsync.value!.plan?.storageLimit;
-      baseStorageText = baseLimit == null ? 'Unlimited' : '$baseLimit GB';
+      baseStorageText = baseLimit == null ? l10n.subscriptionUnlimitedLabel : '$baseLimit GB';
     } else if (subscriptionAsync.isLoading) {
       baseStorageText = '…';
     } else {
@@ -190,21 +195,22 @@ class _StorageOverviewCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Storage Overview', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+          Text(l10n.storageOverviewHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: 'Storage Used', value: _formatFileSize(storage.storageUsageBytes)),
+          _InfoRow(label: l10n.storageUsedLabel, value: _formatFileSize(storage.storageUsageBytes)),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Base Storage Allowance', value: baseStorageText),
+          _InfoRow(label: l10n.storageBaseAllowanceLabel, value: baseStorageText),
           const SizedBox(height: 12),
           _InfoRow(
-            label: 'Effective Storage Allowance',
-            value: storage.storageLimitGb == null ? 'Unlimited' : '${storage.storageLimitGb} GB',
+            label: l10n.storageEffectiveAllowanceLabel,
+            value: storage.storageLimitGb == null ? l10n.subscriptionUnlimitedLabel : '${storage.storageLimitGb} GB',
           ),
           const SizedBox(height: 12),
           _InfoRow(
-            label: 'Remaining Storage',
-            value:
-                storage.remainingStorageGb == null ? 'Unlimited' : '${storage.remainingStorageGb!.toStringAsFixed(2)} GB',
+            label: l10n.storageRemainingAllowanceLabel,
+            value: storage.remainingStorageGb == null
+                ? l10n.subscriptionUnlimitedLabel
+                : '${storage.remainingStorageGb!.toStringAsFixed(2)} GB',
           ),
         ],
       ),
@@ -219,10 +225,11 @@ class _ActiveAddonsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (addons.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text('No active storage add-ons.', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+        child: Text(l10n.storageNoActiveAddonsMessage, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
       );
     }
     return Column(
@@ -243,6 +250,7 @@ class _AddonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,16 +266,16 @@ class _AddonCard extends StatelessWidget {
             ],
           ),
           Divider(height: 24, color: context.colors.background),
-          _InfoRow(label: 'Size', value: '${addon.storageSize} GB'),
+          _InfoRow(label: l10n.storageSizeLabel, value: '${addon.storageSize} GB'),
           const SizedBox(height: 8),
-          _InfoRow(label: 'Monthly Price', value: addon.monthlyPrice),
+          _InfoRow(label: l10n.subscriptionMonthlyPriceLabel, value: addon.monthlyPrice),
           if (addon.startedAt != null) ...[
             const SizedBox(height: 8),
-            _InfoRow(label: 'Started On', value: _formatDate(addon.startedAt)),
+            _InfoRow(label: l10n.storageStartedOnLabel, value: _formatDate(addon.startedAt)),
           ],
           if (addon.expiresAt != null) ...[
             const SizedBox(height: 8),
-            _InfoRow(label: 'Expires On', value: _formatDate(addon.expiresAt)),
+            _InfoRow(label: l10n.storageExpiresOnLabel, value: _formatDate(addon.expiresAt)),
           ],
         ],
       ),
@@ -286,6 +294,7 @@ class _PendingAddonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,7 +304,7 @@ class _PendingAddonCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${_packageLabel(addon.storagePackage)} Storage Add-on',
+                  l10n.storageAddonTitleLabel(_packageLabel(addon.storagePackage)),
                   style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -306,11 +315,11 @@ class _PendingAddonCard extends StatelessWidget {
             ],
           ),
           Divider(height: 24, color: context.colors.background),
-          _InfoRow(label: 'Monthly Price', value: addon.monthlyPrice),
+          _InfoRow(label: l10n.subscriptionMonthlyPriceLabel, value: addon.monthlyPrice),
           const SizedBox(height: 8),
-          _InfoRow(label: 'Payment Reference', value: addon.paymentReference),
+          _InfoRow(label: l10n.subscriptionPaymentReferenceLabel, value: addon.paymentReference),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: onCancel, child: const Text('Cancel Request')),
+          OutlinedButton(onPressed: onCancel, child: Text(l10n.subscriptionCancelRequestButton)),
         ],
       ),
     );

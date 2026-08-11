@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/auth_state.dart';
 import '../providers/auth_provider.dart';
 
@@ -49,6 +50,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authProvider);
     final isLoading = authState is Authenticating;
 
@@ -60,18 +62,18 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
         children: [
           TextFormField(
             controller: _businessNameController,
-            decoration: const InputDecoration(labelText: 'Business Name'),
+            decoration: InputDecoration(labelText: l10n.registerBusinessNameLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Business name is required';
+              if (value == null || value.trim().isEmpty) return l10n.registerBusinessNameRequired;
               return null;
             },
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Full Name'),
+            decoration: InputDecoration(labelText: l10n.registerFullNameLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Full name is required';
+              if (value == null || value.trim().isEmpty) return l10n.registerFullNameRequired;
               return null;
             },
           ),
@@ -80,9 +82,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             maxLength: 30,
-            decoration: const InputDecoration(labelText: 'Phone Number'),
+            decoration: InputDecoration(labelText: l10n.registerPhoneLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Phone number is required';
+              if (value == null || value.trim().isEmpty) return l10n.registerPhoneValidatorRequired;
               return null;
             },
           ),
@@ -90,10 +92,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: InputDecoration(labelText: l10n.authEmailLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return 'Email is required';
-              if (!_emailPattern.hasMatch(value.trim())) return 'Enter a valid email';
+              if (value == null || value.trim().isEmpty) return l10n.authEmailRequired;
+              if (!_emailPattern.hasMatch(value.trim())) return l10n.authEmailInvalid;
               return null;
             },
           ),
@@ -101,11 +103,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           TextFormField(
             controller: _passwordController,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Password'),
+            decoration: InputDecoration(labelText: l10n.authPasswordLabel),
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Password is required';
+              if (value == null || value.isEmpty) return l10n.authPasswordRequired;
               if (value.length < _minPasswordLength) {
-                return 'Password must be at least $_minPasswordLength characters';
+                return l10n.authPasswordMinLength(_minPasswordLength);
               }
               return null;
             },
@@ -114,10 +116,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           TextFormField(
             controller: _confirmController,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Confirm Password'),
+            decoration: InputDecoration(labelText: l10n.registerConfirmPasswordLabel),
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Confirm your password';
-              if (value != _passwordController.text) return 'Passwords do not match';
+              if (value == null || value.isEmpty) return l10n.registerConfirmPasswordRequired;
+              if (value != _passwordController.text) return l10n.authPasswordsMismatch;
               return null;
             },
           ),
@@ -130,7 +132,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           ],
           const SizedBox(height: 24),
           PrimaryButton(
-            label: 'Create Account',
+            label: l10n.registerSubmitButton,
             isLoading: isLoading,
             onPressed: _submit,
           ),

@@ -13,6 +13,11 @@
   "languageEnglish": "English",
   "languageSomali": "Somali",
 
+  "appearance": "Appearance",
+  "appearanceLight": "Light",
+  "appearanceDark": "Dark",
+  "appearanceSystem": "System Default",
+
   "pushNotifications": "Push Notifications",
   "reminderNotifications": "Reminder Notifications",
   "paymentNotifications": "Payment Notifications",
@@ -38,5 +43,1157 @@
   "retry": "Retry",
   "fieldRequired": "This field is required",
   "enterValidNumber": "Enter a valid number",
-  "enterValueBetween0And100": "Enter a value between 0 and 100"
+  "enterValueBetween0And100": "Enter a value between 0 and 100",
+
+  "comingSoonMessage": "{value} — coming soon",
+  "@comingSoonMessage": {
+    "description": "Shown for a tab/screen whose module isn't built yet",
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+
+  "riskHigh": "High",
+  "riskMedium": "Medium",
+  "riskLow": "Low",
+  "riskUnknown": "Unknown",
+
+  "statusActive": "Active",
+  "statusGoodStanding": "Good Standing",
+  "statusLatePayer": "Late Payer",
+  "statusHighRisk": "High Risk",
+  "statusInCollection": "In Collection",
+  "statusRecovered": "Recovered",
+  "statusBlocked": "Blocked",
+  "statusDraft": "Draft",
+  "statusPending": "Pending",
+  "statusOverdue": "Overdue",
+  "statusPartiallyPaid": "Partially Paid",
+  "statusPaid": "Paid",
+  "statusCancelled": "Cancelled",
+  "statusWrittenOff": "Written Off",
+  "statusOpen": "Open",
+  "statusClosed": "Closed",
+  "statusToday": "Today",
+  "statusUpcoming": "Upcoming",
+  "statusCompleted": "Completed",
+  "statusSubmitted": "Submitted",
+  "statusUnderReview": "Under Review",
+  "statusNeedMoreInformation": "Need More Information",
+  "statusAccepted": "Accepted",
+  "statusAssigned": "Assigned",
+  "statusInProgress": "In Progress",
+  "statusFulfilled": "Fulfilled",
+  "statusBroken": "Broken",
+  "statusTrial": "Trial",
+  "statusExpired": "Expired",
+
+  "themeSwitchToLight": "Switch to light mode",
+  "themeSwitchToDark": "Switch to dark mode",
+
+  "navHome": "Home",
+  "navAnalytics": "Analytics",
+  "navCases": "Cases",
+  "navReminders": "Reminders",
+  "navDocuments": "Documents",
+
+  "commonLoading": "Loading...",
+  "commonViewAll": "View All",
+
+  "authEmailLabel": "Email",
+  "authEmailRequired": "Email is required",
+  "authEmailInvalid": "Enter a valid email",
+  "authPasswordLabel": "Password",
+  "authPasswordRequired": "Password is required",
+  "authPasswordMinLength": "Password must be at least {minLength} characters",
+  "@authPasswordMinLength": {
+    "description": "Password validator error when the entered password is shorter than the minimum length",
+    "placeholders": {
+      "minLength": {"type": "int"}
+    }
+  },
+  "authPasswordsMismatch": "Passwords do not match",
+
+  "loginAppName": "Deendoon",
+  "loginTagline": "Smart Debt Recovery Assistant",
+  "loginForgotPasswordLink": "Forgot password?",
+  "loginSubmitButton": "Log In",
+  "loginCreateAccountPrompt": "Don't have an account? Create Account",
+
+  "forgotPasswordTitle": "Forgot Password",
+  "forgotPasswordInstructions": "Enter the email associated with your account and we'll send you a link to reset your password.",
+  "forgotPasswordSubmitButton": "Send Reset Link",
+  "forgotPasswordHaveCodeLink": "I already have a reset code",
+
+  "registerTitle": "Create Account",
+  "registerBusinessNameLabel": "Business Name",
+  "registerBusinessNameRequired": "Business name is required",
+  "registerFullNameLabel": "Full Name",
+  "registerFullNameRequired": "Full name is required",
+  "registerPhoneLabel": "Phone Number",
+  "registerPhoneValidatorRequired": "Phone number is required",
+  "registerConfirmPasswordLabel": "Confirm Password",
+  "registerConfirmPasswordRequired": "Confirm your password",
+  "registerSubmitButton": "Create Account",
+
+  "resetPasswordTitle": "Reset Password",
+  "resetPasswordCodeLabel": "Reset Code",
+  "resetPasswordCodeHelper": "The code sent to your email",
+  "resetPasswordCodeRequired": "Reset code is required",
+  "resetPasswordNewPasswordLabel": "New Password",
+  "resetPasswordConfirmLabel": "Confirm New Password",
+  "resetPasswordSubmitButton": "Reset Password",
+
+  "dashboardTodaysOverview": "Today's Overview",
+  "dashboardQuickActions": "Quick Actions",
+  "dashboardBusinessHealthTitle": "Business Health",
+  "dashboardGreetingFallbackName": "there",
+  "dashboardGreetingMorning": "Good Morning",
+  "dashboardGreetingAfternoon": "Good Afternoon",
+  "dashboardGreetingEvening": "Good Evening",
+
+  "quickActionAddCase": "Add Case",
+  "quickActionRecordPayment": "Record Payment",
+  "quickActionAddReminder": "Add Reminder",
+  "quickActionGlobalSearch": "Global Search",
+
+  "kpiOverviewTitle": "KPI Overview",
+  "kpiLoadError": "Could not load KPIs.",
+  "kpiTotalOutstanding": "Total Outstanding",
+  "kpiCollectedPeriod": "Collected ({period})",
+  "@kpiCollectedPeriod": {
+    "description": "KPI card label for the Collected figure, scoped to the selected period",
+    "placeholders": {
+      "period": {"type": "String"}
+    }
+  },
+  "kpiOverdueAmount": "Overdue Amount",
+  "kpiHighRiskCustomers": "High Risk Customers",
+  "kpiTrendVsLastMonth": "{trend} vs last month",
+  "@kpiTrendVsLastMonth": {
+    "description": "KPI card trend delta compared with the previous month",
+    "placeholders": {
+      "trend": {"type": "String"}
+    }
+  },
+  "kpiSelectPeriodTitle": "Select Period",
+
+  "kpiPeriodToday": "Today",
+  "kpiPeriodYesterday": "Yesterday",
+  "kpiPeriodThisWeek": "This Week",
+  "kpiPeriodLastWeek": "Last Week",
+  "kpiPeriodThisMonth": "This Month",
+  "kpiPeriodLastMonth": "Last Month",
+  "kpiPeriodThisQuarter": "This Quarter",
+  "kpiPeriodLastQuarter": "Last Quarter",
+  "kpiPeriodThisYear": "This Year",
+  "kpiPeriodLastYear": "Last Year",
+  "kpiPeriodCustomLabel": "Custom Date Range",
+
+  "statusHealthy": "Healthy",
+  "statusNeedsAttention": "Needs Attention",
+  "statusAtRisk": "At Risk",
+  "statusNeutralBaseline": "Neutral Baseline",
+
+  "businessHealthSubtextHealthy": "You are doing great!",
+  "businessHealthSubtextNeedsAttention": "Some areas need review.",
+  "businessHealthSubtextAtRisk": "Immediate attention recommended.",
+  "businessHealthSubtextNeutralBaseline": "Not enough data yet.",
+  "businessHealthLoadError": "Could not load Business Health.",
+
+  "professionalCollectionTitle": "Professional Collection",
+  "professionalCollectionLoadError": "Could not load Professional Collection summary.",
+  "professionalCollectionEmptyState": "No cases submitted to Deendoon yet",
+  "professionalCollectionLatestRequestLabel": "Latest Request",
+
+  "professionalCollectionListLoadError": "Could not load Professional Collection Requests.",
+  "professionalCollectionListEmptyState": "No Professional Collection Requests yet",
+  "professionalCollectionListEmptyFilteredState": "No requests match this filter",
+
+  "professionalCollectionDetailTitle": "Professional Collection Request",
+  "professionalCollectionDetailLoadError": "Could not load this Professional Collection Request.",
+  "professionalCollectionSubmittedByLabel": "Submitted By",
+  "professionalCollectionActionedByLabel": "Actioned By",
+  "professionalCollectionSubmittedOnLabel": "Submitted On",
+  "professionalCollectionClosedOnLabel": "Closed On",
+  "professionalCollectionDeclarationAcceptedLabel": "Declaration Accepted",
+  "professionalCollectionDeclarationAcceptedByLabel": "Declaration Accepted By",
+  "professionalCollectionReasonsForTransferHeading": "Reasons for Transfer",
+  "professionalCollectionNoReasonsRecorded": "No reasons recorded for this Request.",
+  "professionalCollectionRequestedServicesHeading": "Requested Services",
+  "professionalCollectionNoRequestedServicesRecorded": "No requested services recorded for this Request.",
+  "professionalCollectionNoNotesRecorded": "No notes were added to this Request.",
+  "professionalCollectionViewCaseButton": "View Collection Case",
+  "professionalCollectionViewTimelineButton": "View Timeline",
+  "professionalCollectionViewMessagesButton": "View Messages",
+
+  "professionalCollectionTimelineTitle": "Timeline",
+  "professionalCollectionTimelineLoadError": "Could not load the timeline.",
+  "professionalCollectionTimelineEmptyState": "No timeline events yet",
+  "professionalCollectionTimelineOutcomeLabel": "Outcome: {outcome}",
+  "@professionalCollectionTimelineOutcomeLabel": {
+    "description": "Professional Collection timeline event card, the outcome recorded by the Deendoon Recovery Team for that event",
+    "placeholders": {
+      "outcome": {"type": "String"}
+    }
+  },
+
+  "professionalCollectionDocumentsEmptyState": "No documents linked to this Request yet",
+
+  "professionalCollectionAttachmentsLoadError": "Could not load attachments.",
+  "professionalCollectionAttachmentsEmptyState": "No attachments yet",
+  "professionalCollectionUploadAttachmentButton": "Upload Attachment",
+  "professionalCollectionUploadUnavailableMessage": "Uploading is not available at this stage of the Request.",
+
+  "professionalCollectionMessagesTitle": "Messages",
+  "professionalCollectionMessagesLoadError": "Could not load messages.",
+  "professionalCollectionMessagesEmptyState": "No messages yet",
+  "professionalCollectionMessagesClosedNotice": "This Professional Collection Request is closed — new messages are not accepted.",
+  "professionalCollectionMessageInputHint": "Type a message",
+  "professionalCollectionMessageSenderYou": "You",
+  "professionalCollectionMessageSenderTeam": "Deendoon Team",
+
+  "professionalCollectionSubmitSheetTitle": "Submit to Professional Collection",
+  "professionalCollectionSubmitSheetDescription": "This hands the case off to the Deendoon recovery team for review. Your current plan stays active — this is a request, not an approval.",
+  "professionalCollectionReasonForTransferHeading": "Reason for Transfer",
+  "professionalCollectionNoActiveReasonsConfigured": "No active Reasons for Transfer are configured for this tenant yet.",
+  "professionalCollectionReasonsLoadError": "Could not load Reasons for Transfer.",
+  "professionalCollectionNoActiveServicesConfigured": "No active Requested Services are configured for this tenant yet.",
+  "professionalCollectionServicesLoadError": "Could not load Requested Services.",
+  "professionalCollectionDeclarationConfirmLabel": "I confirm the Client Declaration for this hand-off.",
+  "professionalCollectionSubmitReasonsRequiredValidator": "Select at least one Reason for Transfer.",
+  "professionalCollectionSubmitServicesRequiredValidator": "Select at least one Requested Service.",
+  "professionalCollectionSubmitDeclarationRequiredValidator": "You must accept the Client Declaration to submit.",
+  "professionalCollectionSubmitButton": "Submit Request",
+
+  "recentCasesTitle": "Recent Cases",
+  "recentCasesLoadError": "Could not load recent cases.",
+  "recentCasesEmptyState": "No recent activity",
+
+  "todaysOverviewLoadError": "Could not load today's overview.",
+  "todaysOverviewRemindersDueToday": "Reminders Due Today",
+  "todaysOverviewPaymentsDue": "Payments Due",
+  "todaysOverviewClientVisits": "Client Visits",
+  "todaysOverviewFollowUps": "Follow-ups",
+
+  "commonCancel": "Cancel",
+  "commonOk": "OK",
+  "commonSave": "Save",
+
+  "customerAddTitle": "Add Customer",
+  "customerEditTitle": "Edit Customer",
+  "customerDetailsTitle": "Customer Details",
+  "customerReadOnlyTooltip": "This customer is read-only",
+  "customerDetailLoadError": "Could not load this customer.",
+
+  "creditLimitLabel": "Credit Limit",
+  "creditLimitHint": "0.00",
+  "creditLimitRequiredValidator": "Enter a credit limit",
+  "creditLimitInvalidValidator": "Enter a valid credit limit",
+
+  "customerListTitle": "Customers",
+  "customerListSelectTitle": "Select Customer",
+  "customerListShowArchivedFilter": "Show Archived",
+  "customerListLoadError": "Could not load customers.",
+  "customerListEmptyState": "No customers yet",
+  "customerListEmptySearchState": "No customers match \"{search}\"",
+  "@customerListEmptySearchState": {
+    "description": "Customer list empty state when a search query returns no results",
+    "placeholders": {
+      "search": {"type": "String"}
+    }
+  },
+  "customerRestoredSuccessfully": "Customer restored successfully",
+
+  "customerArchiveTitle": "Archive Customer",
+  "customerArchiveDialogContent": "This customer will no longer appear in the default list. This can be undone later.",
+  "customerArchiveConfirmButton": "Archive",
+  "customerArchivedSuccessfully": "Customer archived successfully",
+  "customerStatementGeneratedSuccessfully": "Statement generated successfully",
+  "customerDetailRecentPaymentsHeading": "Recent Payments",
+  "customerDetailViewDebtsButton": "View Debts",
+  "customerDetailAttachmentsButton": "Attachments",
+  "customerDetailGenerateStatementButton": "Generate Statement",
+  "customerReadOnlyBannerTitle": "Read-only Customer",
+  "customerReadOnlyBannerMessage": "Your tenant is over its plan's customer limit, so this customer cannot be edited, archived, or have documents generated. It remains fully viewable. Upgrade your plan to restore full access.",
+  "customerReadOnlyBannerUpgradeButton": "Upgrade Plan",
+
+  "addEditCustomerNameLabel": "Name",
+  "addEditCustomerNameRequired": "Enter the customer's name",
+  "addEditCustomerPhoneLabel": "Phone",
+  "addEditCustomerPhoneRequired": "Enter a phone number",
+  "addEditCustomerAddressLabel": "Address (Optional)",
+  "addEditCustomerContinueButton": "Continue",
+  "addEditCustomerDuplicateTitle": "Possible Duplicate",
+  "addEditCustomerViewExistingButton": "View Existing Customer",
+
+  "customerDocumentsLoadError": "Could not load documents.",
+  "customerDocumentsEmptyState": "No documents yet",
+  "documentTypeReceipt": "Receipt",
+  "documentTypeDemandLetter": "Demand Letter",
+  "documentTypeStatement": "Statement",
+  "documentTypeInvoice": "Invoice",
+
+  "documentTabAll": "All",
+  "documentListTitleAll": "All Documents",
+  "documentTabInvoices": "Invoices",
+  "documentTabReceipts": "Receipts",
+  "documentTabLetters": "Letters",
+  "documentTabOther": "Other",
+  "documentSearchHint": "Search documents...",
+  "documentRecentDocumentsHeading": "Recent Documents",
+  "documentEmptyInvoices": "No invoices yet",
+  "documentEmptyReceipts": "No receipts yet",
+  "documentEmptyLetters": "No letters yet",
+  "documentEmptyStatements": "No statements yet",
+  "documentEmptyStatementsCaption": "Account statements will appear here once generated.",
+
+  "documentHistoryTitle": "Document History",
+  "documentHistoryLoadError": "Could not load this document's history.",
+  "documentHistoryEmptyState": "No history yet",
+  "documentHistorySystemLabel": "System",
+  "documentEventGenerated": "Generated",
+  "documentEventDownloaded": "Downloaded",
+  "documentEventRegenerated": "Regenerated",
+
+  "documentPreviewFallbackTitle": "Document",
+  "documentDownloadTooltip": "Download",
+  "documentShareTooltip": "Share",
+  "documentHistoryTooltip": "History",
+  "documentPreviewLoadError": "Could not load this document.",
+  "documentPreviewRenderError": "Could not render this document.",
+
+  "documentShareTitle": "Share Document",
+  "documentSharedSuccessMessage": "Document shared successfully",
+
+  "documentStorageUsageTitle": "Storage Usage",
+  "documentStorageUsageLoadError": "Could not load storage usage.",
+  "documentStorageUsageLabel": "{used} of {total} used",
+  "@documentStorageUsageLabel": {
+    "description": "Storage Usage card caption, e.g. \"1.2 MB of 10.0 GB used\"",
+    "placeholders": {
+      "used": {"type": "String"},
+      "total": {"type": "String"}
+    }
+  },
+
+  "documentSizeUnitBytes": "B",
+  "documentSizeUnitKb": "KB",
+  "documentSizeUnitMb": "MB",
+  "documentSizeUnitGb": "GB",
+
+  "customerCasesLoadError": "Could not load cases.",
+  "customerCasesEmptyState": "No collection cases yet",
+
+  "customerCardRestoreButton": "Restore",
+  "customerCardArchivedBadge": "Archived",
+
+  "customerInfoChangeStatusTooltip": "Change Customer Status",
+  "customerInfoEditCreditLimitTooltip": "Edit Credit Limit",
+  "customerInfoOutstandingBalanceLabel": "Outstanding Balance",
+  "customerInfoRemainingCreditLabel": "Remaining Credit",
+  "customerInfoCreditScoreLabel": "Credit Score",
+
+  "customerSearchHint": "Search by name or phone",
+
+  "customerPaymentsLoadError": "Could not load recent payments.",
+  "customerPaymentsEmptyState": "No recent payments",
+  "customerPaymentsMethodNotRecorded": "Method not recorded",
+
+  "creditLimitSheetTitle": "Credit Limit",
+
+  "customerStatusSheetTitle": "Customer Status",
+
+  "debtListTitle": "Debts",
+  "debtListSelectTitle": "Select Debt",
+  "debtListFilterAll": "All",
+  "debtListLoadError": "Could not load debts.",
+  "debtListEmptyState": "No debts yet",
+  "debtListEmptyFilteredState": "No debts with this status",
+
+  "addEditDebtAddTitle": "Add Debt",
+  "addEditDebtEditTitle": "Edit Debt",
+
+  "debtDetailTitle": "Debt Details",
+  "debtDetailLoadError": "Could not load this debt.",
+  "debtDetailGenerateSuccessMessage": "{label} generated successfully",
+  "@debtDetailGenerateSuccessMessage": {
+    "description": "Shown after a document (e.g. Statement) is generated from the Debt Detail screen",
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "debtDetailGenerateErrorMessage": "Could not generate {label}",
+  "@debtDetailGenerateErrorMessage": {
+    "description": "Shown when generating a document from the Debt Detail screen fails",
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "debtDetailInvoiceAttachedSuccess": "Invoice attached successfully",
+  "debtDetailCustomerInfoHeading": "Customer Information",
+  "debtDetailCustomerLoadError": "Could not load the customer for this debt.",
+  "debtDetailSummaryHeading": "Debt Summary",
+  "promiseToPayTitle": "Promise to Pay",
+  "debtDetailCaseOpenedSuccess": "Case opened successfully",
+  "debtDetailOpenCaseButton": "Open Case",
+  "debtDetailLogReminderHeading": "Log Reminder",
+  "debtDetailLogWhatsAppButton": "Log WhatsApp",
+  "debtDetailLogSmsButton": "Log SMS",
+  "debtDetailLogCallButton": "Log Call",
+  "debtDetailReminderPresetLabel": "Debt {referenceNumber}",
+  "@debtDetailReminderPresetLabel": {
+    "description": "Label shown for a reminder created from a Debt's context, identifying which debt it relates to",
+    "placeholders": {
+      "referenceNumber": {"type": "String"}
+    }
+  },
+  "debtDetailPaymentHistoryHeading": "Payment History",
+  "debtDetailFollowUpTimelineHeading": "Follow-up Timeline",
+  "debtDetailPromiseToPayHistoryHeading": "Promise to Pay History",
+  "debtDetailGenerateDocumentsHeading": "Generate Documents",
+  "debtDetailRelatedDocumentsHeading": "Related Documents",
+  "debtScanInvoiceButton": "Scan Invoice",
+  "debtUploadInvoiceButton": "Upload Invoice",
+  "debtDetailRelatedCaseHeading": "Related Case",
+
+  "addEditDebtDueDateRequiredError": "Select a due date.",
+  "addEditDebtInvoiceUploadFailedMessage": "Debt saved, but the invoice failed: {message}",
+  "@addEditDebtInvoiceUploadFailedMessage": {
+    "description": "Snackbar shown when the Debt itself saved successfully but the attached invoice upload afterward failed",
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+  "addEditDebtCreditLimitExceededTitle": "Credit Limit Exceeded",
+  "addEditDebtAmountLabel": "Amount",
+  "addEditDebtAmountRequiredValidator": "Enter an amount",
+  "addEditDebtAmountInvalidValidator": "Enter a valid amount",
+  "addEditDebtDueDateHeading": "Due Date",
+  "addEditDebtSelectDueDateButton": "Select Due Date",
+  "addEditDebtInvoiceHeading": "Invoice (Optional)",
+  "addEditDebtRemoveInvoiceTooltip": "Remove selected invoice",
+  "addEditDebtNotesHeading": "Notes",
+  "addEditDebtNotesHint": "Optional notes",
+
+  "debtOriginalAmountLabel": "Original Amount",
+  "debtRemainingBalanceLabel": "Remaining Balance",
+  "debtCardDueDateLabel": "Due {dueDate}",
+  "@debtCardDueDateLabel": {
+    "description": "Debt card due date line",
+    "placeholders": {
+      "dueDate": {"type": "String"}
+    }
+  },
+  "debtCardOverdueDays": "{days, plural, one{{days} day overdue} other{{days} days overdue}}",
+  "@debtCardOverdueDays": {
+    "description": "Debt card days-overdue badge",
+    "placeholders": {
+      "days": {"type": "int"}
+    }
+  },
+  "debtSummaryDaysOverdueLabel": "Days Overdue",
+
+  "debtPaymentHistoryLoadError": "Could not load payment history.",
+  "debtPaymentHistoryEmptyState": "No payments recorded yet",
+
+  "debtDocumentsLoadError": "Could not load related documents.",
+
+  "debtTimelineLoadError": "Could not load the follow-up timeline.",
+  "debtTimelineStageDebtCreated": "Debt Created",
+  "debtTimelineStageWhatsappReminder": "WhatsApp Reminder",
+  "debtTimelineStageSmsReminder": "SMS Reminder",
+  "debtTimelineStagePhoneCall": "Phone Call",
+  "debtTimelineStagePayment": "Payment",
+
+  "debtRelatedCaseLoadError": "Could not load the related case.",
+  "debtRelatedCaseEmptyState": "No collection case has been opened for this debt yet",
+
+  "promiseToPaySheetDateLabel": "Promised Date",
+  "promiseToPaySheetSaveButton": "Save Promise",
+
+  "promiseToPayHistoryLoadError": "Could not load Promise to Pay history.",
+  "promiseToPayHistoryEmptyState": "No promises to pay recorded yet",
+  "promiseToPayHistoryPromisedLabel": "Promised {date}",
+  "@promiseToPayHistoryPromisedLabel": {
+    "description": "Promise to Pay history entry, the date the customer promised to pay by",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "promiseToPayHistoryRecordedLabel": "Recorded {date}",
+  "@promiseToPayHistoryRecordedLabel": {
+    "description": "Promise to Pay history entry, the date the promise was recorded",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "logReminderCallLabel": "Call",
+  "logReminderSheetTitle": "Log {label}",
+  "@logReminderSheetTitle": {
+    "description": "Log Reminder sheet title and submit button, e.g. \"Log WhatsApp Reminder\"",
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "logReminderDetailsLabel": "Details (optional)",
+
+  "recordPaymentDateLabel": "Payment Date",
+  "recordPaymentMethodLabel": "Payment Method (optional)",
+  "recordPaymentNotesLabel": "Notes (optional)",
+  "recordPaymentSaveButton": "Save Payment",
+
+  "caseListTabHighRisk": "High Risk",
+  "caseListTabFollowUp": "Follow Up",
+  "caseListTabPromiseDue": "Promise Due",
+  "caseListBrowseCustomersTooltip": "Browse Customers",
+  "caseListProfessionalRequestsTooltip": "Professional Collection Requests",
+  "caseListEmptyFilteredState": "No cases match this filter",
+
+  "caseDetailTitle": "Case Details",
+  "caseDetailLoadError": "Could not load this case.",
+  "caseDetailNoCustomerMessage": "This case has no associated customer to display.",
+  "caseDetailCustomerLoadError": "Could not load the customer for this case.",
+  "caseDetailCustomerSummaryHeading": "Customer Summary",
+  "caseDetailDebtLoadError": "Could not load the debt for this case.",
+  "caseDetailCaseSummaryHeading": "Case Summary",
+  "caseDetailAddFollowUpButton": "Add Follow-up",
+  "caseDetailMarkContactedButton": "Mark Contacted",
+  "caseDetailRecordVisitButton": "Record Visit",
+  "caseDetailSubmitProfessionalCollectionButton": "Submit to Professional Collection",
+  "caseDetailClosedMessage": "This case is closed — no further activity, follow-up, or closure actions apply.",
+  "caseDetailTimelineHeading": "Timeline",
+  "caseNotesEditTitle": "Edit Notes",
+  "caseDetailNoNotesMessage": "No notes yet.",
+  "caseDetailReminderPresetLabel": "Case {referenceNumber}",
+  "@caseDetailReminderPresetLabel": {
+    "description": "Label shown for a reminder created from a Collection Case's context, identifying which case it relates to",
+    "placeholders": {
+      "referenceNumber": {"type": "String"}
+    }
+  },
+  "caseDetailRelatedPaymentsHeading": "Related Payments",
+  "professionalCollectionRequestSubmittedSuccess": "Professional Collection Request submitted successfully",
+
+  "closeCaseTitle": "Close Case",
+  "closeCaseSheetReasonLabel": "Closure Outcome",
+  "closeCaseSheetReasonRequiredValidator": "Enter a closure outcome",
+
+  "editCaseNotesSaveButton": "Save Notes",
+
+  "caseCardUnknownCustomer": "Unknown customer",
+  "caseCardOutstandingLabel": "Outstanding",
+  "caseUnassignedLabel": "Unassigned",
+
+  "caseSummaryOutstandingAmountLabel": "Outstanding Amount",
+  "caseSummaryAssignedOfficerLabel": "Assigned Officer",
+  "caseSummaryOfficerLabel": "Officer {officerId}",
+  "@caseSummaryOfficerLabel": {
+    "description": "Case Summary card value shown for the assigned officer, an id-only reference (no officer display name is resolvable)",
+    "placeholders": {
+      "officerId": {"type": "String"}
+    }
+  },
+  "caseSummaryLastActivityLabel": "Last Activity",
+
+  "caseTimelineLoadError": "Could not load the case timeline.",
+  "caseTimelineEmptyState": "No activity recorded yet",
+
+  "collectionStageLabel": "Collection Stage",
+  "collectionStageValueLabel": "Stage {stage} of 6",
+  "@collectionStageValueLabel": {
+    "description": "Collection Stage card value, e.g. \"Stage 3 of 6\"",
+    "placeholders": {
+      "stage": {"type": "int"}
+    }
+  },
+
+  "reminderListCalendarTooltip": "Calendar",
+  "reminderScheduleTitle": "Schedule Reminder",
+  "reminderFilterPayments": "Payments",
+  "reminderListLoadError": "Could not load reminders.",
+  "reminderListEmptyFilteredState": "Nothing due in this filter",
+  "reminderListEmptyState": "Nothing due",
+
+  "reminderCardCompleteButton": "Complete",
+
+  "reminderSummaryLoadError": "Could not load the summary.",
+  "reminderSummaryDueTodayLabel": "Due Today",
+
+  "reminderTypeBadgeVisit": "VISIT",
+  "reminderTypeBadgeFollowUp": "FOLLOW-UP",
+  "reminderTypeBadgePayment": "PAYMENT",
+  "reminderTypeBadgeRenewal": "RENEWAL",
+  "reminderTypeBadgePromise": "PROMISE",
+
+  "customerPickerSheetEmptyState": "No customers found",
+
+  "reminderDetailDeleteDialogTitle": "Delete Reminder",
+  "reminderDetailDeleteDialogContent": "This reminder will no longer appear in any view. This cannot be undone.",
+  "reminderDetailDeleteButton": "Delete",
+  "reminderDetailNoAddressMessage": "No customer name or address available to navigate to.",
+  "reminderDetailMapsOpenError": "Could not open maps.",
+  "reminderDetailTitle": "Reminder Details",
+  "reminderDetailLoadError": "Could not load this reminder.",
+  "reminderDetailTypeLabel": "Type",
+  "reminderDetailAmountDueLabel": "Amount Due",
+  "reminderDetailRelatedCaseLabel": "Related Case",
+  "reminderDetailViewCaseLabel": "View Case",
+  "reminderDetailCreatedByLabel": "Created By",
+  "reminderDetailCreatedByValue": "User {userId}",
+  "@reminderDetailCreatedByValue": {
+    "description": "Reminder Details 'Created By' value, shown as a raw user id (no name-resolution endpoint available)",
+    "placeholders": {
+      "userId": {"type": "String"}
+    }
+  },
+  "reminderDetailCreatedOnLabel": "Created On",
+  "reminderDetailNoNotesMessage": "No notes added",
+  "reminderDetailNavigateButton": "Navigate",
+  "reminderDetailCheckedInLabel": "Checked In",
+  "reminderDetailCheckInButton": "Check In",
+  "reminderDetailLogVisitOutcomeLabel": "Log Visit Outcome",
+  "reminderDetailSnoozeButton": "Snooze",
+  "reminderDetailMarkCompletedButton": "Mark as Completed",
+  "reminderDetailWhatsAppButton": "WhatsApp",
+  "reminderDetailSmsButton": "SMS",
+  "reminderDetailRescheduleButton": "Reschedule",
+  "reminderDetailLogVisitOutcomeHint": "What happened during this visit?",
+  "reminderDetailVisitOutcomeSavedMessage": "Visit outcome saved.",
+
+  "reminderSnoozeSheetTitle": "Snooze Reminder",
+  "reminderSnoozeOneHour": "1 Hour",
+  "reminderSnoozeTomorrow": "Tomorrow",
+  "reminderSnoozeNextWeek": "Next Week",
+  "reminderSnoozePickDateTime": "Pick Date & Time",
+  "reminderSnoozedUntilMessage": "Snoozed until {date}.",
+  "@reminderSnoozedUntilMessage": {
+    "description": "Snackbar shown after a reminder is snoozed to a new due date",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+
+  "reminderNoPhoneNumberMessage": "No phone number available for this customer.",
+  "reminderCouldNotOpenDialerMessage": "Could not open the phone dialer.",
+
+  "reminderTypeClientVisit": "Client Visit",
+  "reminderTypeFollowUpCall": "Follow-up Call",
+  "reminderTypePaymentDue": "Payment Due",
+  "reminderTypeContractRenewal": "Contract Renewal",
+
+  "reminderTimingOneDayBefore": "1 day before",
+  "reminderTimingSameDay": "Same day",
+  "reminderTimingOneHourBefore": "1 hour before",
+  "reminderTimingCustomTime": "Custom time",
+
+  "reminderDeliveryInApp": "In-App Notification",
+  "reminderDeliveryPush": "Push Notification",
+  "reminderDeliveryWhatsApp": "WhatsApp Message",
+  "reminderDeliverySms": "SMS Message",
+
+  "reminderScheduleTypeRequiredValidator": "Select a reminder type.",
+  "reminderScheduleCustomerRequiredValidator": "Select a customer.",
+  "reminderScheduleCustomFireRequiredValidator": "Select a custom fire date/time.",
+  "reminderScheduleCustomFireBeforeDueValidator": "Custom fire time must be on or before the due date.",
+  "reminderScheduleDeliveryMethodRequiredValidator": "Select at least one delivery method.",
+
+  "reminderScheduleRescheduleLoadingTitle": "Reschedule",
+  "reminderScheduleRescheduleTitle": "Reschedule Reminder",
+  "reminderScheduleTypeHeading": "Reminder Type",
+  "reminderScheduleRelatedToHeading": "Related To",
+  "reminderScheduleTimingHeading": "When should this reminder be sent?",
+  "reminderScheduleSelectCustomFireTimeButton": "Select Custom Fire Time",
+  "reminderScheduleDeliveryMethodsHeading": "Delivery Methods",
+
+  "messagePreviewTitle": "Send Reminder",
+  "messagePreviewWhatsAppOpenError": "Could not open WhatsApp.",
+  "messagePreviewMessagingAppOpenError": "Could not open the messaging app.",
+  "messagePreviewUnknownRecipient": "Unknown recipient",
+  "messagePreviewTemplatesLoadError": "Could not load message templates.",
+  "messagePreviewEmptyTemplatesState": "No templates available for this channel",
+  "messagePreviewUseTemplateHeading": "Use Template",
+  "messagePreviewSendViaWhatsAppButton": "Send via WhatsApp",
+  "messagePreviewSendViaSmsButton": "Send via SMS",
+
+  "notificationMarkAllReadButton": "Mark all read",
+  "notificationFilterAll": "All",
+  "notificationListLoadError": "Could not load notifications.",
+  "notificationListEmptyState": "No notifications yet",
+  "notificationListEmptyFilteredState": "No {type} notifications",
+  "@notificationListEmptyFilteredState": {
+    "description": "Notification list empty state when a type filter is active, e.g. \"No Payment Received notifications\"",
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+
+  "notificationTypeFallback": "Notification",
+  "notificationDetailRelatedToLabel": "Related to",
+  "notificationDetailReferenceIdLabel": "Reference ID",
+  "notificationDetailReceivedLabel": "Received",
+  "notificationDetailStatusLabel": "Status",
+  "notificationDetailStatusRead": "Read",
+  "notificationDetailStatusUnread": "Unread",
+  "notificationDetailOpenButton": "Open",
+
+  "notificationTypeCreditLimitReached": "Credit Limit Reached",
+  "notificationTypePaymentReceived": "Payment Received",
+  "notificationTypeDocumentAvailable": "Document Available",
+  "notificationTypeCollectionAssignment": "Collection Assignment",
+  "notificationTypeReminderSent": "Reminder Sent",
+  "notificationTypePromiseToPayDue": "Promise to Pay Due",
+  "notificationTypeCollectionRequestUpdate": "Collection Request Update",
+  "notificationTypeSubscriptionUpdate": "Subscription Update",
+  "notificationTypeStorageAddonUpdate": "Storage Add-on Update",
+
+  "globalSearchTitle": "Global Search",
+  "globalSearchHint": "Search customers, debts, payments, documents, cases",
+  "globalSearchCategoryAll": "All",
+  "globalSearchCategoryCustomers": "Customers",
+  "globalSearchCategoryDebts": "Debts",
+  "globalSearchCategoryPayments": "Payments",
+  "globalSearchCategoryDocuments": "Documents",
+  "globalSearchCategoryCases": "Cases",
+  "globalSearchErrorMessage": "Could not complete the search.",
+  "globalSearchNoResultsTitle": "No results found",
+  "globalSearchNoResultsMessage": "Nothing matched \"{query}\". Try a different search term.",
+  "@globalSearchNoResultsMessage": {
+    "description": "Global Search empty-results message, showing the query that returned nothing",
+    "placeholders": {
+      "query": {"type": "String"}
+    }
+  },
+  "globalSearchDeendoonTitle": "Search Deendoon",
+  "globalSearchDeendoonMessage": "Find customers, debts, payments, documents, and cases.",
+  "globalSearchRecentSearchesHeading": "Recent Searches",
+  "globalSearchClearButton": "Clear",
+
+  "calendarTitle": "Calendar",
+  "calendarPreviousMonthTooltip": "Previous month",
+  "calendarNextMonthTooltip": "Next month",
+
+  "monthJan": "January",
+  "monthFeb": "February",
+  "monthMar": "March",
+  "monthApr": "April",
+  "monthMay": "May",
+  "monthJun": "June",
+  "monthJul": "July",
+  "monthAug": "August",
+  "monthSep": "September",
+  "monthOct": "October",
+  "monthNov": "November",
+  "monthDec": "December",
+
+  "weekdayMon": "Mon",
+  "weekdayTue": "Tue",
+  "weekdayWed": "Wed",
+  "weekdayThu": "Thu",
+  "weekdayFri": "Fri",
+  "weekdaySat": "Sat",
+  "weekdaySun": "Sun",
+
+  "calendarWeekdayMonday": "Monday",
+  "calendarWeekdayTuesday": "Tuesday",
+  "calendarWeekdayWednesday": "Wednesday",
+  "calendarWeekdayThursday": "Thursday",
+  "calendarWeekdayFriday": "Friday",
+  "calendarWeekdaySaturday": "Saturday",
+  "calendarWeekdaySunday": "Sunday",
+
+  "calendarLoadError": "Could not load calendar data.",
+  "calendarEmptyStateTitle": "No events",
+  "calendarEmptyStateMessage": "Nothing due, promised, or scheduled on this day.",
+
+  "calendarFollowUpWhatsApp": "WhatsApp Follow-up",
+  "calendarFollowUpSms": "SMS Follow-up",
+  "calendarFollowUpCallLogged": "Call Logged",
+  "calendarEntryTitleDebtDue": "Debt Due",
+  "calendarEntryTitleDue": "Due: {label}",
+  "@calendarEntryTitleDue": {
+    "description": "Calendar agenda tile title for a due_date entry that carries a debt reference label",
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "calendarEntryTitleFollowUpFallback": "Follow-up",
+  "calendarEntryTitleReminderFallback": "Reminder",
+
+  "analyticsTitle": "Analytics",
+  "analyticsTabOverview": "Overview",
+  "analyticsTabReports": "Reports",
+  "analyticsTabTrends": "Trends",
+  "analyticsNotIncludedTitle": "Analytics Not Included",
+  "analyticsNotIncludedMessage": "Analytics and Reports are not included in your current plan. Upgrade your plan to unlock KPIs, Aging Analysis, Risk Distribution, Collections Trend, and every Report category.",
+  "analyticsUpgradePlanButton": "Upgrade Plan",
+
+  "overviewSectionCollectionAnalytics": "Collection Analytics",
+  "overviewSectionCollectionsTrend": "Collections Trend",
+  "overviewSectionAgingAnalysis": "Aging Analysis",
+  "overviewSectionRiskDistribution": "Risk Distribution",
+
+  "overviewCollectionAnalyticsLoadError": "Could not load Collection Analytics.",
+  "overviewCollectionsTrendLoadError": "Could not load Collections Trend.",
+  "overviewAgingAnalysisLoadError": "Could not load Aging Analysis.",
+  "overviewRiskDistributionLoadError": "Could not load Risk Distribution.",
+
+  "overviewKpiCollectionRate": "Collection Rate",
+  "overviewKpiTotalCollected": "Total Collected",
+  "overviewKpiAverageDays": "Average Days",
+  "overviewDonutTotalOutstanding": "Total Outstanding",
+  "overviewDonutClassifiedCustomers": "Classified Customers",
+
+  "overviewRiskLabelHigh": "High Risk",
+  "overviewRiskLabelMedium": "Medium Risk",
+  "overviewRiskLabelLow": "Low Risk",
+
+  "paymentReportMethodNotRecorded": "Method not recorded",
+  "paymentReportDebtIdLabel": "Debt #{debtId}",
+  "@paymentReportDebtIdLabel": {
+    "description": "Reports > Payments card, the debt id the payment belongs to",
+    "placeholders": {
+      "debtId": {"type": "String"}
+    }
+  },
+
+  "dateRangeMonthJan": "Jan",
+  "dateRangeMonthFeb": "Feb",
+  "dateRangeMonthMar": "Mar",
+  "dateRangeMonthApr": "Apr",
+  "dateRangeMonthMay": "May",
+  "dateRangeMonthJun": "Jun",
+  "dateRangeMonthJul": "Jul",
+  "dateRangeMonthAug": "Aug",
+  "dateRangeMonthSep": "Sep",
+  "dateRangeMonthOct": "Oct",
+  "dateRangeMonthNov": "Nov",
+  "dateRangeMonthDec": "Dec",
+
+  "reportCategoryCustomers": "Customers",
+  "reportCategoryDebts": "Debts",
+  "reportCategoryCollectionCases": "Collection Cases",
+  "reportCategoryPayments": "Payments",
+  "reportCategoryCreditRisk": "Credit Risk",
+
+  "reportExportTooltip": "Export",
+
+  "reportDebtsTitle": "Debts Report",
+  "reportDebtsEmptyState": "No debts match this filter",
+
+  "reportCustomersTitle": "Customers Report",
+  "reportCustomersEmptyState": "No customers match this filter",
+  "reportRiskFilterAll": "All Risk",
+
+  "reportCreditRiskTitle": "Credit Risk Report",
+  "reportCreditRiskLoadError": "Could not load credit risk report.",
+
+  "reportCollectionCasesTitle": "Collection Cases Report",
+  "reportCollectionCasesLoadError": "Could not load collection cases.",
+
+  "reportPaymentsTitle": "Payments Report",
+  "reportPaymentsClearDateFilterTooltip": "Clear date filter",
+  "reportPaymentsLoadError": "Could not load payments.",
+  "reportPaymentsEmptyState": "No payments in this range",
+
+  "averageDaysDetailDescription": "Mean days between a debt's due date and the date it was fully paid, for debts paid within this period.",
+  "averageDaysDetailDebtsHeading": "Debts Paid in This Period",
+  "averageDaysDetailEmptyState": "No debts were paid off within this period.",
+
+  "collectionRateDetailFormulaCaption": "Collected ÷ Amount Due in Period",
+  "collectionRateDetailDebtsHeading": "Debts Due in This Period",
+  "collectionRateDetailEmptyState": "No debts became due in this period.",
+
+  "agingBucketDebtsEmptyState": "No debts in this bucket",
+  "agingBucketDebtsShowingCountLabel": "Showing {shown} of {total} debts in this bucket.",
+  "@agingBucketDebtsShowingCountLabel": {
+    "description": "Aging Bucket Debts screen, shown when the fetched debt list is a partial view of the bucket's total count",
+    "placeholders": {
+      "shown": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "exportActionSheetTitle": "Export as",
+  "exportFormatPdf": "PDF",
+  "exportFormatExcel": "Excel",
+  "exportFormatCsv": "CSV",
+  "exportSavedToPathMessage": "Saved to {path}",
+  "@exportSavedToPathMessage": {
+    "description": "Snackbar shown after a report export completes, with the local file path it was saved to",
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
+
+  "subscriptionTitle": "Subscription",
+  "subscriptionLoadError": "Could not load your subscription.",
+  "subscriptionManageStorageButton": "Manage Storage",
+  "subscriptionAvailablePlansHeading": "Available Plans",
+  "subscriptionRequestHistoryHeading": "Request History",
+  "subscriptionPlanChangeRequestSubmittedMessage": "Plan change request to {planName} submitted — status: Pending.",
+  "@subscriptionPlanChangeRequestSubmittedMessage": {
+    "description": "Snackbar shown after a Subscription Plan Change Request is submitted from the Subscription screen",
+    "placeholders": {
+      "planName": {"type": "String"}
+    }
+  },
+  "subscriptionRequestPlanChangeButton": "Request Plan Change to {planName}",
+  "@subscriptionRequestPlanChangeButton": {
+    "description": "Button shown after selecting a plan on the Subscription screen, to request the change",
+    "placeholders": {
+      "planName": {"type": "String"}
+    }
+  },
+  "subscriptionMonthlyPriceLabel": "Monthly Price",
+  "subscriptionTrialEndsLabel": "Trial Ends",
+  "subscriptionStartDateLabel": "Start Date",
+  "subscriptionExpiryDateLabel": "Expiry Date",
+  "subscriptionCustomersLabel": "Customers",
+  "storageUsedLabel": "Storage Used",
+  "subscriptionStorageLimitLabel": "Storage Limit",
+  "subscriptionUnlimitedLabel": "Unlimited",
+  "subscriptionAnalyticsLabel": "Analytics",
+  "subscriptionIncludedLabel": "Included",
+  "subscriptionNotIncludedLabel": "Not Included",
+  "subscriptionAccountStatusLabel": "Account Status",
+  "subscriptionReadOnlyValueLabel": "Read-only",
+  "subscriptionNormalValueLabel": "Normal",
+  "subscriptionCustomerLimitReachedTitle": "Customer Limit Reached",
+  "subscriptionCustomerLimitReachedMessage": "You've reached your current plan's customer limit, so adding new customers is blocked. Your existing data remains fully accessible. Upgrade your plan to add more customers.",
+  "subscriptionPlansLoadError": "Could not load subscription plans.",
+  "subscriptionNoPlansAvailable": "No plans available.",
+  "subscriptionCurrentPlanBadge": "Current Plan",
+  "subscriptionPlanCustomerLimitLabel": "Customer Limit",
+  "subscriptionChangeRequestHistoryLoadError": "Could not load your subscription change request history.",
+  "subscriptionNoChangeRequestsMessage": "No subscription change requests yet.",
+  "subscriptionLoadMoreButton": "Load More",
+  "subscriptionChangeRequestCancelledMessage": "Subscription Change Request cancelled.",
+  "subscriptionFromLabel": "From",
+  "subscriptionPaymentReferenceLabel": "Payment Reference",
+  "subscriptionRequestedOnLabel": "Requested On",
+  "subscriptionReviewedOnLabel": "Reviewed On",
+  "subscriptionRejectionReasonLabel": "Rejection Reason",
+  "subscriptionCancelRequestButton": "Cancel Request",
+
+  "subscriptionRequestPlanChangeSheetTitle": "Request Plan Change",
+  "subscriptionRequestPlanChangeDescription": "You are requesting a change to {planName} ({monthlyPrice} / month). This creates a pending request — your current plan stays active until a Platform Administrator approves it.",
+  "@subscriptionRequestPlanChangeDescription": {
+    "description": "Request Plan Change sheet description, confirming the target plan and its monthly price before submitting",
+    "placeholders": {
+      "planName": {"type": "String"},
+      "monthlyPrice": {"type": "String"}
+    }
+  },
+  "subscriptionPaymentReferenceRequiredValidator": "Payment reference is required",
+  "subscriptionPaymentReferenceMaxLengthValidator": "Payment reference must be 100 characters or fewer",
+
+  "storageTitle": "Storage",
+  "storageAddonRequestSubmittedMessage": "Storage Add-on request for {label} submitted — pending Platform Administrator approval.",
+  "@storageAddonRequestSubmittedMessage": {
+    "description": "Snackbar shown after a Storage Add-on request is submitted from the Storage screen",
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "storageAddonRequestCancelledMessage": "Storage Add-on request cancelled.",
+  "storageLoadError": "Could not load your storage usage.",
+  "storageActiveAddonsHeading": "Active Storage Add-ons",
+  "storageAvailablePackagesHeading": "Available Storage Packages",
+  "storageRequestAddonButton": "Request Storage Add-on ({label})",
+  "@storageRequestAddonButton": {
+    "description": "Button shown after selecting a storage package on the Storage screen, to request the add-on",
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "storageOverviewHeading": "Storage Overview",
+  "storageBaseAllowanceLabel": "Base Storage Allowance",
+  "storageEffectiveAllowanceLabel": "Effective Storage Allowance",
+  "storageRemainingAllowanceLabel": "Remaining Storage",
+  "storageNoActiveAddonsMessage": "No active storage add-ons.",
+  "storageSizeLabel": "Size",
+  "storageStartedOnLabel": "Started On",
+  "storageExpiresOnLabel": "Expires On",
+
+  "storageRequestAddonSheetTitle": "Request Storage Add-on",
+  "storageRequestAddonDescription": "You are requesting the {packageLabel} storage add-on. This creates a pending request — it does not increase your storage allowance until a Platform Administrator approves it. The exact monthly price will be confirmed once submitted.",
+  "@storageRequestAddonDescription": {
+    "description": "Request Storage Add-on sheet description, confirming the target package before submitting",
+    "placeholders": {
+      "packageLabel": {"type": "String"}
+    }
+  },
+
+  "bulkImportTitle": "Bulk Import",
+  "bulkImportSampleTemplateHeading": "Sample Template",
+  "bulkImportUploadFileHeading": "Upload File",
+  "bulkImportAcceptedFormats": "Accepted formats: .xlsx, .xls",
+  "bulkImportSelectFilePrompt": "Select Excel file",
+  "bulkImportButton": "Import",
+  "bulkImportNoRowsFoundMessage": "No rows found in the uploaded file.",
+  "bulkImportSummaryHeading": "Import Summary",
+  "bulkImportImportedSuccessfullyLabel": "Imported Successfully",
+  "bulkImportSkippedDuplicateLabel": "Skipped (Duplicate)",
+  "bulkImportFailedLabel": "Failed",
+  "bulkImportFailedRowsHeading": "Failed Rows",
+  "bulkImportRowLabel": "Row {rowNumber}",
+  "@bulkImportRowLabel": {
+    "description": "Failed row card heading in the Bulk Import summary, the 1-based row number from the uploaded file",
+    "placeholders": {
+      "rowNumber": {"type": "int"}
+    }
+  },
+  "bulkImportDownloadTemplateButton": "Download Sample Template",
+
+  "agingBucketCurrentLabel": "Current",
+  "agingBucket1To30Label": "1–30 Days",
+  "agingBucket31To60Label": "31–60 Days",
+  "agingBucket61To90Label": "61–90 Days",
+  "agingBucketOver90Label": "Over 90 Days",
+
+  "accountTitle": "Account",
+  "accountSectionLabel": "ACCOUNT",
+  "accountLogout": "Logout",
+
+  "profileTitle": "Profile",
+
+  "businessProfileTitle": "Business Profile",
+  "businessProfileLoadError": "Could not load your business profile.",
+  "businessProfileLogoInvalidTypeError": "Logo must be a JPEG or PNG image.",
+  "businessProfileLogoTooLargeError": "Logo must be 2MB or smaller.",
+  "businessProfileUpdatedSuccess": "Business Profile updated successfully",
+  "businessProfileCompanyNameLabel": "Company Name",
+  "businessProfileCompanyNameRequired": "Company name is required",
+  "businessProfileContactEmailLabel": "Contact Email",
+  "businessProfileContactEmailInvalid": "Enter a valid email address",
+  "businessProfileContactPhoneLabel": "Contact Phone",
+  "businessProfileAddressLabel": "Business Address",
+  "businessProfileLogoNewSelected": "New logo selected",
+  "businessProfileLogoOnFile": "Logo on file — tap to replace",
+  "businessProfileLogoTapToAdd": "Tap to add a logo",
+
+  "changePasswordCurrentLabel": "Current Password",
+  "changePasswordCurrentRequired": "Current password is required",
+  "changePasswordNewRequired": "New password is required",
+
+  "aboutTitle": "About",
+
+  "aboutDeendoonAboutSectionLabel": "ABOUT",
+  "aboutDeendoonOthersSectionLabel": "OTHERS",
+  "aboutDeendoonNotPublishedMessage": "Deendoon is not yet published on the App Store.",
+  "aboutDeendoonPlayStoreOpenError": "Could not open the Play Store.",
+  "aboutDeendoonPrivacyPolicyLabel": "Privacy Policy",
+  "aboutDeendoonTermsConditionsLabel": "Terms & Conditions",
+  "aboutDeendoonContactSupportLabel": "Contact Support",
+  "aboutDeendoonRateAppLabel": "Rate the App",
+  "aboutDeendoonVersionLabel": "Version",
+  "aboutDeendoonBuildNumberLabel": "Build Number",
+  "aboutDeendoonCopyrightLabel": "Copyright",
+  "aboutDeendoonCopyrightValue": "© {year} Deendoon. All rights reserved.",
+  "@aboutDeendoonCopyrightValue": {
+    "description": "About Deendoon section, copyright line value showing the current year",
+    "placeholders": {
+      "year": {"type": "int"}
+    }
+  },
+
+  "aboutDeendoonTagline": "The Modern Assistant for\nDebt Recovery",
+  "aboutDeendoonIntroHeading": "Introduction to DEENDOON",
+  "aboutDeendoonIntroParagraph1": "DEENDOON is an app that helps you easily manage your customers' debts and recover the money owed to you.",
+  "aboutDeendoonIntroParagraph2": "You can record outstanding debts, track payments received and remaining balances, and schedule calls, WhatsApp messages, SMS, and important reminders. The app tells you who you've followed up with and what to do next, so no debt gets forgotten.",
+  "aboutDeendoonIntroParagraph3": "If your own efforts aren't enough to recover a debt, you can request directly within the app for the Deendoon professional recovery team to represent you legally and professionally, contact the debtor, and work to recover your money.",
+  "aboutDeendoonBenefitsHeading": "DEENDOON helps you to:",
+  "aboutDeendoonBenefit1": "Record and manage all your debts in one place.",
+  "aboutDeendoonBenefit2": "Send timely reminders to your customers.",
+  "aboutDeendoonBenefit3": "Track calls, WhatsApp messages, SMS, and appointments.",
+  "aboutDeendoonBenefit4": "Record payments received and remaining balances.",
+  "aboutDeendoonBenefit5": "Get clear reports on your debts.",
+  "aboutDeendoonBenefit6": "Improve the recovery of money owed to you and your business's cash flow.",
+  "aboutDeendoonConclusionHeading": "Conclusion",
+  "aboutDeendoonConclusionParagraph": "DEENDOON is a modern assistant that simplifies debt management and strengthens customer follow-up, so your business gets paid on time.",
+  "aboutDeendoonInfoHeading": "Information",
+
+  "subscriptionNoPlanLabel": "No Plan",
+  "storageAddonTitleLabel": "{package} Storage Add-on",
+  "@storageAddonTitleLabel": {
+    "placeholders": {
+      "package": {"type": "String"}
+    }
+  },
+
+  "addCaseEntrySheetExistingCustomer": "Existing Customer",
+  "addCaseEntrySheetNewCustomer": "New Customer",
+  "addCaseReviewTitle": "Review",
+  "addCaseReviewCustomerHeading": "Customer",
+  "addCaseReviewCreditLimitLabel": "Credit Limit: {limit}",
+  "@addCaseReviewCreditLimitLabel": {
+    "placeholders": {
+      "limit": {"type": "String"}
+    }
+  },
+  "addCaseReviewDebtHeading": "Debt",
+  "addCaseReviewAmountLabel": "Amount: {amount}",
+  "@addCaseReviewAmountLabel": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "addCaseReviewDueDateLabel": "Due Date: {date}",
+  "@addCaseReviewDueDateLabel": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "addCaseReviewNotesLabel": "Notes: {notes}",
+  "@addCaseReviewNotesLabel": {
+    "placeholders": {
+      "notes": {"type": "String"}
+    }
+  },
+  "addCaseReviewInvoiceLabel": "Invoice: {filename}",
+  "@addCaseReviewInvoiceLabel": {
+    "placeholders": {
+      "filename": {"type": "String"}
+    }
+  },
+  "addCaseReviewCreateCustomerDebtButton": "Create Customer & Debt",
+  "addCaseReviewCreateDebtButton": "Create Debt",
+  "addCaseReviewTryAgainButton": "Try Again",
+  "addCaseReviewCustomerCreatedDebtFailedMessage": "The customer \"{name}\" was created successfully. Creating the debt failed: {message}",
+  "@addCaseReviewCustomerCreatedDebtFailedMessage": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "message": {"type": "String"}
+    }
+  },
+  "addCaseReviewOpenCustomerButton": "Open Customer",
+  "addCaseReviewDebtCreatedCaseFailedMessage": "Debt {referenceNumber} was created successfully. Creating the Collection Case failed: {message}",
+  "@addCaseReviewDebtCreatedCaseFailedMessage": {
+    "placeholders": {
+      "referenceNumber": {"type": "String"},
+      "message": {"type": "String"}
+    }
+  },
+  "addCaseReviewCaseLaterHint": "You can open a Collection Case for this debt later from its Debt Details screen.",
+  "addCaseReviewOpenDebtButton": "Open Debt",
+
+  "overviewAgingLegendValue": "{count, plural, one{{count} debt · {amount}} other{{count} debts · {amount}}}",
+  "@overviewAgingLegendValue": {
+    "description": "Aging Analysis legend row: debt count and remaining balance for one bucket",
+    "placeholders": {
+      "count": {"type": "int"},
+      "amount": {"type": "String"}
+    }
+  },
+  "overviewRiskLegendValue": "{count, plural, one{{count} customer} other{{count} customers}}",
+  "@overviewRiskLegendValue": {
+    "description": "Risk Distribution legend row: customer count for one risk segment",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "bulkImportUnsupportedFileTypeError": "Unsupported file type. Only .xlsx and .xls files are supported."
 }

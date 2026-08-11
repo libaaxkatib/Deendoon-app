@@ -11,6 +11,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/coming_soon.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// Profile screen's "About Deendoon" section. Version and build number are
 /// real, read from the installed app bundle via `package_info_plus` — never
@@ -39,12 +40,13 @@ class AboutDeendoonSection extends StatelessWidget {
   /// first submission to App Store Connect), so it shows an honest status
   /// message instead of a fabricated store link.
   Future<void> _rateApp(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final isIOS = !kIsWeb && (Platform.isIOS || defaultTargetPlatform == TargetPlatform.iOS);
     if (isIOS) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Deendoon is not yet published on the App Store.')));
+        ..showSnackBar(SnackBar(content: Text(l10n.aboutDeendoonNotPublishedMessage)));
       return;
     }
 
@@ -54,17 +56,18 @@ class AboutDeendoonSection extends StatelessWidget {
     if (!launched && context.mounted) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Could not open the Play Store.')));
+        ..showSnackBar(SnackBar(content: Text(l10n.aboutDeendoonPlayStoreOpenError)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'ABOUT',
+          l10n.aboutDeendoonAboutSectionLabel,
           style: AppTypography.caption.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.8,
@@ -83,7 +86,7 @@ class AboutDeendoonSection extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Kaaliyaha Casriga ah ee\nSoo Celinta Deymaha',
+                l10n.aboutDeendoonTagline,
                 style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -95,65 +98,20 @@ class AboutDeendoonSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionHeader(icon: Icons.info_outline, title: 'Hordhac DEENDOON'),
+              _SectionHeader(icon: Icons.info_outline, title: l10n.aboutDeendoonIntroHeading),
               const SizedBox(height: 12),
               Text(
-                'DEENDOON waa app kaa caawinaya inaad si fudud u maamusho '
-                'deymaha macaamiishaada oo aad u soo ceshato lacagta aad ku '
-                'leedahay.',
+                l10n.aboutDeendoonIntroParagraph1,
                 style: AppTypography.body.copyWith(color: context.colors.textSecondary),
               ),
               const SizedBox(height: 12),
               Text(
-                'Waxaad ku diiwaangelin kartaa deymaha kaa maqan, la socon '
-                'kartaa lacagaha la bixiyay iyo kuwa harsan, jadwal u samayn '
-                'kartaa wicitaannada, fariimaha WhatsApp, SMS-ka iyo '
-                'xasuusinnada muhiimka ah. App-ku wuxuu kuu sheegayaa cidda '
-                'la xiriirkeedu gaaray iyo tallaabada xigta ee aad qaadi '
-                'lahayd si aan deyn loo illoobin.',
+                l10n.aboutDeendoonIntroParagraph2,
                 style: AppTypography.body.copyWith(color: context.colors.textSecondary),
               ),
               const SizedBox(height: 12),
               Text(
-                'Haddii dadaalladaadu aysan ku filnaan soo celinta deynta, '
-                'waxaad si toos ah uga codsan kartaa gudaha app-ka kooxda '
-                'xirfadlayaasha Deendoon inay si sharci ah oo xirfad leh kuu '
-                'metelaan, ula xiriiraan deyn-bixiyaha, ugana shaqeeyaan soo '
-                'celinta lacagtaada.',
-                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              _SectionHeader(icon: Icons.star, title: 'DEENDOON wuxuu kaa caawinayaa inaad:'),
-              SizedBox(height: 4),
-              _BulletItem('Diiwaangeliso oo aad maamusho dhammaan deymaha hal meel.'),
-              _BulletItem('Xasuusinno u dirto macaamiisha waqtigooda.'),
-              _BulletItem('La socoto wicitaannada, WhatsApp-ka, SMS-ka iyo ballamaha.'),
-              _BulletItem('Diiwaangeliso lacagaha la bixiyay iyo kuwa harsan.'),
-              _BulletItem('Hesho warbixinno cad oo ku saabsan deymahaaga.'),
-              _BulletItem(
-                'Kordhiso soo celinta lacagaha lagugu leeyahay iyo socodka lacagta (Cash Flow) ee ganacsigaaga.',
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _SectionHeader(icon: Icons.check_circle, title: 'Gunaanad'),
-              const SizedBox(height: 12),
-              Text(
-                'DEENDOON waa kaaliye casri ah oo kuu fududeynaya maamulka '
-                'deymaha, xoojiyana la socodka macaamiisha, si ganacsigaagu u '
-                'helo lacagtiisa waqtigeeda.',
+                l10n.aboutDeendoonIntroParagraph3,
                 style: AppTypography.body.copyWith(color: context.colors.textSecondary),
               ),
             ],
@@ -164,7 +122,37 @@ class AboutDeendoonSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionHeader(icon: Icons.info_outline, title: 'Macluumaad'),
+              _SectionHeader(icon: Icons.star, title: l10n.aboutDeendoonBenefitsHeading),
+              const SizedBox(height: 4),
+              _BulletItem(l10n.aboutDeendoonBenefit1),
+              _BulletItem(l10n.aboutDeendoonBenefit2),
+              _BulletItem(l10n.aboutDeendoonBenefit3),
+              _BulletItem(l10n.aboutDeendoonBenefit4),
+              _BulletItem(l10n.aboutDeendoonBenefit5),
+              _BulletItem(l10n.aboutDeendoonBenefit6),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(icon: Icons.check_circle, title: l10n.aboutDeendoonConclusionHeading),
+              const SizedBox(height: 12),
+              Text(
+                l10n.aboutDeendoonConclusionParagraph,
+                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(icon: Icons.info_outline, title: l10n.aboutDeendoonInfoHeading),
               const SizedBox(height: 12),
               FutureBuilder<PackageInfo>(
                 future: PackageInfo.fromPlatform(),
@@ -172,21 +160,24 @@ class AboutDeendoonSection extends StatelessWidget {
                   final info = snapshot.data;
                   return Column(
                     children: [
-                      _InfoRow(label: 'Version', value: info?.version ?? '—'),
+                      _InfoRow(label: l10n.aboutDeendoonVersionLabel, value: info?.version ?? '—'),
                       const SizedBox(height: 8),
-                      _InfoRow(label: 'Build Number', value: info?.buildNumber ?? '—'),
+                      _InfoRow(label: l10n.aboutDeendoonBuildNumberLabel, value: info?.buildNumber ?? '—'),
                     ],
                   );
                 },
               ),
               const SizedBox(height: 8),
-              _InfoRow(label: 'Copyright', value: '© ${DateTime.now().year} Deendoon. All rights reserved.'),
+              _InfoRow(
+                label: l10n.aboutDeendoonCopyrightLabel,
+                value: l10n.aboutDeendoonCopyrightValue(DateTime.now().year),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 20),
         Text(
-          'KUWA KALE',
+          l10n.aboutDeendoonOthersSectionLabel,
           style: AppTypography.caption.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.8,
@@ -198,22 +189,22 @@ class AboutDeendoonSection extends StatelessWidget {
           children: [
             _AboutRow(
               icon: Icons.privacy_tip_outlined,
-              label: 'Privacy Policy',
+              label: l10n.aboutDeendoonPrivacyPolicyLabel,
               onTap: () => context.push('/account/privacy-policy'),
             ),
             _AboutRow(
               icon: Icons.description_outlined,
-              label: 'Terms & Conditions',
+              label: l10n.aboutDeendoonTermsConditionsLabel,
               onTap: () => context.push('/account/terms-conditions'),
             ),
             _AboutRow(
               icon: Icons.support_agent_outlined,
-              label: 'Contact Support',
-              onTap: () => showComingSoon(context, 'Contact Support'),
+              label: l10n.aboutDeendoonContactSupportLabel,
+              onTap: () => showComingSoon(context, l10n.aboutDeendoonContactSupportLabel),
             ),
             _AboutRow(
               icon: Icons.star_outline,
-              label: 'Rate the App',
+              label: l10n.aboutDeendoonRateAppLabel,
               onTap: () => _rateApp(context),
               isLast: true,
             ),

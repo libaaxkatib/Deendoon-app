@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/unavailable_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/professional_collection_detail_providers.dart';
 
 /// Professional Collection Request Detail — reference number, status,
@@ -29,11 +30,12 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final requestAsync = ref.watch(professionalCollectionDetailProvider(requestId));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(requestAsync.valueOrNull?.referenceNumber ?? 'Professional Collection Request'),
+        title: Text(requestAsync.valueOrNull?.referenceNumber ?? l10n.professionalCollectionDetailTitle),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -46,7 +48,7 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: RetrySection(
-                message: 'Could not load this Professional Collection Request.',
+                message: l10n.professionalCollectionDetailLoadError,
                 onRetry: () => ref.invalidate(professionalCollectionDetailProvider(requestId)),
               ),
             ),
@@ -69,39 +71,48 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                       ],
                     ),
                     Divider(height: 32, color: context.colors.background),
-                    _InfoRow(label: 'Submitted By', value: request.submittedByUserId),
+                    _InfoRow(label: l10n.professionalCollectionSubmittedByLabel, value: request.submittedByUserId),
                     if (request.actionedByUserId != null) ...[
                       const SizedBox(height: 12),
-                      _InfoRow(label: 'Actioned By', value: request.actionedByUserId!),
+                      _InfoRow(label: l10n.professionalCollectionActionedByLabel, value: request.actionedByUserId!),
                     ],
                     const SizedBox(height: 12),
-                    _InfoRow(label: 'Submitted On', value: request.createdAt.split('T').first),
+                    _InfoRow(
+                      label: l10n.professionalCollectionSubmittedOnLabel,
+                      value: request.createdAt.split('T').first,
+                    ),
                     if (request.closedAt != null) ...[
                       const SizedBox(height: 12),
-                      _InfoRow(label: 'Closed On', value: request.closedAt!.split('T').first),
+                      _InfoRow(
+                        label: l10n.professionalCollectionClosedOnLabel,
+                        value: request.closedAt!.split('T').first,
+                      ),
                     ],
                     if (request.declarationAcceptedAt != null) ...[
                       const SizedBox(height: 12),
                       _InfoRow(
-                        label: 'Declaration Accepted',
+                        label: l10n.professionalCollectionDeclarationAcceptedLabel,
                         value: request.declarationAcceptedAt!.split('T').first,
                       ),
                     ],
                     if (request.declarationAcceptedBy != null) ...[
                       const SizedBox(height: 12),
-                      _InfoRow(label: 'Declaration Accepted By', value: request.declarationAcceptedBy!),
+                      _InfoRow(
+                        label: l10n.professionalCollectionDeclarationAcceptedByLabel,
+                        value: request.declarationAcceptedBy!,
+                      ),
                     ],
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               Text(
-                'Reasons for Transfer',
+                l10n.professionalCollectionReasonsForTransferHeading,
                 style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
               ),
               const SizedBox(height: 12),
               if (request.reasons.isEmpty)
-                const UnavailableSection(reason: 'No reasons recorded for this Request.')
+                UnavailableSection(reason: l10n.professionalCollectionNoReasonsRecorded)
               else
                 Wrap(
                   spacing: 8,
@@ -110,12 +121,12 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                 ),
               const SizedBox(height: 24),
               Text(
-                'Requested Services',
+                l10n.professionalCollectionRequestedServicesHeading,
                 style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
               ),
               const SizedBox(height: 12),
               if (request.requestedServices.isEmpty)
-                const UnavailableSection(reason: 'No requested services recorded for this Request.')
+                UnavailableSection(reason: l10n.professionalCollectionNoRequestedServicesRecorded)
               else
                 Wrap(
                   spacing: 8,
@@ -124,12 +135,12 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                 ),
               const SizedBox(height: 24),
               Text(
-                'Notes',
+                l10n.addEditDebtNotesHeading,
                 style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
               ),
               const SizedBox(height: 12),
               if (request.notes == null || request.notes!.trim().isEmpty)
-                const UnavailableSection(reason: 'No notes were added to this Request.')
+                UnavailableSection(reason: l10n.professionalCollectionNoNotesRecorded)
               else
                 AppCard(
                   child: Text(
@@ -140,7 +151,7 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: () => context.push('/cases/${request.collectionCaseId}'),
-                child: const Text('View Collection Case'),
+                child: Text(l10n.professionalCollectionViewCaseButton),
               ),
               const SizedBox(height: 12),
               Row(
@@ -148,14 +159,14 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => context.push('/professional-requests/$requestId/documents'),
-                      child: const Text('Documents'),
+                      child: Text(l10n.navDocuments),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => context.push('/professional-requests/$requestId/attachments'),
-                      child: const Text('Attachments'),
+                      child: Text(l10n.customerDetailAttachmentsButton),
                     ),
                   ),
                 ],
@@ -163,12 +174,12 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () => context.push('/professional-requests/$requestId/timeline'),
-                child: const Text('View Timeline'),
+                child: Text(l10n.professionalCollectionViewTimelineButton),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () => context.push('/professional-requests/$requestId/messages'),
-                child: const Text('View Messages'),
+                child: Text(l10n.professionalCollectionViewMessagesButton),
               ),
             ],
           ),

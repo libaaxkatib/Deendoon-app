@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../debts/presentation/widgets/debt_card.dart';
 import '../providers/average_days_debts_provider.dart';
 import '../providers/collection_analytics_provider.dart';
@@ -25,12 +26,13 @@ class AverageDaysDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final analyticsAsync = ref.watch(collectionAnalyticsProvider);
     final range = ref.watch(overviewDateRangeProvider);
     final debtsAsync = ref.watch(averageDaysDebtsProvider(range));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Average Days')),
+      appBar: AppBar(title: Text(l10n.overviewKpiAverageDays)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(collectionAnalyticsProvider);
@@ -46,7 +48,7 @@ class AverageDaysDetailScreen extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (error, _) => RetrySection(
-                message: 'Could not load Collection Analytics.',
+                message: l10n.overviewCollectionAnalyticsLoadError,
                 onRetry: () => ref.invalidate(collectionAnalyticsProvider),
               ),
               data: (analytics) => AppCard(
@@ -56,9 +58,8 @@ class AverageDaysDetailScreen extends ConsumerWidget {
                     Text(analytics.averageDays?.toStringAsFixed(1) ?? '—',
                         style: AppTypography.heading.copyWith(fontSize: 32, color: AppColors.primary)),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Mean days between a debt\'s due date and the date it was fully paid, '
-                      'for debts paid within this period.',
+                    Text(
+                      l10n.averageDaysDetailDescription,
                       style: AppTypography.caption,
                     ),
                   ],
@@ -66,7 +67,7 @@ class AverageDaysDetailScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Text('Debts Paid in This Period', style: AppTypography.heading),
+            Text(l10n.averageDaysDetailDebtsHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             debtsAsync.when(
               loading: () => const Padding(
@@ -74,12 +75,12 @@ class AverageDaysDetailScreen extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (error, _) => RetrySection(
-                message: 'Could not load debts.',
+                message: l10n.debtListLoadError,
                 onRetry: () => ref.invalidate(averageDaysDebtsProvider(range)),
               ),
               data: (debts) {
                 if (debts.isEmpty) {
-                  return const Text('No debts were paid off within this period.', style: AppTypography.body);
+                  return Text(l10n.averageDaysDetailEmptyState, style: AppTypography.body);
                 }
                 return Column(
                   children: [

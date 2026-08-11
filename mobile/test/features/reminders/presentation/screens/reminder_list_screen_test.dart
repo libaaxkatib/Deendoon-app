@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/cases/data/collection_case_repository.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
@@ -10,6 +12,7 @@ import 'package:mobile/features/reminders/domain/reminder.dart';
 import 'package:mobile/features/reminders/domain/reminder_page.dart';
 import 'package:mobile/features/reminders/domain/reminder_summary.dart';
 import 'package:mobile/features/reminders/presentation/screens/reminder_list_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockReminderRepository extends Mock implements ReminderRepository {}
@@ -106,7 +109,19 @@ Future<void> _pumpScreen(
         debtRepositoryProvider.overrideWithValue(_MockDebtRepository()),
         collectionCaseRepositoryProvider.overrideWithValue(_MockCollectionCaseRepository()),
       ],
-      child: MaterialApp(home: ReminderListScreen(initialFilter: initialFilter)),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: ReminderListScreen(initialFilter: initialFilter),
+      ),
     ),
   );
 }

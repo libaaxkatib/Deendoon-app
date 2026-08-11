@@ -5,6 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/debt.dart';
 
 /// Debt Summary + Collection Status — everything `GET /debts/{id}`
@@ -16,6 +17,7 @@ class DebtSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final overdueDays = debt.daysOverdue();
 
     return AppCard(
@@ -38,22 +40,22 @@ class DebtSummaryCard extends StatelessWidget {
             ],
           ),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: 'Original Amount', value: debt.amount),
+          _InfoRow(label: l10n.debtOriginalAmountLabel, value: debt.amount),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Remaining Balance', value: debt.remainingBalance),
+          _InfoRow(label: l10n.debtRemainingBalanceLabel, value: debt.remainingBalance),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Due Date', value: debt.dueDate),
+          _InfoRow(label: l10n.addEditDebtDueDateHeading, value: debt.dueDate),
           if (overdueDays != null) ...[
             const SizedBox(height: 12),
             _InfoRow(
-              label: 'Days Overdue',
+              label: l10n.debtSummaryDaysOverdueLabel,
               value: '$overdueDays',
               valueColor: AppColors.danger,
             ),
           ],
           if (debt.notes != null && debt.notes!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text('Notes', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+            Text(l10n.addEditDebtNotesHeading, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
             const SizedBox(height: 4),
             Text(debt.notes!, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
           ],

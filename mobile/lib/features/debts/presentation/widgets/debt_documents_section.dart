@@ -5,14 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_detail_providers.dart';
-
-const _documentTypeLabels = {
-  'receipt': 'Receipt',
-  'demand_letter': 'Demand Letter',
-  'statement': 'Statement',
-  'invoice': 'Invoice',
-};
 
 /// Related Documents — `GET /debts/{id}/documents`
 /// (`DocumentController::forDebt`), combining Receipts, Demand Letters,
@@ -29,7 +23,14 @@ class DebtDocumentsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final documentsAsync = ref.watch(debtDocumentsProvider(debtId));
+    final documentTypeLabels = <String, String>{
+      'receipt': l10n.documentTypeReceipt,
+      'demand_letter': l10n.documentTypeDemandLetter,
+      'statement': l10n.documentTypeStatement,
+      'invoice': l10n.documentTypeInvoice,
+    };
 
     return documentsAsync.when(
       loading: () => const Padding(
@@ -37,14 +38,14 @@ class DebtDocumentsSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load related documents.',
+        message: l10n.debtDocumentsLoadError,
         onRetry: () => ref.invalidate(debtDocumentsProvider(debtId)),
       ),
       data: (documents) {
         if (documents.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('No documents yet', style: AppTypography.body),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(l10n.customerDocumentsEmptyState, style: AppTypography.body),
           );
         }
 
@@ -62,7 +63,7 @@ class DebtDocumentsSection extends ConsumerWidget {
                         Text(document.referenceNumber, style: AppTypography.body),
                         const SizedBox(height: 2),
                         Text(
-                          _documentTypeLabels[document.documentType] ?? document.documentType,
+                          documentTypeLabels[document.documentType] ?? document.documentType,
                           style: AppTypography.caption,
                         ),
                       ],

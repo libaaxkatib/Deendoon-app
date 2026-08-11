@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../subscription/presentation/providers/subscription_providers.dart';
 import 'overview_tab.dart';
 import 'reports_tab.dart';
@@ -31,10 +32,11 @@ class AnalyticsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final subscriptionAsync = ref.watch(subscriptionProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Analytics')),
+      appBar: AppBar(title: Text(l10n.analyticsTitle)),
       body: subscriptionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => const _AnalyticsTabs(),
@@ -50,6 +52,8 @@ class _AnalyticsTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return DefaultTabController(
       length: 3,
       child: Column(
@@ -69,10 +73,10 @@ class _AnalyticsTabs extends StatelessWidget {
               unselectedLabelColor: context.colors.textSecondary,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-              tabs: const [
-                Tab(text: 'Overview'),
-                Tab(text: 'Reports'),
-                Tab(text: 'Trends'),
+              tabs: [
+                Tab(text: l10n.analyticsTabOverview),
+                Tab(text: l10n.analyticsTabReports),
+                Tab(text: l10n.analyticsTabTrends),
               ],
             ),
           ),
@@ -96,6 +100,8 @@ class _AnalyticsLockedState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -104,27 +110,25 @@ class _AnalyticsLockedState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.lock_outline, color: AppColors.warning, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.lock_outline, color: AppColors.warning, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    'Analytics Not Included',
-                    style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
+                    l10n.analyticsNotIncludedTitle,
+                    style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                'Analytics and Reports are not included in your current plan. '
-                'Upgrade your plan to unlock KPIs, Aging Analysis, Risk Distribution, '
-                'Collections Trend, and every Report category.',
+                l10n.analyticsNotIncludedMessage,
                 style: AppTypography.body.copyWith(color: context.colors.textPrimary),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () => context.push('/account/subscription'),
-                child: const Text('Upgrade Plan'),
+                child: Text(l10n.analyticsUpgradePlanButton),
               ),
             ],
           ),

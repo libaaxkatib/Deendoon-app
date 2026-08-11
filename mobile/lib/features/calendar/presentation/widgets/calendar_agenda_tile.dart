@@ -46,7 +46,7 @@ class CalendarAgendaTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  calendarEntryTitle(entry),
+                  calendarEntryTitle(context, entry),
                   style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                 ),
                 Text(entry.relatedEntityType, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),

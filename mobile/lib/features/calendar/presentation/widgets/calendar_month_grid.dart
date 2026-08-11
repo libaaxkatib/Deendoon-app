@@ -3,8 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
-const _weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+List<String> _weekdayLabels(AppLocalizations l10n) => [
+  l10n.weekdayMon,
+  l10n.weekdayTue,
+  l10n.weekdayWed,
+  l10n.weekdayThu,
+  l10n.weekdayFri,
+  l10n.weekdaySat,
+  l10n.weekdaySun,
+];
 
 bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -28,6 +37,7 @@ class CalendarMonthGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final today = DateTime.now();
     final firstDay = DateTime(month.year, month.month, 1);
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
@@ -38,7 +48,7 @@ class CalendarMonthGrid extends StatelessWidget {
       children: [
         Row(
           children: [
-            for (final label in _weekdayLabels)
+            for (final label in _weekdayLabels(l10n))
               Expanded(
                 child: Center(
                   child: Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),

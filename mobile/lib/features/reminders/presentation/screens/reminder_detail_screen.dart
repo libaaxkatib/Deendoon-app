@@ -11,6 +11,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../debts/presentation/widgets/log_reminder_sheet.dart';
 import '../providers/reminder_actions.dart';
 import '../providers/reminder_detail_providers.dart';
@@ -59,14 +60,15 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   static const _amountDueTypes = {'payment_due', 'promise_to_pay'};
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Reminder'),
-        content: const Text('This reminder will no longer appear in any view. This cannot be undone.'),
+        title: Text(l10n.reminderDetailDeleteDialogTitle),
+        content: Text(l10n.reminderDetailDeleteDialogContent),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.commonCancel)),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.reminderDetailDeleteButton)),
         ],
       ),
     );
@@ -97,16 +99,17 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   /// customer's name when no address is on file (an older customer record,
   /// or one created without one — `address` is optional).
   Future<void> _navigate(BuildContext context, String? customerName, String? customerAddress) async {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final query = (customerAddress != null && customerAddress.trim().isNotEmpty) ? customerAddress : customerName;
     if (query == null || query.trim().isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('No customer name or address available to navigate to.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderDetailNoAddressMessage)));
       return;
     }
     final uri = Uri.https('www.google.com', '/maps/search/', {'api': '1', 'query': query});
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
-      messenger.showSnackBar(const SnackBar(content: Text('Could not open maps.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderDetailMapsOpenError)));
     }
   }
 
@@ -152,24 +155,26 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
       await showLogReminderSheet(context, relatedEntityId, 'call');
       return;
     }
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     if (phone == null || phone.trim().isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('No phone number available for this customer.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderNoPhoneNumberMessage)));
       return;
     }
     final launched = await launchUrl(Uri(scheme: 'tel', path: phone));
     if (!launched && context.mounted) {
-      messenger.showSnackBar(const SnackBar(content: Text('Could not open the phone dialer.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderCouldNotOpenDialerMessage)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final reminderAsync = ref.watch(reminderDetailProvider(widget.reminderId));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reminder Details'),
+        title: Text(l10n.reminderDetailTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -189,7 +194,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: RetrySection(
-              message: 'Could not load this reminder.',
+              message: l10n.reminderDetailLoadError,
               onRetry: () => ref.invalidate(reminderDetailProvider(widget.reminderId)),
             ),
           ),
@@ -232,34 +237,37 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _InfoRow(label: 'Type', value: reminder.title),
+                    _InfoRow(label: l10n.reminderDetailTypeLabel, value: reminder.title),
                     const SizedBox(height: 12),
-                    _InfoRow(label: 'Due Date', value: formatFriendlyDateTimeFromIso(reminder.dueDate)),
+                    _InfoRow(label: l10n.addEditDebtDueDateHeading, value: formatFriendlyDateTimeFromIso(reminder.dueDate)),
                     if (_amountDueTypes.contains(reminder.type) && reminder.amountDue != null) ...[
                       const SizedBox(height: 12),
-                      _InfoRow(label: 'Amount Due', value: formatFriendlyAmount(reminder.amountDue!)),
+                      _InfoRow(label: l10n.reminderDetailAmountDueLabel, value: formatFriendlyAmount(reminder.amountDue!)),
                     ],
                     if (reminder.relatedCaseId != null) ...[
                       const SizedBox(height: 12),
                       _InfoRow(
-                        label: 'Related Case',
-                        value: 'View Case',
+                        label: l10n.reminderDetailRelatedCaseLabel,
+                        value: l10n.reminderDetailViewCaseLabel,
                         onTap: () => context.push('/cases/${reminder.relatedCaseId}'),
                       ),
                     ],
                     const SizedBox(height: 12),
-                    _InfoRow(label: 'Created By', value: 'User ${reminder.createdByUserId}'),
+                    _InfoRow(
+                      label: l10n.reminderDetailCreatedByLabel,
+                      value: l10n.reminderDetailCreatedByValue(reminder.createdByUserId),
+                    ),
                     const SizedBox(height: 12),
-                    _InfoRow(label: 'Created On', value: formatFriendlyDateTimeFromIso(reminder.createdAt)),
+                    _InfoRow(label: l10n.reminderDetailCreatedOnLabel, value: formatFriendlyDateTimeFromIso(reminder.createdAt)),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              Text('Notes', style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
+              Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
               const SizedBox(height: 12),
               AppCard(
                 child: Text(
-                  (reminder.notes?.trim().isNotEmpty ?? false) ? reminder.notes! : 'No notes added',
+                  (reminder.notes?.trim().isNotEmpty ?? false) ? reminder.notes! : l10n.reminderDetailNoNotesMessage,
                   style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                 ),
               ),
@@ -268,30 +276,30 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                 OutlinedButton.icon(
                   onPressed: () => _navigate(context, relatedAsync.valueOrNull?.name, relatedAsync.valueOrNull?.address),
                   icon: const Icon(Icons.directions_outlined),
-                  label: const Text('Navigate'),
+                  label: Text(l10n.reminderDetailNavigateButton),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: reminder.checkedInAt != null ? null : () => _checkIn(context, ref),
                   icon: Icon(reminder.checkedInAt != null ? Icons.check_circle : Icons.check_circle_outline),
-                  label: Text(reminder.checkedInAt != null ? 'Checked In' : 'Check In'),
+                  label: Text(reminder.checkedInAt != null ? l10n.reminderDetailCheckedInLabel : l10n.reminderDetailCheckInButton),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () => _logVisitOutcome(context, reminder.notes),
                   icon: const Icon(Icons.notes_outlined),
-                  label: const Text('Log Visit Outcome'),
+                  label: Text(l10n.reminderDetailLogVisitOutcomeLabel),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: isCompleted ? null : () => _snooze(context),
                   icon: const Icon(Icons.snooze_outlined),
-                  label: const Text('Snooze'),
+                  label: Text(l10n.reminderDetailSnoozeButton),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: isCompleted ? null : () => _complete(context, ref),
-                  child: const Text('Mark as Completed'),
+                  child: Text(l10n.reminderDetailMarkCompletedButton),
                 ),
               ] else ...[
                 Row(
@@ -299,7 +307,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                     Expanded(
                       child: _CommunicationActionButton(
                         icon: Icons.call_outlined,
-                        label: 'Call',
+                        label: l10n.logReminderCallLabel,
                         onPressed: () => _placeCall(
                           context,
                           reminder.relatedEntityType,
@@ -312,7 +320,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                     Expanded(
                       child: _CommunicationActionButton(
                         icon: Icons.chat_outlined,
-                        label: 'WhatsApp',
+                        label: l10n.reminderDetailWhatsAppButton,
                         onPressed: () => context.push('/reminders/${widget.reminderId}/send?channel=whatsapp'),
                       ),
                     ),
@@ -320,7 +328,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                     Expanded(
                       child: _CommunicationActionButton(
                         icon: Icons.sms_outlined,
-                        label: 'SMS',
+                        label: l10n.reminderDetailSmsButton,
                         onPressed: () => context.push('/reminders/${widget.reminderId}/send?channel=sms'),
                       ),
                     ),
@@ -329,19 +337,19 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: isCompleted ? null : () => _complete(context, ref),
-                  child: const Text('Mark as Completed'),
+                  child: Text(l10n.reminderDetailMarkCompletedButton),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: isCompleted ? null : () => _snooze(context),
                   icon: const Icon(Icons.snooze_outlined),
-                  label: const Text('Snooze'),
+                  label: Text(l10n.reminderDetailSnoozeButton),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: const BorderSide(color: AppColors.danger)),
                   onPressed: () => context.push('/reminders/${widget.reminderId}/edit'),
-                  child: const Text('Reschedule'),
+                  child: Text(l10n.reminderDetailRescheduleButton),
                 ),
               ],
             ],
@@ -405,12 +413,13 @@ class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
       _isSaving = true;
       _error = null;
     });
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
       await ref.read(reminderActionsProvider).update(id: widget.reminderId, notes: _outcomeController.text.trim());
       navigator.pop();
-      messenger.showSnackBar(const SnackBar(content: Text('Visit outcome saved.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderDetailVisitOutcomeSavedMessage)));
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -420,6 +429,7 @@ class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -431,12 +441,12 @@ class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Log Visit Outcome', style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
+          Text(l10n.reminderDetailLogVisitOutcomeLabel, style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 16),
           TextField(
             controller: _outcomeController,
             maxLines: 4,
-            decoration: const InputDecoration(labelText: 'What happened during this visit?'),
+            decoration: InputDecoration(labelText: l10n.reminderDetailLogVisitOutcomeHint),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -447,7 +457,7 @@ class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
             onPressed: _isSaving ? null : _save,
             child: _isSaving
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
+                : Text(l10n.commonSave),
           ),
         ],
       ),
@@ -480,12 +490,13 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
       _isSaving = true;
       _error = null;
     });
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
       await ref.read(reminderActionsProvider).update(id: widget.reminderId, dueDate: dueDate.toIso8601String());
       navigator.pop();
-      messenger.showSnackBar(SnackBar(content: Text('Snoozed until ${formatFriendlyDateTime(dueDate)}.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderSnoozedUntilMessage(formatFriendlyDateTime(dueDate)))));
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -506,6 +517,7 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
 
     return Padding(
@@ -519,29 +531,29 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Snooze Reminder', style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
+          Text(l10n.reminderSnoozeSheetTitle, style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 16),
           if (_isSaving)
             const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
           else ...[
             OutlinedButton(
               onPressed: () => _snoozeUntil(now.add(const Duration(hours: 1))),
-              child: const Text('1 Hour'),
+              child: Text(l10n.reminderSnoozeOneHour),
             ),
             const SizedBox(height: 8),
             OutlinedButton(
               onPressed: () => _snoozeUntil(DateTime(now.year, now.month, now.day + 1, 9, 0)),
-              child: const Text('Tomorrow'),
+              child: Text(l10n.reminderSnoozeTomorrow),
             ),
             const SizedBox(height: 8),
             OutlinedButton(
               onPressed: () => _snoozeUntil(now.add(const Duration(days: 7))),
-              child: const Text('Next Week'),
+              child: Text(l10n.reminderSnoozeNextWeek),
             ),
             const SizedBox(height: 8),
             OutlinedButton(
               onPressed: _pickCustom,
-              child: const Text('Pick Date & Time'),
+              child: Text(l10n.reminderSnoozePickDateTime),
             ),
           ],
           if (_error != null) ...[

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/attachment_repository.dart';
 import '../providers/attachment_providers.dart';
 
@@ -55,10 +56,11 @@ class _AttachmentsScreenState extends ConsumerState<AttachmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final attachmentsAsync = ref.watch(attachmentsProvider(widget.entityPathPrefix));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Attachments')),
+      appBar: AppBar(title: Text(l10n.customerDetailAttachmentsButton)),
       body: Column(
         children: [
           Expanded(
@@ -71,13 +73,13 @@ class _AttachmentsScreenState extends ConsumerState<AttachmentsScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load attachments.',
+                    message: l10n.professionalCollectionAttachmentsLoadError,
                     onRetry: () => ref.invalidate(attachmentsProvider(widget.entityPathPrefix)),
                   ),
                 ),
                 data: (attachments) {
                   if (attachments.isEmpty) {
-                    return const Center(child: Text('No attachments yet', style: AppTypography.body));
+                    return Center(child: Text(l10n.professionalCollectionAttachmentsEmptyState, style: AppTypography.body));
                   }
 
                   return ListView.separated(
@@ -125,7 +127,11 @@ class _AttachmentsScreenState extends ConsumerState<AttachmentsScreen> {
                       Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       const SizedBox(height: 8),
                     ],
-                    PrimaryButton(label: 'Upload Attachment', isLoading: _isUploading, onPressed: _pickAndUpload),
+                    PrimaryButton(
+                      label: l10n.professionalCollectionUploadAttachmentButton,
+                      isLoading: _isUploading,
+                      onPressed: _pickAndUpload,
+                    ),
                   ],
                 ),
               ),

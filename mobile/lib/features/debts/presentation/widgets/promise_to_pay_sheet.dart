@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_actions.dart';
 
 /// Promise to Pay — `POST /debts/{id}/promise-to-pay`
@@ -61,6 +62,7 @@ class _PromiseToPaySheetState extends ConsumerState<_PromiseToPaySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -72,11 +74,11 @@ class _PromiseToPaySheetState extends ConsumerState<_PromiseToPaySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Promise to Pay', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.promiseToPayTitle, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Promised Date'),
+            title: Text(l10n.promiseToPaySheetDateLabel),
             subtitle: Text(_promisedDate.toIso8601String().split('T').first),
             trailing: const Icon(Icons.calendar_today, size: 18),
             onTap: _pickDate,
@@ -86,7 +88,7 @@ class _PromiseToPaySheetState extends ConsumerState<_PromiseToPaySheet> {
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 20),
-          PrimaryButton(label: 'Save Promise', isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(label: l10n.promiseToPaySheetSaveButton, isLoading: _isLoading, onPressed: _submit),
         ],
       ),
     );

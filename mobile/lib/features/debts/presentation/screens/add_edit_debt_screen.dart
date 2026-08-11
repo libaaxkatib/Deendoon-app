@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../attachments/data/attachment_repository.dart';
 import '../../../attachments/presentation/providers/attachment_providers.dart';
 import '../../../quick_actions/domain/debt_draft.dart';
@@ -118,18 +119,23 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
             description: 'Invoice',
           );
     } on ApiException catch (e) {
-      if (mounted) messenger.showSnackBar(SnackBar(content: Text('Debt saved, but the invoice failed: ${e.message}')));
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).addEditDebtInvoiceUploadFailedMessage(e.message))),
+        );
+      }
     }
   }
 
   Future<void> _showCreditLimitDialog(String message) {
+    final l10n = AppLocalizations.of(context);
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Credit Limit Exceeded'),
+        title: Text(l10n.addEditDebtCreditLimitExceededTitle),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.commonOk)),
         ],
       ),
     );
@@ -138,7 +144,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
   Future<void> _save() async {
     if (_formKey.currentState?.validate() != true) return;
     if (_dueDate == null) {
-      setState(() => _error = 'Select a due date.');
+      setState(() => _error = AppLocalizations.of(context).addEditDebtDueDateRequiredError);
       return;
     }
 
@@ -198,16 +204,17 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isEdit) {
       final debtAsync = ref.watch(debtDetailProvider(widget.debtId!));
       return debtAsync.when(
         loading: () => Scaffold(
-          appBar: AppBar(title: const Text('Edit Debt')),
+          appBar: AppBar(title: Text(l10n.addEditDebtEditTitle)),
           body: const Center(child: CircularProgressIndicator()),
         ),
         error: (error, _) => Scaffold(
-          appBar: AppBar(title: const Text('Edit Debt')),
-          body: const Center(child: Text('Could not load this debt.', style: AppTypography.body)),
+          appBar: AppBar(title: Text(l10n.addEditDebtEditTitle)),
+          body: Center(child: Text(l10n.debtDetailLoadError, style: AppTypography.body)),
         ),
         data: (debt) {
           _prefillFromExisting(debt);
@@ -219,7 +226,8 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
   }
 
   Widget _buildForm(BuildContext context) {
-    final title = _isEdit ? 'Edit Debt' : (widget.deferSubmit ? 'Debt Details' : 'Add Debt');
+    final l10n = AppLocalizations.of(context);
+    final title = _isEdit ? l10n.addEditDebtEditTitle : (widget.deferSubmit ? l10n.debtDetailTitle : l10n.addEditDebtAddTitle);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Form(
@@ -228,7 +236,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             if (_isEdit) ...[
-              const Text('Amount', style: AppTypography.caption),
+              Text(l10n.addEditDebtAmountLabel, style: AppTypography.caption),
               const SizedBox(height: 4),
               Text(_amountController.text, style: AppTypography.body),
               const SizedBox(height: 20),
@@ -236,24 +244,28 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Amount', hintText: '0.00'),
+                decoration: InputDecoration(labelText: l10n.addEditDebtAmountLabel, hintText: l10n.creditLimitHint),
                 validator: (value) {
                   final trimmed = value?.trim() ?? '';
-                  if (trimmed.isEmpty) return 'Enter an amount';
+                  if (trimmed.isEmpty) {
+                    return l10n.addEditDebtAmountRequiredValidator;
+                  }
                   final parsed = double.tryParse(trimmed);
-                  if (parsed == null || parsed <= 0) return 'Enter a valid amount';
+                  if (parsed == null || parsed <= 0) {
+                    return l10n.addEditDebtAmountInvalidValidator;
+                  }
                   return null;
                 },
               ),
             const SizedBox(height: 20),
-            const Text('Due Date', style: AppTypography.heading),
+            Text(l10n.addEditDebtDueDateHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: _pickDueDate,
-              child: Text(_dueDate == null ? 'Select Due Date' : _dateOnly(_dueDate!)),
+              child: Text(_dueDate == null ? l10n.addEditDebtSelectDueDateButton : _dateOnly(_dueDate!)),
             ),
             const SizedBox(height: 20),
-            const Text('Invoice (Optional)', style: AppTypography.heading),
+            Text(l10n.addEditDebtInvoiceHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -261,7 +273,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickInvoice(ref.read(attachmentCameraProvider)),
                     icon: const Icon(Icons.document_scanner_outlined, size: 18),
-                    label: const Text('Scan Invoice'),
+                    label: Text(l10n.debtScanInvoiceButton),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -269,7 +281,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => _pickInvoice(ref.read(attachmentFilePickerProvider)),
                     icon: const Icon(Icons.upload_file_outlined, size: 18),
-                    label: const Text('Upload Invoice'),
+                    label: Text(l10n.debtUploadInvoiceButton),
                   ),
                 ),
               ],
@@ -285,19 +297,19 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 16),
-                    tooltip: 'Remove selected invoice',
+                    tooltip: l10n.addEditDebtRemoveInvoiceTooltip,
                     onPressed: () => setState(() => _invoiceFile = null),
                   ),
                 ],
               ),
             ],
             const SizedBox(height: 20),
-            const Text('Notes', style: AppTypography.heading),
+            Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             TextFormField(
               controller: _notesController,
               maxLines: 3,
-              decoration: const InputDecoration(hintText: 'Optional notes'),
+              decoration: InputDecoration(hintText: l10n.addEditDebtNotesHint),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),
@@ -305,7 +317,7 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
             ],
             const SizedBox(height: 20),
             PrimaryButton(
-              label: _isEdit ? 'Save Changes' : (widget.deferSubmit ? 'Continue' : 'Add Debt'),
+              label: _isEdit ? l10n.saveChanges : (widget.deferSubmit ? l10n.addEditCustomerContinueButton : l10n.addEditDebtAddTitle),
               isLoading: _isSaving,
               onPressed: _save,
             ),

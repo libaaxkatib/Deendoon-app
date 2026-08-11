@@ -10,6 +10,7 @@ import '../../../customers/domain/customer.dart';
 import '../../../customers/presentation/providers/customer_actions.dart';
 import '../../../debts/domain/debt.dart';
 import '../../../debts/presentation/providers/debt_actions.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/add_case_review_input.dart';
 
 /// Add Case wizard's final step. Reviews everything collected, then on
@@ -151,16 +152,17 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final input = widget.input;
     final debtDraft = input.debtDraft;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Review')),
+      appBar: AppBar(title: Text(l10n.addCaseReviewTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            const Text('Customer', style: AppTypography.heading),
+            Text(l10n.addCaseReviewCustomerHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             if (input.existingCustomer case final customer?) ...[
               Text(customer.name, style: AppTypography.body),
@@ -168,25 +170,26 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
             ] else if (input.customerDraft case final draft?) ...[
               Text(draft.name, style: AppTypography.body),
               Text(draft.phone, style: AppTypography.caption),
-              Text('Credit Limit: ${draft.creditLimit}', style: AppTypography.caption),
+              Text(l10n.addCaseReviewCreditLimitLabel(draft.creditLimit), style: AppTypography.caption),
             ],
             const SizedBox(height: 24),
-            const Text('Debt', style: AppTypography.heading),
+            Text(l10n.addCaseReviewDebtHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
-            Text('Amount: ${debtDraft.amount}', style: AppTypography.body),
-            Text('Due Date: ${debtDraft.dueDate}', style: AppTypography.body),
-            if (debtDraft.notes != null) Text('Notes: ${debtDraft.notes}', style: AppTypography.caption),
-            if (debtDraft.invoiceFile != null) Text('Invoice: ${debtDraft.invoiceFile!.name}', style: AppTypography.caption),
+            Text(l10n.addCaseReviewAmountLabel(debtDraft.amount), style: AppTypography.body),
+            Text(l10n.addCaseReviewDueDateLabel(debtDraft.dueDate), style: AppTypography.body),
+            if (debtDraft.notes != null) Text(l10n.addCaseReviewNotesLabel(debtDraft.notes!), style: AppTypography.caption),
+            if (debtDraft.invoiceFile != null)
+              Text(l10n.addCaseReviewInvoiceLabel(debtDraft.invoiceFile!.name), style: AppTypography.caption),
             const SizedBox(height: 32),
-            _buildStateSection(context),
+            _buildStateSection(context, l10n),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStateSection(BuildContext context) {
-    final label = _isNewCustomer ? 'Create Customer & Debt' : 'Create Debt';
+  Widget _buildStateSection(BuildContext context, AppLocalizations l10n) {
+    final label = _isNewCustomer ? l10n.addCaseReviewCreateCustomerDebtButton : l10n.addCaseReviewCreateDebtButton;
     final state = _state;
     return switch (state) {
       _Idle() => PrimaryButton(label: label, onPressed: _confirm),
@@ -196,20 +199,20 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
           children: [
             Text(message, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             const SizedBox(height: 16),
-            PrimaryButton(label: 'Try Again', onPressed: _confirm),
+            PrimaryButton(label: l10n.addCaseReviewTryAgainButton, onPressed: _confirm),
           ],
         ),
       _FailedAfterCustomer(:final message, :final customer) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'The customer "${customer.name}" was created successfully. Creating the debt failed: $message',
+              l10n.addCaseReviewCustomerCreatedDebtFailedMessage(customer.name, message),
               style: AppTypography.body,
             ),
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: () => GoRouter.of(context).push('/customers/${customer.id}'),
-              child: const Text('Open Customer'),
+              child: Text(l10n.addCaseReviewOpenCustomerButton),
             ),
           ],
         ),
@@ -217,18 +220,18 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Debt ${debt.referenceNumber} was created successfully. Creating the Collection Case failed: $message',
+              l10n.addCaseReviewDebtCreatedCaseFailedMessage(debt.referenceNumber, message),
               style: AppTypography.body,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'You can open a Collection Case for this debt later from its Debt Details screen.',
+            Text(
+              l10n.addCaseReviewCaseLaterHint,
               style: AppTypography.caption,
             ),
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: () => GoRouter.of(context).push('/debts/${debt.id}'),
-              child: const Text('Open Debt'),
+              child: Text(l10n.addCaseReviewOpenDebtButton),
             ),
           ],
         ),

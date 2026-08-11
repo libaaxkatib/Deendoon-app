@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../reminders/domain/reminder_entity_preset.dart';
 import '../providers/customer_actions.dart';
 import '../providers/customer_detail_providers.dart';
@@ -48,14 +49,15 @@ class CustomerDetailScreen extends ConsumerWidget {
   /// to the Customer List instead (restoring it back is only possible from
   /// there, via the "Show Archived" filter — see `customer_list_screen.dart`).
   Future<void> _archive(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Archive Customer'),
-        content: const Text('This customer will no longer appear in the default list. This can be undone later.'),
+        title: Text(l10n.customerArchiveTitle),
+        content: Text(l10n.customerArchiveDialogContent),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Archive')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.commonCancel)),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.customerArchiveConfirmButton)),
         ],
       ),
     );
@@ -66,7 +68,7 @@ class CustomerDetailScreen extends ConsumerWidget {
     final router = GoRouter.of(context);
     try {
       await ref.read(customerActionsProvider).archive(customerId);
-      messenger.showSnackBar(const SnackBar(content: Text('Customer archived successfully')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.customerArchivedSuccessfully)));
       router.pop();
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
@@ -79,10 +81,11 @@ class CustomerDetailScreen extends ConsumerWidget {
   /// action already invalidates `customerDocumentsProvider`, so the
   /// Documents screen picks up the new entry the next time it's opened.
   Future<void> _generateStatement(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(customerActionsProvider).generateStatement(customerId);
-      messenger.showSnackBar(const SnackBar(content: Text('Statement generated successfully')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.customerStatementGeneratedSuccessfully)));
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -90,6 +93,7 @@ class CustomerDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final customerAsync = ref.watch(customerDetailProvider(customerId));
 
     final customer = customerAsync.valueOrNull;
@@ -97,16 +101,16 @@ class CustomerDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(customer?.name ?? 'Customer Details'),
+        title: Text(customer?.name ?? l10n.customerDetailsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: isReadOnly ? 'This customer is read-only' : 'Edit Customer',
+            tooltip: isReadOnly ? l10n.customerReadOnlyTooltip : l10n.customerEditTitle,
             onPressed: customer == null || isReadOnly ? null : () => context.push('/customers/$customerId/edit'),
           ),
           IconButton(
             icon: const Icon(Icons.archive_outlined),
-            tooltip: isReadOnly ? 'This customer is read-only' : 'Archive Customer',
+            tooltip: isReadOnly ? l10n.customerReadOnlyTooltip : l10n.customerArchiveTitle,
             onPressed: customer == null || isReadOnly ? null : () => _archive(context, ref),
           ),
         ],
@@ -123,7 +127,7 @@ class CustomerDetailScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: RetrySection(
-                message: 'Could not load this customer.',
+                message: l10n.customerDetailLoadError,
                 onRetry: () => ref.invalidate(customerDetailProvider(customerId)),
               ),
             ),
@@ -145,13 +149,13 @@ class CustomerDetailScreen extends ConsumerWidget {
                 const _CustomerReadOnlyBanner(),
               ],
               const SizedBox(height: 24),
-              const Text('Recent Payments', style: AppTypography.heading),
+              Text(l10n.customerDetailRecentPaymentsHeading, style: AppTypography.heading),
               const SizedBox(height: 12),
               CustomerRecentPayments(customerId: customerId),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => context.push('/customers/$customerId/debts'),
-                child: const Text('View Debts'),
+                child: Text(l10n.customerDetailViewDebtsButton),
               ),
               const SizedBox(height: 12),
               Row(
@@ -159,14 +163,14 @@ class CustomerDetailScreen extends ConsumerWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => context.push('/customers/$customerId/cases'),
-                      child: const Text('Cases'),
+                      child: Text(l10n.navCases),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => context.push('/customers/$customerId/documents'),
-                      child: const Text('Documents'),
+                      child: Text(l10n.navDocuments),
                     ),
                   ),
                 ],
@@ -174,12 +178,12 @@ class CustomerDetailScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () => context.push('/customers/$customerId/attachments', extra: !customer.isReadOnly),
-                child: const Text('Attachments'),
+                child: Text(l10n.customerDetailAttachmentsButton),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: customer.isReadOnly ? null : () => _generateStatement(context, ref),
-                child: const Text('Generate Statement'),
+                child: Text(l10n.customerDetailGenerateStatementButton),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -190,7 +194,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                           extra: ReminderEntityPreset(type: 'customer', id: customerId, label: customer.name),
                         ),
                 icon: const Icon(Icons.add_alarm_outlined),
-                label: const Text('Add Reminder'),
+                label: Text(l10n.quickActionAddReminder),
               ),
             ],
           ),
@@ -210,6 +214,7 @@ class _CustomerReadOnlyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,21 +225,19 @@ class _CustomerReadOnlyBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Read-only Customer',
-                  style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
+                Text(
+                  l10n.customerReadOnlyBannerTitle,
+                  style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Your tenant is over its plan\'s customer limit, so this customer cannot be edited, '
-                  'archived, or have documents generated. It remains fully viewable. '
-                  'Upgrade your plan to restore full access.',
+                Text(
+                  l10n.customerReadOnlyBannerMessage,
                   style: AppTypography.body,
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () => context.push('/account/subscription'),
-                  child: const Text('Upgrade Plan'),
+                  child: Text(l10n.customerReadOnlyBannerUpgradeButton),
                 ),
               ],
             ),

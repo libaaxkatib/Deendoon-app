@@ -4,6 +4,7 @@ import '../../../../core/models/payment.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// Reports > Payments row — new widget, since `Payment` had no standalone
 /// list-card before this sprint (previously only shown inline within
@@ -18,6 +19,8 @@ class PaymentReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return AppCard(
       child: Row(
         children: [
@@ -31,7 +34,7 @@ class PaymentReportCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  payment.paymentMethod ?? 'Method not recorded',
+                  payment.paymentMethod ?? l10n.paymentReportMethodNotRecorded,
                   style: AppTypography.caption,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -45,7 +48,12 @@ class PaymentReportCard extends StatelessWidget {
             children: [
               Text(payment.paymentDate, style: AppTypography.caption),
               const SizedBox(height: 2),
-              Text('Debt #${payment.debtId}', style: AppTypography.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                l10n.paymentReportDebtIdLabel(payment.debtId),
+                style: AppTypography.caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ],

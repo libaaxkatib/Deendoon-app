@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../debts/presentation/widgets/debt_card.dart';
 import '../../domain/aging_analysis.dart';
 import '../providers/aging_analysis_provider.dart';
@@ -22,15 +23,16 @@ class AgingBucketDebtsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final agingAsync = ref.watch(agingAnalysisProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(agingBucketLabels[bucket] ?? 'Debts')),
+      appBar: AppBar(title: Text(agingBucketLabels(l10n)[bucket] ?? l10n.debtListTitle)),
       body: agingAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
           child: RetrySection(
-            message: 'Could not load debts.',
+            message: l10n.debtListLoadError,
             onRetry: () => ref.invalidate(agingAnalysisProvider),
           ),
         ),
@@ -39,7 +41,7 @@ class AgingBucketDebtsScreen extends ConsumerWidget {
           final bucketTotalCount = aging.buckets[bucket]?.count ?? matching.length;
 
           if (matching.isEmpty) {
-            return const Center(child: Text('No debts in this bucket', style: AppTypography.body));
+            return Center(child: Text(l10n.agingBucketDebtsEmptyState, style: AppTypography.body));
           }
 
           return Column(
@@ -49,7 +51,7 @@ class AgingBucketDebtsScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
-                    'Showing ${matching.length} of $bucketTotalCount debts in this bucket.',
+                    l10n.agingBucketDebtsShowingCountLabel(matching.length, bucketTotalCount),
                     style: AppTypography.caption,
                   ),
                 ),

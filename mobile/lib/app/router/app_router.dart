@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/generated/app_localizations.dart';
+
 import '../../features/account/presentation/screens/about_screen.dart';
 import '../../features/account/presentation/screens/account_screen.dart';
 import '../../features/account/presentation/screens/business_profile_screen.dart';
@@ -77,7 +79,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RoutePaths.login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: RoutePaths.register, builder: (_, _) => const RegisterScreen()),
       GoRoute(path: RoutePaths.forgotPassword, builder: (_, _) => const ForgotPasswordScreen()),
-      GoRoute(path: RoutePaths.resetPassword, builder: (_, _) => const ResetPasswordScreen()),
+      GoRoute(
+        path: RoutePaths.resetPassword,
+        builder: (_, state) => ResetPasswordScreen(initialEmail: state.extra as String?),
+      ),
       GoRoute(
         path: '/customers',
         builder: (_, state) => CustomerListScreen(selectionMode: state.uri.queryParameters['select'] == 'true'),
@@ -237,12 +242,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/account/about', builder: (_, _) => const AboutScreen()),
       GoRoute(
         path: '/account/privacy-policy',
-        builder: (_, _) => const LegalContentScreen(title: 'Privacy Policy', content: kPrivacyPolicyContent),
+        builder: (context, _) => LegalContentScreen(
+          title: AppLocalizations.of(context).aboutDeendoonPrivacyPolicyLabel,
+          content: kPrivacyPolicyContent,
+        ),
       ),
       GoRoute(
         path: '/account/terms-conditions',
-        builder: (_, _) =>
-            const LegalContentScreen(title: 'Terms & Conditions', content: kTermsAndConditionsContent),
+        builder: (context, _) => LegalContentScreen(
+          title: AppLocalizations.of(context).aboutDeendoonTermsConditionsLabel,
+          content: kTermsAndConditionsContent,
+        ),
       ),
       GoRoute(path: '/account/business-profile', builder: (_, _) => const BusinessProfileScreen()),
       GoRoute(path: '/account/settings', builder: (_, _) => const SettingsScreen()),

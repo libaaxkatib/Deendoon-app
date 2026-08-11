@@ -6,19 +6,20 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../debts/presentation/widgets/debt_card.dart';
 import '../providers/report_debts_provider.dart';
 import '../widgets/export_action.dart';
 
-const _statusFilters = <String?, String>{
-  null: 'All',
-  'pending': 'Pending',
-  'overdue': 'Overdue',
-  'partial_paid': 'Partially Paid',
-  'paid': 'Paid',
-  'cancelled': 'Cancelled',
-  'written_off': 'Written Off',
-};
+Map<String?, String> _statusFilters(AppLocalizations l10n) => {
+      null: l10n.debtListFilterAll,
+      'pending': l10n.statusPending,
+      'overdue': l10n.statusOverdue,
+      'partial_paid': l10n.statusPartiallyPaid,
+      'paid': l10n.statusPaid,
+      'cancelled': l10n.statusCancelled,
+      'written_off': l10n.statusWrittenOff,
+    };
 
 /// §5.2 Reports — Debts category, tenant-wide (unlike the Debts module's
 /// own per-customer `DebtListScreen`). `riskLevel` is always passed `null`
@@ -63,15 +64,17 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final debtsAsync = ref.watch(reportDebtsProvider);
+    final statusFilters = _statusFilters(l10n);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Debts Report'),
+        title: Text(l10n.reportDebtsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share),
-            tooltip: 'Export',
+            tooltip: l10n.reportExportTooltip,
             onPressed: () => showExportSheet(
               context,
               ref,
@@ -91,7 +94,7 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  for (final entry in _statusFilters.entries) ...[
+                  for (final entry in statusFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
                       selected: debtsAsync.valueOrNull?.status == entry.key,
@@ -108,7 +111,7 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
-                    message: 'Could not load debts.',
+                    message: l10n.debtListLoadError,
                     onRetry: () => ref.invalidate(reportDebtsProvider),
                   ),
                 ),
@@ -116,7 +119,7 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
                   if (state.debts.isEmpty) {
                     return Center(
                       child: Text(
-                        'No debts match this filter',
+                        l10n.reportDebtsEmptyState,
                         style: AppTypography.body.copyWith(color: context.colors.textPrimary),
                       ),
                     );

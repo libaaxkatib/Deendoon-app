@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/notifications/data/notification_repository.dart';
 import 'package:mobile/features/notifications/domain/app_notification.dart';
 import 'package:mobile/features/notifications/domain/notification_page.dart';
 import 'package:mobile/features/notifications/presentation/screens/notification_list_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockNotificationRepository extends Mock implements NotificationRepository {}
@@ -47,7 +50,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [notificationRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            SomaliMaterialLocalizationsDelegate(),
+            SomaliCupertinoLocalizationsDelegate(),
+          ],
+        ),
       ),
     );
   }

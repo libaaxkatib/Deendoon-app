@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/customer_actions.dart';
 
 /// Credit Limit quick-edit — the dedicated `PATCH /customers/{id}/credit-limit`
@@ -62,6 +63,7 @@ class _CreditLimitSheetState extends ConsumerState<_CreditLimitSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 16,
@@ -75,17 +77,17 @@ class _CreditLimitSheetState extends ConsumerState<_CreditLimitSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Credit Limit', style: Theme.of(context).textTheme.titleMedium),
+            Text(l10n.creditLimitSheetTitle, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 16),
             TextFormField(
               controller: _creditLimitController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Credit Limit', hintText: '0.00'),
+              decoration: InputDecoration(labelText: l10n.creditLimitLabel, hintText: l10n.creditLimitHint),
               validator: (value) {
                 final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty) return 'Enter a credit limit';
+                if (trimmed.isEmpty) return l10n.creditLimitRequiredValidator;
                 final parsed = double.tryParse(trimmed);
-                if (parsed == null || parsed < 0) return 'Enter a valid credit limit';
+                if (parsed == null || parsed < 0) return l10n.creditLimitInvalidValidator;
                 return null;
               },
             ),
@@ -94,7 +96,7 @@ class _CreditLimitSheetState extends ConsumerState<_CreditLimitSheet> {
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: 'Save', isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(label: l10n.commonSave, isLoading: _isLoading, onPressed: _submit),
           ],
         ),
       ),

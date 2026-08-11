@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../theme/deendoon_colors.dart';
 
 /// §2.9 status color vocabulary: High Risk = danger/red, Medium = warning/
@@ -13,11 +14,12 @@ class RiskBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (color, label) = switch (riskLevel) {
-      'high' => (context.colors.danger, 'High'),
-      'medium' => (context.colors.warning, 'Medium'),
-      'low' => (context.colors.success, 'Low'),
-      _ => (context.colors.textSecondary, 'Unknown'),
+      'high' => (context.colors.danger, l10n.riskHigh),
+      'medium' => (context.colors.warning, l10n.riskMedium),
+      'low' => (context.colors.success, l10n.riskLow),
+      _ => (context.colors.textSecondary, l10n.riskUnknown),
     };
 
     return Container(

@@ -37,7 +37,7 @@ class DocumentCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  documentTypeLabels[document.documentType] ?? document.documentType,
+                  documentTypeLabel(context, document.documentType),
                   style: AppTypography.caption,
                 ),
               ],
@@ -55,7 +55,7 @@ class DocumentCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              Text(formatFileSize(document.fileSize), style: AppTypography.caption),
+              Text(formatFileSize(context, document.fileSize), style: AppTypography.caption),
             ],
           ),
         ],

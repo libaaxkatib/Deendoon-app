@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/case_history.dart';
 import '../providers/case_detail_providers.dart';
 
@@ -21,6 +22,7 @@ class CaseTimelineSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final historyAsync = ref.watch(caseHistoryProvider(caseId));
 
     return historyAsync.when(
@@ -29,14 +31,14 @@ class CaseTimelineSection extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => RetrySection(
-        message: 'Could not load the case timeline.',
+        message: l10n.caseTimelineLoadError,
         onRetry: () => ref.invalidate(caseHistoryProvider(caseId)),
       ),
       data: (history) {
         if (history.entries.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('No activity recorded yet', style: AppTypography.body),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(l10n.caseTimelineEmptyState, style: AppTypography.body),
           );
         }
 

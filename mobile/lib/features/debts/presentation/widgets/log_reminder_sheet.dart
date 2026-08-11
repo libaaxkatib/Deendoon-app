@@ -3,13 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_actions.dart';
-
-const _channelLabels = <String, String>{
-  'whatsapp': 'WhatsApp Reminder',
-  'sms': 'SMS Reminder',
-  'call': 'Call',
-};
 
 /// Log Manual Reminder (FR-030) — one shared sheet for all three real,
 /// backend-supported channels (`POST /debts/{id}/reminders/{whatsapp,sms,
@@ -79,7 +74,13 @@ class _LogReminderSheetState extends ConsumerState<_LogReminderSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final label = _channelLabels[widget.channel] ?? widget.channel;
+    final l10n = AppLocalizations.of(context);
+    final channelLabels = <String, String>{
+      'whatsapp': l10n.debtTimelineStageWhatsappReminder,
+      'sms': l10n.debtTimelineStageSmsReminder,
+      'call': l10n.logReminderCallLabel,
+    };
+    final label = channelLabels[widget.channel] ?? widget.channel;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -92,19 +93,19 @@ class _LogReminderSheetState extends ConsumerState<_LogReminderSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Log $label', style: Theme.of(context).textTheme.titleMedium),
+          Text(l10n.logReminderSheetTitle(label), style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
           TextField(
             controller: _detailsController,
             maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Details (optional)'),
+            decoration: InputDecoration(labelText: l10n.logReminderDetailsLabel),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 12),
-          PrimaryButton(label: 'Log $label', isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(label: l10n.logReminderSheetTitle(label), isLoading: _isLoading, onPressed: _submit),
         ],
       ),
     );

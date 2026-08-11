@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/attachments/presentation/providers/attachment_providers.dart';
 import 'package:mobile/features/professional_collection/data/professional_collection_repository.dart';
 import 'package:mobile/features/professional_collection/domain/professional_collection_attachment.dart';
 import 'package:mobile/features/professional_collection/domain/professional_collection_request.dart';
 import 'package:mobile/features/professional_collection/presentation/screens/professional_collection_attachments_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
@@ -45,7 +48,19 @@ void main() {
           professionalCollectionRepositoryProvider.overrideWithValue(mockRepository),
           attachmentFilePickerProvider.overrideWithValue(() async => pickedFile),
         ],
-        child: const MaterialApp(home: ProfessionalCollectionAttachmentsScreen(requestId: '1')),
+        child: const MaterialApp(
+          locale: Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            SomaliMaterialLocalizationsDelegate(),
+            SomaliCupertinoLocalizationsDelegate(),
+          ],
+          home: ProfessionalCollectionAttachmentsScreen(requestId: '1'),
+        ),
       ),
     );
     await tester.pumpAndSettle();

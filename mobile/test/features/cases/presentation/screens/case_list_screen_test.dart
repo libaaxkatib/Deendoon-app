@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/cases/data/collection_case_repository.dart';
 import 'package:mobile/features/cases/domain/collection_case.dart';
 import 'package:mobile/features/cases/domain/collection_case_page.dart';
 import 'package:mobile/features/cases/presentation/screens/case_list_screen.dart';
+import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCollectionCaseRepository extends Mock implements CollectionCaseRepository {}
@@ -40,7 +43,19 @@ Future<void> _pumpScreen(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [collectionCaseRepositoryProvider.overrideWithValue(repository)],
-      child: MaterialApp(home: CaseListScreen(initialTab: initialTab)),
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+        home: CaseListScreen(initialTab: initialTab),
+      ),
     ),
   );
 }
@@ -134,7 +149,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [collectionCaseRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            SomaliMaterialLocalizationsDelegate(),
+            SomaliCupertinoLocalizationsDelegate(),
+          ],
+        ),
       ),
     );
     await tester.pumpAndSettle();

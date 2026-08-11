@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/unavailable_section.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/customer_import_repository.dart';
 import '../../domain/customer_import_state.dart';
 import '../../domain/import_commit_result.dart';
@@ -39,27 +40,35 @@ class BulkImportScreen extends ConsumerWidget {
   Future<void> _pickFile(BuildContext context, WidgetRef ref) async {
     final picked = await ref.read(importFilePickerProvider)();
     if (picked == null) return;
-    ref.read(customerImportProvider.notifier).selectFile(path: picked.path, name: picked.name, size: picked.size);
+    if (!context.mounted) return;
+    final l10n = AppLocalizations.of(context);
+    ref.read(customerImportProvider.notifier).selectFile(
+          path: picked.path,
+          name: picked.name,
+          size: picked.size,
+          unsupportedFileTypeMessage: l10n.bulkImportUnsupportedFileTypeError,
+        );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(customerImportProvider);
     final notifier = ref.read(customerImportProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bulk Import')),
+      appBar: AppBar(title: Text(l10n.bulkImportTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Sample Template', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+          Text(l10n.bulkImportSampleTemplateHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 8),
           const _SampleTemplateSection(),
           const SizedBox(height: 24),
-          Text('Upload File', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+          Text(l10n.bulkImportUploadFileHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 8),
           Text(
-            'Accepted formats: .xlsx, .xls',
+            l10n.bulkImportAcceptedFormats,
             style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
           ),
           const SizedBox(height: 12),
@@ -82,7 +91,7 @@ class BulkImportScreen extends ConsumerWidget {
             ),
           if (state is ImportFailed) const SizedBox(height: 16),
           PrimaryButton(
-            label: 'Import',
+            label: l10n.bulkImportButton,
             isLoading: state is ImportRunning,
             onPressed: state is ImportFileSelected ? notifier.startImport : null,
           ),
@@ -103,6 +112,7 @@ class _UploadFilePrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       onTap: onTap,
       child: Row(
@@ -110,7 +120,7 @@ class _UploadFilePrompt extends StatelessWidget {
           const Icon(Icons.upload_file_outlined, color: AppColors.primary, size: 22),
           const SizedBox(width: 12),
           Expanded(
-            child: Text('Select Excel file', style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            child: Text(l10n.bulkImportSelectFilePrompt, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
           ),
           Icon(Icons.chevron_right, color: context.colors.textSecondary, size: 20),
         ],
@@ -164,8 +174,9 @@ class _ImportSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (result.results.isEmpty) {
-      return const UnavailableSection(reason: 'No rows found in the uploaded file.');
+      return UnavailableSection(reason: l10n.bulkImportNoRowsFoundMessage);
     }
 
     final createdCount = result.results.where((r) => r.outcome == 'created' || r.outcome == 'updated').length;
@@ -175,17 +186,17 @@ class _ImportSummarySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Import Summary', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+        Text(l10n.bulkImportSummaryHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
         const SizedBox(height: 8),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SummaryRow(label: 'Imported Successfully', value: createdCount, color: AppColors.success),
+              _SummaryRow(label: l10n.bulkImportImportedSuccessfullyLabel, value: createdCount, color: AppColors.success),
               const SizedBox(height: 10),
-              _SummaryRow(label: 'Skipped (Duplicate)', value: duplicateSkippedCount, color: AppColors.warning),
+              _SummaryRow(label: l10n.bulkImportSkippedDuplicateLabel, value: duplicateSkippedCount, color: AppColors.warning),
               const SizedBox(height: 10),
-              _SummaryRow(label: 'Failed', value: failedRows.length, color: AppColors.danger),
+              _SummaryRow(label: l10n.bulkImportFailedLabel, value: failedRows.length, color: AppColors.danger),
               if (result.message.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Divider(height: 1, color: context.colors.textSecondary.withValues(alpha: 0.12)),
@@ -197,7 +208,7 @@ class _ImportSummarySection extends StatelessWidget {
         ),
         if (failedRows.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Failed Rows', style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+          Text(l10n.bulkImportFailedRowsHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
           const SizedBox(height: 8),
           for (final row in failedRows) ...[
             _FailedRowCard(
@@ -239,12 +250,13 @@ class _FailedRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Row $rowNumber',
+            l10n.bulkImportRowLabel(rowNumber),
             style: AppTypography.body.copyWith(color: context.colors.textPrimary, fontWeight: FontWeight.w700),
           ),
           if (errors != null)
@@ -272,6 +284,7 @@ class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> 
 
   Future<void> _download() async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _isDownloading = true;
       _error = null;
@@ -282,7 +295,7 @@ class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> 
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/customer-import-template.xlsx');
       await file.writeAsBytes(bytes, flush: true);
-      if (mounted) messenger.showSnackBar(SnackBar(content: Text('Saved to ${file.path}')));
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(l10n.exportSavedToPathMessage(file.path))));
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {
@@ -292,6 +305,7 @@ class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> 
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -299,7 +313,7 @@ class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> 
           Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           const SizedBox(height: 8),
         ],
-        PrimaryButton(label: 'Download Sample Template', isLoading: _isDownloading, onPressed: _download),
+        PrimaryButton(label: l10n.bulkImportDownloadTemplateButton, isLoading: _isDownloading, onPressed: _download),
       ],
     );
   }
