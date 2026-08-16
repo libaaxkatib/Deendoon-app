@@ -11,6 +11,8 @@ use Database\Seeders\RoleSeeder;
 use Database\Seeders\SubscriptionPlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -31,6 +33,7 @@ class GenericAttachmentsTest extends TestCase
 
         $this->seed(RoleSeeder::class);
         $this->seed(SubscriptionPlanSeeder::class);
+        Storage::fake('local');
     }
 
     private function actingAsTenantUser(Tenant $tenant): User
@@ -42,6 +45,28 @@ class GenericAttachmentsTest extends TestCase
 
         $token = $user->createToken('test')->plainTextToken;
         $this->withHeader('Authorization', 'Bearer '.$token);
+
+        return $user;
+    }
+
+    /**
+     * Switches the authenticated identity mid-test, for a second tenant
+     * user or a cross-tenant attempt. `actingAsTenantUser()`'s manual
+     * token + `withHeader()` re-set does not reliably re-resolve on a
+     * second call within the same test (the Sanctum guard instance is
+     * cached for the test's app lifetime) — `Sanctum::actingAs()` bypasses
+     * that guard-resolution caching, matching the reliable pattern
+     * `SupportTicketTest` already uses for its own mid-test identity
+     * switches.
+     */
+    private function switchToTenantUser(Tenant $tenant): User
+    {
+        $user = User::factory()->create();
+        $user->tenant()->associate($tenant);
+        $user->save();
+        $user->assignRole('admin');
+
+        Sanctum::actingAs($user, ['*']);
 
         return $user;
     }
@@ -119,6 +144,67 @@ class GenericAttachmentsTest extends TestCase
         $this->getJson("/api/v1/customers/{$customerB->id}/attachments")->assertStatus(404);
     }
 
+    public function test_the_uploader_can_delete_their_own_customer_attachment(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/customers/{$customer->id}/attachments", [
+            'file' => UploadedFile::fake()->create('id-card.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+
+        $this->deleteJson("/api/v1/customers/{$customer->id}/attachments/{$attachmentId}")->assertStatus(200);
+
+        $this->assertDatabaseMissing('customer_attachments', ['id' => $attachmentId]);
+        $this->assertDatabaseHas('audit_log', [
+            'action' => 'deleted', 'entity_type' => 'customer_attachment', 'entity_id' => $attachmentId,
+        ]);
+    }
+
+    public function test_a_customer_attachment_cannot_be_deleted_by_a_user_who_did_not_upload_it(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/customers/{$customer->id}/attachments", [
+            'file' => UploadedFile::fake()->create('id-card.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+
+        $this->switchToTenantUser($tenant);
+
+        $this->deleteJson("/api/v1/customers/{$customer->id}/attachments/{$attachmentId}")->assertStatus(403);
+        $this->assertDatabaseHas('customer_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_a_customer_attachment_cannot_be_deleted_once_the_customer_is_read_only(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/customers/{$customer->id}/attachments", [
+            'file' => UploadedFile::fake()->create('id-card.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+        Customer::where('id', $customer->id)->update(['is_read_only' => true]);
+
+        $this->deleteJson("/api/v1/customers/{$customer->id}/attachments/{$attachmentId}")->assertStatus(403);
+        $this->assertDatabaseHas('customer_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_deleting_another_tenants_customer_attachment_is_rejected(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Acme Co']);
+        $tenantB = Tenant::create(['business_name' => 'Other Co']);
+        $customerB = $this->makeCustomer($tenantB);
+        $this->actingAsTenantUser($tenantB);
+        $attachmentId = $this->post("/api/v1/customers/{$customerB->id}/attachments", [
+            'file' => UploadedFile::fake()->create('id-card.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+
+        $this->switchToTenantUser($tenantA);
+
+        $this->deleteJson("/api/v1/customers/{$customerB->id}/attachments/{$attachmentId}")->assertStatus(404);
+    }
+
     // --- Debt Attachments ---
 
     public function test_business_owner_can_upload_and_list_a_debt_attachment(): void
@@ -163,6 +249,86 @@ class GenericAttachmentsTest extends TestCase
         $this->actingAsTenantUser($tenantA);
 
         $this->getJson("/api/v1/debts/{$debtB->id}/attachments")->assertStatus(404);
+    }
+
+    public function test_the_uploader_can_delete_their_own_debt_attachment(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $debt = $this->makeDebt($tenant, $customer);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/debts/{$debt->id}/attachments", [
+            'file' => UploadedFile::fake()->create('invoice-scan.jpg', 100, 'image/jpeg'),
+        ])->json('data.id');
+
+        $this->deleteJson("/api/v1/debts/{$debt->id}/attachments/{$attachmentId}")->assertStatus(200);
+
+        $this->assertDatabaseMissing('debt_attachments', ['id' => $attachmentId]);
+        $this->assertDatabaseHas('audit_log', [
+            'action' => 'deleted', 'entity_type' => 'debt_attachment', 'entity_id' => $attachmentId,
+        ]);
+    }
+
+    public function test_a_debt_attachment_cannot_be_deleted_by_a_user_who_did_not_upload_it(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $debt = $this->makeDebt($tenant, $customer);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/debts/{$debt->id}/attachments", [
+            'file' => UploadedFile::fake()->create('invoice-scan.jpg', 100, 'image/jpeg'),
+        ])->json('data.id');
+
+        $this->switchToTenantUser($tenant);
+
+        $this->deleteJson("/api/v1/debts/{$debt->id}/attachments/{$attachmentId}")->assertStatus(403);
+        $this->assertDatabaseHas('debt_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_a_debt_attachment_cannot_be_deleted_once_the_debt_is_in_a_terminal_status(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $debt = $this->makeDebt($tenant, $customer);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/debts/{$debt->id}/attachments", [
+            'file' => UploadedFile::fake()->create('invoice-scan.jpg', 100, 'image/jpeg'),
+        ])->json('data.id');
+        Debt::where('id', $debt->id)->update(['debt_status' => 'paid']);
+
+        $this->deleteJson("/api/v1/debts/{$debt->id}/attachments/{$attachmentId}")->assertStatus(403);
+        $this->assertDatabaseHas('debt_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_a_debt_attachment_cannot_be_deleted_once_the_customer_is_read_only(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $debt = $this->makeDebt($tenant, $customer);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/debts/{$debt->id}/attachments", [
+            'file' => UploadedFile::fake()->create('invoice-scan.jpg', 100, 'image/jpeg'),
+        ])->json('data.id');
+        Customer::where('id', $customer->id)->update(['is_read_only' => true]);
+
+        $this->deleteJson("/api/v1/debts/{$debt->id}/attachments/{$attachmentId}")->assertStatus(403);
+        $this->assertDatabaseHas('debt_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_deleting_another_tenants_debt_attachment_is_rejected(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Acme Co']);
+        $tenantB = Tenant::create(['business_name' => 'Other Co']);
+        $customerB = $this->makeCustomer($tenantB);
+        $debtB = $this->makeDebt($tenantB, $customerB);
+        $this->actingAsTenantUser($tenantB);
+        $attachmentId = $this->post("/api/v1/debts/{$debtB->id}/attachments", [
+            'file' => UploadedFile::fake()->create('invoice-scan.jpg', 100, 'image/jpeg'),
+        ])->json('data.id');
+
+        $this->switchToTenantUser($tenantA);
+
+        $this->deleteJson("/api/v1/debts/{$debtB->id}/attachments/{$attachmentId}")->assertStatus(404);
     }
 
     // --- Collection Case Attachments ---
@@ -211,6 +377,75 @@ class GenericAttachmentsTest extends TestCase
         $this->actingAsTenantUser($tenantA);
 
         $this->getJson("/api/v1/collection-cases/{$caseB->id}/attachments")->assertStatus(404);
+    }
+
+    public function test_the_uploader_can_delete_their_own_case_attachment(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $debt = $this->makeDebt($tenant, $customer);
+        $case = $this->makeCase($tenant, $debt);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/collection-cases/{$case->id}/attachments", [
+            'file' => UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+
+        $this->deleteJson("/api/v1/collection-cases/{$case->id}/attachments/{$attachmentId}")->assertStatus(200);
+
+        $this->assertDatabaseMissing('collection_case_attachments', ['id' => $attachmentId]);
+        $this->assertDatabaseHas('audit_log', [
+            'action' => 'deleted', 'entity_type' => 'collection_case_attachment', 'entity_id' => $attachmentId,
+        ]);
+    }
+
+    public function test_a_case_attachment_cannot_be_deleted_by_a_user_who_did_not_upload_it(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $debt = $this->makeDebt($tenant, $customer);
+        $case = $this->makeCase($tenant, $debt);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/collection-cases/{$case->id}/attachments", [
+            'file' => UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+
+        $this->switchToTenantUser($tenant);
+
+        $this->deleteJson("/api/v1/collection-cases/{$case->id}/attachments/{$attachmentId}")->assertStatus(403);
+        $this->assertDatabaseHas('collection_case_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_a_case_attachment_cannot_be_deleted_once_the_case_is_closed(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = $this->makeCustomer($tenant);
+        $debt = $this->makeDebt($tenant, $customer);
+        $case = $this->makeCase($tenant, $debt);
+        $this->actingAsTenantUser($tenant);
+        $attachmentId = $this->post("/api/v1/collection-cases/{$case->id}/attachments", [
+            'file' => UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+        CollectionCase::where('id', $case->id)->update(['case_status' => 'closed']);
+
+        $this->deleteJson("/api/v1/collection-cases/{$case->id}/attachments/{$attachmentId}")->assertStatus(403);
+        $this->assertDatabaseHas('collection_case_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_deleting_another_tenants_case_attachment_is_rejected(): void
+    {
+        $tenantA = Tenant::create(['business_name' => 'Acme Co']);
+        $tenantB = Tenant::create(['business_name' => 'Other Co']);
+        $customerB = $this->makeCustomer($tenantB);
+        $debtB = $this->makeDebt($tenantB, $customerB);
+        $caseB = $this->makeCase($tenantB, $debtB);
+        $this->actingAsTenantUser($tenantB);
+        $attachmentId = $this->post("/api/v1/collection-cases/{$caseB->id}/attachments", [
+            'file' => UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf'),
+        ])->json('data.id');
+
+        $this->switchToTenantUser($tenantA);
+
+        $this->deleteJson("/api/v1/collection-cases/{$caseB->id}/attachments/{$attachmentId}")->assertStatus(404);
     }
 
     // --- Storage quota accounting ---

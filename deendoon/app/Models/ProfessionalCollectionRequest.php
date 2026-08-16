@@ -17,10 +17,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * (tenant_id IS NULL). That can't be expressed by a single always-scope-
  * or-never-scope trait, so every query against this model is scoped
  * explicitly in ProfessionalCollectionRequestController/Policy instead.
+ *
+ * `closed_at` was previously missing here, so
+ * ProfessionalCollectionRequestService::close()'s `$request->update([...,
+ * 'closed_at' => now()])` silently dropped that key on every call —
+ * `status` persisted correctly, the timestamp never did. Fixed by adding
+ * it to this list; no schema, service, or workflow change.
  */
 #[Fillable([
     'collection_case_id', 'reference_number', 'status', 'submitted_by_user_id', 'actioned_by_user_id',
-    'transfer_notes', 'declaration_accepted_at', 'declaration_accepted_by_user_id',
+    'transfer_notes', 'declaration_accepted_at', 'declaration_accepted_by_user_id', 'closed_at',
 ])]
 class ProfessionalCollectionRequest extends Model
 {

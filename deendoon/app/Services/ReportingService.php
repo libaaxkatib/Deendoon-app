@@ -302,9 +302,14 @@ class ReportingService
      * the caller-supplied `$dateFrom`/`$dateTo` (already validated by
      * `DashboardController::kpis()`) verbatim.
      *
+     * Visibility widened to `public` (Admin Panel Reports & Analytics
+     * module) so `AdminReportingService` can reuse this exact period
+     * vocabulary/arithmetic for its own date-range presets instead of
+     * duplicating it — no behavior change, no other caller affected.
+     *
      * @return array{0: string, 1: string}
      */
-    private function periodBounds(string $period, ?string $dateFrom = null, ?string $dateTo = null): array
+    public function periodBounds(string $period, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $now = now();
 

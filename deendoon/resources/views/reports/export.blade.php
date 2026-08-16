@@ -30,5 +30,9 @@
             <tr><td colspan="{{ count($headings) }}">No records match these filters.</td></tr>
         @endforelse
     </table>
+
+    @if (! empty($autoPrint))
+        <script>window.onload = () => window.print();</script>
+    @endif
 </body>
 </html>

@@ -39,4 +39,5 @@ enum AuditAction: string
     case CustomerReadOnlyRecalculated = 'customer_read_only_recalculated';
     case SubscriptionChangeRequestStatusChanged = 'subscription_change_request_status_changed';
     case StorageAddonStatusChanged = 'storage_addon_status_changed';
+    case Deleted = 'deleted';
 }

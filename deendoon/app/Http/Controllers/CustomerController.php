@@ -12,6 +12,7 @@ use App\Http\Requests\UploadCustomerAttachmentRequest;
 use App\Http\Resources\CustomerAttachmentResource;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
+use App\Policies\CustomerAttachmentPolicy;
 use App\Services\AdminSettingsService;
 use App\Services\AuditLogService;
 use App\Services\CreditScoreService;
@@ -23,6 +24,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
@@ -350,6 +352,32 @@ class CustomerController extends Controller
         });
 
         return $this->successResponse(new CustomerAttachmentResource($attachment), 'Attachment uploaded successfully', 201);
+    }
+
+    /**
+     * Mobile Fix #4A (Attachment Delete): only the uploader may delete
+     * their own attachment, and only while the Customer is not read-only
+     * — see {@see CustomerAttachmentPolicy}. The DB row is
+     * removed first (inside the transaction, alongside the Audit Trail
+     * entry); the file itself is deleted from disk only after that
+     * commits, so a failed transaction never leaves an attachment row
+     * without its file.
+     */
+    public function attachmentsDestroy(Request $request, Customer $customer, string $attachment): JsonResponse
+    {
+        $attachmentModel = $customer->attachments()->findOrFail($attachment);
+
+        $this->authorize('delete', $attachmentModel);
+
+        DB::transaction(function () use ($request, $attachmentModel) {
+            $this->auditLog->record(AuditAction::Deleted, 'customer_attachment', $attachmentModel->id, $request->user());
+
+            $attachmentModel->delete();
+        });
+
+        Storage::disk('local')->delete($attachmentModel->file_path);
+
+        return $this->successResponse(null, 'Attachment deleted successfully');
     }
 
     public function checkDuplicate(CheckCustomerDuplicateRequest $request): JsonResponse

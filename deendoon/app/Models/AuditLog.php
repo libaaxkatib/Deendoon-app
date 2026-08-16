@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use Database\Factories\AuditLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 /**
@@ -16,7 +19,8 @@ use LogicException;
 #[Fillable(['tenant_id', 'user_id', 'action', 'entity_type', 'entity_id', 'reason', 'occurred_at'])]
 class AuditLog extends Model
 {
-    use HasUlids;
+    /** @use HasFactory<AuditLogFactory> */
+    use HasFactory, HasUlids;
 
     protected $table = 'audit_log';
 
@@ -27,6 +31,11 @@ class AuditLog extends Model
         return [
             'occurred_at' => 'datetime',
         ];
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     public function update(array $attributes = [], array $options = []): bool

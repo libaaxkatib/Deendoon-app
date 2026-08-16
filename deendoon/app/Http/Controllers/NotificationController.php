@@ -66,16 +66,25 @@ class NotificationController extends Controller
         return $this->successResponse(null, 'All notifications marked as read');
     }
 
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $notification = $this->resolve($id, $request, 'delete');
+
+        $notification->delete();
+
+        return $this->successResponse(null, 'Notification deleted');
+    }
+
     /**
      * A Notification belonging to another user in the same tenant is
      * masked as 404, not 403 — its existence for that other recipient is
      * not something this endpoint should confirm.
      */
-    private function resolve(string $id, Request $request): Notification
+    private function resolve(string $id, Request $request, string $ability = 'view'): Notification
     {
         $notification = Notification::findOrFail($id);
 
-        if (! $request->user()->can('view', $notification)) {
+        if (! $request->user()->can($ability, $notification)) {
             abort(404);
         }
 

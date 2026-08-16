@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CollectionCase;
 use App\Models\Customer;
 use App\Models\Debt;
+use App\Models\ProfessionalCollectionRequest;
 use App\Models\ReferenceData;
 use App\Models\Tenant;
 use App\Models\User;
@@ -289,6 +290,28 @@ class ProfessionalCollectionRequestTest extends TestCase
         $this->assertDatabaseHas('audit_log', [
             'entity_type' => 'professional_collection_request', 'entity_id' => $pcrId, 'action' => 'professional_collection_request_status_changed', 'tenant_id' => $tenant->id,
         ]);
+    }
+
+    /**
+     * Regression test: `closed_at` was previously missing from
+     * ProfessionalCollectionRequest's #[Fillable] list, so close()'s own
+     * `update([..., 'closed_at' => now()])` silently dropped that key —
+     * `status` persisted, the timestamp never did. Fixed by adding
+     * `closed_at` to Fillable; this proves it now actually persists.
+     */
+    public function test_closing_a_request_persists_closed_at(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        [$caseId] = $this->makeOpenCase($tenant);
+        $this->actingAsTenantUser($tenant);
+        $pcrId = $this->postJson("/api/v1/collection-cases/{$caseId}/professional-requests", $this->submitPayload())->json('data.id');
+
+        $this->actingAsPlatformAdmin();
+        $this->postJson("/api/v1/professional-requests/{$pcrId}/close", ['outcome' => 'recovered'])->assertStatus(200);
+
+        $pcr = ProfessionalCollectionRequest::findOrFail($pcrId);
+        $this->assertNotNull($pcr->closed_at);
+        $this->assertEqualsWithDelta(now()->timestamp, $pcr->closed_at->timestamp, 5);
     }
 
     public function test_closing_an_already_closed_request_is_rejected(): void

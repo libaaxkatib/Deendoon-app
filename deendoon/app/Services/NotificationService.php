@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\NotificationType;
 use App\Models\Notification;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -43,10 +44,18 @@ class NotificationService
         NotificationType $type,
         string $relatedEntityType,
         string $relatedEntityId,
-    ): Notification {
+        ?string $title = null,
+        ?string $message = null,
+    ): ?Notification {
+        if (! $this->isEnabledForTenant($tenantId, $type)) {
+            return null;
+        }
+
         $notification = new Notification([
             'recipient_user_id' => $recipientUserId,
             'type' => $type->value,
+            'title' => $title,
+            'message' => $message,
             'related_entity_type' => $relatedEntityType,
             'related_entity_id' => $relatedEntityId,
         ]);
@@ -66,8 +75,36 @@ class NotificationService
         NotificationType $type,
         string $relatedEntityType,
         string $relatedEntityId,
+        ?string $title = null,
+        ?string $message = null,
     ): void {
-        $recipients->each(fn (User $user) => $this->notify($tenantId, (string) $user->id, $type, $relatedEntityType, $relatedEntityId));
+        $recipients->each(fn (User $user) => $this->notify($tenantId, (string) $user->id, $type, $relatedEntityType, $relatedEntityId, $title, $message));
+    }
+
+    /**
+     * Module 9 — a tenant's notification_settings JSON stays null until
+     * they explicitly save Settings once (AdminSettingsService only
+     * lazily creates a row with unrelated defaults). Failing open on a
+     * missing column/key is required, not optional: failing closed would
+     * silently stop Reminder/Payment notifications for every tenant that
+     * has never touched Settings, a real behavior regression rather than
+     * a bugfix. Queried directly rather than via AdminSettingsService to
+     * avoid that service's side effect of lazily creating a settings row
+     * on every gated notification for a tenant that has none yet.
+     */
+    private function isEnabledForTenant(string $tenantId, NotificationType $type): bool
+    {
+        $key = $type->preferenceKey();
+
+        if ($key === null) {
+            return true;
+        }
+
+        $settings = SystemSetting::withoutGlobalScope('tenant')
+            ->where('tenant_id', $tenantId)
+            ->value('notification_settings');
+
+        return (bool) ($settings[$key] ?? true);
     }
 
     /**

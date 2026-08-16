@@ -14,6 +14,7 @@ use App\Http\Resources\CollectionCaseResource;
 use App\Models\AuditLog;
 use App\Models\CollectionCase;
 use App\Models\Debt;
+use App\Policies\CollectionCaseAttachmentPolicy;
 use App\Services\AuditLogService;
 use App\Services\CollectionCaseService;
 use App\Services\DocumentService;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CollectionCaseController extends Controller
 {
@@ -222,6 +224,34 @@ class CollectionCaseController extends Controller
         });
 
         return $this->successResponse(new CollectionCaseAttachmentResource($attachment), 'Attachment uploaded successfully', 201);
+    }
+
+    /**
+     * Mobile Fix #4A (Attachment Delete): only the uploader may delete
+     * their own attachment, only while the Customer is not read-only, and
+     * never once the Case itself is closed — see
+     * {@see CollectionCaseAttachmentPolicy}. Unlike
+     * `attachmentsStore`, this is deliberately NOT allowed on a closed
+     * Case: uploading evidence to the historical record stays open, but
+     * removing evidence from it does not. DB row removed first (inside
+     * the transaction, alongside the Audit Trail entry); the file itself
+     * is deleted from disk only after that commits.
+     */
+    public function attachmentsDestroy(Request $request, CollectionCase $case, string $attachment): JsonResponse
+    {
+        $attachmentModel = $case->attachments()->findOrFail($attachment);
+
+        $this->authorize('delete', $attachmentModel);
+
+        DB::transaction(function () use ($request, $attachmentModel) {
+            $this->auditLog->record(AuditAction::Deleted, 'collection_case_attachment', $attachmentModel->id, $request->user());
+
+            $attachmentModel->delete();
+        });
+
+        Storage::disk('local')->delete($attachmentModel->file_path);
+
+        return $this->successResponse(null, 'Attachment deleted successfully');
     }
 
     /**

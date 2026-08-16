@@ -14,6 +14,7 @@ use App\Http\Resources\DebtResource;
 use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\Debt;
+use App\Policies\DebtAttachmentPolicy;
 use App\Services\AuditLogService;
 use App\Services\CreditScoreService;
 use App\Services\CustomerBalanceService;
@@ -25,6 +26,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class DebtController extends Controller
 {
@@ -366,6 +368,31 @@ class DebtController extends Controller
         });
 
         return $this->successResponse(new DebtAttachmentResource($attachment), 'Attachment uploaded successfully', 201);
+    }
+
+    /**
+     * Mobile Fix #4A (Attachment Delete): only the uploader may delete
+     * their own attachment, only while the Customer is not read-only, and
+     * never once the Debt itself is in a terminal status — see
+     * {@see DebtAttachmentPolicy}. DB row removed first
+     * (inside the transaction, alongside the Audit Trail entry); the file
+     * itself is deleted from disk only after that commits.
+     */
+    public function attachmentsDestroy(Request $request, Debt $debt, string $attachment): JsonResponse
+    {
+        $attachmentModel = $debt->attachments()->findOrFail($attachment);
+
+        $this->authorize('delete', $attachmentModel);
+
+        DB::transaction(function () use ($request, $attachmentModel) {
+            $this->auditLog->record(AuditAction::Deleted, 'debt_attachment', $attachmentModel->id, $request->user());
+
+            $attachmentModel->delete();
+        });
+
+        Storage::disk('local')->delete($attachmentModel->file_path);
+
+        return $this->successResponse(null, 'Attachment deleted successfully');
     }
 
     /**

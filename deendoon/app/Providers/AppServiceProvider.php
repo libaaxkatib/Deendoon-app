@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use App\Models\CollectionCase;
+use App\Models\CollectionCaseAttachment;
 use App\Models\Customer;
+use App\Models\CustomerAttachment;
 use App\Models\Debt;
+use App\Models\DebtAttachment;
 use App\Models\DemandLetter;
 use App\Models\Invoice;
 use App\Models\Notification;
@@ -12,9 +15,15 @@ use App\Models\ProfessionalCollectionRequest;
 use App\Models\Receipt;
 use App\Models\Reminder;
 use App\Models\Statement;
+use App\Models\SupportTicket;
+use App\Models\SupportTicketAttachment;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Policies\CollectionCaseAttachmentPolicy;
 use App\Policies\CollectionCasePolicy;
+use App\Policies\CustomerAttachmentPolicy;
 use App\Policies\CustomerPolicy;
+use App\Policies\DebtAttachmentPolicy;
 use App\Policies\DebtPolicy;
 use App\Policies\DemandLetterPolicy;
 use App\Policies\InvoicePolicy;
@@ -23,6 +32,9 @@ use App\Policies\ProfessionalCollectionRequestPolicy;
 use App\Policies\ReceiptPolicy;
 use App\Policies\ReminderPolicy;
 use App\Policies\StatementPolicy;
+use App\Policies\SupportTicketAttachmentPolicy;
+use App\Policies\SupportTicketPolicy;
+use App\Policies\TenantPolicy;
 use App\Policies\UserPolicy;
 use App\Services\SubscriptionService;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -112,6 +124,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Reminder::class, ReminderPolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
+        Gate::policy(Tenant::class, TenantPolicy::class);
+        Gate::policy(SupportTicket::class, SupportTicketPolicy::class);
+        Gate::policy(CustomerAttachment::class, CustomerAttachmentPolicy::class);
+        Gate::policy(DebtAttachment::class, DebtAttachmentPolicy::class);
+        Gate::policy(CollectionCaseAttachment::class, CollectionCaseAttachmentPolicy::class);
+        Gate::policy(SupportTicketAttachment::class, SupportTicketAttachmentPolicy::class);
 
         RateLimiter::for('login', function (Request $request) {
             $key = Str::lower(trim((string) $request->input('email'))).'|'.$request->ip();

@@ -19,6 +19,7 @@ use App\Models\Payment;
 use App\Models\ProfessionalCollectionRequestAttachment;
 use App\Models\Receipt;
 use App\Models\Statement;
+use App\Models\SupportTicketAttachment;
 use App\Models\Tenant;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -406,6 +407,10 @@ class DocumentService
      * drifts from enforcement.
      * Final Product Completion Roadmap, P1.6: also includes Customer/
      * Debt/CollectionCase attachments' file_size, folded in the same way.
+     * Module 7 (Support & Tickets): also includes Support Ticket
+     * attachments' file_size, folded in the same way — the same single
+     * source of truth used to enforce the quota those uploads go through
+     * (SupportTicketService::uploadAttachment()).
      * `total_bytes`/`used_percentage` are deliberately left untouched —
      * still the pre-existing flat env-var quota, not
      * {@see StorageAddonService::totalStorageAllowance()} — since
@@ -427,6 +432,10 @@ class DocumentService
             + (int) CustomerAttachment::where('tenant_id', $tenant->id)->sum('file_size')
             + (int) DebtAttachment::where('tenant_id', $tenant->id)->sum('file_size')
             + (int) CollectionCaseAttachment::where('tenant_id', $tenant->id)->sum('file_size')
+            + (int) SupportTicketAttachment::whereHas(
+                'ticket',
+                fn ($q) => $q->where('tenant_id', $tenant->id),
+            )->sum('file_size')
             + $this->logoBytes($tenant);
 
         $totalBytes = (int) env('DOCUMENT_STORAGE_QUOTA_BYTES', 10 * 1024 * 1024 * 1024);

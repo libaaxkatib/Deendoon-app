@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AuditAction;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\CloseAccountRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
@@ -11,6 +12,7 @@ use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\AccountClosureService;
 use App\Services\AuditLogService;
 use App\Services\CustomerReadOnlyService;
 use App\Services\MessageTemplateService;
@@ -22,6 +24,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -52,6 +55,7 @@ class AuthController extends Controller
         private readonly SubscriptionService $subscriptions,
         private readonly CustomerReadOnlyService $customerReadOnly,
         private readonly ReferenceDataService $referenceData,
+        private readonly AccountClosureService $accountClosure,
     ) {}
 
     /**
@@ -254,5 +258,27 @@ class AuthController extends Controller
         }
 
         return $this->successResponse(null, 'Password changed successfully');
+    }
+
+    /**
+     * Mobile Play Store Readiness (Fix #3, Part B) — self-service "Close
+     * Account". Business-Owner-only (`admin-only`, the same Gate
+     * `AdminSettingsController` already uses) — the Deendoon Platform
+     * Administrator must never be able to archive the one Platform
+     * Administrator account this way. There is no target-user parameter
+     * on this route at all (`$request->user()` only), so this can
+     * structurally never affect another user or tenant.
+     */
+    public function closeAccount(CloseAccountRequest $request): JsonResponse
+    {
+        Gate::authorize('admin-only');
+
+        $success = $this->accountClosure->close($request->user(), $request->validated('password'));
+
+        if (! $success) {
+            return $this->errorResponse('The current password is incorrect.', null, 422);
+        }
+
+        return $this->successResponse(null, 'Account closed successfully');
     }
 }

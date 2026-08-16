@@ -7,6 +7,7 @@ use App\Models\Debt;
 use App\Models\Notification;
 use App\Models\PromiseToPay;
 use App\Models\ReferenceData;
+use App\Models\SystemSetting;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -336,5 +337,134 @@ class NotificationTest extends TestCase
         $response = $this->getJson('/api/v1/notifications');
 
         $this->assertCount(1, $response->json('data.notifications'));
+    }
+
+    // --- Notification preferences (Module 9) ---
+
+    public function test_reminder_notification_is_suppressed_when_reminder_preference_is_disabled(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $user = $this->actingAsTenantUser($tenant);
+        SystemSetting::factory()->for($tenant, 'tenant')->create(['notification_settings' => ['reminder_enabled' => false]]);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/reminders/call", [])->assertStatus(200);
+
+        $this->assertDatabaseMissing('notifications', [
+            'recipient_user_id' => (string) $user->id, 'type' => 'reminder_sent',
+        ]);
+    }
+
+    public function test_payment_notification_is_suppressed_when_payment_preference_is_disabled(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant, ['amount' => 1000, 'remaining_balance' => 1000]);
+        $user = $this->actingAsTenantUser($tenant);
+        SystemSetting::factory()->for($tenant, 'tenant')->create(['notification_settings' => ['payment_enabled' => false]]);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/payments", ['amount' => 400, 'payment_date' => now()->toDateString()])->assertStatus(201);
+
+        $this->assertDatabaseMissing('notifications', [
+            'recipient_user_id' => (string) $user->id, 'type' => 'payment_received',
+        ]);
+        // The receipt's document_available notification is a different,
+        // always-on type — unaffected by the payment_enabled toggle.
+        $this->assertDatabaseHas('notifications', [
+            'recipient_user_id' => (string) $user->id, 'type' => 'document_available', 'related_entity_type' => 'receipt',
+        ]);
+    }
+
+    public function test_reminder_notification_is_created_when_notification_settings_column_is_null(): void
+    {
+        // Fail-open: a tenant that saved Settings before this module shipped
+        // (or has never touched Settings at all) must not silently stop
+        // receiving reminder/payment notifications.
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $debt = $this->makeDebt($tenant);
+        $user = $this->actingAsTenantUser($tenant);
+        SystemSetting::factory()->for($tenant, 'tenant')->create(['notification_settings' => null]);
+
+        $this->postJson("/api/v1/debts/{$debt->id}/reminders/call", [])->assertStatus(200);
+
+        $this->assertDatabaseHas('notifications', [
+            'recipient_user_id' => (string) $user->id, 'type' => 'reminder_sent',
+        ]);
+    }
+
+    public function test_credit_limit_reached_notification_is_unaffected_by_disabled_preferences(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $admin = $this->actingAsTenantUser($tenant, 'admin');
+        SystemSetting::factory()->for($tenant, 'tenant')->create([
+            'notification_settings' => ['reminder_enabled' => false, 'payment_enabled' => false],
+        ]);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['credit_limit' => 500]);
+
+        $this->postJson("/api/v1/customers/{$customer->id}/debts", [
+            'amount' => 1000, 'due_date' => now()->addDays(10)->toDateString(),
+        ])->assertStatus(201);
+
+        $this->assertDatabaseHas('notifications', ['recipient_user_id' => (string) $admin->id, 'type' => 'credit_limit_reached']);
+    }
+
+    // --- Delete (Module 9) ---
+
+    public function test_admin_can_delete_their_own_notification(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $user = $this->actingAsTenantUser($tenant);
+        $notification = Notification::factory()->for($tenant, 'tenant')->create(['recipient_user_id' => (string) $user->id]);
+
+        $this->deleteJson("/api/v1/notifications/{$notification->id}")->assertStatus(200);
+
+        $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
+    }
+
+    public function test_a_user_cannot_delete_another_users_notification(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $owner = User::factory()->create();
+        $owner->tenant()->associate($tenant);
+        $owner->save();
+        $notification = Notification::factory()->for($tenant, 'tenant')->create(['recipient_user_id' => (string) $owner->id]);
+
+        $this->actingAsTenantUser($tenant);
+        $this->deleteJson("/api/v1/notifications/{$notification->id}")->assertStatus(404);
+
+        $this->assertDatabaseHas('notifications', ['id' => $notification->id]);
+    }
+
+    public function test_deleting_a_notification_removes_it_from_the_list(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $user = $this->actingAsTenantUser($tenant);
+        $notification = Notification::factory()->for($tenant, 'tenant')->create(['recipient_user_id' => (string) $user->id]);
+
+        $this->deleteJson("/api/v1/notifications/{$notification->id}")->assertStatus(200);
+
+        $response = $this->getJson('/api/v1/notifications');
+        $ids = collect($response->json('data.notifications'))->pluck('id');
+        $this->assertFalse($ids->contains($notification->id));
+    }
+
+    // --- Admin Announcement content (Module 9) ---
+
+    public function test_admin_announcement_notification_includes_title_and_message(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $user = $this->actingAsTenantUser($tenant);
+        Notification::factory()->for($tenant, 'tenant')->create([
+            'recipient_user_id' => (string) $user->id,
+            'type' => 'admin_announcement',
+            'title' => 'Scheduled maintenance',
+            'message' => 'The platform will be briefly unavailable tonight.',
+            'related_entity_type' => 'announcement',
+        ]);
+
+        $response = $this->getJson('/api/v1/notifications');
+
+        $notification = collect($response->json('data.notifications'))->firstWhere('type', 'admin_announcement');
+        $this->assertSame('Scheduled maintenance', $notification['title']);
+        $this->assertSame('The platform will be briefly unavailable tonight.', $notification['message']);
     }
 }

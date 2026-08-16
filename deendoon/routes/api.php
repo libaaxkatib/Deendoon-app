@@ -29,6 +29,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatementController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -42,6 +43,7 @@ Route::prefix('v1')->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('me', [AuthController::class, 'me']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
+        Route::post('account/close', [AuthController::class, 'closeAccount']);
 
         Route::get('customers', [CustomerController::class, 'index']);
         Route::post('customers', [CustomerController::class, 'store']);
@@ -63,6 +65,7 @@ Route::prefix('v1')->group(function () {
         Route::post('customers/{customer}/statements', [StatementController::class, 'storeForCustomer']);
         Route::get('customers/{customer}/attachments', [CustomerController::class, 'attachmentsIndex']);
         Route::post('customers/{customer}/attachments', [CustomerController::class, 'attachmentsStore']);
+        Route::delete('customers/{customer}/attachments/{attachment}', [CustomerController::class, 'attachmentsDestroy']);
 
         Route::get('debts', [DebtController::class, 'index']);
         Route::get('debts/{debt}', [DebtController::class, 'show'])->withTrashed();
@@ -89,6 +92,7 @@ Route::prefix('v1')->group(function () {
         Route::get('debts/{debt}/documents', [DocumentController::class, 'forDebt']);
         Route::get('debts/{debt}/attachments', [DebtController::class, 'attachmentsIndex']);
         Route::post('debts/{debt}/attachments', [DebtController::class, 'attachmentsStore']);
+        Route::delete('debts/{debt}/attachments/{attachment}', [DebtController::class, 'attachmentsDestroy']);
 
         Route::get('collection-cases', [CollectionCaseController::class, 'index']);
         Route::get('collection-cases/{case}', [CollectionCaseController::class, 'show']);
@@ -98,6 +102,7 @@ Route::prefix('v1')->group(function () {
         Route::get('collection-cases/{case}/history', [CollectionCaseController::class, 'history']);
         Route::get('collection-cases/{case}/attachments', [CollectionCaseController::class, 'attachmentsIndex']);
         Route::post('collection-cases/{case}/attachments', [CollectionCaseController::class, 'attachmentsStore']);
+        Route::delete('collection-cases/{case}/attachments/{attachment}', [CollectionCaseController::class, 'attachmentsDestroy']);
         Route::post('collection-cases/{case}/professional-requests', [ProfessionalCollectionRequestController::class, 'store']);
 
         Route::get('professional-requests', [ProfessionalCollectionRequestController::class, 'index']);
@@ -117,6 +122,23 @@ Route::prefix('v1')->group(function () {
         Route::get('professional-requests/{id}/timeline', [ProfessionalCollectionTimelineController::class, 'index']);
         Route::post('professional-requests/{id}/timeline', [ProfessionalCollectionTimelineController::class, 'store']);
         Route::patch('professional-requests/{id}/timeline/{eventId}', [ProfessionalCollectionTimelineController::class, 'update']);
+
+        // Module 7 — Support & Tickets. SupportTicket is bimodal, like
+        // ProfessionalCollectionRequest above — a tenant session sees only
+        // its own tickets, the Deendoon Platform Administrator sees every
+        // ticket (in practice via the separate Admin Panel, not this API).
+        Route::post('support-tickets', [SupportTicketController::class, 'store']);
+        Route::get('support-tickets', [SupportTicketController::class, 'index']);
+        Route::get('support-tickets/{id}', [SupportTicketController::class, 'show']);
+        Route::patch('support-tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
+        Route::post('support-tickets/{id}/close', [SupportTicketController::class, 'close']);
+        Route::post('support-tickets/{id}/reopen', [SupportTicketController::class, 'reopen']);
+        Route::get('support-tickets/{id}/messages', [SupportTicketController::class, 'messagesIndex']);
+        Route::post('support-tickets/{id}/messages', [SupportTicketController::class, 'messagesStore']);
+        Route::get('support-tickets/{id}/attachments', [SupportTicketController::class, 'attachmentsIndex']);
+        Route::post('support-tickets/{id}/attachments', [SupportTicketController::class, 'attachmentsStore']);
+        Route::get('support-tickets/{id}/attachments/{attachment}/download', [SupportTicketController::class, 'attachmentsDownload']);
+        Route::delete('support-tickets/{id}/attachments/{attachment}', [SupportTicketController::class, 'attachmentsDestroy']);
 
         Route::get('receipts/{receipt}', [ReceiptController::class, 'show']);
         Route::get('documents', [DocumentController::class, 'index']);
@@ -168,6 +190,7 @@ Route::prefix('v1')->group(function () {
         Route::get('notifications/history', [NotificationController::class, 'history']);
         Route::patch('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead']);
+        Route::delete('notifications/{id}', [NotificationController::class, 'destroy']);
 
         Route::get('calendar', [CalendarController::class, 'index']);
 

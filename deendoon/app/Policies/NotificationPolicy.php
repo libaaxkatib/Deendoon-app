@@ -17,4 +17,9 @@ class NotificationPolicy
     {
         return (string) $notification->recipient_user_id === (string) $user->id;
     }
+
+    public function delete(User $user, Notification $notification): bool
+    {
+        return (string) $notification->recipient_user_id === (string) $user->id;
+    }
 }
