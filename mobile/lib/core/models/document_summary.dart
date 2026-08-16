@@ -20,7 +20,8 @@ class DocumentSummary {
     required this.fileSize,
   });
 
-  factory DocumentSummary.fromJson(Map<String, dynamic> json) => DocumentSummary(
+  factory DocumentSummary.fromJson(Map<String, dynamic> json) =>
+      DocumentSummary(
         id: json['id'].toString(),
         documentType: json['document_type'] as String,
         referenceNumber: json['reference_number'] as String,

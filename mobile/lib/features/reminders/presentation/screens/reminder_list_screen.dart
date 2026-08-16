@@ -50,12 +50,12 @@ class _ReminderFilterChipDef {
   final bool isTab;
 
   const _ReminderFilterChipDef.tab({required this.key, required this.tab})
-      : type = null,
-        isTab = true;
+    : type = null,
+      isTab = true;
 
   const _ReminderFilterChipDef.type({required this.key, required this.type})
-      : tab = null,
-        isTab = false;
+    : tab = null,
+      isTab = false;
 }
 
 /// Matches the reminder categories shown in the Home Dashboard's Today's
@@ -78,16 +78,16 @@ const _reminderFilterChips = <_ReminderFilterChipDef>[
 ];
 
 String _filterChipLabel(AppLocalizations l10n, String key) => switch (key) {
-      'all' => l10n.debtListFilterAll,
-      'today' => l10n.statusToday,
-      'payments' => l10n.reminderFilterPayments,
-      'visits' => l10n.todaysOverviewClientVisits,
-      'calls' => l10n.todaysOverviewFollowUps,
-      'upcoming' => l10n.statusUpcoming,
-      'overdue' => l10n.statusOverdue,
-      'completed' => l10n.statusCompleted,
-      _ => key,
-    };
+  'all' => l10n.debtListFilterAll,
+  'today' => l10n.statusToday,
+  'payments' => l10n.reminderFilterPayments,
+  'visits' => l10n.todaysOverviewClientVisits,
+  'calls' => l10n.todaysOverviewFollowUps,
+  'upcoming' => l10n.statusUpcoming,
+  'overdue' => l10n.statusOverdue,
+  'completed' => l10n.statusCompleted,
+  _ => key,
+};
 
 class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
   final _scrollController = ScrollController();
@@ -138,7 +138,8 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(reminderListProvider.notifier).loadMore();
     }
   }
@@ -190,11 +191,15 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
                       label: _filterChipLabel(l10n, def.key),
                       selected: def.isTab
                           ? (remindersAsync.valueOrNull?.typeFilter == null &&
-                              remindersAsync.valueOrNull?.tab == def.tab)
+                                remindersAsync.valueOrNull?.tab == def.tab)
                           : remindersAsync.valueOrNull?.typeFilter == def.type,
                       onTap: () => def.isTab
-                          ? ref.read(reminderListProvider.notifier).filterByTab(def.tab)
-                          : ref.read(reminderListProvider.notifier).filterByType(def.type!),
+                          ? ref
+                                .read(reminderListProvider.notifier)
+                                .filterByTab(def.tab)
+                          : ref
+                                .read(reminderListProvider.notifier)
+                                .filterByType(def.type!),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -215,9 +220,12 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
                   final typeFilter = state.typeFilter;
                   final displayed = typeFilter == null
                       ? state.reminders
-                      : state.reminders.where((r) => r.type == typeFilter).toList();
+                      : state.reminders
+                            .where((r) => r.type == typeFilter)
+                            .toList();
 
-                  final hasActiveFilter = state.tab != null || typeFilter != null;
+                  final hasActiveFilter =
+                      state.tab != null || typeFilter != null;
 
                   if (displayed.isEmpty) {
                     // A type filter narrows an already-fetched "All" page — if
@@ -225,38 +233,69 @@ class _ReminderListScreenState extends ConsumerState<ReminderListScreen> {
                     // exist, keep paging until a match is found (or the real
                     // `hasMore` signal says there's nothing left), rather than
                     // showing a false "nothing due" while matches sit unfetched
-                    // on a later page.
-                    if (typeFilter != null && state.hasMore && !state.isLoadingMore) {
+                    // on a later page. Stops auto-triggering once a page fails
+                    // (loadMoreError) instead of looping forever — the user
+                    // must explicitly retry (Mobile Fix #12).
+                    if (typeFilter != null &&
+                        state.hasMore &&
+                        !state.isLoadingMore &&
+                        !state.loadMoreError) {
                       WidgetsBinding.instance.addPostFrameCallback(
-                        (_) => ref.read(reminderListProvider.notifier).loadMore(),
+                        (_) =>
+                            ref.read(reminderListProvider.notifier).loadMore(),
                       );
                       return const Center(child: CircularProgressIndicator());
                     }
+                    if (typeFilter != null && state.loadMoreError) {
+                      return Center(
+                        child: RetrySection(
+                          message: l10n.paginationLoadMoreError,
+                          onRetry: () => ref
+                              .read(reminderListProvider.notifier)
+                              .loadMore(),
+                        ),
+                      );
+                    }
                     return Center(
                       child: Text(
-                        hasActiveFilter ? l10n.reminderListEmptyFilteredState : l10n.reminderListEmptyState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        hasActiveFilter
+                            ? l10n.reminderListEmptyFilteredState
+                            : l10n.reminderListEmptyState,
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(reminderListProvider.notifier).refresh(),
+                    onRefresh: () =>
+                        ref.read(reminderListProvider.notifier).refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
                       itemCount: displayed.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= displayed.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(reminderListProvider.notifier)
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final reminder = displayed[index];
                         return ReminderCard(
                           reminder: reminder,
-                          onTap: () => context.push('/reminders/${reminder.id}'),
+                          onTap: () =>
+                              context.push('/reminders/${reminder.id}'),
                           onComplete: () => _complete(reminder.id),
                         );
                       },
@@ -277,7 +316,11 @@ class _TabFilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabFilterChip({required this.label, required this.selected, required this.onTap});
+  const _TabFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +329,9 @@ class _TabFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

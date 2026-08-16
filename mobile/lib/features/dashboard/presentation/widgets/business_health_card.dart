@@ -122,10 +122,19 @@ class _BusinessHealthContent extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 label,
-                style: AppTypography.heading.copyWith(color: color, fontSize: 19, fontWeight: FontWeight.w700),
+                style: AppTypography.heading.copyWith(
+                  color: color,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 1),
-              Text(subtext, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+              Text(
+                subtext,
+                style: AppTypography.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
+              ),
             ],
           ),
         ),
@@ -144,7 +153,11 @@ class _HealthGauge extends StatelessWidget {
   final Color color;
   final bool isLoading;
 
-  const _HealthGauge({required this.score, required this.color, required this.isLoading});
+  const _HealthGauge({
+    required this.score,
+    required this.color,
+    required this.isLoading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +178,10 @@ class _HealthGauge extends StatelessWidget {
           ),
           Text(
             score != null ? '$score%' : '—',
-            style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800, color: context.colors.textPrimary),
+            style: AppTypography.subheading.copyWith(
+              fontWeight: FontWeight.w800,
+              color: context.colors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -178,7 +194,11 @@ class _GaugePainter extends CustomPainter {
   final Color color;
   final Color trackColor;
 
-  const _GaugePainter({required this.percentage, required this.color, required this.trackColor});
+  const _GaugePainter({
+    required this.percentage,
+    required this.color,
+    required this.trackColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {

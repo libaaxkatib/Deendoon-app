@@ -37,6 +37,12 @@ import '../theme/deendoon_colors.dart';
 ///   (customer_status) and is reused as-is. `trialing` gets `info`
 ///   (matching `pending`/`upcoming`'s "in progress, nothing wrong" tone);
 ///   `expired` gets `danger` (matching `overdue`'s "needs attention now").
+/// - Support Ticket `status` (the real Postgres CHECK constraint on
+///   `support_tickets.status`): open, in_progress, resolved, closed.
+///   `open`/`in_progress`/`closed` already exist above (case_status/
+///   professional_collection_request status) and are reused as-is; only
+///   `resolved` is new, and gets `success` (matching `paid`/`recovered`'s
+///   "good outcome" tone).
 /// No value collides across these with a different meaning, so one
 /// widget/mapping serves all rather than duplicating a near-identical
 /// pill per module.
@@ -77,7 +83,10 @@ class StatusBadge extends StatelessWidget {
       // recovered/closed are already mapped above and reused as-is)
       'submitted' => (context.colors.info, l10n.statusSubmitted),
       'under_review' => (context.colors.info, l10n.statusUnderReview),
-      'need_more_information' => (context.colors.warning, l10n.statusNeedMoreInformation),
+      'need_more_information' => (
+        context.colors.warning,
+        l10n.statusNeedMoreInformation,
+      ),
       'accepted' => (context.colors.info, l10n.statusAccepted),
       'assigned' => (context.colors.info, l10n.statusAssigned),
       'in_progress' => (context.colors.info, l10n.statusInProgress),
@@ -87,6 +96,8 @@ class StatusBadge extends StatelessWidget {
       // subscription_status (active reuses customer_status's mapping above)
       'trialing' => (context.colors.info, l10n.statusTrial),
       'expired' => (context.colors.danger, l10n.statusExpired),
+      // support_tickets.status (open/in_progress/closed reuse existing mappings above)
+      'resolved' => (context.colors.success, l10n.statusResolved),
       _ => (context.colors.textSecondary, status),
     };
 
@@ -96,7 +107,14 @@ class StatusBadge extends StatelessWidget {
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

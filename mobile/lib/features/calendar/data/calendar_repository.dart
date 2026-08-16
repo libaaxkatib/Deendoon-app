@@ -5,8 +5,9 @@ import '../../../core/network/api_exception.dart';
 import '../domain/calendar_data.dart';
 import 'calendar_api.dart';
 
-final calendarRepositoryProvider =
-    Provider<CalendarRepository>((ref) => CalendarRepository(ref.read(calendarApiProvider)));
+final calendarRepositoryProvider = Provider<CalendarRepository>(
+  (ref) => CalendarRepository(ref.read(calendarApiProvider)),
+);
 
 /// Translates raw Dio failures into `ApiException` — same pattern as every
 /// other repository in the app. No caching, no business logic.
@@ -15,7 +16,8 @@ class CalendarRepository {
 
   const CalendarRepository(this._api);
 
-  Future<CalendarData> fetchEntries({String? from, String? to}) => _guard(() => _api.fetch(from: from, to: to));
+  Future<CalendarData> fetchEntries({String? from, String? to}) =>
+      _guard(() => _api.fetch(from: from, to: to));
 
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {

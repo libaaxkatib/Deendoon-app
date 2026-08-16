@@ -29,14 +29,28 @@ void main() {
     repository = DocumentRepository(mockApi);
   });
 
-  test('fetchDocuments passes type/search through and returns the page', () async {
-    const page = DocumentPage(documents: [_document], currentPage: 1, lastPage: 2, total: 21);
-    when(() => mockApi.list(page: 1, type: 'invoices', search: 'INV')).thenAnswer((_) async => page);
+  test(
+    'fetchDocuments passes type/search through and returns the page',
+    () async {
+      const page = DocumentPage(
+        documents: [_document],
+        currentPage: 1,
+        lastPage: 2,
+        total: 21,
+      );
+      when(
+        () => mockApi.list(page: 1, type: 'invoices', search: 'INV'),
+      ).thenAnswer((_) async => page);
 
-    final result = await repository.fetchDocuments(page: 1, type: 'invoices', search: 'INV');
+      final result = await repository.fetchDocuments(
+        page: 1,
+        type: 'invoices',
+        search: 'INV',
+      );
 
-    expect(result.documents, [_document]);
-  });
+      expect(result.documents, [_document]);
+    },
+  );
 
   test('fetchDocuments throws ApiException on failure', () async {
     when(() => mockApi.list(page: 1, type: null, search: '')).thenThrow(
@@ -45,7 +59,12 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: '/documents'),
           statusCode: 401,
-          data: {'success': false, 'message': 'Unauthenticated.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'Unauthenticated.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -53,12 +72,18 @@ void main() {
 
     expect(
       () => repository.fetchDocuments(page: 1),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+      ),
     );
   });
 
   test('fetchStorageUsage delegates to the api', () async {
-    const usage = StorageUsage(usedBytes: 1024, totalBytes: 10737418240, usedPercentage: 0.01);
+    const usage = StorageUsage(
+      usedBytes: 1024,
+      totalBytes: 10737418240,
+      usedPercentage: 0.01,
+    );
     when(() => mockApi.storageUsage()).thenAnswer((_) async => usage);
 
     expect(await repository.fetchStorageUsage(), usage);
@@ -103,9 +128,15 @@ void main() {
       status: 'sent',
       sentAt: '2026-07-28T10:00:00.000000Z',
     );
-    when(() => mockApi.share(id: '1', channel: 'whatsapp', templateId: '01TPL')).thenAnswer((_) async => sentMessage);
+    when(
+      () => mockApi.share(id: '1', channel: 'whatsapp', templateId: '01TPL'),
+    ).thenAnswer((_) async => sentMessage);
 
-    final result = await repository.shareDocument(id: '1', channel: 'whatsapp', templateId: '01TPL');
+    final result = await repository.shareDocument(
+      id: '1',
+      channel: 'whatsapp',
+      templateId: '01TPL',
+    );
 
     expect(result, sentMessage);
   });

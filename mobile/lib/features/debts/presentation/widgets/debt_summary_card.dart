@@ -30,7 +30,9 @@ class DebtSummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   debt.referenceNumber,
-                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.subheading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -42,7 +44,10 @@ class DebtSummaryCard extends StatelessWidget {
           Divider(height: 32, color: context.colors.background),
           _InfoRow(label: l10n.debtOriginalAmountLabel, value: debt.amount),
           const SizedBox(height: 12),
-          _InfoRow(label: l10n.debtRemainingBalanceLabel, value: debt.remainingBalance),
+          _InfoRow(
+            label: l10n.debtRemainingBalanceLabel,
+            value: debt.remainingBalance,
+          ),
           const SizedBox(height: 12),
           _InfoRow(label: l10n.addEditDebtDueDateHeading, value: debt.dueDate),
           if (overdueDays != null) ...[
@@ -55,9 +60,19 @@ class DebtSummaryCard extends StatelessWidget {
           ],
           if (debt.notes != null && debt.notes!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(l10n.addEditDebtNotesHeading, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+            Text(
+              l10n.addEditDebtNotesHeading,
+              style: AppTypography.caption.copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(debt.notes!, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            Text(
+              debt.notes!,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
           ],
         ],
       ),
@@ -77,8 +92,18 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
-        Text(value, style: AppTypography.body.copyWith(color: valueColor ?? AppColors.primary)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTypography.body.copyWith(
+            color: valueColor ?? AppColors.primary,
+          ),
+        ),
       ],
     );
   }

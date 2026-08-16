@@ -20,17 +20,20 @@ final debtPaymentsProvider = FutureProvider.family<List<Payment>, String>(
   (ref, debtId) => ref.watch(debtRepositoryProvider).fetchPayments(debtId),
 );
 
-final debtDocumentsProvider = FutureProvider.family<List<DocumentSummary>, String>(
-  (ref, debtId) => ref.watch(debtRepositoryProvider).fetchDocuments(debtId),
-);
+final debtDocumentsProvider =
+    FutureProvider.family<List<DocumentSummary>, String>(
+      (ref, debtId) => ref.watch(debtRepositoryProvider).fetchDocuments(debtId),
+    );
 
 final debtTimelineProvider = FutureProvider.family<DebtTimeline, String>(
   (ref, debtId) => ref.watch(debtRepositoryProvider).fetchTimeline(debtId),
 );
 
-final debtPromiseToPayHistoryProvider = FutureProvider.family<List<PromiseToPay>, String>(
-  (ref, debtId) => ref.watch(debtRepositoryProvider).fetchPromiseToPayHistory(debtId),
-);
+final debtPromiseToPayHistoryProvider =
+    FutureProvider.family<List<PromiseToPay>, String>(
+      (ref, debtId) =>
+          ref.watch(debtRepositoryProvider).fetchPromiseToPayHistory(debtId),
+    );
 
 /// Null is a real, expected value here — "no related case yet" — not a
 /// loading/error state; see `DebtRepository.fetchRelatedCase()`.

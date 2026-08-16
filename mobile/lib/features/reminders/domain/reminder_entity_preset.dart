@@ -11,5 +11,9 @@ class ReminderEntityPreset {
   final String id;
   final String label;
 
-  const ReminderEntityPreset({required this.type, required this.id, required this.label});
+  const ReminderEntityPreset({
+    required this.type,
+    required this.id,
+    required this.label,
+  });
 }

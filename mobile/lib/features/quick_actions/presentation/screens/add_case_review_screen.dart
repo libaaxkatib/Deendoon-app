@@ -35,7 +35,8 @@ class AddCaseReviewScreen extends ConsumerStatefulWidget {
   const AddCaseReviewScreen({super.key, required this.input});
 
   @override
-  ConsumerState<AddCaseReviewScreen> createState() => _AddCaseReviewScreenState();
+  ConsumerState<AddCaseReviewScreen> createState() =>
+      _AddCaseReviewScreenState();
 }
 
 sealed class _ReviewState {
@@ -87,7 +88,9 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
     if (_isNewCustomer) {
       final draft = widget.input.customerDraft!;
       try {
-        final result = await ref.read(customerActionsProvider).create(
+        final result = await ref
+            .read(customerActionsProvider)
+            .create(
               name: draft.name,
               phone: draft.phone,
               address: draft.address,
@@ -104,7 +107,9 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
 
     Debt debt;
     try {
-      final result = await ref.read(debtActionsProvider).create(
+      final result = await ref
+          .read(debtActionsProvider)
+          .create(
             customerId: customer.id,
             amount: debtDraft.amount,
             dueDate: debtDraft.dueDate,
@@ -114,7 +119,9 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         setState(() {
-          _state = _isNewCustomer ? _FailedAfterCustomer(e.message, customer) : _FailedNothingCreated(e.message);
+          _state = _isNewCustomer
+              ? _FailedAfterCustomer(e.message, customer)
+              : _FailedNothingCreated(e.message);
         });
       }
       return;
@@ -123,7 +130,9 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
     final invoiceFile = debtDraft.invoiceFile;
     if (invoiceFile != null) {
       try {
-        await ref.read(attachmentRepositoryProvider).uploadAttachment(
+        await ref
+            .read(attachmentRepositoryProvider)
+            .uploadAttachment(
               entityPathPrefix: 'debts/${debt.id}',
               filePath: invoiceFile.path,
               fileName: invoiceFile.name,
@@ -138,7 +147,9 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
     }
 
     try {
-      final collectionCase = await ref.read(debtActionsProvider).openCase(debt.id);
+      final collectionCase = await ref
+          .read(debtActionsProvider)
+          .openCase(debt.id, customer.id);
       if (!mounted) return;
       // `go()`, not `push()`/`pushReplacement()` — clears the whole wizard
       // stack (entry sheet's pushed steps) now that the flow is complete,
@@ -158,83 +169,120 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.addCaseReviewTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            Text(l10n.addCaseReviewCustomerHeading, style: AppTypography.heading),
-            const SizedBox(height: 12),
-            if (input.existingCustomer case final customer?) ...[
-              Text(customer.name, style: AppTypography.body),
-              Text(customer.phone, style: AppTypography.caption),
-            ] else if (input.customerDraft case final draft?) ...[
-              Text(draft.name, style: AppTypography.body),
-              Text(draft.phone, style: AppTypography.caption),
-              Text(l10n.addCaseReviewCreditLimitLabel(draft.creditLimit), style: AppTypography.caption),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ListView(
+            children: [
+              Text(
+                l10n.addCaseReviewCustomerHeading,
+                style: AppTypography.heading,
+              ),
+              const SizedBox(height: 12),
+              if (input.existingCustomer case final customer?) ...[
+                Text(customer.name, style: AppTypography.body),
+                Text(customer.phone, style: AppTypography.caption),
+              ] else if (input.customerDraft case final draft?) ...[
+                Text(draft.name, style: AppTypography.body),
+                Text(draft.phone, style: AppTypography.caption),
+                Text(
+                  l10n.addCaseReviewCreditLimitLabel(draft.creditLimit),
+                  style: AppTypography.caption,
+                ),
+              ],
+              const SizedBox(height: 24),
+              Text(l10n.addCaseReviewDebtHeading, style: AppTypography.heading),
+              const SizedBox(height: 12),
+              Text(
+                l10n.addCaseReviewAmountLabel(debtDraft.amount),
+                style: AppTypography.body,
+              ),
+              Text(
+                l10n.addCaseReviewDueDateLabel(debtDraft.dueDate),
+                style: AppTypography.body,
+              ),
+              if (debtDraft.notes != null)
+                Text(
+                  l10n.addCaseReviewNotesLabel(debtDraft.notes!),
+                  style: AppTypography.caption,
+                ),
+              if (debtDraft.invoiceFile != null)
+                Text(
+                  l10n.addCaseReviewInvoiceLabel(debtDraft.invoiceFile!.name),
+                  style: AppTypography.caption,
+                ),
+              const SizedBox(height: 32),
+              _buildStateSection(context, l10n),
             ],
-            const SizedBox(height: 24),
-            Text(l10n.addCaseReviewDebtHeading, style: AppTypography.heading),
-            const SizedBox(height: 12),
-            Text(l10n.addCaseReviewAmountLabel(debtDraft.amount), style: AppTypography.body),
-            Text(l10n.addCaseReviewDueDateLabel(debtDraft.dueDate), style: AppTypography.body),
-            if (debtDraft.notes != null) Text(l10n.addCaseReviewNotesLabel(debtDraft.notes!), style: AppTypography.caption),
-            if (debtDraft.invoiceFile != null)
-              Text(l10n.addCaseReviewInvoiceLabel(debtDraft.invoiceFile!.name), style: AppTypography.caption),
-            const SizedBox(height: 32),
-            _buildStateSection(context, l10n),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildStateSection(BuildContext context, AppLocalizations l10n) {
-    final label = _isNewCustomer ? l10n.addCaseReviewCreateCustomerDebtButton : l10n.addCaseReviewCreateDebtButton;
+    final label = _isNewCustomer
+        ? l10n.addCaseReviewCreateCustomerDebtButton
+        : l10n.addCaseReviewCreateDebtButton;
     final state = _state;
     return switch (state) {
       _Idle() => PrimaryButton(label: label, onPressed: _confirm),
-      _Running() => PrimaryButton(label: label, isLoading: true, onPressed: null),
+      _Running() => PrimaryButton(
+        label: label,
+        isLoading: true,
+        onPressed: null,
+      ),
       _FailedNothingCreated(:final message) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(message, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            const SizedBox(height: 16),
-            PrimaryButton(label: l10n.addCaseReviewTryAgainButton, onPressed: _confirm),
-          ],
-        ),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            message,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: l10n.addCaseReviewTryAgainButton,
+            onPressed: _confirm,
+          ),
+        ],
+      ),
       _FailedAfterCustomer(:final message, :final customer) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.addCaseReviewCustomerCreatedDebtFailedMessage(customer.name, message),
-              style: AppTypography.body,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.addCaseReviewCustomerCreatedDebtFailedMessage(
+              customer.name,
+              message,
             ),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () => GoRouter.of(context).push('/customers/${customer.id}'),
-              child: Text(l10n.addCaseReviewOpenCustomerButton),
-            ),
-          ],
-        ),
+            style: AppTypography.body,
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: () =>
+                GoRouter.of(context).push('/customers/${customer.id}'),
+            child: Text(l10n.addCaseReviewOpenCustomerButton),
+          ),
+        ],
+      ),
       _FailedAfterDebt(:final message, :final debt) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.addCaseReviewDebtCreatedCaseFailedMessage(debt.referenceNumber, message),
-              style: AppTypography.body,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.addCaseReviewDebtCreatedCaseFailedMessage(
+              debt.referenceNumber,
+              message,
             ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.addCaseReviewCaseLaterHint,
-              style: AppTypography.caption,
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () => GoRouter.of(context).push('/debts/${debt.id}'),
-              child: Text(l10n.addCaseReviewOpenDebtButton),
-            ),
-          ],
-        ),
+            style: AppTypography.body,
+          ),
+          const SizedBox(height: 8),
+          Text(l10n.addCaseReviewCaseLaterHint, style: AppTypography.caption),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: () => GoRouter.of(context).push('/debts/${debt.id}'),
+            child: Text(l10n.addCaseReviewOpenDebtButton),
+          ),
+        ],
+      ),
     };
   }
 }

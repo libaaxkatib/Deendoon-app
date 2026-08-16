@@ -9,11 +9,11 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/professional_collection_detail_providers.dart';
 
 Map<String, String> _documentTypeLabels(AppLocalizations l10n) => {
-      'receipt': l10n.documentTypeReceipt,
-      'demand_letter': l10n.documentTypeDemandLetter,
-      'statement': l10n.documentTypeStatement,
-      'invoice': l10n.documentTypeInvoice,
-    };
+  'receipt': l10n.documentTypeReceipt,
+  'demand_letter': l10n.documentTypeDemandLetter,
+  'statement': l10n.documentTypeStatement,
+  'invoice': l10n.documentTypeInvoice,
+};
 
 /// Professional Collection Request's "Documents" destination —
 /// `GET /professional-requests/{id}/documents` — the existing Receipt/
@@ -24,32 +24,44 @@ Map<String, String> _documentTypeLabels(AppLocalizations l10n) => {
 class ProfessionalCollectionDocumentsScreen extends ConsumerWidget {
   final String requestId;
 
-  const ProfessionalCollectionDocumentsScreen({super.key, required this.requestId});
+  const ProfessionalCollectionDocumentsScreen({
+    super.key,
+    required this.requestId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final documentsAsync = ref.watch(professionalCollectionDocumentsProvider(requestId));
+    final documentsAsync = ref.watch(
+      professionalCollectionDocumentsProvider(requestId),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navDocuments)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(professionalCollectionDocumentsProvider(requestId));
-          await ref.read(professionalCollectionDocumentsProvider(requestId).future);
+          await ref.read(
+            professionalCollectionDocumentsProvider(requestId).future,
+          );
         },
         child: documentsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
             child: RetrySection(
               message: l10n.customerDocumentsLoadError,
-              onRetry: () => ref.invalidate(professionalCollectionDocumentsProvider(requestId)),
+              onRetry: () => ref.invalidate(
+                professionalCollectionDocumentsProvider(requestId),
+              ),
             ),
           ),
           data: (documents) {
             if (documents.isEmpty) {
               return Center(
-                child: Text(l10n.professionalCollectionDocumentsEmptyState, style: AppTypography.body),
+                child: Text(
+                  l10n.professionalCollectionDocumentsEmptyState,
+                  style: AppTypography.body,
+                ),
               );
             }
 
@@ -67,10 +79,14 @@ class ProfessionalCollectionDocumentsScreen extends ConsumerWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(document.referenceNumber, style: AppTypography.body),
+                          Text(
+                            document.referenceNumber,
+                            style: AppTypography.body,
+                          ),
                           const SizedBox(height: 2),
                           Text(
-                            _documentTypeLabels(l10n)[document.documentType] ?? document.documentType,
+                            _documentTypeLabels(l10n)[document.documentType] ??
+                                document.documentType,
                             style: AppTypography.caption,
                           ),
                         ],

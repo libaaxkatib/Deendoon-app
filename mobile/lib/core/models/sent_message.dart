@@ -34,15 +34,15 @@ class SentMessage {
   });
 
   factory SentMessage.fromJson(Map<String, dynamic> json) => SentMessage(
-        id: json['id'].toString(),
-        reminderId: json['reminder_id']?.toString(),
-        caseId: json['case_id']?.toString(),
-        documentType: json['document_type'] as String?,
-        documentId: json['document_id']?.toString(),
-        channel: json['channel'] as String,
-        recipientPhone: json['recipient_phone'] as String,
-        renderedText: json['rendered_text'] as String,
-        status: json['status'] as String,
-        sentAt: json['sent_at'] as String,
-      );
+    id: json['id'].toString(),
+    reminderId: json['reminder_id']?.toString(),
+    caseId: json['case_id']?.toString(),
+    documentType: json['document_type'] as String?,
+    documentId: json['document_id']?.toString(),
+    channel: json['channel'] as String,
+    recipientPhone: json['recipient_phone'] as String,
+    renderedText: json['rendered_text'] as String,
+    status: json['status'] as String,
+    sentAt: json['sent_at'] as String,
+  );
 }

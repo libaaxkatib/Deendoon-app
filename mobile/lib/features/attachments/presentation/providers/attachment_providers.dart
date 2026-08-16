@@ -9,7 +9,9 @@ import '../../domain/attachment.dart';
 /// same one repository/provider pair backs Customer/Debt/CollectionCase
 /// attachments, since all three are identical in shape (P1.6).
 final attachmentsProvider = FutureProvider.family<List<Attachment>, String>(
-  (ref, entityPathPrefix) => ref.watch(attachmentRepositoryProvider).fetchAttachments(entityPathPrefix),
+  (ref, entityPathPrefix) => ref
+      .watch(attachmentRepositoryProvider)
+      .fetchAttachments(entityPathPrefix),
 );
 
 typedef PickedAttachmentFile = ({String path, String name});
@@ -18,7 +20,8 @@ typedef PickedAttachmentFile = ({String path, String name});
 /// tests can override it — same rationale as `importFilePickerProvider`
 /// (`file_picker` needs a platform channel that doesn't exist in the
 /// widget-test environment).
-final attachmentFilePickerProvider = Provider<Future<PickedAttachmentFile?> Function()>((ref) => _pickFile);
+final attachmentFilePickerProvider =
+    Provider<Future<PickedAttachmentFile?> Function()>((ref) => _pickFile);
 
 Future<PickedAttachmentFile?> _pickFile() async {
   final result = await FilePicker.pickFiles(
@@ -36,7 +39,8 @@ Future<PickedAttachmentFile?> _pickFile() async {
 /// captures a photo and uploads it as a plain attachment — no OCR, no
 /// invoice-data extraction, no manual invoice metadata form (Product
 /// Owner decision).
-final attachmentCameraProvider = Provider<Future<PickedAttachmentFile?> Function()>((ref) => _captureImage);
+final attachmentCameraProvider =
+    Provider<Future<PickedAttachmentFile?> Function()>((ref) => _captureImage);
 
 Future<PickedAttachmentFile?> _captureImage() async {
   final file = await ImagePicker().pickImage(source: ImageSource.camera);

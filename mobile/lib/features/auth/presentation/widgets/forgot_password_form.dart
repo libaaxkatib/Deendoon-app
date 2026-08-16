@@ -27,6 +27,7 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
+  Map<String, dynamic>? _fieldErrors;
 
   @override
   void dispose() {
@@ -35,6 +36,7 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
   }
 
   Future<void> _submit() async {
+    setState(() => _fieldErrors = null);
     if (_formKey.currentState?.validate() != true) return;
 
     setState(() {
@@ -49,7 +51,11 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
           .forgotPassword(_emailController.text.trim());
       setState(() => _successMessage = message);
     } on ApiException catch (e) {
-      setState(() => _errorMessage = e.detailedMessage);
+      setState(() {
+        _errorMessage = e.detailedMessage;
+        _fieldErrors = e.fieldErrors;
+      });
+      _formKey.currentState?.validate();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,12 +76,24 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
             enabled: _successMessage == null,
             decoration: InputDecoration(labelText: l10n.authEmailLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return l10n.authEmailRequired;
-              if (!_emailPattern.hasMatch(value.trim())) return l10n.authEmailInvalid;
+              final backendError = ApiException.fieldErrorFor(
+                _fieldErrors,
+                'email',
+              );
+              if (backendError != null) return backendError;
+              if (value == null || value.trim().isEmpty) {
+                return l10n.authEmailRequired;
+              }
+              if (!_emailPattern.hasMatch(value.trim())) {
+                return l10n.authEmailInvalid;
+              }
               return null;
             },
           ),
-          if (_errorMessage != null) ...[
+          // Field-mappable errors already render on the email field above —
+          // this fallback is only for errors that aren't per-field.
+          if (_errorMessage != null &&
+              (_fieldErrors == null || _fieldErrors!.isEmpty)) ...[
             const SizedBox(height: 12),
             Text(
               _errorMessage!,

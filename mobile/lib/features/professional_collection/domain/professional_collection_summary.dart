@@ -21,17 +21,25 @@ class ProfessionalCollectionSummary {
     required this.latestTimelineEvent,
   });
 
-  bool get isEmpty => totalActive == 0 && totalRecovered == 0 && latestRequest == null;
+  bool get isEmpty =>
+      totalActive == 0 && totalRecovered == 0 && latestRequest == null;
 
-  factory ProfessionalCollectionSummary.fromJson(Map<String, dynamic> json) => ProfessionalCollectionSummary(
-        countsByStatus: (json['counts_by_status'] as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
+  factory ProfessionalCollectionSummary.fromJson(Map<String, dynamic> json) =>
+      ProfessionalCollectionSummary(
+        countsByStatus: (json['counts_by_status'] as Map<String, dynamic>).map(
+          (k, v) => MapEntry(k, v as int),
+        ),
         totalActive: json['total_active'] as int,
         totalRecovered: json['total_recovered'] as int,
         latestRequest: json['latest_request'] == null
             ? null
-            : ProfessionalCollectionRequest.fromJson(json['latest_request'] as Map<String, dynamic>),
+            : ProfessionalCollectionRequest.fromJson(
+                json['latest_request'] as Map<String, dynamic>,
+              ),
         latestTimelineEvent: json['latest_timeline_event'] == null
             ? null
-            : ProfessionalCollectionTimelineEvent.fromJson(json['latest_timeline_event'] as Map<String, dynamic>),
+            : ProfessionalCollectionTimelineEvent.fromJson(
+                json['latest_timeline_event'] as Map<String, dynamic>,
+              ),
       );
 }

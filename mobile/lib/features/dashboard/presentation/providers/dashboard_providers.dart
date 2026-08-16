@@ -22,7 +22,9 @@ final businessHealthProvider = FutureProvider<BusinessHealth>(
 /// `period`/`date_from`/`date_to` query parameters, not just a label swap.
 final dashboardKpisProvider = FutureProvider<DashboardKpis>((ref) {
   final selection = ref.watch(kpiPeriodProvider);
-  return ref.watch(dashboardRepositoryProvider).fetchKpis(
+  return ref
+      .watch(dashboardRepositoryProvider)
+      .fetchKpis(
         period: selection.key,
         dateFrom: selection.dateFrom,
         dateTo: selection.dateTo,

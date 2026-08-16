@@ -16,7 +16,8 @@ class NotificationBellButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final hasUnread = ref.watch(notificationListProvider).valueOrNull?.hasUnread ?? false;
+    final hasUnread =
+        ref.watch(notificationListProvider).valueOrNull?.hasUnread ?? false;
 
     return IconButton(
       tooltip: l10n.sectionNotifications,
@@ -32,7 +33,10 @@ class NotificationBellButton extends ConsumerWidget {
               child: Container(
                 width: 9,
                 height: 9,
-                decoration: const BoxDecoration(color: AppColors.danger, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
         ],

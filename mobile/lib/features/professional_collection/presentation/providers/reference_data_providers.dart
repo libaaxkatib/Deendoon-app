@@ -15,6 +15,8 @@ class ReferenceDataCategory {
 /// `professional_collection_detail_providers.dart`. The endpoint returns
 /// every configured value regardless of `isActive`; only active values
 /// should be offered as selectable options.
-final referenceDataProvider = FutureProvider.family<List<ReferenceDataItem>, String>(
-  (ref, category) => ref.watch(referenceDataRepositoryProvider).fetchCategory(category),
-);
+final referenceDataProvider =
+    FutureProvider.family<List<ReferenceDataItem>, String>(
+      (ref, category) =>
+          ref.watch(referenceDataRepositoryProvider).fetchCategory(category),
+    );

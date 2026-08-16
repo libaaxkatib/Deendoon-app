@@ -32,7 +32,10 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
             child: Column(
               children: [
-                AvatarInitial(name: user?.name.isNotEmpty == true ? user!.name : '?', radius: 30),
+                AvatarInitial(
+                  name: user?.name.isNotEmpty == true ? user!.name : '?',
+                  radius: 30,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   user?.name ?? '—',
@@ -44,7 +47,9 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 3),
                 Text(
                   user?.email ?? '—',
-                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -59,10 +64,16 @@ class ProfileScreen extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     l10n.changePassword,
-                    style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                    style: AppTypography.body.copyWith(
+                      color: context.colors.textPrimary,
+                    ),
                   ),
                 ),
-                Icon(Icons.chevron_right, size: 20, color: context.colors.textSecondary),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: context.colors.textSecondary,
+                ),
               ],
             ),
           ),

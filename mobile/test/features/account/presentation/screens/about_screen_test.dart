@@ -29,7 +29,9 @@ void main() {
     SomaliCupertinoLocalizationsDelegate(),
   ];
 
-  testWidgets('shows Deendoon branding, description, and legal/support rows', (tester) async {
+  testWidgets('shows Deendoon branding, description, and legal/support rows', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
@@ -42,7 +44,10 @@ void main() {
 
     final logo = tester.widget<Image>(find.byType(Image));
     expect((logo.image as AssetImage).assetName, 'assets/deendoon_logo.png');
-    expect(find.text('The Modern Assistant for\nDebt Recovery'), findsOneWidget);
+    expect(
+      find.text('The Modern Assistant for\nDebt Recovery'),
+      findsOneWidget,
+    );
     expect(find.text('Introduction to DEENDOON'), findsOneWidget);
     expect(find.text('DEENDOON helps you to:'), findsOneWidget);
     expect(find.text('Conclusion'), findsOneWidget);
@@ -52,25 +57,6 @@ void main() {
     expect(find.text('Contact Support'), findsOneWidget);
     expect(find.text('Rate the App'), findsOneWidget);
     expect(find.text('Website'), findsNothing);
-  });
-
-  testWidgets('Contact Support still shows the coming-soon acknowledgement (no real contact channel exists)',
-      (tester) async {
-    useTallViewport(tester);
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('en'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: localizationsDelegates,
-        home: const AboutScreen(),
-      ),
-    );
-    await tester.pump();
-
-    await tester.tap(find.text('Contact Support'));
-    await tester.pump();
-
-    expect(find.text('Contact Support — coming soon'), findsOneWidget);
   });
 
   group('legal content navigation (with a real router)', () {
@@ -87,14 +73,19 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('Privacy Policy opens the real Privacy Policy content screen', (tester) async {
+    testWidgets('Privacy Policy opens the real Privacy Policy content screen', (
+      tester,
+    ) async {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(path: '/', builder: (_, _) => const AboutScreen()),
           GoRoute(
             path: '/account/privacy-policy',
-            builder: (_, _) => const LegalContentScreen(title: 'Privacy Policy', content: kPrivacyPolicyContent),
+            builder: (_, _) => const LegalContentScreen(
+              title: 'Privacy Policy',
+              content: kPrivacyPolicyContent,
+            ),
           ),
         ],
       );
@@ -104,28 +95,68 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(AppBar, 'Privacy Policy'), findsOneWidget);
-      expect(find.textContaining('Deendoon stores the business data you enter directly'), findsOneWidget);
-    });
-
-    testWidgets('Terms & Conditions opens the real Terms & Conditions content screen', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const AboutScreen()),
-          GoRoute(
-            path: '/account/terms-conditions',
-            builder: (_, _) =>
-                const LegalContentScreen(title: 'Terms & Conditions', content: kTermsAndConditionsContent),
-          ),
-        ],
+      expect(
+        find.textContaining(
+          'Deendoon stores the business data you enter directly',
+        ),
+        findsOneWidget,
       );
-      await pumpWithRouter(tester, router);
-
-      await tester.tap(find.text('Terms & Conditions'));
-      await tester.pumpAndSettle();
-
-      expect(find.widgetWithText(AppBar, 'Terms & Conditions'), findsOneWidget);
-      expect(find.textContaining('Each business account (tenant) is'), findsOneWidget);
     });
+
+    testWidgets(
+      'Terms & Conditions opens the real Terms & Conditions content screen',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const AboutScreen()),
+            GoRoute(
+              path: '/account/terms-conditions',
+              builder: (_, _) => const LegalContentScreen(
+                title: 'Terms & Conditions',
+                content: kTermsAndConditionsContent,
+              ),
+            ),
+          ],
+        );
+        await pumpWithRouter(tester, router);
+
+        await tester.tap(find.text('Terms & Conditions'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.widgetWithText(AppBar, 'Terms & Conditions'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Each business account (tenant) is'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'Contact Support opens the real Support & Tickets module (no longer coming-soon)',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const AboutScreen()),
+            GoRoute(
+              path: '/support/tickets',
+              builder: (_, _) =>
+                  const Scaffold(body: Text('Support Ticket List Screen')),
+            ),
+          ],
+        );
+        await pumpWithRouter(tester, router);
+
+        await tester.tap(find.text('Contact Support'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Support Ticket List Screen'), findsOneWidget);
+        expect(find.text('Contact Support — coming soon'), findsNothing);
+      },
+    );
   });
 }

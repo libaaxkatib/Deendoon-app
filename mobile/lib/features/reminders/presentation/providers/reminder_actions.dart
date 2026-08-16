@@ -6,7 +6,9 @@ import '../../../../core/models/sent_message.dart';
 import 'reminder_detail_providers.dart';
 import 'reminder_list_provider.dart';
 
-final reminderActionsProvider = Provider<ReminderActions>((ref) => ReminderActions(ref));
+final reminderActionsProvider = Provider<ReminderActions>(
+  (ref) => ReminderActions(ref),
+);
 
 /// The real, backend-supported Reminder actions: create, update (also
 /// backs Reschedule — same real `PUT` endpoint, see
@@ -97,8 +99,16 @@ class ReminderActions {
     _ref.invalidate(reminderSummaryProvider);
   }
 
-  Future<SentMessage> send({required String id, required String channel, required String templateId}) async {
-    final sentMessage = await _repository.sendReminder(id: id, channel: channel, templateId: templateId);
+  Future<SentMessage> send({
+    required String id,
+    required String channel,
+    required String templateId,
+  }) async {
+    final sentMessage = await _repository.sendReminder(
+      id: id,
+      channel: channel,
+      templateId: templateId,
+    );
     // `send` never mutates the reminder itself (no `completed_at`/status
     // change) — no invalidation needed beyond returning the result for
     // the caller to display.

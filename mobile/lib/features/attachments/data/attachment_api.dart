@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/attachment.dart';
 
-final attachmentApiProvider = Provider<AttachmentApi>((ref) => AttachmentApi(ref.read(dioProvider)));
+final attachmentApiProvider = Provider<AttachmentApi>(
+  (ref) => AttachmentApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET/POST {entityPathPrefix}/attachments` — mirrors
 /// `CustomerController`/`DebtController`/`CollectionCaseController`'s
@@ -20,7 +22,9 @@ class AttachmentApi {
   Future<List<Attachment>> list(String entityPathPrefix) async {
     final response = await _dio.get('$entityPathPrefix/attachments');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => Attachment.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => Attachment.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// `mimes:pdf,jpg,jpeg,png,doc,docx`, `max:10240` (10MB) — same
@@ -36,7 +40,19 @@ class AttachmentApi {
       'file': await MultipartFile.fromFile(filePath, filename: fileName),
       'description': ?description,
     });
-    final response = await _dio.post('$entityPathPrefix/attachments', data: formData);
+    final response = await _dio.post(
+      '$entityPathPrefix/attachments',
+      data: formData,
+    );
     return Attachment.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
+  /// Mobile Fix #4A — `DELETE {entityPathPrefix}/attachments/{id}`, mirrors
+  /// `CustomerController`/`DebtController`/`CollectionCaseController`'s
+  /// `attachmentsDestroy` exactly. The backend enforces ownership and
+  /// workflow-state rules; this call surfaces whatever real error comes
+  /// back rather than duplicating that logic client-side.
+  Future<void> delete(String entityPathPrefix, String attachmentId) async {
+    await _dio.delete('$entityPathPrefix/attachments/$attachmentId');
   }
 }

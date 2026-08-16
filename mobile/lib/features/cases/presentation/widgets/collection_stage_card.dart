@@ -28,7 +28,10 @@ class CollectionStageCard extends StatelessWidget {
             child: Text(
               l10n.collectionStageValueLabel(recoveryStage),
               textAlign: TextAlign.end,
-              style: AppTypography.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+              style: AppTypography.body.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

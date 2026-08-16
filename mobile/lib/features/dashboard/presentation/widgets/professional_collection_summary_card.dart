@@ -42,7 +42,8 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
           loading: () => const SectionLoading(),
           error: (error, _) => RetrySection(
             message: l10n.professionalCollectionLoadError,
-            onRetry: () => ref.invalidate(professionalCollectionSummaryProvider),
+            onRetry: () =>
+                ref.invalidate(professionalCollectionSummaryProvider),
           ),
           data: (summary) {
             if (summary.isEmpty) {
@@ -50,7 +51,9 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
                   l10n.professionalCollectionEmptyState,
-                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.body.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
               );
             }
@@ -58,17 +61,25 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
             return AppCard(
               onTap: summary.latestRequest == null
                   ? null
-                  : () => context.push('/professional-requests/${summary.latestRequest!.id}'),
+                  : () => context.push(
+                      '/professional-requests/${summary.latestRequest!.id}',
+                    ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Expanded(
-                        child: _StatColumn(label: l10n.statusActive, value: summary.totalActive),
+                        child: _StatColumn(
+                          label: l10n.statusActive,
+                          value: summary.totalActive,
+                        ),
                       ),
                       Expanded(
-                        child: _StatColumn(label: l10n.statusRecovered, value: summary.totalRecovered),
+                        child: _StatColumn(
+                          label: l10n.statusRecovered,
+                          value: summary.totalRecovered,
+                        ),
                       ),
                     ],
                   ),
@@ -83,12 +94,16 @@ class ProfessionalCollectionSummaryCard extends ConsumerWidget {
                             children: [
                               Text(
                                 l10n.professionalCollectionLatestRequestLabel,
-                                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                                style: AppTypography.caption.copyWith(
+                                  color: context.colors.textSecondary,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 summary.latestRequest!.referenceNumber,
-                                style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                                style: AppTypography.body.copyWith(
+                                  color: context.colors.textPrimary,
+                                ),
                               ),
                             ],
                           ),
@@ -118,9 +133,20 @@ class _StatColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$value', style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 20)),
+        Text(
+          '$value',
+          style: AppTypography.subheading.copyWith(
+            color: AppColors.primary,
+            fontSize: 20,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
       ],
     );
   }

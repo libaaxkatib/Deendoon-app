@@ -18,38 +18,77 @@ class RelatedEntitySummary {
   final String? phone;
   final String? address;
 
-  const RelatedEntitySummary({required this.name, required this.resolved, this.phone, this.address});
+  const RelatedEntitySummary({
+    required this.name,
+    required this.resolved,
+    this.phone,
+    this.address,
+  });
 }
 
 /// Keyed by `"type:id"` rather than the `Reminder` object itself, so
 /// repeated lookups for the same related entity share one cache entry
 /// regardless of which `Reminder` instance triggered them.
-final relatedEntityProvider = FutureProvider.family<RelatedEntitySummary, String>((ref, key) async {
-  final parts = key.split(':');
-  final type = parts.first;
-  final id = parts.sublist(1).join(':');
+final relatedEntityProvider =
+    FutureProvider.family<RelatedEntitySummary, String>((ref, key) async {
+      final parts = key.split(':');
+      final type = parts.first;
+      final id = parts.sublist(1).join(':');
 
-  try {
-    switch (type) {
-      case 'customer':
-        final customer = await ref.watch(customerRepositoryProvider).fetchCustomer(id);
-        return RelatedEntitySummary(name: customer.name, resolved: true, phone: customer.phone, address: customer.address);
-      case 'debt':
-        final debt = await ref.watch(debtRepositoryProvider).fetchDebt(id);
-        final customer = await ref.watch(customerRepositoryProvider).fetchCustomer(debt.customerId);
-        return RelatedEntitySummary(name: customer.name, resolved: true, phone: customer.phone, address: customer.address);
-      case 'collection_case':
-        final collectionCase = await ref.watch(collectionCaseRepositoryProvider).fetchCase(id);
-        return RelatedEntitySummary(name: collectionCase.customerName ?? 'Unknown customer', resolved: true);
-      case 'promise_to_pay':
-        final promise = await ref.watch(debtRepositoryProvider).fetchPromiseToPayById(id);
-        final debt = await ref.watch(debtRepositoryProvider).fetchDebt(promise.debtId);
-        final customer = await ref.watch(customerRepositoryProvider).fetchCustomer(debt.customerId);
-        return RelatedEntitySummary(name: customer.name, resolved: true, phone: customer.phone, address: customer.address);
-      default:
-        return RelatedEntitySummary(name: type, resolved: false);
-    }
-  } on ApiException {
-    return const RelatedEntitySummary(name: 'Not available', resolved: false);
-  }
-});
+      try {
+        switch (type) {
+          case 'customer':
+            final customer = await ref
+                .watch(customerRepositoryProvider)
+                .fetchCustomer(id);
+            return RelatedEntitySummary(
+              name: customer.name,
+              resolved: true,
+              phone: customer.phone,
+              address: customer.address,
+            );
+          case 'debt':
+            final debt = await ref.watch(debtRepositoryProvider).fetchDebt(id);
+            final customer = await ref
+                .watch(customerRepositoryProvider)
+                .fetchCustomer(debt.customerId);
+            return RelatedEntitySummary(
+              name: customer.name,
+              resolved: true,
+              phone: customer.phone,
+              address: customer.address,
+            );
+          case 'collection_case':
+            final collectionCase = await ref
+                .watch(collectionCaseRepositoryProvider)
+                .fetchCase(id);
+            return RelatedEntitySummary(
+              name: collectionCase.customerName ?? 'Unknown customer',
+              resolved: true,
+            );
+          case 'promise_to_pay':
+            final promise = await ref
+                .watch(debtRepositoryProvider)
+                .fetchPromiseToPayById(id);
+            final debt = await ref
+                .watch(debtRepositoryProvider)
+                .fetchDebt(promise.debtId);
+            final customer = await ref
+                .watch(customerRepositoryProvider)
+                .fetchCustomer(debt.customerId);
+            return RelatedEntitySummary(
+              name: customer.name,
+              resolved: true,
+              phone: customer.phone,
+              address: customer.address,
+            );
+          default:
+            return RelatedEntitySummary(name: type, resolved: false);
+        }
+      } on ApiException {
+        return const RelatedEntitySummary(
+          name: 'Not available',
+          resolved: false,
+        );
+      }
+    });

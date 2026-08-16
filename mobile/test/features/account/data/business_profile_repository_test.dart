@@ -39,9 +39,16 @@ void main() {
       DioException(
         requestOptions: RequestOptions(path: 'admin/settings/company-profile'),
         response: Response(
-          requestOptions: RequestOptions(path: 'admin/settings/company-profile'),
+          requestOptions: RequestOptions(
+            path: 'admin/settings/company-profile',
+          ),
           statusCode: 401,
-          data: {'success': false, 'message': 'Unauthenticated.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'Unauthenticated.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -49,18 +56,22 @@ void main() {
 
     expect(
       () => repository.fetchBusinessProfile(),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+      ),
     );
   });
 
   test('updateBusinessProfile delegates every field to the api', () async {
-    when(() => mockApi.update(
-          businessName: 'Somali Builders',
-          address: '123 Main St',
-          contactEmail: 'owner@example.com',
-          contactPhone: '+252612345678',
-          logo: null,
-        )).thenAnswer((_) async => _profile);
+    when(
+      () => mockApi.update(
+        businessName: 'Somali Builders',
+        address: '123 Main St',
+        contactEmail: 'owner@example.com',
+        contactPhone: '+252612345678',
+        logo: null,
+      ),
+    ).thenAnswer((_) async => _profile);
 
     final result = await repository.updateBusinessProfile(
       businessName: 'Somali Builders',
@@ -70,45 +81,63 @@ void main() {
     );
 
     expect(result, _profile);
-    verify(() => mockApi.update(
-          businessName: 'Somali Builders',
-          address: '123 Main St',
-          contactEmail: 'owner@example.com',
-          contactPhone: '+252612345678',
-          logo: null,
-        )).called(1);
+    verify(
+      () => mockApi.update(
+        businessName: 'Somali Builders',
+        address: '123 Main St',
+        contactEmail: 'owner@example.com',
+        contactPhone: '+252612345678',
+        logo: null,
+      ),
+    ).called(1);
   });
 
-  test('updateBusinessProfile surfaces field validation errors via ApiException', () async {
-    when(() => mockApi.update(
+  test(
+    'updateBusinessProfile surfaces field validation errors via ApiException',
+    () async {
+      when(
+        () => mockApi.update(
           businessName: '',
           address: null,
           contactEmail: 'not-an-email',
           contactPhone: null,
           logo: null,
-        )).thenThrow(
-      DioException(
-        requestOptions: RequestOptions(path: 'admin/settings/company-profile'),
-        response: Response(
-          requestOptions: RequestOptions(path: 'admin/settings/company-profile'),
-          statusCode: 422,
-          data: {
-            'success': false,
-            'message': 'The given data was invalid.',
-            'data': null,
-            'errors': {
-              'business_name': ['The business name field is required.'],
-              'contact_email': ['The contact email must be a valid email address.'],
-            },
-          },
         ),
-        type: DioExceptionType.badResponse,
-      ),
-    );
+      ).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(
+            path: 'admin/settings/company-profile',
+          ),
+          response: Response(
+            requestOptions: RequestOptions(
+              path: 'admin/settings/company-profile',
+            ),
+            statusCode: 422,
+            data: {
+              'success': false,
+              'message': 'The given data was invalid.',
+              'data': null,
+              'errors': {
+                'business_name': ['The business name field is required.'],
+                'contact_email': [
+                  'The contact email must be a valid email address.',
+                ],
+              },
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
 
-    expect(
-      () => repository.updateBusinessProfile(businessName: '', contactEmail: 'not-an-email'),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 422)),
-    );
-  });
+      expect(
+        () => repository.updateBusinessProfile(
+          businessName: '',
+          contactEmail: 'not-an-email',
+        ),
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 422),
+        ),
+      );
+    },
+  );
 }

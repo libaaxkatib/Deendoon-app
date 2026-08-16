@@ -10,5 +10,7 @@ void showComingSoon(BuildContext context, String destination) {
   final l10n = AppLocalizations.of(context);
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(l10n.comingSoonMessage(destination))));
+    ..showSnackBar(
+      SnackBar(content: Text(l10n.comingSoonMessage(destination))),
+    );
 }

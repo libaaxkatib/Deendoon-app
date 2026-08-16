@@ -33,7 +33,9 @@ class CaseSummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   collectionCase.referenceNumber,
-                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.subheading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -43,17 +45,28 @@ class CaseSummaryCard extends StatelessWidget {
             ],
           ),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: l10n.caseSummaryOutstandingAmountLabel, value: collectionCase.outstandingAmount ?? '—'),
+          _InfoRow(
+            label: l10n.caseSummaryOutstandingAmountLabel,
+            value: collectionCase.outstandingAmount ?? '—',
+          ),
           const SizedBox(height: 12),
           _InfoRow(
             label: l10n.caseSummaryAssignedOfficerLabel,
-            value: officerId == null ? l10n.caseUnassignedLabel : l10n.caseSummaryOfficerLabel(officerId),
+            value: officerId == null
+                ? l10n.caseUnassignedLabel
+                : l10n.caseSummaryOfficerLabel(officerId),
           ),
           const SizedBox(height: 12),
-          _InfoRow(label: l10n.caseSummaryLastActivityLabel, value: collectionCase.lastActivityAt),
+          _InfoRow(
+            label: l10n.caseSummaryLastActivityLabel,
+            value: collectionCase.lastActivityAt,
+          ),
           if (collectionCase.closureOutcome != null) ...[
             const SizedBox(height: 12),
-            _InfoRow(label: l10n.closeCaseSheetReasonLabel, value: collectionCase.closureOutcome!),
+            _InfoRow(
+              label: l10n.closeCaseSheetReasonLabel,
+              value: collectionCase.closureOutcome!,
+            ),
           ],
         ],
       ),
@@ -72,7 +85,12 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
         Expanded(
           child: Text(
             value,

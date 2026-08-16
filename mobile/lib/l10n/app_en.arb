@@ -28,6 +28,12 @@
   "biometricNotSupported": "Not supported on this device",
   "comingSoon": "Coming soon",
 
+  "biometricLockTitle": "Unlock Deendoon",
+  "biometricLockPromptReason": "Authenticate to access your account",
+  "biometricLockFailedMessage": "Authentication failed. Try again or use your password.",
+  "usePasswordInstead": "Use Password Instead",
+  "biometricEnableFailedMessage": "Could not verify your biometrics. Please try again.",
+
   "defaultCreditLimit": "Default Credit Limit",
   "creditLimitReminderEnabled": "Credit Limit Reminder",
   "softLimitWarningThreshold": "Soft Limit Warning Threshold (%)",
@@ -41,6 +47,7 @@
   "settingsSavedSuccessfully": "Settings updated successfully",
   "couldNotLoadSettings": "Could not load Settings.",
   "retry": "Retry",
+  "paginationLoadMoreError": "Couldn't load more. Tap to retry.",
   "fieldRequired": "This field is required",
   "enterValidNumber": "Enter a valid number",
   "enterValueBetween0And100": "Enter a value between 0 and 100",
@@ -87,6 +94,7 @@
   "statusBroken": "Broken",
   "statusTrial": "Trial",
   "statusExpired": "Expired",
+  "statusResolved": "Resolved",
 
   "themeSwitchToLight": "Switch to light mode",
   "themeSwitchToDark": "Switch to dark mode",
@@ -113,6 +121,9 @@
     }
   },
   "authPasswordsMismatch": "Passwords do not match",
+
+  "passwordFieldShowTooltip": "Show password",
+  "passwordFieldHideTooltip": "Hide password",
 
   "loginAppName": "Deendoon",
   "loginTagline": "Smart Debt Recovery Assistant",
@@ -244,6 +255,11 @@
   "professionalCollectionAttachmentsEmptyState": "No attachments yet",
   "professionalCollectionUploadAttachmentButton": "Upload Attachment",
   "professionalCollectionUploadUnavailableMessage": "Uploading is not available at this stage of the Request.",
+
+  "attachmentDeleteTitle": "Delete Attachment",
+  "attachmentDeleteDialogContent": "This attachment will be permanently deleted. This cannot be undone.",
+  "attachmentDeleteConfirmButton": "Delete",
+  "attachmentDeletedSuccessfully": "Attachment deleted successfully",
 
   "professionalCollectionMessagesTitle": "Messages",
   "professionalCollectionMessagesLoadError": "Could not load messages.",
@@ -410,12 +426,20 @@
   "debtListLoadError": "Could not load debts.",
   "debtListEmptyState": "No debts yet",
   "debtListEmptyFilteredState": "No debts with this status",
+  "debtListShowArchivedFilter": "Show Archived",
+  "debtRestoredSuccessfully": "Debt restored successfully",
+  "debtCardRestoreButton": "Restore",
+  "debtCardArchivedBadge": "Archived",
 
   "addEditDebtAddTitle": "Add Debt",
   "addEditDebtEditTitle": "Edit Debt",
 
   "debtDetailTitle": "Debt Details",
   "debtDetailLoadError": "Could not load this debt.",
+  "debtArchiveTitle": "Archive Debt",
+  "debtArchiveDialogContent": "This debt will no longer appear in the default list. This can be undone later.",
+  "debtArchiveConfirmButton": "Archive",
+  "debtArchivedSuccessfully": "Debt archived successfully",
   "debtDetailGenerateSuccessMessage": "{label} generated successfully",
   "@debtDetailGenerateSuccessMessage": {
     "description": "Shown after a document (e.g. Statement) is generated from the Debt Detail screen",
@@ -747,6 +771,13 @@
   "notificationTypeCollectionRequestUpdate": "Collection Request Update",
   "notificationTypeSubscriptionUpdate": "Subscription Update",
   "notificationTypeStorageAddonUpdate": "Storage Add-on Update",
+  "notificationTypeSupportTicketCreated": "Support Ticket Created",
+  "notificationTypeSupportTicketReplied": "Support Ticket Reply",
+  "notificationTypeSupportTicketStatusChanged": "Support Ticket Status Update",
+  "notificationTypeSupportTicketClosed": "Support Ticket Closed",
+  "notificationTypeSupportTicketReopened": "Support Ticket Reopened",
+  "notificationTypeAdminAnnouncement": "Announcement",
+  "notificationDeleteAction": "Delete",
 
   "globalSearchTitle": "Global Search",
   "globalSearchHint": "Search customers, debts, payments, documents, cases",
@@ -1056,6 +1087,17 @@
   "accountTitle": "Account",
   "accountSectionLabel": "ACCOUNT",
   "accountLogout": "Logout",
+  "accountCloseAccount": "Close Account",
+
+  "closeAccountTitle": "Close Account",
+  "closeAccountWarningHeading": "What happens when you close your account",
+  "closeAccountWarningBody": "Your account will be archived and your business will be suspended immediately. You will be signed out and will no longer be able to log in. Your customers, debts, payments, documents, and history are kept — nothing is deleted. To reopen your account, contact Deendoon Support.",
+  "closeAccountPasswordLabel": "Enter your password to confirm",
+  "closeAccountPasswordRequired": "Password is required",
+  "closeAccountButton": "Close My Account",
+  "closeAccountConfirmDialogTitle": "Close your account?",
+  "closeAccountConfirmDialogContent": "This will immediately sign you out and block access to your business. This cannot be undone by you — only Deendoon Support can reopen it.",
+  "closeAccountConfirmButton": "Yes, Close Account",
 
   "profileTitle": "Profile",
 
@@ -1195,5 +1237,63 @@
     }
   },
 
-  "bulkImportUnsupportedFileTypeError": "Unsupported file type. Only .xlsx and .xls files are supported."
+  "bulkImportUnsupportedFileTypeError": "Unsupported file type. Only .xlsx and .xls files are supported.",
+
+  "supportTicketListTitle": "My Tickets",
+  "supportTicketListLoadError": "Could not load your tickets.",
+  "supportTicketListEmptyState": "No tickets yet.",
+  "supportTicketListEmptyFilteredState": "No tickets match this status.",
+  "supportTicketCreateTitle": "Create Ticket",
+  "supportTicketCreateValidationError": "Please fill in the subject and description.",
+  "supportTicketSubjectLabel": "Subject",
+  "supportTicketSubjectHint": "Briefly describe the issue",
+  "supportTicketDescriptionLabel": "Description",
+  "supportTicketDescriptionHint": "Give as much detail as you can",
+  "supportTicketPriorityLabel": "Priority",
+  "supportTicketCategoryLabel": "Category",
+  "supportTicketSubmitButton": "Submit Ticket",
+  "supportTicketDetailTitle": "Ticket",
+  "supportTicketDetailLoadError": "Could not load this ticket.",
+  "supportTicketClosedNotice": "This ticket is closed — new replies are not accepted.",
+  "supportTicketClosedAtLabel": "Closed on {date}",
+  "@supportTicketClosedAtLabel": {
+    "description": "Shown on a closed ticket's detail screen",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "supportTicketReopenedAtLabel": "Reopened on {date}",
+  "@supportTicketReopenedAtLabel": {
+    "description": "Shown on a ticket that has been reopened at least once",
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "supportTicketAttachmentsTitle": "Attachments",
+  "supportTicketAttachmentsLoadError": "Could not load attachments.",
+  "supportTicketNoAttachments": "No attachments uploaded.",
+  "supportTicketUploadButton": "Attach File",
+  "supportTicketConversationTitle": "Conversation",
+  "supportTicketConversationLoadError": "Could not load the conversation.",
+  "supportTicketNoRepliesYet": "No replies yet.",
+  "supportTicketReplyHint": "Type a reply",
+  "supportTicketMessageSenderYou": "You",
+  "supportTicketMessageSenderDeendoon": "Deendoon Support",
+  "supportTicketPriorityLow": "Low",
+  "supportTicketPriorityMedium": "Medium",
+  "supportTicketPriorityHigh": "High",
+  "supportTicketPriorityUrgent": "Urgent",
+  "supportTicketCategoryTechnicalIssue": "Technical Issue",
+  "supportTicketCategoryPaymentBilling": "Payment / Billing",
+  "supportTicketCategoryAccount": "Account",
+  "supportTicketCategorySubscription": "Subscription",
+  "supportTicketCategoryDebtRecovery": "Debt & Recovery",
+  "supportTicketCategoryProfessionalCollection": "Professional Collection",
+  "supportTicketCategoryFeatureRequest": "Feature Request",
+  "supportTicketCategoryOther": "Other",
+  "supportTicketContactCardTitle": "Contact Deendoon Support",
+  "supportTicketContactPhoneButton": "Phone",
+  "supportTicketContactWhatsAppButton": "WhatsApp",
+  "supportTicketContactEmailButton": "Email",
+  "supportTicketContactLaunchError": "Could not open that. Please try again."
 }

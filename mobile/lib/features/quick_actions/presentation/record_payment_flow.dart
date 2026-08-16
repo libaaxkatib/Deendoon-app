@@ -14,8 +14,10 @@ Future<void> startRecordPaymentFlow(BuildContext context) async {
   final customer = await context.push<Customer>('/customers?select=true');
   if (customer == null || !context.mounted) return;
 
-  final debt = await context.push<Debt>('/customers/${customer.id}/debts?select=true');
+  final debt = await context.push<Debt>(
+    '/customers/${customer.id}/debts?select=true',
+  );
   if (debt == null || !context.mounted) return;
 
-  await showRecordPaymentSheet(context, debt.id);
+  await showRecordPaymentSheet(context, debt.id, customer.id);
 }

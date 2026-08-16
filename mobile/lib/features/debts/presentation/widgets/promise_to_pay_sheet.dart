@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_actions.dart';
@@ -48,7 +49,9 @@ class _PromiseToPaySheetState extends ConsumerState<_PromiseToPaySheet> {
     });
 
     try {
-      await ref.read(debtActionsProvider).promiseToPay(
+      await ref
+          .read(debtActionsProvider)
+          .promiseToPay(
             debtId: widget.debtId,
             promisedDate: _promisedDate.toIso8601String().split('T').first,
           );
@@ -63,18 +66,15 @@ class _PromiseToPaySheetState extends ConsumerState<_PromiseToPaySheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.promiseToPayTitle, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            l10n.promiseToPayTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -85,10 +85,17 @@ class _PromiseToPaySheetState extends ConsumerState<_PromiseToPaySheet> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
           const SizedBox(height: 20),
-          PrimaryButton(label: l10n.promiseToPaySheetSaveButton, isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(
+            label: l10n.promiseToPaySheetSaveButton,
+            isLoading: _isLoading,
+            onPressed: _submit,
+          ),
         ],
       ),
     );

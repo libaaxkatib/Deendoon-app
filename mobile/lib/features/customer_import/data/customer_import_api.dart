@@ -5,7 +5,9 @@ import '../../../core/network/dio_client.dart';
 import '../domain/import_commit_result.dart';
 import '../domain/import_preview.dart';
 
-final customerImportApiProvider = Provider<CustomerImportApi>((ref) => CustomerImportApi(ref.read(dioProvider)));
+final customerImportApiProvider = Provider<CustomerImportApi>(
+  (ref) => CustomerImportApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET /customers/import/template`,
 /// `POST /customers/import`, and `POST /customers/import/{batch}/commit`
@@ -30,20 +32,31 @@ class CustomerImportApi {
 
   /// `ImportCustomersRequest` accepts only `mimes:xlsx,xls` — the backend
   /// does not accept `.csv` despite it being a common import format.
-  Future<ImportPreview> preview({required String filePath, required String fileName}) async {
+  Future<ImportPreview> preview({
+    required String filePath,
+    required String fileName,
+  }) async {
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath, filename: fileName),
     });
     final response = await _dio.post('customers/import', data: formData);
-    return ImportPreview.fromJson(response.data['data'] as Map<String, dynamic>);
+    return ImportPreview.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `resolutions` left empty means every duplicate-matched row defaults
   /// to `skip` server-side (`CommitCustomerImportRequest` — the field is
   /// `sometimes`, never required).
   Future<ImportCommitResult> commit({required String batchId}) async {
-    final response = await _dio.post('customers/import/$batchId/commit', data: {'resolutions': []});
+    final response = await _dio.post(
+      'customers/import/$batchId/commit',
+      data: {'resolutions': []},
+    );
     final data = response.data['data'] as Map<String, dynamic>;
-    return ImportCommitResult.fromJson({...data, 'message': response.data['message']});
+    return ImportCommitResult.fromJson({
+      ...data,
+      'message': response.data['message'],
+    });
   }
 }

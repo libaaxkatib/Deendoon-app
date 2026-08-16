@@ -13,9 +13,16 @@ final dioProvider = Provider<Dio>((ref) {
       // (endpoint paths are deliberately bare, no leading slash) becomes
       // "…/api/v1login". Normalized here so it's correct regardless of
       // whether API_BASE_URL is passed with or without one.
-      baseUrl: Env.apiBaseUrl.endsWith('/') ? Env.apiBaseUrl : '${Env.apiBaseUrl}/',
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      baseUrl: Env.apiBaseUrl.endsWith('/')
+          ? Env.apiBaseUrl
+          : '${Env.apiBaseUrl}/',
+      // 45s (Mobile Fix #6, raised again from 30s): the backend runs on
+      // Render's free tier, which cold-starts after a period of
+      // inactivity — the first request after idle can take well over 30s
+      // to respond, which surfaced as "Try..." on some screens even
+      // though a manual retry (against the now-warm instance) succeeded.
+      connectTimeout: const Duration(seconds: 45),
+      receiveTimeout: const Duration(seconds: 45),
       contentType: 'application/json',
     ),
   );

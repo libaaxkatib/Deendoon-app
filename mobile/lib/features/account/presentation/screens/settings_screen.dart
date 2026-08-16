@@ -72,7 +72,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _whatsappDaysController.text = settings.whatsappReminderDays.join(', ');
     _smsDaysController.text = settings.smsReminderDays.join(', ');
     _callDaysController.text = settings.callReminderDays.join(', ');
-    _thresholdDaysController.text = settings.professionalCollectionThresholdDays?.toString() ?? '';
+    _thresholdDaysController.text =
+        settings.professionalCollectionThresholdDays?.toString() ?? '';
     _pushEnabled = settings.pushNotificationsEnabled;
     _reminderEnabled = settings.reminderNotificationsEnabled;
     _paymentEnabled = settings.paymentNotificationsEnabled;
@@ -98,7 +99,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (_formKey.currentState?.validate() != true) return;
 
     final l10n = AppLocalizations.of(context);
-    final (whatsappDays, whatsappError) = _parseDays(_whatsappDaysController.text);
+    final (whatsappDays, whatsappError) = _parseDays(
+      _whatsappDaysController.text,
+    );
     final (smsDays, smsError) = _parseDays(_smsDaysController.text);
     final (callDays, callError) = _parseDays(_callDaysController.text);
     final daysError = whatsappError ?? smsError ?? callError;
@@ -117,14 +120,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final softLimitText = _softLimitController.text.trim();
       final thresholdText = _thresholdDaysController.text.trim();
 
-      await ref.read(settingsRepositoryProvider).updateSettings(
+      await ref
+          .read(settingsRepositoryProvider)
+          .updateSettings(
             defaultCreditLimit: _creditLimitController.text.trim(),
             creditLimitReminderEnabled: _creditLimitReminderEnabled,
-            softLimitWarningThreshold: softLimitText.isEmpty ? null : softLimitText,
+            softLimitWarningThreshold: softLimitText.isEmpty
+                ? null
+                : softLimitText,
             whatsappReminderDays: whatsappDays!,
             smsReminderDays: smsDays!,
             callReminderDays: callDays!,
-            professionalCollectionThresholdDays: thresholdText.isEmpty ? null : int.tryParse(thresholdText),
+            professionalCollectionThresholdDays: thresholdText.isEmpty
+                ? null
+                : int.tryParse(thresholdText),
             pushNotificationsEnabled: _pushEnabled,
             reminderNotificationsEnabled: _reminderEnabled,
             paymentNotificationsEnabled: _paymentEnabled,
@@ -147,199 +156,239 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          SectionHeader(title: l10n.sectionGeneral),
-          const SizedBox(height: 8),
-          const _LanguageCard(),
-          const SizedBox(height: 12),
-          const _AppearanceCard(),
-          const SizedBox(height: 24),
-          SectionHeader(title: l10n.sectionSecurity),
-          const SizedBox(height: 8),
-          AppCard(
-            onTap: () => context.push('/account/change-password'),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.changePassword,
-                    style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            SectionHeader(title: l10n.sectionGeneral),
+            const SizedBox(height: 8),
+            const _LanguageCard(),
+            const SizedBox(height: 12),
+            const _AppearanceCard(),
+            const SizedBox(height: 24),
+            SectionHeader(title: l10n.sectionSecurity),
+            const SizedBox(height: 8),
+            AppCard(
+              onTap: () => context.push('/account/change-password'),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.changePassword,
+                      style: AppTypography.body.copyWith(
+                        color: context.colors.textPrimary,
+                      ),
+                    ),
                   ),
-                ),
-                Icon(Icons.chevron_right, color: context.colors.textSecondary),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _BiometricLoginTile(),
-          const SizedBox(height: 24),
-          settingsAsync.when(
-            loading: () => const SectionLoading(),
-            error: (error, _) => Center(
-              child: RetrySection(
-                message: l10n.couldNotLoadSettings,
-                onRetry: () => ref.invalidate(settingsProvider),
+                  Icon(
+                    Icons.chevron_right,
+                    color: context.colors.textSecondary,
+                  ),
+                ],
               ),
             ),
-            data: (settings) {
-              _prefillFromExisting(settings);
-              return Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SectionHeader(title: l10n.sectionNotifications),
-                    const SizedBox(height: 8),
-                    AppCard(
-                      child: Column(
-                        children: [
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              l10n.pushNotifications,
-                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
-                            ),
-                            value: _pushEnabled,
-                            onChanged: (value) => setState(() => _pushEnabled = value),
-                          ),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              l10n.reminderNotifications,
-                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
-                            ),
-                            value: _reminderEnabled,
-                            onChanged: (value) => setState(() => _reminderEnabled = value),
-                          ),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              l10n.paymentNotifications,
-                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
-                            ),
-                            value: _paymentEnabled,
-                            onChanged: (value) => setState(() => _paymentEnabled = value),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            l10n.notificationsDisclosure,
-                            style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SectionHeader(title: l10n.sectionBusiness),
-                    const SizedBox(height: 8),
-                    AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextFormField(
-                            controller: _creditLimitController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: InputDecoration(labelText: l10n.defaultCreditLimit),
-                            validator: (value) {
-                              final trimmed = value?.trim() ?? '';
-                              if (trimmed.isEmpty) return l10n.fieldRequired;
-                              final parsed = double.tryParse(trimmed);
-                              if (parsed == null || parsed < 0 || parsed > 9999999999.99) {
-                                return l10n.enterValidNumber;
-                              }
-                              return null;
-                            },
-                          ),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              l10n.creditLimitReminderEnabled,
-                              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
-                            ),
-                            value: _creditLimitReminderEnabled,
-                            onChanged: (value) => setState(() => _creditLimitReminderEnabled = value),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _softLimitController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: InputDecoration(labelText: l10n.softLimitWarningThreshold),
-                            validator: (value) {
-                              final trimmed = value?.trim() ?? '';
-                              if (trimmed.isEmpty) return null;
-                              final parsed = double.tryParse(trimmed);
-                              if (parsed == null || parsed < 0 || parsed > 100) {
-                                return l10n.enterValueBetween0And100;
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextFormField(
-                            controller: _whatsappDaysController,
-                            decoration: InputDecoration(
-                              labelText: l10n.whatsappReminderDays,
-                              hintText: l10n.reminderDaysHint,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _smsDaysController,
-                            decoration: InputDecoration(
-                              labelText: l10n.smsReminderDays,
-                              hintText: l10n.reminderDaysHint,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _callDaysController,
-                            decoration: InputDecoration(
-                              labelText: l10n.callReminderDays,
-                              hintText: l10n.reminderDaysHint,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    AppCard(
-                      child: TextFormField(
-                        controller: _thresholdDaysController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: l10n.professionalCollectionThresholdDays),
-                        validator: (value) {
-                          final trimmed = value?.trim() ?? '';
-                          if (trimmed.isEmpty) return null;
-                          final parsed = int.tryParse(trimmed);
-                          if (parsed == null || parsed < 1 || parsed > 365) return l10n.enterValidNumber;
-                          return null;
-                        },
-                      ),
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                    ],
-                    if (_successMessage != null) ...[
-                      const SizedBox(height: 16),
-                      Text(_successMessage!, style: const TextStyle(color: Colors.green)),
-                    ],
-                    const SizedBox(height: 24),
-                    PrimaryButton(label: l10n.saveChanges, isLoading: _isSaving, onPressed: _save),
-                  ],
+            const SizedBox(height: 12),
+            const _BiometricLoginTile(),
+            const SizedBox(height: 24),
+            settingsAsync.when(
+              loading: () => const SectionLoading(),
+              error: (error, _) => Center(
+                child: RetrySection(
+                  message: l10n.couldNotLoadSettings,
+                  onRetry: () => ref.invalidate(settingsProvider),
                 ),
-              );
-            },
-          ),
-        ],
+              ),
+              data: (settings) {
+                _prefillFromExisting(settings);
+                return Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SectionHeader(title: l10n.sectionNotifications),
+                      const SizedBox(height: 8),
+                      AppCard(
+                        child: Column(
+                          children: [
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                l10n.reminderNotifications,
+                                style: AppTypography.body.copyWith(
+                                  color: context.colors.textPrimary,
+                                ),
+                              ),
+                              value: _reminderEnabled,
+                              onChanged: (value) =>
+                                  setState(() => _reminderEnabled = value),
+                            ),
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                l10n.paymentNotifications,
+                                style: AppTypography.body.copyWith(
+                                  color: context.colors.textPrimary,
+                                ),
+                              ),
+                              value: _paymentEnabled,
+                              onChanged: (value) =>
+                                  setState(() => _paymentEnabled = value),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              l10n.notificationsDisclosure,
+                              style: AppTypography.caption.copyWith(
+                                color: context.colors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SectionHeader(title: l10n.sectionBusiness),
+                      const SizedBox(height: 8),
+                      AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: _creditLimitController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                labelText: l10n.defaultCreditLimit,
+                              ),
+                              validator: (value) {
+                                final trimmed = value?.trim() ?? '';
+                                if (trimmed.isEmpty) return l10n.fieldRequired;
+                                final parsed = double.tryParse(trimmed);
+                                if (parsed == null ||
+                                    parsed < 0 ||
+                                    parsed > 9999999999.99) {
+                                  return l10n.enterValidNumber;
+                                }
+                                return null;
+                              },
+                            ),
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                l10n.creditLimitReminderEnabled,
+                                style: AppTypography.body.copyWith(
+                                  color: context.colors.textPrimary,
+                                ),
+                              ),
+                              value: _creditLimitReminderEnabled,
+                              onChanged: (value) => setState(
+                                () => _creditLimitReminderEnabled = value,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _softLimitController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                labelText: l10n.softLimitWarningThreshold,
+                              ),
+                              validator: (value) {
+                                final trimmed = value?.trim() ?? '';
+                                if (trimmed.isEmpty) return null;
+                                final parsed = double.tryParse(trimmed);
+                                if (parsed == null ||
+                                    parsed < 0 ||
+                                    parsed > 100) {
+                                  return l10n.enterValueBetween0And100;
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: _whatsappDaysController,
+                              decoration: InputDecoration(
+                                labelText: l10n.whatsappReminderDays,
+                                hintText: l10n.reminderDaysHint,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _smsDaysController,
+                              decoration: InputDecoration(
+                                labelText: l10n.smsReminderDays,
+                                hintText: l10n.reminderDaysHint,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _callDaysController,
+                              decoration: InputDecoration(
+                                labelText: l10n.callReminderDays,
+                                hintText: l10n.reminderDaysHint,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      AppCard(
+                        child: TextFormField(
+                          controller: _thresholdDaysController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: l10n.professionalCollectionThresholdDays,
+                          ),
+                          validator: (value) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.isEmpty) return null;
+                            final parsed = int.tryParse(trimmed);
+                            if (parsed == null || parsed < 1 || parsed > 365) {
+                              return l10n.enterValidNumber;
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                      if (_successMessage != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          _successMessage!,
+                          style: const TextStyle(color: Colors.green),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      PrimaryButton(
+                        label: l10n.saveChanges,
+                        isLoading: _isSaving,
+                        onPressed: _save,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -357,7 +406,12 @@ class _LanguageCard extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(l10n.language, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            child: Text(
+              l10n.language,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
           ),
           DropdownButton<String>(
             value: locale.languageCode,
@@ -394,9 +448,18 @@ class _AppearanceCard extends ConsumerWidget {
             value: themeMode,
             underline: const SizedBox.shrink(),
             items: [
-              DropdownMenuItem(value: ThemeMode.light, child: Text(l10n.appearanceLight)),
-              DropdownMenuItem(value: ThemeMode.dark, child: Text(l10n.appearanceDark)),
-              DropdownMenuItem(value: ThemeMode.system, child: Text(l10n.appearanceSystem)),
+              DropdownMenuItem(
+                value: ThemeMode.light,
+                child: Text(l10n.appearanceLight),
+              ),
+              DropdownMenuItem(
+                value: ThemeMode.dark,
+                child: Text(l10n.appearanceDark),
+              ),
+              DropdownMenuItem(
+                value: ThemeMode.system,
+                child: Text(l10n.appearanceSystem),
+              ),
             ],
             onChanged: (mode) {
               if (mode != null) {
@@ -419,7 +482,12 @@ class _BiometricLoginTile extends ConsumerWidget {
     final supportedAsync = ref.watch(biometricSupportedProvider);
 
     return supportedAsync.when(
-      loading: () => const AppCard(child: SizedBox(height: 24, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))),
+      loading: () => const AppCard(
+        child: SizedBox(
+          height: 24,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      ),
       error: (_, _) => _unsupportedCard(context, l10n),
       data: (supported) {
         if (!supported) return _unsupportedCard(context, l10n);
@@ -430,22 +498,40 @@ class _BiometricLoginTile extends ConsumerWidget {
             contentPadding: EdgeInsets.zero,
             title: Text(
               l10n.biometricLogin,
-              style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
             ),
             value: enabledAsync.value ?? false,
             onChanged: enabledAsync.isLoading
                 ? null
                 : (value) async {
                     if (!value) {
-                      await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
+                      await ref
+                          .read(biometricEnabledProvider.notifier)
+                          .setEnabled(false);
                       return;
                     }
+                    final messenger = ScaffoldMessenger.of(context);
                     final authenticated = await ref
                         .read(biometricAuthServiceProvider)
                         .authenticate(l10n.biometricLogin);
                     if (authenticated) {
-                      await ref.read(biometricEnabledProvider.notifier).setEnabled(true);
+                      await ref
+                          .read(biometricEnabledProvider.notifier)
+                          .setEnabled(true);
+                      return;
                     }
+                    // Mobile Fix #17: previously silent — a cancelled or
+                    // failed prompt left the switch off with zero feedback,
+                    // indistinguishable from the FlutterActivity bug this
+                    // fix also corrects.
+                    if (!context.mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.biometricEnableFailedMessage),
+                      ),
+                    );
                   },
           ),
         );
@@ -458,9 +544,19 @@ class _BiometricLoginTile extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(l10n.biometricLogin, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            child: Text(
+              l10n.biometricLogin,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
           ),
-          Text(l10n.comingSoon, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+          Text(
+            l10n.comingSoon,
+            style: AppTypography.caption.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
         ],
       ),
     );

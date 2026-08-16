@@ -15,7 +15,8 @@ List<String> _weekdayLabels(AppLocalizations l10n) => [
   l10n.weekdaySun,
 ];
 
-bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+bool _isSameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Month grid — Monday-first, current day highlighted, selected day filled,
 /// a dot under any date carrying at least one real backend entry. Matches
@@ -51,7 +52,12 @@ class CalendarMonthGrid extends StatelessWidget {
             for (final label in _weekdayLabels(l10n))
               Expanded(
                 child: Center(
-                  child: Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                  child: Text(
+                    label,
+                    style: AppTypography.caption.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -61,7 +67,9 @@ class CalendarMonthGrid extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: totalCells,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+          ),
           itemBuilder: (context, index) {
             if (index < leadingBlanks) return const SizedBox.shrink();
 
@@ -104,8 +112,12 @@ class _DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color? background = isSelected ? AppColors.primary : (isToday ? AppColors.primary.withValues(alpha: 0.15) : null);
-    final Color textColor = isSelected ? context.colors.background : context.colors.textPrimary;
+    final Color? background = isSelected
+        ? AppColors.primary
+        : (isToday ? AppColors.primary.withValues(alpha: 0.15) : null);
+    final Color textColor = isSelected
+        ? context.colors.background
+        : context.colors.textPrimary;
 
     return InkWell(
       onTap: onTap,
@@ -119,8 +131,14 @@ class _DayCell extends StatelessWidget {
               width: 32,
               height: 32,
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-              child: Text('$day', style: AppTypography.body.copyWith(color: textColor)),
+              decoration: BoxDecoration(
+                color: background,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '$day',
+                style: AppTypography.body.copyWith(color: textColor),
+              ),
             ),
             const SizedBox(height: 2),
             SizedBox(
@@ -128,7 +146,10 @@ class _DayCell extends StatelessWidget {
               width: 6,
               child: hasEntries
                   ? DecoratedBox(
-                      decoration: BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        shape: BoxShape.circle,
+                      ),
                     )
                   : null,
             ),

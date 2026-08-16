@@ -6,7 +6,8 @@ import 'package:mobile/features/cases/domain/collection_case_page.dart';
 import 'package:mobile/features/cases/presentation/providers/case_list_provider.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockCollectionCaseRepository extends Mock implements CollectionCaseRepository {}
+class _MockCollectionCaseRepository extends Mock
+    implements CollectionCaseRepository {}
 
 const _caseOne = CollectionCase(
   id: '1',
@@ -49,14 +50,22 @@ void main() {
   setUp(() {
     mockRepository = _MockCollectionCaseRepository();
     container = ProviderContainer(
-      overrides: [collectionCaseRepositoryProvider.overrideWithValue(mockRepository)],
+      overrides: [
+        collectionCaseRepositoryProvider.overrideWithValue(mockRepository),
+      ],
     );
     addTearDown(container.dispose);
   });
 
   test('build() fetches page 1 with no tab filter', () async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_caseOne], currentPage: 1, lastPage: 2, total: 30));
+    when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+      (_) async => const CollectionCasePage(
+        cases: [_caseOne],
+        currentPage: 1,
+        lastPage: 2,
+        total: 30,
+      ),
+    );
 
     final state = await container.read(caseListProvider.future);
 
@@ -65,12 +74,24 @@ void main() {
   });
 
   test('filterByTab() re-fetches page 1 under the real tab value', () async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_caseOne], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+      (_) async => const CollectionCasePage(
+        cases: [_caseOne],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
     await container.read(caseListProvider.future);
 
-    when(() => mockRepository.fetchCases(page: 1, tab: 'high_risk'))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_caseOne], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchCases(page: 1, tab: 'high_risk')).thenAnswer(
+      (_) async => const CollectionCasePage(
+        cases: [_caseOne],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await container.read(caseListProvider.notifier).filterByTab('high_risk');
 
@@ -79,18 +100,99 @@ void main() {
     expect(state.tab, 'high_risk');
   });
 
-  test('loadMore() appends the next page and stops once lastPage is reached', () async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_caseOne], currentPage: 1, lastPage: 2, total: 2));
-    await container.read(caseListProvider.future);
+  test(
+    'loadMore() appends the next page and stops once lastPage is reached',
+    () async {
+      when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_caseOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(caseListProvider.future);
 
-    when(() => mockRepository.fetchCases(page: 2, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_caseTwo], currentPage: 2, lastPage: 2, total: 2));
+      when(() => mockRepository.fetchCases(page: 2, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_caseTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
 
-    await container.read(caseListProvider.notifier).loadMore();
+      await container.read(caseListProvider.notifier).loadMore();
 
-    final state = container.read(caseListProvider).value!;
-    expect(state.cases, [_caseOne, _caseTwo]);
-    expect(state.hasMore, isFalse);
-  });
+      final state = container.read(caseListProvider).value!;
+      expect(state.cases, [_caseOne, _caseTwo]);
+      expect(state.hasMore, isFalse);
+    },
+  );
+
+  test(
+    'loadMore() sets loadMoreError and preserves existing state when the request fails',
+    () async {
+      when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_caseOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(caseListProvider.future);
+
+      when(
+        () => mockRepository.fetchCases(page: 2, tab: null),
+      ).thenThrow(Exception('network error'));
+
+      await container.read(caseListProvider.notifier).loadMore();
+
+      final state = container.read(caseListProvider).value!;
+      expect(state.loadMoreError, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.cases, [_caseOne]);
+      expect(state.currentPage, 1);
+      expect(state.hasMore, isTrue);
+    },
+  );
+
+  test(
+    'loadMore() retried after a failure clears loadMoreError, re-requests the same page, and appends on success',
+    () async {
+      when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_caseOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(caseListProvider.future);
+
+      when(
+        () => mockRepository.fetchCases(page: 2, tab: null),
+      ).thenThrow(Exception('network error'));
+      await container.read(caseListProvider.notifier).loadMore();
+      expect(container.read(caseListProvider).value!.loadMoreError, isTrue);
+
+      when(() => mockRepository.fetchCases(page: 2, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_caseTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      await container.read(caseListProvider.notifier).loadMore();
+
+      final state = container.read(caseListProvider).value!;
+      expect(state.loadMoreError, isFalse);
+      expect(state.cases, [_caseOne, _caseTwo]);
+      expect(state.hasMore, isFalse);
+      verify(() => mockRepository.fetchCases(page: 2, tab: null)).called(2);
+    },
+  );
 }

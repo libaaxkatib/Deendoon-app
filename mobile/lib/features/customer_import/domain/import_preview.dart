@@ -7,13 +7,17 @@ class ImportPreview {
   final String status;
   final List<ImportPreviewRow> rows;
 
-  const ImportPreview({required this.batchId, required this.status, required this.rows});
+  const ImportPreview({
+    required this.batchId,
+    required this.status,
+    required this.rows,
+  });
 
   factory ImportPreview.fromJson(Map<String, dynamic> json) => ImportPreview(
-        batchId: json['batch_id'].toString(),
-        status: json['status'] as String,
-        rows: (json['rows'] as List<dynamic>)
-            .map((e) => ImportPreviewRow.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    batchId: json['batch_id'].toString(),
+    status: json['status'] as String,
+    rows: (json['rows'] as List<dynamic>)
+        .map((e) => ImportPreviewRow.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }

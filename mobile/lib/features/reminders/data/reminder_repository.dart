@@ -9,8 +9,9 @@ import '../domain/reminder_summary.dart';
 import '../../../core/models/sent_message.dart';
 import 'reminder_api.dart';
 
-final reminderRepositoryProvider =
-    Provider<ReminderRepository>((ref) => ReminderRepository(ref.read(reminderApiProvider)));
+final reminderRepositoryProvider = Provider<ReminderRepository>(
+  (ref) => ReminderRepository(ref.read(reminderApiProvider)),
+);
 
 /// Translates raw Dio failures into `ApiException` — same pattern as
 /// every other repository in the app. No caching, no business logic.
@@ -37,19 +38,20 @@ class ReminderRepository {
     String? customFireAt,
     required List<String> deliveryMethods,
     String? notes,
-  }) =>
-      _guard(() => _api.create(
-            type: type,
-            relatedEntityType: relatedEntityType,
-            relatedEntityId: relatedEntityId,
-            relatedCaseId: relatedCaseId,
-            dueDate: dueDate,
-            amountDue: amountDue,
-            timingRule: timingRule,
-            customFireAt: customFireAt,
-            deliveryMethods: deliveryMethods,
-            notes: notes,
-          ));
+  }) => _guard(
+    () => _api.create(
+      type: type,
+      relatedEntityType: relatedEntityType,
+      relatedEntityId: relatedEntityId,
+      relatedCaseId: relatedCaseId,
+      dueDate: dueDate,
+      amountDue: amountDue,
+      timingRule: timingRule,
+      customFireAt: customFireAt,
+      deliveryMethods: deliveryMethods,
+      notes: notes,
+    ),
+  );
 
   Future<Reminder> updateReminder({
     required String id,
@@ -63,35 +65,45 @@ class ReminderRepository {
     String? customFireAt,
     List<String>? deliveryMethods,
     String? notes,
-  }) =>
-      _guard(() => _api.update(
-            id: id,
-            type: type,
-            relatedEntityType: relatedEntityType,
-            relatedEntityId: relatedEntityId,
-            relatedCaseId: relatedCaseId,
-            dueDate: dueDate,
-            amountDue: amountDue,
-            timingRule: timingRule,
-            customFireAt: customFireAt,
-            deliveryMethods: deliveryMethods,
-            notes: notes,
-          ));
+  }) => _guard(
+    () => _api.update(
+      id: id,
+      type: type,
+      relatedEntityType: relatedEntityType,
+      relatedEntityId: relatedEntityId,
+      relatedCaseId: relatedCaseId,
+      dueDate: dueDate,
+      amountDue: amountDue,
+      timingRule: timingRule,
+      customFireAt: customFireAt,
+      deliveryMethods: deliveryMethods,
+      notes: notes,
+    ),
+  );
 
   Future<void> deleteReminder(String id) => _guard(() => _api.delete(id));
 
-  Future<Reminder> completeReminder(String id) => _guard(() => _api.complete(id));
+  Future<Reminder> completeReminder(String id) =>
+      _guard(() => _api.complete(id));
 
   Future<Reminder> checkInReminder(String id) => _guard(() => _api.checkIn(id));
 
-  Future<SentMessage> sendReminder({required String id, required String channel, required String templateId}) =>
+  Future<SentMessage> sendReminder({
+    required String id,
+    required String channel,
+    required String templateId,
+  }) =>
       _guard(() => _api.send(id: id, channel: channel, templateId: templateId));
 
   Future<List<MessageTemplate>> fetchMessageTemplates({String? channel}) =>
       _guard(() => _api.messageTemplates(channel: channel));
 
-  Future<Map<String, dynamic>> renderMessage({required String templateId, required String reminderId}) =>
-      _guard(() => _api.renderMessage(templateId: templateId, reminderId: reminderId));
+  Future<Map<String, dynamic>> renderMessage({
+    required String templateId,
+    required String reminderId,
+  }) => _guard(
+    () => _api.renderMessage(templateId: templateId, reminderId: reminderId),
+  );
 
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {

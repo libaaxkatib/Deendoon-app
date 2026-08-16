@@ -28,10 +28,20 @@ void main() {
   });
 
   test('fetchNotifications passes type through and returns the page', () async {
-    final page = NotificationPage(notifications: [_notification], currentPage: 1, lastPage: 2, total: 21);
-    when(() => mockApi.list(page: 1, type: 'payment_received')).thenAnswer((_) async => page);
+    final page = NotificationPage(
+      notifications: [_notification],
+      currentPage: 1,
+      lastPage: 2,
+      total: 21,
+    );
+    when(
+      () => mockApi.list(page: 1, type: 'payment_received'),
+    ).thenAnswer((_) async => page);
 
-    final result = await repository.fetchNotifications(page: 1, type: 'payment_received');
+    final result = await repository.fetchNotifications(
+      page: 1,
+      type: 'payment_received',
+    );
 
     expect(result.notifications, [_notification]);
   });
@@ -43,7 +53,12 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: '/notifications'),
           statusCode: 401,
-          data: {'success': false, 'message': 'Unauthenticated.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'Unauthenticated.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -51,12 +66,19 @@ void main() {
 
     expect(
       () => repository.fetchNotifications(page: 1),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+      ),
     );
   });
 
   test('fetchHistory delegates to the api', () async {
-    final page = NotificationPage(notifications: [_notification], currentPage: 1, lastPage: 1, total: 1);
+    final page = NotificationPage(
+      notifications: [_notification],
+      currentPage: 1,
+      lastPage: 1,
+      total: 1,
+    );
     when(() => mockApi.history(page: 1)).thenAnswer((_) async => page);
 
     final result = await repository.fetchHistory(page: 1);
@@ -78,5 +100,39 @@ void main() {
     await repository.markAllRead();
 
     verify(() => mockApi.markAllRead()).called(1);
+  });
+
+  test('deleteNotification delegates to the api', () async {
+    when(() => mockApi.delete('1')).thenAnswer((_) async {});
+
+    await repository.deleteNotification('1');
+
+    verify(() => mockApi.delete('1')).called(1);
+  });
+
+  test('deleteNotification throws ApiException on failure', () async {
+    when(() => mockApi.delete('1')).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(path: '/notifications/1'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/notifications/1'),
+          statusCode: 404,
+          data: {
+            'success': false,
+            'message': 'Not Found.',
+            'data': null,
+            'errors': null,
+          },
+        ),
+        type: DioExceptionType.badResponse,
+      ),
+    );
+
+    expect(
+      () => repository.deleteNotification('1'),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 404),
+      ),
+    );
   });
 }

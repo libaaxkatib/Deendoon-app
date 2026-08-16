@@ -30,13 +30,15 @@ class NotificationDetailScreen extends StatelessWidget {
   /// screens already show the tenant's own real, current request state,
   /// which is the closest honest destination for these two types.
   String? _openRoute() => switch (notification.relatedEntityType) {
-        'debt' => '/debts/${notification.relatedEntityId}',
-        'customer' => '/customers/${notification.relatedEntityId}',
-        'professional_collection_request' => '/professional-requests/${notification.relatedEntityId}',
-        'subscription_change_request' => '/account/subscription',
-        'storage_addon' => '/account/storage',
-        _ => null,
-      };
+    'debt' => '/debts/${notification.relatedEntityId}',
+    'customer' => '/customers/${notification.relatedEntityId}',
+    'professional_collection_request' =>
+      '/professional-requests/${notification.relatedEntityId}',
+    'subscription_change_request' => '/account/subscription',
+    'storage_addon' => '/account/storage',
+    'support_ticket' => '/support/tickets/${notification.relatedEntityId}',
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -56,20 +58,38 @@ class NotificationDetailScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    notificationTypeLabel(context, notification.type),
-                    style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                    notification.title ??
+                        notificationTypeLabel(context, notification.type),
+                    style: AppTypography.heading.copyWith(
+                      color: context.colors.textPrimary,
+                    ),
                   ),
                 ),
               ],
             ),
+            if (notification.message != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                notification.message!,
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textPrimary,
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _DetailRow(label: l10n.notificationDetailRelatedToLabel, value: notification.relatedEntityType),
+                  _DetailRow(
+                    label: l10n.notificationDetailRelatedToLabel,
+                    value: notification.relatedEntityType,
+                  ),
                   const SizedBox(height: 12),
-                  _DetailRow(label: l10n.notificationDetailReferenceIdLabel, value: notification.relatedEntityId),
+                  _DetailRow(
+                    label: l10n.notificationDetailReferenceIdLabel,
+                    value: notification.relatedEntityId,
+                  ),
                   const SizedBox(height: 12),
                   _DetailRow(
                     label: l10n.notificationDetailReceivedLabel,
@@ -78,8 +98,12 @@ class NotificationDetailScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _DetailRow(
                     label: l10n.notificationDetailStatusLabel,
-                    value: notification.isRead ? l10n.notificationDetailStatusRead : l10n.notificationDetailStatusUnread,
-                    valueColor: notification.isRead ? context.colors.textSecondary : AppColors.primary,
+                    value: notification.isRead
+                        ? l10n.notificationDetailStatusRead
+                        : l10n.notificationDetailStatusUnread,
+                    valueColor: notification.isRead
+                        ? context.colors.textSecondary
+                        : AppColors.primary,
                   ),
                 ],
               ),
@@ -113,7 +137,15 @@ class _DetailRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 100, child: Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary))),
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
+        ),
         Expanded(
           child: Text(
             value,

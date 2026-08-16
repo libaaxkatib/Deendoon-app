@@ -16,9 +16,13 @@ void main() async {
     ProviderScope(
       overrides: [
         if (savedLanguageCode != null)
-          localeProvider.overrideWith(() => LocaleNotifier(initial: Locale(savedLanguageCode))),
+          localeProvider.overrideWith(
+            () => LocaleNotifier(initial: Locale(savedLanguageCode)),
+          ),
         if (savedThemeMode != null)
-          themeModeProvider.overrideWith(() => AppThemeModeNotifier(initial: savedThemeMode)),
+          themeModeProvider.overrideWith(
+            () => AppThemeModeNotifier(initial: savedThemeMode),
+          ),
       ],
       child: const DeendoonApp(),
     ),

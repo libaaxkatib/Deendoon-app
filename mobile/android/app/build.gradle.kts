@@ -58,6 +58,11 @@ android {
             // points at) when present; falls back to the debug key only
             // if that file is genuinely missing (see comment above).
             signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+            // Mobile Fix #11: proguardFiles() below was already wired but
+            // inert — AGP defaults isMinifyEnabled to false, so R8 never
+            // actually ran and proguard-rules.pro was never picked up
+            // despite the comment above always having said otherwise.
+            isMinifyEnabled = true
             // Without this, app/proguard-rules.pro is never picked up by R8 —
             // Flutter's own default/consumer rules are applied automatically,
             // but this project's own rules are not unless wired explicitly here.

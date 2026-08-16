@@ -16,14 +16,18 @@ class ReminderTypeBadge extends StatelessWidget {
 
   const ReminderTypeBadge({super.key, required this.type});
 
-  static (Color, String) _colorAndLabel(BuildContext context, AppLocalizations l10n, String type) => switch (type) {
-        'client_visit' => (AppColors.accent, l10n.reminderTypeBadgeVisit),
-        'follow_up_call' => (AppColors.warning, l10n.reminderTypeBadgeFollowUp),
-        'payment_due' => (AppColors.success, l10n.reminderTypeBadgePayment),
-        'contract_renewal' => (AppColors.info, l10n.reminderTypeBadgeRenewal),
-        'promise_to_pay' => (AppColors.primary, l10n.reminderTypeBadgePromise),
-        _ => (context.colors.textSecondary, type.toUpperCase()),
-      };
+  static (Color, String) _colorAndLabel(
+    BuildContext context,
+    AppLocalizations l10n,
+    String type,
+  ) => switch (type) {
+    'client_visit' => (AppColors.accent, l10n.reminderTypeBadgeVisit),
+    'follow_up_call' => (AppColors.warning, l10n.reminderTypeBadgeFollowUp),
+    'payment_due' => (AppColors.success, l10n.reminderTypeBadgePayment),
+    'contract_renewal' => (AppColors.info, l10n.reminderTypeBadgeRenewal),
+    'promise_to_pay' => (AppColors.primary, l10n.reminderTypeBadgePromise),
+    _ => (context.colors.textSecondary, type.toUpperCase()),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +35,18 @@ class ReminderTypeBadge extends StatelessWidget {
     final (color, label) = _colorAndLabel(context, l10n, type);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.4),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }

@@ -15,10 +15,11 @@ class RequestMessage {
   });
 
   factory RequestMessage.fromJson(Map<String, dynamic> json) => RequestMessage(
-        id: json['id'].toString(),
-        professionalCollectionRequestId: json['professional_collection_request_id'].toString(),
-        senderUserId: json['sender_user_id'].toString().trim(),
-        content: json['content'] as String,
-        createdAt: json['created_at'] as String,
-      );
+    id: json['id'].toString(),
+    professionalCollectionRequestId: json['professional_collection_request_id']
+        .toString(),
+    senderUserId: json['sender_user_id'].toString().trim(),
+    content: json['content'] as String,
+    createdAt: json['created_at'] as String,
+  );
 }

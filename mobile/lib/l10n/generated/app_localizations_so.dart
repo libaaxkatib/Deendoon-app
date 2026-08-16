@@ -70,6 +70,24 @@ class AppLocalizationsSo extends AppLocalizations {
   String get comingSoon => 'Dhawaan';
 
   @override
+  String get biometricLockTitle => 'Fur Deendoon';
+
+  @override
+  String get biometricLockPromptReason =>
+      'Isticmaal biometric-kaaga si aad u gasho akoonkaaga';
+
+  @override
+  String get biometricLockFailedMessage =>
+      'Xaqiijintu way fashilantay. Isku day mar kale ama isticmaal password-kaaga.';
+
+  @override
+  String get usePasswordInstead => 'Isticmaal Password-ka';
+
+  @override
+  String get biometricEnableFailedMessage =>
+      'Lama xaqiijin karo biometric-kaaga. Fadlan isku day mar kale.';
+
+  @override
   String get defaultCreditLimit => 'Xaddiga Deynta ee Caadiga ah';
 
   @override
@@ -107,6 +125,10 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get retry => 'Isku day mar kale';
+
+  @override
+  String get paginationLoadMoreError =>
+      'Wax badan lama soo dejin karin. Taabo si aad mar kale u tijaabiso.';
 
   @override
   String get fieldRequired => 'Goobtan waa lagama maarmaan';
@@ -223,6 +245,9 @@ class AppLocalizationsSo extends AppLocalizations {
   String get statusExpired => 'Dhammaaday';
 
   @override
+  String get statusResolved => 'La Xalliyay';
+
+  @override
   String get themeSwitchToLight => 'U Beddel Muuqaalka Iftiinka';
 
   @override
@@ -271,6 +296,12 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get authPasswordsMismatch => 'Furayaasha sirta ahi isku mid ma aha';
+
+  @override
+  String get passwordFieldShowTooltip => 'Tus furaha sirta ah';
+
+  @override
+  String get passwordFieldHideTooltip => 'Qari furaha sirta ah';
 
   @override
   String get loginAppName => 'Deendoon';
@@ -598,6 +629,20 @@ class AppLocalizationsSo extends AppLocalizations {
   @override
   String get professionalCollectionUploadUnavailableMessage =>
       'Ku lifaaqidda faylka lagama heli karo marxaladdan codsiga.';
+
+  @override
+  String get attachmentDeleteTitle => 'Tirtir Lifaaqa';
+
+  @override
+  String get attachmentDeleteDialogContent =>
+      'Lifaaqan si joogto ah ayaa loo tirtiri doonaa. Tan dib looma celin karo.';
+
+  @override
+  String get attachmentDeleteConfirmButton => 'Tirtir';
+
+  @override
+  String get attachmentDeletedSuccessfully =>
+      'Lifaaqa si guul leh ayaa loo tirtiray';
 
   @override
   String get professionalCollectionMessagesTitle => 'Fariimaha';
@@ -1012,6 +1057,19 @@ class AppLocalizationsSo extends AppLocalizations {
   String get debtListEmptyFilteredState => 'Xaaladdan dayn kuma jiro';
 
   @override
+  String get debtListShowArchivedFilter => 'Tus Kuwa La Xafiday';
+
+  @override
+  String get debtRestoredSuccessfully =>
+      'Daynta si guul leh ayaa loo soo celiyay';
+
+  @override
+  String get debtCardRestoreButton => 'Soo Celi';
+
+  @override
+  String get debtCardArchivedBadge => 'La Xafiday';
+
+  @override
   String get addEditDebtAddTitle => 'Ku Dar Dayn';
 
   @override
@@ -1022,6 +1080,19 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get debtDetailLoadError => 'Daynta lama soo geli karin.';
+
+  @override
+  String get debtArchiveTitle => 'Xafid Daynta';
+
+  @override
+  String get debtArchiveDialogContent =>
+      'Daynta mar dambe kama muuqan doonto liiska caadiga ah. Tan waxaa dib loogu celin karaa mar dambe.';
+
+  @override
+  String get debtArchiveConfirmButton => 'Xafid';
+
+  @override
+  String get debtArchivedSuccessfully => 'Daynta si guul leh ayaa loo xafiday';
 
   @override
   String debtDetailGenerateSuccessMessage(String label) {
@@ -1719,6 +1790,32 @@ class AppLocalizationsSo extends AppLocalizations {
       'Cusboonaysiinta Add-on-ka Kaydinta';
 
   @override
+  String get notificationTypeSupportTicketCreated =>
+      'Tikidhka Taageerada Waa La Abuuray';
+
+  @override
+  String get notificationTypeSupportTicketReplied =>
+      'Jawaab Tikidhka Taageerada';
+
+  @override
+  String get notificationTypeSupportTicketStatusChanged =>
+      'Cusboonaysiinta Xaaladda Tikidhka';
+
+  @override
+  String get notificationTypeSupportTicketClosed =>
+      'Tikidhka Taageerada Waa La Xiray';
+
+  @override
+  String get notificationTypeSupportTicketReopened =>
+      'Tikidhka Taageerada Waa Dib Loo Furay';
+
+  @override
+  String get notificationTypeAdminAnnouncement => 'Ogeysiin';
+
+  @override
+  String get notificationDeleteAction => 'Tirtir';
+
+  @override
   String get globalSearchTitle => 'Raadinta Guud';
 
   @override
@@ -2387,6 +2484,39 @@ class AppLocalizationsSo extends AppLocalizations {
   String get accountLogout => 'Ka Bax';
 
   @override
+  String get accountCloseAccount => 'Xir Akoonka';
+
+  @override
+  String get closeAccountTitle => 'Xir Akoonka';
+
+  @override
+  String get closeAccountWarningHeading =>
+      'Waxa dhaca marka aad xirto akoonkaaga';
+
+  @override
+  String get closeAccountWarningBody =>
+      'Akoonkaaga waa la kaydin doonaa (archive) ganacsigaagana isla markiiba waa la joojin doonaa. Waa lagaa saari doonaa akoonka mana geli kartid mar dambe. Macaamiishaada, deymaha, lacag-bixinnada, dukumeentiyada, iyo taariikhda waa la haynayaa — waxba lama tirtiro. Si aad akoonkaaga dib u furto, la xiriir Taageerada Deendoon.';
+
+  @override
+  String get closeAccountPasswordLabel => 'Geli furahaaga si aad u xaqiijiso';
+
+  @override
+  String get closeAccountPasswordRequired => 'Furaha waa lagama maarmaan';
+
+  @override
+  String get closeAccountButton => 'Xir Akoonkayga';
+
+  @override
+  String get closeAccountConfirmDialogTitle => 'Ma xirtaa akoonkaaga?';
+
+  @override
+  String get closeAccountConfirmDialogContent =>
+      'Tan waxay isla markiiba kaa saari doontaa akoonka waxayna joojin doontaa gelitaanka ganacsigaaga. Adiga kuma laaban kartid — kaliya Taageerada Deendoon ayaa dib u furi kara.';
+
+  @override
+  String get closeAccountConfirmButton => 'Haa, Xir Akoonka';
+
+  @override
   String get profileTitle => 'Astaanta Shaqsiga';
 
   @override
@@ -2658,4 +2788,151 @@ class AppLocalizationsSo extends AppLocalizations {
   @override
   String get bulkImportUnsupportedFileTypeError =>
       'Nooca faylka lama aqbalo. Kaliya faylasha .xlsx iyo .xls ayaa la aqbalaa.';
+
+  @override
+  String get supportTicketListTitle => 'Tikidhyadayda';
+
+  @override
+  String get supportTicketListLoadError => 'Lama soo rari karo tikidhyadaada.';
+
+  @override
+  String get supportTicketListEmptyState => 'Wali tikidh ma jiro.';
+
+  @override
+  String get supportTicketListEmptyFilteredState =>
+      'Ma jiro tikidh la mid ah xaaladan.';
+
+  @override
+  String get supportTicketCreateTitle => 'Abuur Tikidh';
+
+  @override
+  String get supportTicketCreateValidationError =>
+      'Fadlan buuxi mawduuca iyo faahfaahinta.';
+
+  @override
+  String get supportTicketSubjectLabel => 'Mawduuca';
+
+  @override
+  String get supportTicketSubjectHint => 'Si kooban u sharax dhibaatada';
+
+  @override
+  String get supportTicketDescriptionLabel => 'Faahfaahinta';
+
+  @override
+  String get supportTicketDescriptionHint =>
+      'Bixi faahfaahin intii suurtogal ah';
+
+  @override
+  String get supportTicketPriorityLabel => 'Mudnaanta';
+
+  @override
+  String get supportTicketCategoryLabel => 'Qaybta';
+
+  @override
+  String get supportTicketSubmitButton => 'Dir Tikidhka';
+
+  @override
+  String get supportTicketDetailTitle => 'Tikidhka';
+
+  @override
+  String get supportTicketDetailLoadError => 'Lama soo rari karo tikidhkan.';
+
+  @override
+  String get supportTicketClosedNotice =>
+      'Tikidhkan waa xiran yahay — jawaabo cusub lama aqbali doono.';
+
+  @override
+  String supportTicketClosedAtLabel(String date) {
+    return 'Waxaa la xiray $date';
+  }
+
+  @override
+  String supportTicketReopenedAtLabel(String date) {
+    return 'Dib ayaa loo furay $date';
+  }
+
+  @override
+  String get supportTicketAttachmentsTitle => 'Lifaaqyada';
+
+  @override
+  String get supportTicketAttachmentsLoadError =>
+      'Lifaaqyada lama soo rari karo.';
+
+  @override
+  String get supportTicketNoAttachments => 'Wax lifaaq ah lama soo shubin.';
+
+  @override
+  String get supportTicketUploadButton => 'Lifaaq Fayl';
+
+  @override
+  String get supportTicketConversationTitle => 'Wada Xaajoodka';
+
+  @override
+  String get supportTicketConversationLoadError =>
+      'Wada xaajoodka lama soo rari karo.';
+
+  @override
+  String get supportTicketNoRepliesYet => 'Wali jawaab ma jirto.';
+
+  @override
+  String get supportTicketReplyHint => 'Qor jawaab';
+
+  @override
+  String get supportTicketMessageSenderYou => 'Adiga';
+
+  @override
+  String get supportTicketMessageSenderDeendoon => 'Taageerada Deendoon';
+
+  @override
+  String get supportTicketPriorityLow => 'Hooseeya';
+
+  @override
+  String get supportTicketPriorityMedium => 'Dhexdhexaad';
+
+  @override
+  String get supportTicketPriorityHigh => 'Sarreeya';
+
+  @override
+  String get supportTicketPriorityUrgent => 'Degdeg ah';
+
+  @override
+  String get supportTicketCategoryTechnicalIssue => 'Dhibaato Farsamo';
+
+  @override
+  String get supportTicketCategoryPaymentBilling => 'Lacag-bixin / Biil';
+
+  @override
+  String get supportTicketCategoryAccount => 'Akoonka';
+
+  @override
+  String get supportTicketCategorySubscription => 'Subscription-ka';
+
+  @override
+  String get supportTicketCategoryDebtRecovery => 'Deyn & Ururin';
+
+  @override
+  String get supportTicketCategoryProfessionalCollection =>
+      'Ururinta Xirfadleyda';
+
+  @override
+  String get supportTicketCategoryFeatureRequest => 'Codsi Sifayn';
+
+  @override
+  String get supportTicketCategoryOther => 'Kale';
+
+  @override
+  String get supportTicketContactCardTitle => 'La Xiriir Taageerada Deendoon';
+
+  @override
+  String get supportTicketContactPhoneButton => 'Taleefan';
+
+  @override
+  String get supportTicketContactWhatsAppButton => 'WhatsApp';
+
+  @override
+  String get supportTicketContactEmailButton => 'Iimayl';
+
+  @override
+  String get supportTicketContactLaunchError =>
+      'Lama furi karo. Fadlan isku day mar kale.';
 }

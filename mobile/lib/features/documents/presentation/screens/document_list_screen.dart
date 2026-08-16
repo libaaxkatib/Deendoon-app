@@ -9,12 +9,12 @@ import '../providers/document_list_provider.dart';
 import '../widgets/document_card.dart';
 
 Map<String?, String> _tabTitles(AppLocalizations l10n) => {
-      null: l10n.documentListTitleAll,
-      'invoices': l10n.documentTabInvoices,
-      'receipts': l10n.documentTabReceipts,
-      'letters': l10n.documentTabLetters,
-      'other': l10n.documentTabOther,
-    };
+  null: l10n.documentListTitleAll,
+  'invoices': l10n.documentTabInvoices,
+  'receipts': l10n.documentTabReceipts,
+  'letters': l10n.documentTabLetters,
+  'other': l10n.documentTabOther,
+};
 
 /// "View All" destination from Documents Home (§8.1) — the full,
 /// infinite-scroll Document List for whichever tab/search was active.
@@ -46,7 +46,8 @@ class _DocumentListScreenState extends ConsumerState<DocumentListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(documentListProvider.notifier).loadMore();
     }
   }
@@ -57,7 +58,12 @@ class _DocumentListScreenState extends ConsumerState<DocumentListScreen> {
     final documentsAsync = ref.watch(documentListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_tabTitles(l10n)[documentsAsync.valueOrNull?.type] ?? l10n.navDocuments)),
+      appBar: AppBar(
+        title: Text(
+          _tabTitles(l10n)[documentsAsync.valueOrNull?.type] ??
+              l10n.navDocuments,
+        ),
+      ),
       body: documentsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
@@ -68,7 +74,12 @@ class _DocumentListScreenState extends ConsumerState<DocumentListScreen> {
         ),
         data: (state) {
           if (state.documents.isEmpty) {
-            return Center(child: Text(l10n.customerDocumentsEmptyState, style: AppTypography.body));
+            return Center(
+              child: Text(
+                l10n.customerDocumentsEmptyState,
+                style: AppTypography.body,
+              ),
+            );
           }
 
           return RefreshIndicator(
@@ -80,13 +91,25 @@ class _DocumentListScreenState extends ConsumerState<DocumentListScreen> {
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 if (index >= state.documents.length) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator()),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: state.loadMoreError
+                          ? RetrySection(
+                              message: l10n.paginationLoadMoreError,
+                              onRetry: () => ref
+                                  .read(documentListProvider.notifier)
+                                  .loadMore(),
+                            )
+                          : const CircularProgressIndicator(),
+                    ),
                   );
                 }
                 final document = state.documents[index];
-                return DocumentCard(document: document, onTap: () => context.push('/documents/${document.id}'));
+                return DocumentCard(
+                  document: document,
+                  onTap: () => context.push('/documents/${document.id}'),
+                );
               },
             ),
           );

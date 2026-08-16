@@ -13,7 +13,12 @@ class KpiCard extends StatelessWidget {
   final String value;
   final VoidCallback? onTap;
 
-  const KpiCard({super.key, required this.label, required this.value, this.onTap});
+  const KpiCard({
+    super.key,
+    required this.label,
+    required this.value,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +37,10 @@ class KpiCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: AppTypography.display.copyWith(color: AppColors.primary, fontSize: 22),
+            style: AppTypography.display.copyWith(
+              color: AppColors.primary,
+              fontSize: 22,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

@@ -38,7 +38,10 @@ class _CustomerSearchBarState extends State<CustomerSearchBar> {
 
   void _onChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () => widget.onChanged(value.trim()));
+    _debounce = Timer(
+      const Duration(milliseconds: 400),
+      () => widget.onChanged(value.trim()),
+    );
   }
 
   @override

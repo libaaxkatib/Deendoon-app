@@ -8,7 +8,9 @@ import '../domain/document_event.dart';
 import '../domain/document_page.dart';
 import '../domain/storage_usage.dart';
 
-final documentApiProvider = Provider<DocumentApi>((ref) => DocumentApi(ref.read(dioProvider)));
+final documentApiProvider = Provider<DocumentApi>(
+  (ref) => DocumentApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET/POST /documents*` — mirrors
 /// `App\Http\Controllers\DocumentController` exactly.
@@ -25,12 +27,19 @@ class DocumentApi {
 
   const DocumentApi(this._dio);
 
-  Future<DocumentPage> list({required int page, String? type, String search = ''}) async {
-    final response = await _dio.get('documents', queryParameters: {
-      'page': page,
-      'type': ?type,
-      if (search.isNotEmpty) 'search': search,
-    });
+  Future<DocumentPage> list({
+    required int page,
+    String? type,
+    String search = '',
+  }) async {
+    final response = await _dio.get(
+      'documents',
+      queryParameters: {
+        'page': page,
+        'type': ?type,
+        if (search.isNotEmpty) 'search': search,
+      },
+    );
     return DocumentPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -41,7 +50,9 @@ class DocumentApi {
 
   Future<DocumentSummary> show(String id) async {
     final response = await _dio.get('documents/$id');
-    return DocumentSummary.fromJson(response.data['data'] as Map<String, dynamic>);
+    return DocumentSummary.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// Streams the actual PDF bytes — this endpoint does NOT return the
@@ -61,7 +72,9 @@ class DocumentApi {
   Future<List<DocumentEvent>> history(String id) async {
     final response = await _dio.get('documents/$id/history');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => DocumentEvent.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => DocumentEvent.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// `DocumentShareRequest`: `channel` + `template_id` only — the
@@ -72,11 +85,15 @@ class DocumentApi {
   /// sendDocument()` in full; the two `MessageController` endpoints
   /// (`sendWhatsApp`/`sendSms`) are hard-coded to reminders only and
   /// cannot accept a document.
-  Future<SentMessage> share({required String id, required String channel, required String templateId}) async {
-    final response = await _dio.post('documents/$id/share', data: {
-      'channel': channel,
-      'template_id': templateId,
-    });
+  Future<SentMessage> share({
+    required String id,
+    required String channel,
+    required String templateId,
+  }) async {
+    final response = await _dio.post(
+      'documents/$id/share',
+      data: {'channel': channel, 'template_id': templateId},
+    );
     return SentMessage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 }

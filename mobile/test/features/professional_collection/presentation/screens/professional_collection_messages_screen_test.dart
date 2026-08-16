@@ -13,14 +13,15 @@ import 'package:mobile/features/professional_collection/presentation/screens/pro
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
+class _MockProfessionalCollectionRepository extends Mock
+    implements ProfessionalCollectionRepository {}
 
 class _FakeAuthenticatedNotifier extends AuthNotifier {
   @override
   AuthState build() => const Authenticated(
-        user: User(id: '01USER', name: 'Test Owner', email: 'owner@example.com'),
-        token: 'test-token',
-      );
+    user: User(id: '01USER', name: 'Test Owner', email: 'owner@example.com'),
+    token: 'test-token',
+  );
 }
 
 const _activeRequest = ProfessionalCollectionRequest(
@@ -71,7 +72,10 @@ const _teamMessage = RequestMessage(
   createdAt: '2026-08-01T01:00:00.000000Z',
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockProfessionalCollectionRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockProfessionalCollectionRepository repository,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -107,35 +111,63 @@ void main() {
     mockRepository = _MockProfessionalCollectionRepository();
   });
 
-  testWidgets('renders messages with the sender label distinguishing Business Owner from Deendoon Team', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _activeRequest);
-    when(() => mockRepository.fetchMessages('1')).thenAnswer((_) async => [_ownMessage, _teamMessage]);
+  testWidgets(
+    'renders messages with the sender label distinguishing Business Owner from Deendoon Team',
+    (tester) async {
+      when(
+        () => mockRepository.fetchRequest('1'),
+      ).thenAnswer((_) async => _activeRequest);
+      when(
+        () => mockRepository.fetchMessages('1'),
+      ).thenAnswer((_) async => [_ownMessage, _teamMessage]);
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    expect(find.text('My message'), findsOneWidget);
-    expect(find.text('Their message'), findsOneWidget);
-    expect(find.text('You'), findsOneWidget);
-    expect(find.text('Deendoon Team'), findsOneWidget);
-  });
+      expect(find.text('My message'), findsOneWidget);
+      expect(find.text('Their message'), findsOneWidget);
+      expect(find.text('You'), findsOneWidget);
+      expect(find.text('Deendoon Team'), findsOneWidget);
+    },
+  );
 
-  testWidgets('own messages are right-aligned and team messages are left-aligned', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _activeRequest);
-    when(() => mockRepository.fetchMessages('1')).thenAnswer((_) async => [_ownMessage, _teamMessage]);
+  testWidgets(
+    'own messages are right-aligned and team messages are left-aligned',
+    (tester) async {
+      when(
+        () => mockRepository.fetchRequest('1'),
+      ).thenAnswer((_) async => _activeRequest);
+      when(
+        () => mockRepository.fetchMessages('1'),
+      ).thenAnswer((_) async => [_ownMessage, _teamMessage]);
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    final rows = tester.widgetList<Row>(find.byType(Row)).where(
-          (row) => row.mainAxisAlignment == MainAxisAlignment.end || row.mainAxisAlignment == MainAxisAlignment.start,
-        );
-    expect(rows.any((row) => row.mainAxisAlignment == MainAxisAlignment.end), isTrue);
-    expect(rows.any((row) => row.mainAxisAlignment == MainAxisAlignment.start), isTrue);
-  });
+      final rows = tester
+          .widgetList<Row>(find.byType(Row))
+          .where(
+            (row) =>
+                row.mainAxisAlignment == MainAxisAlignment.end ||
+                row.mainAxisAlignment == MainAxisAlignment.start,
+          );
+      expect(
+        rows.any((row) => row.mainAxisAlignment == MainAxisAlignment.end),
+        isTrue,
+      );
+      expect(
+        rows.any((row) => row.mainAxisAlignment == MainAxisAlignment.start),
+        isTrue,
+      );
+    },
+  );
 
-  testWidgets('shows the explicit empty state when there are no messages', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _activeRequest);
+  testWidgets('shows the explicit empty state when there are no messages', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchRequest('1'),
+    ).thenAnswer((_) async => _activeRequest);
     when(() => mockRepository.fetchMessages('1')).thenAnswer((_) async => []);
 
     await _pumpScreen(tester, repository: mockRepository);
@@ -144,32 +176,52 @@ void main() {
     expect(find.text('No messages yet'), findsOneWidget);
   });
 
-  testWidgets('sending a message calls the real endpoint and clears the field', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _activeRequest);
-    when(() => mockRepository.fetchMessages('1')).thenAnswer((_) async => [_ownMessage]);
-    when(() => mockRepository.postMessage(id: '1', content: 'New message')).thenAnswer((_) async => _ownMessage);
+  testWidgets(
+    'sending a message calls the real endpoint and clears the field',
+    (tester) async {
+      when(
+        () => mockRepository.fetchRequest('1'),
+      ).thenAnswer((_) async => _activeRequest);
+      when(
+        () => mockRepository.fetchMessages('1'),
+      ).thenAnswer((_) async => [_ownMessage]);
+      when(
+        () => mockRepository.postMessage(id: '1', content: 'New message'),
+      ).thenAnswer((_) async => _ownMessage);
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'New message');
-    await tester.tap(find.byIcon(Icons.send));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'New message');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.postMessage(id: '1', content: 'New message')).called(1);
-  });
+      verify(
+        () => mockRepository.postMessage(id: '1', content: 'New message'),
+      ).called(1);
+    },
+  );
 
-  testWidgets('the composer is hidden and a closed notice is shown when the request is terminal', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _closedRequest);
-    when(() => mockRepository.fetchMessages('1')).thenAnswer((_) async => [_ownMessage]);
+  testWidgets(
+    'the composer is hidden and a closed notice is shown when the request is terminal',
+    (tester) async {
+      when(
+        () => mockRepository.fetchRequest('1'),
+      ).thenAnswer((_) async => _closedRequest);
+      when(
+        () => mockRepository.fetchMessages('1'),
+      ).thenAnswer((_) async => [_ownMessage]);
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    expect(find.byType(TextField), findsNothing);
-    expect(
-      find.text('This Professional Collection Request is closed — new messages are not accepted.'),
-      findsOneWidget,
-    );
-  });
+      expect(find.byType(TextField), findsNothing);
+      expect(
+        find.text(
+          'This Professional Collection Request is closed — new messages are not accepted.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 }

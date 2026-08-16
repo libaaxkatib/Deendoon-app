@@ -21,7 +21,8 @@ class BusinessProfile {
     required this.contactPhone,
   });
 
-  factory BusinessProfile.fromJson(Map<String, dynamic> json) => BusinessProfile(
+  factory BusinessProfile.fromJson(Map<String, dynamic> json) =>
+      BusinessProfile(
         id: json['id'].toString(),
         businessName: json['business_name'] as String,
         logoPath: json['logo_path'] as String?,

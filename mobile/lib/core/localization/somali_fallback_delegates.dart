@@ -14,7 +14,8 @@ import 'package:flutter/material.dart';
 /// `AppLocalizations` — only Flutter's own untranslated internals fall
 /// back to English, which is the standard, documented way to add a
 /// locale Flutter doesn't ship itself.
-class SomaliMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
+class SomaliMaterialLocalizationsDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
   const SomaliMaterialLocalizationsDelegate();
 
   @override
@@ -22,14 +23,19 @@ class SomaliMaterialLocalizationsDelegate extends LocalizationsDelegate<Material
 
   @override
   Future<MaterialLocalizations> load(Locale locale) {
-    return SynchronousFuture<MaterialLocalizations>(const DefaultMaterialLocalizations());
+    return SynchronousFuture<MaterialLocalizations>(
+      const DefaultMaterialLocalizations(),
+    );
   }
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<MaterialLocalizations> old) => false;
+  bool shouldReload(
+    covariant LocalizationsDelegate<MaterialLocalizations> old,
+  ) => false;
 }
 
-class SomaliCupertinoLocalizationsDelegate extends LocalizationsDelegate<CupertinoLocalizations> {
+class SomaliCupertinoLocalizationsDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
   const SomaliCupertinoLocalizationsDelegate();
 
   @override
@@ -37,9 +43,13 @@ class SomaliCupertinoLocalizationsDelegate extends LocalizationsDelegate<Cuperti
 
   @override
   Future<CupertinoLocalizations> load(Locale locale) {
-    return SynchronousFuture<CupertinoLocalizations>(const DefaultCupertinoLocalizations());
+    return SynchronousFuture<CupertinoLocalizations>(
+      const DefaultCupertinoLocalizations(),
+    );
   }
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<CupertinoLocalizations> old) => false;
+  bool shouldReload(
+    covariant LocalizationsDelegate<CupertinoLocalizations> old,
+  ) => false;
 }

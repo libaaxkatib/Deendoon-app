@@ -15,6 +15,7 @@ class ReportCollectionCasesState {
   final int total;
   final String? status;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const ReportCollectionCasesState({
     required this.cases,
@@ -23,6 +24,7 @@ class ReportCollectionCasesState {
     required this.total,
     required this.status,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -34,6 +36,7 @@ class ReportCollectionCasesState {
     int? total,
     String? status,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return ReportCollectionCasesState(
       cases: cases ?? this.cases,
@@ -42,15 +45,19 @@ class ReportCollectionCasesState {
       total: total ?? this.total,
       status: status ?? this.status,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final reportCollectionCasesProvider =
-    AsyncNotifierProvider<ReportCollectionCasesNotifier, ReportCollectionCasesState>(
-        ReportCollectionCasesNotifier.new);
+    AsyncNotifierProvider<
+      ReportCollectionCasesNotifier,
+      ReportCollectionCasesState
+    >(ReportCollectionCasesNotifier.new);
 
-class ReportCollectionCasesNotifier extends AsyncNotifier<ReportCollectionCasesState> {
+class ReportCollectionCasesNotifier
+    extends AsyncNotifier<ReportCollectionCasesState> {
   @override
   Future<ReportCollectionCasesState> build() => _fetchFirstPage(status: null);
 
@@ -63,30 +70,47 @@ class ReportCollectionCasesNotifier extends AsyncNotifier<ReportCollectionCasesS
 
   Future<void> refresh() async {
     final current = state.valueOrNull;
-    state = await AsyncValue.guard(() => _fetchFirstPage(status: current?.status));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(status: current?.status),
+    );
   }
 
   Future<void> loadMore() async {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
-      final next = await _repository.fetchReportCollectionCases(page: current.currentPage + 1, status: current.status);
-      state = AsyncData(current.copyWith(
-        cases: [...current.cases, ...next.cases],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      final next = await _repository.fetchReportCollectionCases(
+        page: current.currentPage + 1,
+        status: current.status,
+      );
+      state = AsyncData(
+        current.copyWith(
+          cases: [...current.cases, ...next.cases],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
-  Future<ReportCollectionCasesState> _fetchFirstPage({required String? status}) async {
-    final page = await _repository.fetchReportCollectionCases(page: 1, status: status);
+  Future<ReportCollectionCasesState> _fetchFirstPage({
+    required String? status,
+  }) async {
+    final page = await _repository.fetchReportCollectionCases(
+      page: 1,
+      status: status,
+    );
     return ReportCollectionCasesState(
       cases: page.cases,
       currentPage: page.currentPage,

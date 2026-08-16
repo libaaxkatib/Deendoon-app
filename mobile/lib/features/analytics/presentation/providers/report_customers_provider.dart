@@ -15,6 +15,7 @@ class ReportCustomersState {
   final String? customerStatus;
   final String? riskLevel;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const ReportCustomersState({
     required this.customers,
@@ -24,6 +25,7 @@ class ReportCustomersState {
     required this.customerStatus,
     required this.riskLevel,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -36,6 +38,7 @@ class ReportCustomersState {
     String? customerStatus,
     String? riskLevel,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return ReportCustomersState(
       customers: customers ?? this.customers,
@@ -45,35 +48,46 @@ class ReportCustomersState {
       customerStatus: customerStatus ?? this.customerStatus,
       riskLevel: riskLevel ?? this.riskLevel,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final reportCustomersProvider =
-    AsyncNotifierProvider<ReportCustomersNotifier, ReportCustomersState>(ReportCustomersNotifier.new);
+    AsyncNotifierProvider<ReportCustomersNotifier, ReportCustomersState>(
+      ReportCustomersNotifier.new,
+    );
 
 class ReportCustomersNotifier extends AsyncNotifier<ReportCustomersState> {
   @override
-  Future<ReportCustomersState> build() => _fetchFirstPage(customerStatus: null, riskLevel: null);
+  Future<ReportCustomersState> build() =>
+      _fetchFirstPage(customerStatus: null, riskLevel: null);
 
   AnalyticsRepository get _repository => ref.read(analyticsRepositoryProvider);
 
   Future<void> filterByStatus(String? status) async {
     final riskLevel = state.valueOrNull?.riskLevel;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(customerStatus: status, riskLevel: riskLevel));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(customerStatus: status, riskLevel: riskLevel),
+    );
   }
 
   Future<void> filterByRiskLevel(String? riskLevel) async {
     final status = state.valueOrNull?.customerStatus;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(customerStatus: status, riskLevel: riskLevel));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(customerStatus: status, riskLevel: riskLevel),
+    );
   }
 
   Future<void> refresh() async {
     final current = state.valueOrNull;
     state = await AsyncValue.guard(
-      () => _fetchFirstPage(customerStatus: current?.customerStatus, riskLevel: current?.riskLevel),
+      () => _fetchFirstPage(
+        customerStatus: current?.customerStatus,
+        riskLevel: current?.riskLevel,
+      ),
     );
   }
 
@@ -81,27 +95,41 @@ class ReportCustomersNotifier extends AsyncNotifier<ReportCustomersState> {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
       final next = await _repository.fetchReportCustomers(
         page: current.currentPage + 1,
         customerStatus: current.customerStatus,
         riskLevel: current.riskLevel,
       );
-      state = AsyncData(current.copyWith(
-        customers: [...current.customers, ...next.customers],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      state = AsyncData(
+        current.copyWith(
+          customers: [...current.customers, ...next.customers],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
-  Future<ReportCustomersState> _fetchFirstPage({required String? customerStatus, required String? riskLevel}) async {
-    final page = await _repository.fetchReportCustomers(page: 1, customerStatus: customerStatus, riskLevel: riskLevel);
+  Future<ReportCustomersState> _fetchFirstPage({
+    required String? customerStatus,
+    required String? riskLevel,
+  }) async {
+    final page = await _repository.fetchReportCustomers(
+      page: 1,
+      customerStatus: customerStatus,
+      riskLevel: riskLevel,
+    );
     return ReportCustomersState(
       customers: page.customers,
       currentPage: page.currentPage,

@@ -10,16 +10,26 @@ class KpiPeriodSelection {
   final String? dateFrom;
   final String? dateTo;
 
-  const KpiPeriodSelection({required this.key, required this.label, this.dateFrom, this.dateTo});
+  const KpiPeriodSelection({
+    required this.key,
+    required this.label,
+    this.dateFrom,
+    this.dateTo,
+  });
 
-  static const thisMonth = KpiPeriodSelection(key: 'this_month', label: 'This Month');
+  static const thisMonth = KpiPeriodSelection(
+    key: 'this_month',
+    label: 'This Month',
+  );
 }
 
 /// Selecting a period here actually changes the KPI figures —
 /// `dashboardKpisProvider` watches this and refetches
 /// `GET /dashboard/kpis` with the real `period` (and, for Custom Date
 /// Range, `date_from`/`date_to`) query parameters.
-final kpiPeriodProvider = StateProvider<KpiPeriodSelection>((ref) => KpiPeriodSelection.thisMonth);
+final kpiPeriodProvider = StateProvider<KpiPeriodSelection>(
+  (ref) => KpiPeriodSelection.thisMonth,
+);
 
 /// Real backend `period` values, in the order the picker sheet shows them.
 /// Display labels are resolved from these keys at render time in

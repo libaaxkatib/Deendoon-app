@@ -16,12 +16,23 @@ class _MockAuthApi extends Mock implements AuthApi {}
 /// recognizable placeholder) so `context.go(RoutePaths.login)` on success
 /// has somewhere real to navigate to, instead of throwing for lack of an
 /// ancestor GoRouter.
-Future<void> _pumpScreen(WidgetTester tester, {required AuthApi authApi}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required AuthApi authApi,
+  String? initialEmail,
+}) async {
   final router = GoRouter(
     initialLocation: '/reset-password',
     routes: [
-      GoRoute(path: '/reset-password', builder: (_, _) => const ResetPasswordScreen()),
-      GoRoute(path: '/login', builder: (_, _) => const Scaffold(body: Text('LOGIN_SCREEN_PLACEHOLDER'))),
+      GoRoute(
+        path: '/reset-password',
+        builder: (_, _) => ResetPasswordScreen(initialEmail: initialEmail),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (_, _) =>
+            const Scaffold(body: Text('LOGIN_SCREEN_PLACEHOLDER')),
+      ),
     ],
   );
 
@@ -53,10 +64,22 @@ void main() {
   });
 
   Future<void> fillForm(WidgetTester tester) async {
-    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'test@example.com');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Reset Code'), '123456');
-    await tester.enterText(find.widgetWithText(TextFormField, 'New Password'), 'a-very-long-password');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Confirm New Password'), 'a-very-long-password');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'test@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Reset Code'),
+      '123456',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'New Password'),
+      'a-very-long-password',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Confirm New Password'),
+      'a-very-long-password',
+    );
   }
 
   testWidgets('renders all four fields and the submit button', (tester) async {
@@ -65,37 +88,64 @@ void main() {
     expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Reset Code'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'New Password'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Confirm New Password'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Reset Password'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextFormField, 'Confirm New Password'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ElevatedButton, 'Reset Password'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('rejects a mismatched password confirmation without calling the API', (tester) async {
-    await _pumpScreen(tester, authApi: mockApi);
+  testWidgets(
+    'rejects a mismatched password confirmation without calling the API',
+    (tester) async {
+      await _pumpScreen(tester, authApi: mockApi);
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'test@example.com');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Reset Code'), '123456');
-    await tester.enterText(find.widgetWithText(TextFormField, 'New Password'), 'a-very-long-password');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Confirm New Password'), 'does-not-match');
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'test@example.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Reset Code'),
+        '123456',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'New Password'),
+        'a-very-long-password',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Confirm New Password'),
+        'does-not-match',
+      );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Reset Password'));
-    await tester.pump();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Reset Password'));
+      await tester.pump();
 
-    expect(find.text('Passwords do not match'), findsOneWidget);
-    verifyNever(() => mockApi.resetPassword(
+      expect(find.text('Passwords do not match'), findsOneWidget);
+      verifyNever(
+        () => mockApi.resetPassword(
           email: any(named: 'email'),
           token: any(named: 'token'),
           password: any(named: 'password'),
           passwordConfirmation: any(named: 'passwordConfirmation'),
-        ));
-  });
+        ),
+      );
+    },
+  );
 
-  testWidgets('surfaces the server message on an invalid/expired token', (tester) async {
-    when(() => mockApi.resetPassword(
-          email: 'test@example.com',
-          token: '123456',
-          password: 'a-very-long-password',
-          passwordConfirmation: 'a-very-long-password',
-        )).thenThrow(
+  testWidgets('surfaces the server message on an invalid/expired token', (
+    tester,
+  ) async {
+    when(
+      () => mockApi.resetPassword(
+        email: 'test@example.com',
+        token: '123456',
+        password: 'a-very-long-password',
+        passwordConfirmation: 'a-very-long-password',
+      ),
+    ).thenThrow(
       DioException(
         requestOptions: RequestOptions(path: '/reset-password'),
         response: Response(
@@ -118,16 +168,23 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Reset Password'));
     await tester.pumpAndSettle();
 
-    expect(find.text('This password reset token is invalid or has expired.'), findsOneWidget);
+    expect(
+      find.text('This password reset token is invalid or has expired.'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('shows success then navigates to login after the delay', (tester) async {
-    when(() => mockApi.resetPassword(
-          email: 'test@example.com',
-          token: '123456',
-          password: 'a-very-long-password',
-          passwordConfirmation: 'a-very-long-password',
-        )).thenAnswer((_) async => 'Password reset successfully');
+  testWidgets('shows success then navigates to login after the delay', (
+    tester,
+  ) async {
+    when(
+      () => mockApi.resetPassword(
+        email: 'test@example.com',
+        token: '123456',
+        password: 'a-very-long-password',
+        passwordConfirmation: 'a-very-long-password',
+      ),
+    ).thenAnswer((_) async => 'Password reset successfully');
 
     await _pumpScreen(tester, authApi: mockApi);
     await fillForm(tester);
@@ -141,4 +198,136 @@ void main() {
 
     expect(find.text('LOGIN_SCREEN_PLACEHOLDER'), findsOneWidget);
   });
+
+  testWidgets(
+    'New Password and Confirm New Password are obscured by default and reveal independently',
+    (tester) async {
+      await _pumpScreen(tester, authApi: mockApi);
+
+      final newPasswordField = find.descendant(
+        of: find.widgetWithText(TextFormField, 'New Password'),
+        matching: find.byType(TextField),
+      );
+      final confirmPasswordField = find.descendant(
+        of: find.widgetWithText(TextFormField, 'Confirm New Password'),
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(newPasswordField).obscureText, isTrue);
+      expect(
+        tester.widget<TextField>(confirmPasswordField).obscureText,
+        isTrue,
+      );
+
+      final eyeIcons = find.byIcon(Icons.visibility_outlined);
+      expect(eyeIcons, findsNWidgets(2));
+
+      await tester.tap(eyeIcons.first);
+      await tester.pump();
+
+      expect(tester.widget<TextField>(newPasswordField).obscureText, isFalse);
+      expect(
+        tester.widget<TextField>(confirmPasswordField).obscureText,
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets(
+    'pre-fills the email field when reached with an initialEmail (e.g. from Forgot Password)',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        authApi: mockApi,
+        initialEmail: 'test@example.com',
+      );
+
+      expect(find.text('test@example.com'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'surfaces field-specific 422 errors inline on the Email and Reset Code fields',
+    (tester) async {
+      when(
+        () => mockApi.resetPassword(
+          email: 'test@example.com',
+          token: '123456',
+          password: 'a-very-long-password',
+          passwordConfirmation: 'a-very-long-password',
+        ),
+      ).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/reset-password'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/reset-password'),
+            statusCode: 422,
+            data: {
+              'success': false,
+              'message': 'The given data was invalid.',
+              'data': null,
+              'errors': {
+                'email': ['The email field must be a valid email address.'],
+                'token': ['The token field is required.'],
+              },
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      await _pumpScreen(tester, authApi: mockApi);
+      await fillForm(tester);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Reset Password'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('The email field must be a valid email address.'),
+        findsOneWidget,
+      );
+      expect(find.text('The token field is required.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a password-confirmation mismatch from the backend shows on both New Password and Confirm New Password fields',
+    (tester) async {
+      when(
+        () => mockApi.resetPassword(
+          email: 'test@example.com',
+          token: '123456',
+          password: 'a-very-long-password',
+          passwordConfirmation: 'a-very-long-password',
+        ),
+      ).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/reset-password'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/reset-password'),
+            statusCode: 422,
+            data: {
+              'success': false,
+              'message': 'The given data was invalid.',
+              'data': null,
+              'errors': {
+                'password': ['The password confirmation does not match.'],
+              },
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      await _pumpScreen(tester, authApi: mockApi);
+      await fillForm(tester);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Reset Password'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('The password confirmation does not match.'),
+        findsNWidgets(2),
+      );
+    },
+  );
 }

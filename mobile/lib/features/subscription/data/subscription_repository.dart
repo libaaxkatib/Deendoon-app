@@ -10,8 +10,9 @@ import '../domain/subscription_plan.dart';
 import '../domain/subscription_storage.dart';
 import 'subscription_api.dart';
 
-final subscriptionRepositoryProvider =
-    Provider<SubscriptionRepository>((ref) => SubscriptionRepository(ref.read(subscriptionApiProvider)));
+final subscriptionRepositoryProvider = Provider<SubscriptionRepository>(
+  (ref) => SubscriptionRepository(ref.read(subscriptionApiProvider)),
+);
 
 /// Translates raw Dio failures into `ApiException` — same pattern as every
 /// other repository in the app. No caching, no calculation: each method is
@@ -23,28 +24,41 @@ class SubscriptionRepository {
 
   Future<Subscription> fetchSubscription() => _guard(() => _api.fetch());
 
-  Future<List<SubscriptionPlan>> fetchPlans() => _guard(() => _api.fetchPlans());
+  Future<List<SubscriptionPlan>> fetchPlans() =>
+      _guard(() => _api.fetchPlans());
 
-  Future<SubscriptionChangeRequestPage> fetchChangeRequests({required int page}) =>
-      _guard(() => _api.fetchChangeRequests(page: page));
+  Future<SubscriptionChangeRequestPage> fetchChangeRequests({
+    required int page,
+  }) => _guard(() => _api.fetchChangeRequests(page: page));
 
   Future<SubscriptionChangeRequest> requestUpgrade({
     required String requestedPlanId,
     required String paymentReference,
-  }) =>
-      _guard(() => _api.requestUpgrade(requestedPlanId: requestedPlanId, paymentReference: paymentReference));
+  }) => _guard(
+    () => _api.requestUpgrade(
+      requestedPlanId: requestedPlanId,
+      paymentReference: paymentReference,
+    ),
+  );
 
-  Future<SubscriptionChangeRequest> cancelChangeRequest(String id) => _guard(() => _api.cancelChangeRequest(id));
+  Future<SubscriptionChangeRequest> cancelChangeRequest(String id) =>
+      _guard(() => _api.cancelChangeRequest(id));
 
-  Future<SubscriptionStorage> fetchStorage() => _guard(() => _api.fetchStorage());
+  Future<SubscriptionStorage> fetchStorage() =>
+      _guard(() => _api.fetchStorage());
 
   Future<StorageAddon> requestStorageAddon({
     required String storagePackage,
     required String paymentReference,
-  }) =>
-      _guard(() => _api.requestStorageAddon(storagePackage: storagePackage, paymentReference: paymentReference));
+  }) => _guard(
+    () => _api.requestStorageAddon(
+      storagePackage: storagePackage,
+      paymentReference: paymentReference,
+    ),
+  );
 
-  Future<StorageAddon> cancelStorageAddon(String id) => _guard(() => _api.cancelStorageAddon(id));
+  Future<StorageAddon> cancelStorageAddon(String id) =>
+      _guard(() => _api.cancelStorageAddon(id));
 
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {

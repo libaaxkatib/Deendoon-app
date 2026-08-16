@@ -62,8 +62,12 @@ void main() {
   });
 
   testWidgets('renders the full debts report', (tester) async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+    when(
+      () => mockRepository.fetchReportDebts(page: 1, status: null),
+    ).thenAnswer(
+      (_) async =>
+          const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -71,9 +75,15 @@ void main() {
     expect(find.text('DBT-000001'), findsOneWidget);
   });
 
-  testWidgets('shows the explicit empty state when there are no debts', (tester) async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [], currentPage: 1, lastPage: 1, total: 0));
+  testWidgets('shows the explicit empty state when there are no debts', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchReportDebts(page: 1, status: null),
+    ).thenAnswer(
+      (_) async =>
+          const DebtPage(debts: [], currentPage: 1, lastPage: 1, total: 0),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -81,8 +91,12 @@ void main() {
     expect(find.text('No debts match this filter'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the report fails to load', (tester) async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null)).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the report fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchReportDebts(page: 1, status: null),
+    ).thenThrow(Exception('network down'));
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -91,30 +105,76 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('tapping a status filter chip triggers a real API call with that status', (tester) async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
-    when(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue'))
-        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+  testWidgets(
+    'tapping a status filter chip triggers a real API call with that status',
+    (tester) async {
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: 'overdue'),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Overdue'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Overdue'));
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue')).called(1);
-  });
+      verify(
+        () => mockRepository.fetchReportDebts(page: 1, status: 'overdue'),
+      ).called(1);
+    },
+  );
 
-  testWidgets('an initialStatus constructor argument applies the filter on first load', (tester) async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
-    when(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue'))
-        .thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+  testWidgets(
+    'an initialStatus constructor argument applies the filter on first load',
+    (tester) async {
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: 'overdue'),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await _pumpScreen(tester, repository: mockRepository, initialStatus: 'overdue');
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        initialStatus: 'overdue',
+      );
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue')).called(1);
-  });
+      verify(
+        () => mockRepository.fetchReportDebts(page: 1, status: 'overdue'),
+      ).called(1);
+    },
+  );
 }

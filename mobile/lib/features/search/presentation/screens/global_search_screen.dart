@@ -119,11 +119,17 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               style: TextStyle(color: context.colors.textPrimary),
               decoration: InputDecoration(
                 hintText: l10n.globalSearchHint,
-                prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: context.colors.textSecondary,
+                ),
                 suffixIcon: _controller.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: Icon(Icons.close, color: context.colors.textSecondary),
+                        icon: Icon(
+                          Icons.close,
+                          color: context.colors.textSecondary,
+                        ),
                         onPressed: _clearSearch,
                       ),
                 filled: true,
@@ -168,21 +174,26 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: RetrySection(
-                      message: error is ApiException ? error.message : l10n.globalSearchErrorMessage,
+                      message: error is ApiException
+                          ? error.message
+                          : l10n.globalSearchErrorMessage,
                       onRetry: () => notifier.search(notifier.lastQuery),
                     ),
                   ),
                 ),
               ),
               data: (results) {
-                if (results == null) return _RecentSearchesView(onSearch: _runSearch);
+                if (results == null)
+                  return _RecentSearchesView(onSearch: _runSearch);
                 if (results.totalCount == 0) {
                   return SingleChildScrollView(
                     child: Center(
                       child: PremiumEmptyState(
                         icon: Icons.search_off,
                         title: l10n.globalSearchNoResultsTitle,
-                        message: l10n.globalSearchNoResultsMessage(notifier.lastQuery),
+                        message: l10n.globalSearchNoResultsMessage(
+                          notifier.lastQuery,
+                        ),
                       ),
                     ),
                   );
@@ -202,7 +213,11 @@ class _CategoryChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _CategoryChip({required this.label, required this.selected, required this.onTap});
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +226,9 @@ class _CategoryChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.background,
       side: BorderSide.none,
     );
@@ -258,10 +275,13 @@ class _RecentSearchesView extends ConsumerWidget {
               children: [
                 Text(
                   l10n.globalSearchRecentSearchesHeading,
-                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.subheading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 TextButton(
-                  onPressed: () => ref.read(recentSearchesProvider.notifier).clearAll(),
+                  onPressed: () =>
+                      ref.read(recentSearchesProvider.notifier).clearAll(),
                   child: Text(l10n.globalSearchClearButton),
                 ),
               ],
@@ -270,8 +290,16 @@ class _RecentSearchesView extends ConsumerWidget {
             for (final query in recent)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.history, color: context.colors.textSecondary),
-                title: Text(query, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+                leading: Icon(
+                  Icons.history,
+                  color: context.colors.textSecondary,
+                ),
+                title: Text(
+                  query,
+                  style: AppTypography.body.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
+                ),
                 onTap: () => onSearch(query),
               ),
           ],
@@ -304,28 +332,41 @@ class _ResultsView extends StatelessWidget {
         if (_show(_Category.customers) && customers.isNotEmpty) ...[
           _SectionHeader(l10n.globalSearchCategoryCustomers),
           for (final customer in customers) ...[
-            CustomerCard(customer: customer, onTap: () => context.push('/customers/${customer.id}')),
+            CustomerCard(
+              customer: customer,
+              onTap: () => context.push('/customers/${customer.id}'),
+            ),
             const SizedBox(height: 8),
           ],
         ],
         if (_show(_Category.debts) && debts.isNotEmpty) ...[
           _SectionHeader(l10n.globalSearchCategoryDebts),
           for (final debt in debts) ...[
-            DebtCard(debt: debt, riskLevel: null, onTap: () => context.push('/debts/${debt.id}')),
+            DebtCard(
+              debt: debt,
+              riskLevel: null,
+              onTap: () => context.push('/debts/${debt.id}'),
+            ),
             const SizedBox(height: 8),
           ],
         ],
         if (_show(_Category.payments) && payments.isNotEmpty) ...[
           _SectionHeader(l10n.globalSearchCategoryPayments),
           for (final payment in payments) ...[
-            PaymentResultTile(payment: payment, onTap: () => context.push('/debts/${payment.debtId}')),
+            PaymentResultTile(
+              payment: payment,
+              onTap: () => context.push('/debts/${payment.debtId}'),
+            ),
             const SizedBox(height: 8),
           ],
         ],
         if (_show(_Category.documents) && documents.isNotEmpty) ...[
           _SectionHeader(l10n.globalSearchCategoryDocuments),
           for (final document in documents) ...[
-            DocumentCard(document: document, onTap: () => context.push('/documents/${document.id}')),
+            DocumentCard(
+              document: document,
+              onTap: () => context.push('/documents/${document.id}'),
+            ),
             const SizedBox(height: 8),
           ],
         ],
@@ -354,7 +395,12 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(title, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+      child: Text(
+        title,
+        style: AppTypography.subheading.copyWith(
+          color: context.colors.textPrimary,
+        ),
+      ),
     );
   }
 }

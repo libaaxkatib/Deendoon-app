@@ -19,7 +19,8 @@ class ReferenceDataItem {
     required this.isActive,
   });
 
-  factory ReferenceDataItem.fromJson(Map<String, dynamic> json) => ReferenceDataItem(
+  factory ReferenceDataItem.fromJson(Map<String, dynamic> json) =>
+      ReferenceDataItem(
         id: json['id'].toString(),
         category: json['category'] as String,
         valueLabel: json['value_label'] as String,

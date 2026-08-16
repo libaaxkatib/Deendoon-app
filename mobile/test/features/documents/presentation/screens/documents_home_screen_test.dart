@@ -13,7 +13,11 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockDocumentRepository extends Mock implements DocumentRepository {}
 
-const _usage = StorageUsage(usedBytes: 5242880, totalBytes: 10737418240, usedPercentage: 0.05);
+const _usage = StorageUsage(
+  usedBytes: 5242880,
+  totalBytes: 10737418240,
+  usedPercentage: 0.05,
+);
 
 const _document = DocumentSummary(
   id: '1',
@@ -23,7 +27,10 @@ const _document = DocumentSummary(
   fileSize: 2048,
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockDocumentRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockDocumentRepository repository,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -54,12 +61,24 @@ void main() {
 
   setUp(() {
     mockRepository = _MockDocumentRepository();
-    when(() => mockRepository.fetchStorageUsage()).thenAnswer((_) async => _usage);
+    when(
+      () => mockRepository.fetchStorageUsage(),
+    ).thenAnswer((_) async => _usage);
   });
 
-  testWidgets('renders recent documents and the storage usage card', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_document], currentPage: 1, lastPage: 1, total: 1));
+  testWidgets('renders recent documents and the storage usage card', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [_document],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -69,9 +88,19 @@ void main() {
     expect(find.textContaining('used'), findsOneWidget);
   });
 
-  testWidgets('shows the explicit empty state when there are no documents', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [], currentPage: 1, lastPage: 1, total: 0));
+  testWidgets('shows the explicit empty state when there are no documents', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [],
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+      ),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -79,8 +108,12 @@ void main() {
     expect(find.text('No documents yet'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the list fails to load', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: '')).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the list fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenThrow(Exception('network down'));
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -89,35 +122,93 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('tapping a tab filter chip triggers a real API call with that type', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_document], currentPage: 1, lastPage: 1, total: 1));
-    when(() => mockRepository.fetchDocuments(page: 1, type: 'invoices', search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_document], currentPage: 1, lastPage: 1, total: 1));
+  testWidgets(
+    'tapping a tab filter chip triggers a real API call with that type',
+    (tester) async {
+      when(
+        () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_document],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockRepository.fetchDocuments(
+          page: 1,
+          type: 'invoices',
+          search: '',
+        ),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_document],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Invoices'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Invoices'));
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchDocuments(page: 1, type: 'invoices', search: '')).called(1);
-  });
+      verify(
+        () => mockRepository.fetchDocuments(
+          page: 1,
+          type: 'invoices',
+          search: '',
+        ),
+      ).called(1);
+    },
+  );
 
-  testWidgets('typing in the search field triggers a real API call with the query', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_document], currentPage: 1, lastPage: 1, total: 1));
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: 'INV-000123'))
-        .thenAnswer((_) async => const DocumentPage(documents: [_document], currentPage: 1, lastPage: 1, total: 1));
+  testWidgets(
+    'typing in the search field triggers a real API call with the query',
+    (tester) async {
+      when(
+        () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_document],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockRepository.fetchDocuments(
+          page: 1,
+          type: null,
+          search: 'INV-000123',
+        ),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_document],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.search));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'INV-000123');
-    await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'INV-000123');
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchDocuments(page: 1, type: null, search: 'INV-000123')).called(1);
-  });
+      verify(
+        () => mockRepository.fetchDocuments(
+          page: 1,
+          type: null,
+          search: 'INV-000123',
+        ),
+      ).called(1);
+    },
+  );
 }

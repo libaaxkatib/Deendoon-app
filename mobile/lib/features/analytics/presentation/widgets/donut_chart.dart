@@ -10,7 +10,11 @@ class DonutSegment {
   final double value;
   final Color color;
 
-  const DonutSegment({required this.label, required this.value, required this.color});
+  const DonutSegment({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 }
 
 /// Hand-rolled `CustomPainter` donut — no charting package added (§5.5/§5.6
@@ -44,7 +48,10 @@ class DonutChart extends StatelessWidget {
         children: [
           CustomPaint(
             size: Size(size, size),
-            painter: _DonutPainter(segments: segments, neutralColor: context.colors.textSecondary),
+            painter: _DonutPainter(
+              segments: segments,
+              neutralColor: context.colors.textSecondary,
+            ),
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -53,7 +60,10 @@ class DonutChart extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   centerValue,
-                  style: AppTypography.subheading.copyWith(fontSize: 15, color: context.colors.textPrimary),
+                  style: AppTypography.subheading.copyWith(
+                    fontSize: 15,
+                    color: context.colors.textPrimary,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -63,7 +73,10 @@ class DonutChart extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   centerLabel,
-                  style: AppTypography.caption.copyWith(fontSize: 10, color: context.colors.textSecondary),
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 10,
+                    color: context.colors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -121,7 +134,8 @@ class _DonutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DonutPainter oldDelegate) =>
-      oldDelegate.segments != segments || oldDelegate.neutralColor != neutralColor;
+      oldDelegate.segments != segments ||
+      oldDelegate.neutralColor != neutralColor;
 }
 
 /// One tappable legend row — color dot, label + de-emphasized value on one
@@ -154,7 +168,11 @@ class DonutLegendRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -162,13 +180,18 @@ class DonutLegendRow extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: AppTypography.body.copyWith(fontWeight: FontWeight.w600, color: context.colors.textPrimary),
+                    style: AppTypography.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: context.colors.textPrimary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     value,
-                    style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                    style: AppTypography.caption.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -178,7 +201,10 @@ class DonutLegendRow extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               '${percentage.toStringAsFixed(0)}%',
-              style: AppTypography.body.copyWith(fontWeight: FontWeight.w700, color: context.colors.textPrimary),
+              style: AppTypography.body.copyWith(
+                fontWeight: FontWeight.w700,
+                color: context.colors.textPrimary,
+              ),
             ),
           ],
         ),

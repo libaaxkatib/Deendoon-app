@@ -12,14 +12,14 @@ import '../providers/report_debts_provider.dart';
 import '../widgets/export_action.dart';
 
 Map<String?, String> _statusFilters(AppLocalizations l10n) => {
-      null: l10n.debtListFilterAll,
-      'pending': l10n.statusPending,
-      'overdue': l10n.statusOverdue,
-      'partial_paid': l10n.statusPartiallyPaid,
-      'paid': l10n.statusPaid,
-      'cancelled': l10n.statusCancelled,
-      'written_off': l10n.statusWrittenOff,
-    };
+  null: l10n.debtListFilterAll,
+  'pending': l10n.statusPending,
+  'overdue': l10n.statusOverdue,
+  'partial_paid': l10n.statusPartiallyPaid,
+  'paid': l10n.statusPaid,
+  'cancelled': l10n.statusCancelled,
+  'written_off': l10n.statusWrittenOff,
+};
 
 /// §5.2 Reports — Debts category, tenant-wide (unlike the Debts module's
 /// own per-customer `DebtListScreen`). `riskLevel` is always passed `null`
@@ -44,7 +44,9 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
     _scrollController.addListener(_onScroll);
     if (widget.initialStatus != null) {
       Future.microtask(
-        () => ref.read(reportDebtsProvider.notifier).filterByStatus(widget.initialStatus),
+        () => ref
+            .read(reportDebtsProvider.notifier)
+            .filterByStatus(widget.initialStatus),
       );
     }
   }
@@ -57,7 +59,8 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(reportDebtsProvider.notifier).loadMore();
     }
   }
@@ -79,7 +82,10 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
               context,
               ref,
               reportType: 'debts',
-              filters: {if (debtsAsync.valueOrNull?.status != null) 'status': debtsAsync.valueOrNull!.status},
+              filters: {
+                if (debtsAsync.valueOrNull?.status != null)
+                  'status': debtsAsync.valueOrNull!.status,
+              },
             ),
           ),
         ],
@@ -98,7 +104,9 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
                     _FilterChip(
                       label: entry.value,
                       selected: debtsAsync.valueOrNull?.status == entry.key,
-                      onTap: () => ref.read(reportDebtsProvider.notifier).filterByStatus(entry.key),
+                      onTap: () => ref
+                          .read(reportDebtsProvider.notifier)
+                          .filterByStatus(entry.key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -120,26 +128,42 @@ class _ReportDebtsScreenState extends ConsumerState<ReportDebtsScreen> {
                     return Center(
                       child: Text(
                         l10n.reportDebtsEmptyState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(reportDebtsProvider.notifier).refresh(),
+                    onRefresh: () =>
+                        ref.read(reportDebtsProvider.notifier).refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
                       itemCount: state.debts.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.debts.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(reportDebtsProvider.notifier)
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final debt = state.debts[index];
-                        return DebtCard(debt: debt, riskLevel: null, onTap: () => context.push('/debts/${debt.id}'));
+                        return DebtCard(
+                          debt: debt,
+                          riskLevel: null,
+                          onTap: () => context.push('/debts/${debt.id}'),
+                        );
                       },
                     ),
                   );
@@ -158,7 +182,11 @@ class _FilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +195,9 @@ class _FilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

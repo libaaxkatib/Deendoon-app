@@ -48,13 +48,18 @@ Future<void> _pumpScreen(
     initialLocation: '/',
     routes: [
       GoRoute(path: '/', builder: (_, _) => const Text('Reminder List Screen')),
-      GoRoute(path: '/form', builder: (_, _) => ReminderScheduleScreen(entityPreset: entityPreset)),
+      GoRoute(
+        path: '/form',
+        builder: (_, _) => ReminderScheduleScreen(entityPreset: entityPreset),
+      ),
     ],
   );
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [reminderRepositoryProvider.overrideWithValue(reminderRepository)],
+      overrides: [
+        reminderRepositoryProvider.overrideWithValue(reminderRepository),
+      ],
       child: MaterialApp.router(
         routerConfig: router,
         locale: const Locale('en'),
@@ -82,25 +87,37 @@ void main() {
   });
 
   group('Entity-Aware Reminder Creation (P2.4)', () {
-    testWidgets('with an entityPreset, Related To shows the locked label instead of a customer picker', (tester) async {
-      await _pumpScreen(
-        tester,
-        reminderRepository: mockReminderRepository,
-        entityPreset: const ReminderEntityPreset(type: 'debt', id: '01DEBT', label: 'Debt DBT-0001'),
-      );
+    testWidgets(
+      'with an entityPreset, Related To shows the locked label instead of a customer picker',
+      (tester) async {
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          entityPreset: const ReminderEntityPreset(
+            type: 'debt',
+            id: '01DEBT',
+            label: 'Debt DBT-0001',
+          ),
+        );
 
-      expect(find.text('Debt DBT-0001'), findsOneWidget);
-      expect(find.text('Select Customer'), findsNothing);
-    });
+        expect(find.text('Debt DBT-0001'), findsOneWidget);
+        expect(find.text('Select Customer'), findsNothing);
+      },
+    );
 
-    testWidgets('without a preset, the generic customer picker is shown', (tester) async {
+    testWidgets('without a preset, the generic customer picker is shown', (
+      tester,
+    ) async {
       await _pumpScreen(tester, reminderRepository: mockReminderRepository);
 
       expect(find.text('Select Customer'), findsOneWidget);
     });
 
-    testWidgets('saving with a preset creates the reminder against that entity without selecting a customer', (tester) async {
-      when(() => mockReminderRepository.createReminder(
+    testWidgets(
+      'saving with a preset creates the reminder against that entity without selecting a customer',
+      (tester) async {
+        when(
+          () => mockReminderRepository.createReminder(
             type: 'follow_up_call',
             relatedEntityType: 'debt',
             relatedEntityId: '01DEBT',
@@ -111,33 +128,39 @@ void main() {
             customFireAt: null,
             deliveryMethods: ['in_app'],
             notes: null,
-          )).thenAnswer((_) async => _createdReminder);
+          ),
+        ).thenAnswer((_) async => _createdReminder);
 
-      await _pumpScreen(
-        tester,
-        reminderRepository: mockReminderRepository,
-        entityPreset: const ReminderEntityPreset(type: 'debt', id: '01DEBT', label: 'Debt DBT-0001'),
-      );
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          entityPreset: const ReminderEntityPreset(
+            type: 'debt',
+            id: '01DEBT',
+            label: 'Debt DBT-0001',
+          ),
+        );
 
-      await tester.tap(find.text('Follow-up Call'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Follow-up Call'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Select Due Date'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('15'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Select Due Date'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('15'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('In-App Notification'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('In-App Notification'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.save_outlined));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.save_outlined));
+        await tester.pumpAndSettle();
 
-      verify(() => mockReminderRepository.createReminder(
+        verify(
+          () => mockReminderRepository.createReminder(
             type: 'follow_up_call',
             relatedEntityType: 'debt',
             relatedEntityId: '01DEBT',
@@ -148,7 +171,9 @@ void main() {
             customFireAt: null,
             deliveryMethods: ['in_app'],
             notes: null,
-          )).called(1);
-    });
+          ),
+        ).called(1);
+      },
+    );
   });
 }

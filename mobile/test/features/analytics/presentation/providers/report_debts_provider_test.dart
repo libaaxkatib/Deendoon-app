@@ -39,14 +39,24 @@ void main() {
   setUp(() {
     mockRepository = _MockAnalyticsRepository();
     container = ProviderContainer(
-      overrides: [analyticsRepositoryProvider.overrideWithValue(mockRepository)],
+      overrides: [
+        analyticsRepositoryProvider.overrideWithValue(mockRepository),
+      ],
     );
     addTearDown(container.dispose);
   });
 
   test('build() fetches page 1 with no status filter', () async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtOne], currentPage: 1, lastPage: 2, total: 20));
+    when(
+      () => mockRepository.fetchReportDebts(page: 1, status: null),
+    ).thenAnswer(
+      (_) async => const DebtPage(
+        debts: [_debtOne],
+        currentPage: 1,
+        lastPage: 2,
+        total: 20,
+      ),
+    );
 
     final state = await container.read(reportDebtsProvider.future);
 
@@ -54,33 +64,147 @@ void main() {
     expect(state.hasMore, isTrue);
   });
 
-  test('filterByStatus() re-fetches page 1 under the real debt_status value', () async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtOne], currentPage: 1, lastPage: 1, total: 1));
-    await container.read(reportDebtsProvider.future);
+  test(
+    'filterByStatus() re-fetches page 1 under the real debt_status value',
+    () async {
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(reportDebtsProvider.future);
 
-    when(() => mockRepository.fetchReportDebts(page: 1, status: 'overdue'))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtTwo], currentPage: 1, lastPage: 1, total: 1));
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: 'overdue'),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtTwo],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await container.read(reportDebtsProvider.notifier).filterByStatus('overdue');
+      await container
+          .read(reportDebtsProvider.notifier)
+          .filterByStatus('overdue');
 
-    final state = container.read(reportDebtsProvider).value!;
-    expect(state.debts, [_debtTwo]);
-    expect(state.status, 'overdue');
-  });
+      final state = container.read(reportDebtsProvider).value!;
+      expect(state.debts, [_debtTwo]);
+      expect(state.status, 'overdue');
+    },
+  );
 
-  test('loadMore() appends the next page and stops once lastPage is reached', () async {
-    when(() => mockRepository.fetchReportDebts(page: 1, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtOne], currentPage: 1, lastPage: 2, total: 2));
-    await container.read(reportDebtsProvider.future);
+  test(
+    'loadMore() appends the next page and stops once lastPage is reached',
+    () async {
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(reportDebtsProvider.future);
 
-    when(() => mockRepository.fetchReportDebts(page: 2, status: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtTwo], currentPage: 2, lastPage: 2, total: 2));
+      when(
+        () => mockRepository.fetchReportDebts(page: 2, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
 
-    await container.read(reportDebtsProvider.notifier).loadMore();
+      await container.read(reportDebtsProvider.notifier).loadMore();
 
-    final state = container.read(reportDebtsProvider).value!;
-    expect(state.debts, [_debtOne, _debtTwo]);
-    expect(state.hasMore, isFalse);
-  });
+      final state = container.read(reportDebtsProvider).value!;
+      expect(state.debts, [_debtOne, _debtTwo]);
+      expect(state.hasMore, isFalse);
+    },
+  );
+
+  test(
+    'loadMore() sets loadMoreError and preserves existing state when the request fails',
+    () async {
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(reportDebtsProvider.future);
+
+      when(
+        () => mockRepository.fetchReportDebts(page: 2, status: null),
+      ).thenThrow(Exception('network error'));
+
+      await container.read(reportDebtsProvider.notifier).loadMore();
+
+      final state = container.read(reportDebtsProvider).value!;
+      expect(state.loadMoreError, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.debts, [_debtOne]);
+      expect(state.currentPage, 1);
+      expect(state.hasMore, isTrue);
+    },
+  );
+
+  test(
+    'loadMore() retried after a failure clears loadMoreError, re-requests the same page, and appends on success',
+    () async {
+      when(
+        () => mockRepository.fetchReportDebts(page: 1, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(reportDebtsProvider.future);
+
+      when(
+        () => mockRepository.fetchReportDebts(page: 2, status: null),
+      ).thenThrow(Exception('network error'));
+      await container.read(reportDebtsProvider.notifier).loadMore();
+      expect(container.read(reportDebtsProvider).value!.loadMoreError, isTrue);
+
+      when(
+        () => mockRepository.fetchReportDebts(page: 2, status: null),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      await container.read(reportDebtsProvider.notifier).loadMore();
+
+      final state = container.read(reportDebtsProvider).value!;
+      expect(state.loadMoreError, isFalse);
+      expect(state.debts, [_debtOne, _debtTwo]);
+      expect(state.hasMore, isFalse);
+      verify(
+        () => mockRepository.fetchReportDebts(page: 2, status: null),
+      ).called(2);
+    },
+  );
 }

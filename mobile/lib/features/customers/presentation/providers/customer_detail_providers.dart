@@ -12,17 +12,24 @@ import '../../domain/customer.dart';
 /// (Sprint 10): a failure fetching payments doesn't blank out the
 /// already-loaded customer profile, and vice versa.
 final customerDetailProvider = FutureProvider.family<Customer, String>(
-  (ref, customerId) => ref.watch(customerRepositoryProvider).fetchCustomer(customerId),
+  (ref, customerId) =>
+      ref.watch(customerRepositoryProvider).fetchCustomer(customerId),
 );
 
 final customerPaymentsProvider = FutureProvider.family<List<Payment>, String>(
-  (ref, customerId) => ref.watch(customerRepositoryProvider).fetchPayments(customerId),
+  (ref, customerId) =>
+      ref.watch(customerRepositoryProvider).fetchPayments(customerId),
 );
 
-final customerDocumentsProvider = FutureProvider.family<List<DocumentSummary>, String>(
-  (ref, customerId) => ref.watch(customerRepositoryProvider).fetchDocuments(customerId),
-);
+final customerDocumentsProvider =
+    FutureProvider.family<List<DocumentSummary>, String>(
+      (ref, customerId) =>
+          ref.watch(customerRepositoryProvider).fetchDocuments(customerId),
+    );
 
-final customerCasesProvider = FutureProvider.family<List<CollectionCase>, String>(
-  (ref, customerId) => ref.watch(collectionCaseRepositoryProvider).fetchCasesForCustomer(customerId),
-);
+final customerCasesProvider =
+    FutureProvider.family<List<CollectionCase>, String>(
+      (ref, customerId) => ref
+          .watch(collectionCaseRepositoryProvider)
+          .fetchCasesForCustomer(customerId),
+    );

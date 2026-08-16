@@ -25,6 +25,7 @@ class ReminderListState {
   final String? tab;
   final String? typeFilter;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const ReminderListState({
     required this.reminders,
@@ -34,6 +35,7 @@ class ReminderListState {
     required this.tab,
     this.typeFilter,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -46,6 +48,7 @@ class ReminderListState {
     String? tab,
     String? typeFilter,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return ReminderListState(
       reminders: reminders ?? this.reminders,
@@ -55,11 +58,15 @@ class ReminderListState {
       tab: tab ?? this.tab,
       typeFilter: typeFilter ?? this.typeFilter,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
-final reminderListProvider = AsyncNotifierProvider<ReminderListNotifier, ReminderListState>(ReminderListNotifier.new);
+final reminderListProvider =
+    AsyncNotifierProvider<ReminderListNotifier, ReminderListState>(
+      ReminderListNotifier.new,
+    );
 
 class ReminderListNotifier extends AsyncNotifier<ReminderListState> {
   @override
@@ -83,31 +90,45 @@ class ReminderListNotifier extends AsyncNotifier<ReminderListState> {
   /// `ReminderListScreen`'s own build method.
   Future<void> filterByType(String type) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(tab: null, typeFilter: type));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(tab: null, typeFilter: type),
+    );
   }
 
   Future<void> refresh() async {
     final tab = state.valueOrNull?.tab;
     final typeFilter = state.valueOrNull?.typeFilter;
-    state = await AsyncValue.guard(() => _fetchFirstPage(tab: tab, typeFilter: typeFilter));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(tab: tab, typeFilter: typeFilter),
+    );
   }
 
   Future<void> loadMore() async {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
-      final next = await _repository.fetchReminders(page: current.currentPage + 1, tab: current.tab);
-      state = AsyncData(current.copyWith(
-        reminders: [...current.reminders, ...next.reminders],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      final next = await _repository.fetchReminders(
+        page: current.currentPage + 1,
+        tab: current.tab,
+      );
+      state = AsyncData(
+        current.copyWith(
+          reminders: [...current.reminders, ...next.reminders],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
@@ -118,22 +139,32 @@ class ReminderListNotifier extends AsyncNotifier<ReminderListState> {
   void replaceReminder(Reminder updated) {
     final current = state.valueOrNull;
     if (current == null) return;
-    state = AsyncData(current.copyWith(
-      reminders: [for (final r in current.reminders) if (r.id == updated.id) updated else r],
-    ));
+    state = AsyncData(
+      current.copyWith(
+        reminders: [
+          for (final r in current.reminders)
+            if (r.id == updated.id) updated else r,
+        ],
+      ),
+    );
   }
 
   /// Removes a deleted reminder from the currently visible page.
   void removeReminder(String id) {
     final current = state.valueOrNull;
     if (current == null) return;
-    state = AsyncData(current.copyWith(
-      reminders: current.reminders.where((r) => r.id != id).toList(),
-      total: current.total - 1,
-    ));
+    state = AsyncData(
+      current.copyWith(
+        reminders: current.reminders.where((r) => r.id != id).toList(),
+        total: current.total - 1,
+      ),
+    );
   }
 
-  Future<ReminderListState> _fetchFirstPage({required String? tab, String? typeFilter}) async {
+  Future<ReminderListState> _fetchFirstPage({
+    required String? tab,
+    String? typeFilter,
+  }) async {
     final page = await _repository.fetchReminders(page: 1, tab: tab);
     return ReminderListState(
       reminders: page.reminders,

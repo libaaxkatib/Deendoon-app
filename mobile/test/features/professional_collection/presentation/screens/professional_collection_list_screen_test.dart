@@ -11,7 +11,8 @@ import 'package:mobile/features/professional_collection/presentation/screens/pro
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
+class _MockProfessionalCollectionRepository extends Mock
+    implements ProfessionalCollectionRepository {}
 
 const _request = ProfessionalCollectionRequest(
   id: '1',
@@ -29,7 +30,10 @@ const _request = ProfessionalCollectionRequest(
   closedAt: null,
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockProfessionalCollectionRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockProfessionalCollectionRepository repository,
+}) async {
   tester.view.physicalSize = const Size(400, 1400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -38,14 +42,22 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockProfessionalCollect
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const ProfessionalCollectionListScreen()),
-      GoRoute(path: '/professional-requests/:id', builder: (_, state) => Text('Detail ${state.pathParameters['id']}')),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const ProfessionalCollectionListScreen(),
+      ),
+      GoRoute(
+        path: '/professional-requests/:id',
+        builder: (_, state) => Text('Detail ${state.pathParameters['id']}'),
+      ),
     ],
   );
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [professionalCollectionRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        professionalCollectionRepositoryProvider.overrideWithValue(repository),
+      ],
       child: MaterialApp.router(
         routerConfig: router,
         locale: const Locale('en'),
@@ -70,9 +82,17 @@ void main() {
     mockRepository = _MockProfessionalCollectionRepository();
   });
 
-  testWidgets('renders request cards with real fields and status badge', (tester) async {
-    when(() => mockRepository.fetchRequests(page: 1, status: null))
-        .thenAnswer((_) async => const ProfessionalCollectionRequestPage(requests: [_request], currentPage: 1, lastPage: 1, total: 1));
+  testWidgets('renders request cards with real fields and status badge', (
+    tester,
+  ) async {
+    when(() => mockRepository.fetchRequests(page: 1, status: null)).thenAnswer(
+      (_) async => const ProfessionalCollectionRequestPage(
+        requests: [_request],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -81,45 +101,90 @@ void main() {
     expect(find.text('Need More Information'), findsOneWidget);
   });
 
-  testWidgets('shows the explicit empty state when there are no requests', (tester) async {
-    when(() => mockRepository.fetchRequests(page: 1, status: null))
-        .thenAnswer((_) async => const ProfessionalCollectionRequestPage(requests: [], currentPage: 1, lastPage: 1, total: 0));
+  testWidgets('shows the explicit empty state when there are no requests', (
+    tester,
+  ) async {
+    when(() => mockRepository.fetchRequests(page: 1, status: null)).thenAnswer(
+      (_) async => const ProfessionalCollectionRequestPage(
+        requests: [],
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+      ),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
 
-    expect(find.text('No Professional Collection Requests yet'), findsOneWidget);
+    expect(
+      find.text('No Professional Collection Requests yet'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('shows a retry affordance when the list fails to load', (tester) async {
-    when(() => mockRepository.fetchRequests(page: 1, status: null)).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the list fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchRequests(page: 1, status: null),
+    ).thenThrow(Exception('network down'));
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
 
-    expect(find.text('Could not load Professional Collection Requests.'), findsOneWidget);
+    expect(
+      find.text('Could not load Professional Collection Requests.'),
+      findsOneWidget,
+    );
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('tapping a status filter chip triggers a real API call with that status', (tester) async {
-    when(() => mockRepository.fetchRequests(page: 1, status: null))
-        .thenAnswer((_) async => const ProfessionalCollectionRequestPage(requests: [_request], currentPage: 1, lastPage: 1, total: 1));
-    when(() => mockRepository.fetchRequests(page: 1, status: 'submitted'))
-        .thenAnswer((_) async => const ProfessionalCollectionRequestPage(requests: [], currentPage: 1, lastPage: 1, total: 0));
+  testWidgets(
+    'tapping a status filter chip triggers a real API call with that status',
+    (tester) async {
+      when(
+        () => mockRepository.fetchRequests(page: 1, status: null),
+      ).thenAnswer(
+        (_) async => const ProfessionalCollectionRequestPage(
+          requests: [_request],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockRepository.fetchRequests(page: 1, status: 'submitted'),
+      ).thenAnswer(
+        (_) async => const ProfessionalCollectionRequestPage(
+          requests: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Submitted'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Submitted'));
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchRequests(page: 1, status: 'submitted')).called(1);
-    expect(find.text('No requests match this filter'), findsOneWidget);
-  });
+      verify(
+        () => mockRepository.fetchRequests(page: 1, status: 'submitted'),
+      ).called(1);
+      expect(find.text('No requests match this filter'), findsOneWidget);
+    },
+  );
 
   testWidgets('tapping a request opens its Detail screen', (tester) async {
-    when(() => mockRepository.fetchRequests(page: 1, status: null))
-        .thenAnswer((_) async => const ProfessionalCollectionRequestPage(requests: [_request], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchRequests(page: 1, status: null)).thenAnswer(
+      (_) async => const ProfessionalCollectionRequestPage(
+        requests: [_request],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();

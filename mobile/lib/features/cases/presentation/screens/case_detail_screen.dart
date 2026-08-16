@@ -46,13 +46,24 @@ class CaseDetailScreen extends ConsumerWidget {
   /// backend's 409 when the case already has an active Request); it only
   /// pops with a non-null Request on real success. On success, navigates
   /// straight to the new Request's Detail screen.
-  Future<void> _submitProfessionalCollection(BuildContext context, WidgetRef ref, String caseId) async {
+  Future<void> _submitProfessionalCollection(
+    BuildContext context,
+    WidgetRef ref,
+    String caseId,
+  ) async {
     final l10n = AppLocalizations.of(context);
     final router = GoRouter.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final request = await showSubmitProfessionalCollectionSheet(context, caseId);
+    final request = await showSubmitProfessionalCollectionSheet(
+      context,
+      caseId,
+    );
     if (request != null) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.professionalCollectionRequestSubmittedSuccess)));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.professionalCollectionRequestSubmittedSuccess),
+        ),
+      );
       router.push('/professional-requests/${request.id}');
     }
   }
@@ -64,7 +75,9 @@ class CaseDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(caseAsync.valueOrNull?.referenceNumber ?? l10n.caseDetailTitle),
+        title: Text(
+          caseAsync.valueOrNull?.referenceNumber ?? l10n.caseDetailTitle,
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -86,14 +99,18 @@ class CaseDetailScreen extends ConsumerWidget {
           data: (collectionCase) {
             final isOpen = collectionCase.caseStatus == 'open';
             final customerId = collectionCase.customerId;
-            final debtAsync = ref.watch(debtDetailProvider(collectionCase.debtId));
+            final debtAsync = ref.watch(
+              debtDetailProvider(collectionCase.debtId),
+            );
 
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
                   l10n.caseDetailCustomerSummaryHeading,
-                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.heading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 if (customerId == null)
@@ -101,7 +118,9 @@ class CaseDetailScreen extends ConsumerWidget {
                 else
                   Consumer(
                     builder: (context, ref, _) {
-                      final customerAsync = ref.watch(customerDetailProvider(customerId));
+                      final customerAsync = ref.watch(
+                        customerDetailProvider(customerId),
+                      );
                       return customerAsync.when(
                         loading: () => const Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
@@ -109,16 +128,21 @@ class CaseDetailScreen extends ConsumerWidget {
                         ),
                         error: (error, _) => RetrySection(
                           message: l10n.caseDetailCustomerLoadError,
-                          onRetry: () => ref.invalidate(customerDetailProvider(customerId)),
+                          onRetry: () => ref.invalidate(
+                            customerDetailProvider(customerId),
+                          ),
                         ),
-                        data: (customer) => CustomerInfoCard(customer: customer),
+                        data: (customer) =>
+                            CustomerInfoCard(customer: customer),
                       );
                     },
                   ),
                 const SizedBox(height: 24),
                 Text(
                   l10n.debtDetailSummaryHeading,
-                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.heading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 debtAsync.when(
@@ -128,7 +152,9 @@ class CaseDetailScreen extends ConsumerWidget {
                   ),
                   error: (error, _) => RetrySection(
                     message: l10n.caseDetailDebtLoadError,
-                    onRetry: () => ref.invalidate(debtDetailProvider(collectionCase.debtId)),
+                    onRetry: () => ref.invalidate(
+                      debtDetailProvider(collectionCase.debtId),
+                    ),
                   ),
                   data: (debt) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -142,7 +168,9 @@ class CaseDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 Text(
                   l10n.caseDetailCaseSummaryHeading,
-                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.heading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 CaseSummaryCard(collectionCase: collectionCase),
@@ -152,8 +180,11 @@ class CaseDetailScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () =>
-                              showRecordActivitySheet(context, caseId, title: l10n.caseDetailAddFollowUpButton),
+                          onPressed: () => showRecordActivitySheet(
+                            context,
+                            caseId,
+                            title: l10n.caseDetailAddFollowUpButton,
+                          ),
                           child: Text(l10n.caseDetailAddFollowUpButton),
                         ),
                       ),
@@ -188,7 +219,10 @@ class CaseDetailScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => showPromiseToPaySheet(context, collectionCase.debtId),
+                          onPressed: () => showPromiseToPaySheet(
+                            context,
+                            collectionCase.debtId,
+                          ),
                           child: Text(l10n.promiseToPayTitle),
                         ),
                       ),
@@ -196,13 +230,20 @@ class CaseDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton(
-                    onPressed: () => showCloseCaseSheet(context, caseId),
+                    onPressed: () => showCloseCaseSheet(
+                      context,
+                      caseId,
+                      collectionCase.debtId,
+                    ),
                     child: Text(l10n.closeCaseTitle),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton(
-                    onPressed: () => _submitProfessionalCollection(context, ref, caseId),
-                    child: Text(l10n.caseDetailSubmitProfessionalCollectionButton),
+                    onPressed: () =>
+                        _submitProfessionalCollection(context, ref, caseId),
+                    child: Text(
+                      l10n.caseDetailSubmitProfessionalCollectionButton,
+                    ),
                   ),
                 ] else ...[
                   UnavailableSection(reason: l10n.caseDetailClosedMessage),
@@ -210,7 +251,9 @@ class CaseDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 Text(
                   l10n.caseDetailTimelineHeading,
-                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.heading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 CaseTimelineSection(caseId: caseId),
@@ -220,30 +263,46 @@ class CaseDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       l10n.addEditDebtNotesHeading,
-                      style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                      style: AppTypography.heading.copyWith(
+                        color: context.colors.textPrimary,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined),
                       tooltip: l10n.caseNotesEditTitle,
-                      onPressed: () => showEditCaseNotesSheet(context, caseId, currentNotes: collectionCase.notes),
+                      onPressed: () => showEditCaseNotesSheet(
+                        context,
+                        caseId,
+                        currentNotes: collectionCase.notes,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 AppCard(
-                  child: (collectionCase.notes != null && collectionCase.notes!.trim().isNotEmpty)
+                  child:
+                      (collectionCase.notes != null &&
+                          collectionCase.notes!.trim().isNotEmpty)
                       ? Text(
                           collectionCase.notes!,
-                          style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                          style: AppTypography.body.copyWith(
+                            color: context.colors.textPrimary,
+                          ),
                         )
                       : Row(
                           children: [
-                            Icon(Icons.info_outline, color: context.colors.textSecondary, size: 20),
+                            Icon(
+                              Icons.info_outline,
+                              color: context.colors.textSecondary,
+                              size: 20,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 l10n.caseDetailNoNotesMessage,
-                                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                                style: AppTypography.caption.copyWith(
+                                  color: context.colors.textSecondary,
+                                ),
                               ),
                             ),
                           ],
@@ -258,18 +317,25 @@ class CaseDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Consumer(
                     builder: (context, ref, _) {
-                      final isReadOnly = ref.watch(customerDetailProvider(customerId)).valueOrNull?.isReadOnly ?? false;
+                      final isReadOnly =
+                          ref
+                              .watch(customerDetailProvider(customerId))
+                              .valueOrNull
+                              ?.isReadOnly ??
+                          false;
                       return OutlinedButton.icon(
                         onPressed: isReadOnly
                             ? null
                             : () => context.push(
-                                  '/reminders/new',
-                                  extra: ReminderEntityPreset(
-                                    type: 'collection_case',
-                                    id: caseId,
-                                    label: l10n.caseDetailReminderPresetLabel(collectionCase.referenceNumber),
+                                '/reminders/new',
+                                extra: ReminderEntityPreset(
+                                  type: 'collection_case',
+                                  id: caseId,
+                                  label: l10n.caseDetailReminderPresetLabel(
+                                    collectionCase.referenceNumber,
                                   ),
                                 ),
+                              ),
                         icon: const Icon(Icons.add_alarm_outlined),
                         label: Text(l10n.quickActionAddReminder),
                       );
@@ -279,14 +345,18 @@ class CaseDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 Text(
                   l10n.debtDetailRelatedDocumentsHeading,
-                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.heading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DebtDocumentsSection(debtId: collectionCase.debtId),
                 const SizedBox(height: 24),
                 Text(
                   l10n.caseDetailRelatedPaymentsHeading,
-                  style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.heading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DebtPaymentHistory(debtId: collectionCase.debtId),

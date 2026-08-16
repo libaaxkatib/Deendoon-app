@@ -7,6 +7,8 @@ import '../../domain/professional_collection_summary.dart';
 /// `GET /professional-requests/summary`. Independent from the Dashboard's
 /// own 4 providers (`dashboard_providers.dart`) — same per-component
 /// loading/error isolation rationale.
-final professionalCollectionSummaryProvider = FutureProvider<ProfessionalCollectionSummary>(
-  (ref) => ref.watch(professionalCollectionRepositoryProvider).fetchSummary(),
-);
+final professionalCollectionSummaryProvider =
+    FutureProvider<ProfessionalCollectionSummary>(
+      (ref) =>
+          ref.watch(professionalCollectionRepositoryProvider).fetchSummary(),
+    );

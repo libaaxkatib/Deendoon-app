@@ -138,7 +138,10 @@ void main() {
 
         // Screen title and submit button render in Somali outside Settings,
         // on a debt-specific screen.
-        expect(find.text('Ku Dar Dayn'), findsWidgets); // AppBar title + submit button both use this key
+        expect(
+          find.text('Ku Dar Dayn'),
+          findsWidgets,
+        ); // AppBar title + submit button both use this key
         expect(find.text('Qadarka'), findsOneWidget); // "Amount" field label
 
         // Submitting with no amount surfaces the Somali validation message.

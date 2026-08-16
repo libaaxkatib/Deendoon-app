@@ -16,6 +16,7 @@ class DocumentListState {
   final String? type;
   final String search;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const DocumentListState({
     required this.documents,
@@ -25,6 +26,7 @@ class DocumentListState {
     required this.type,
     required this.search,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -37,6 +39,7 @@ class DocumentListState {
     String? type,
     String? search,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return DocumentListState(
       documents: documents ?? this.documents,
@@ -46,12 +49,15 @@ class DocumentListState {
       type: type ?? this.type,
       search: search ?? this.search,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final documentListProvider =
-    AsyncNotifierProvider<DocumentListNotifier, DocumentListState>(DocumentListNotifier.new);
+    AsyncNotifierProvider<DocumentListNotifier, DocumentListState>(
+      DocumentListNotifier.new,
+    );
 
 class DocumentListNotifier extends AsyncNotifier<DocumentListState> {
   @override
@@ -64,45 +70,65 @@ class DocumentListNotifier extends AsyncNotifier<DocumentListState> {
   Future<void> filterByType(String? type) async {
     final search = state.valueOrNull?.search ?? '';
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(type: type, search: search));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(type: type, search: search),
+    );
   }
 
   Future<void> search(String query) async {
     final type = state.valueOrNull?.type;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(type: type, search: query));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(type: type, search: query),
+    );
   }
 
   Future<void> refresh() async {
     final current = state.valueOrNull;
-    state = await AsyncValue.guard(() => _fetchFirstPage(type: current?.type, search: current?.search ?? ''));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(type: current?.type, search: current?.search ?? ''),
+    );
   }
 
   Future<void> loadMore() async {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
       final next = await _repository.fetchDocuments(
         page: current.currentPage + 1,
         type: current.type,
         search: current.search,
       );
-      state = AsyncData(current.copyWith(
-        documents: [...current.documents, ...next.documents],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      state = AsyncData(
+        current.copyWith(
+          documents: [...current.documents, ...next.documents],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
-  Future<DocumentListState> _fetchFirstPage({required String? type, required String search}) async {
-    final page = await _repository.fetchDocuments(page: 1, type: type, search: search);
+  Future<DocumentListState> _fetchFirstPage({
+    required String? type,
+    required String search,
+  }) async {
+    final page = await _repository.fetchDocuments(
+      page: 1,
+      type: type,
+      search: search,
+    );
     return DocumentListState(
       documents: page.documents,
       currentPage: page.currentPage,

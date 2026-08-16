@@ -44,7 +44,9 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [documentRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          documentRepositoryProvider.overrideWithValue(mockRepository),
+        ],
         child: MaterialApp(
           locale: const Locale('en'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -62,19 +64,28 @@ void main() {
     );
   }
 
-  testWidgets('renders each real event with its actor, labeled action, and timestamp', (tester) async {
-    when(() => mockRepository.fetchHistory('01DOC')).thenAnswer((_) async => [_generatedEvent, _downloadedEvent]);
+  testWidgets(
+    'renders each real event with its actor, labeled action, and timestamp',
+    (tester) async {
+      when(
+        () => mockRepository.fetchHistory('01DOC'),
+      ).thenAnswer((_) async => [_generatedEvent, _downloadedEvent]);
 
-    await pumpScreen(tester);
-    await tester.pumpAndSettle();
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Generated'), findsOneWidget);
-    expect(find.text('Downloaded'), findsOneWidget);
-    expect(find.text('User 01USER'), findsNWidgets(2));
-  });
+      expect(find.text('Generated'), findsOneWidget);
+      expect(find.text('Downloaded'), findsOneWidget);
+      expect(find.text('User 01USER'), findsNWidgets(2));
+    },
+  );
 
-  testWidgets('shows the explicit empty state when there is no history yet', (tester) async {
-    when(() => mockRepository.fetchHistory('01DOC')).thenAnswer((_) async => []);
+  testWidgets('shows the explicit empty state when there is no history yet', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchHistory('01DOC'),
+    ).thenAnswer((_) async => []);
 
     await pumpScreen(tester);
     await tester.pumpAndSettle();
@@ -82,13 +93,20 @@ void main() {
     expect(find.text('No history yet'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when history fails to load', (tester) async {
-    when(() => mockRepository.fetchHistory('01DOC')).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when history fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchHistory('01DOC'),
+    ).thenThrow(Exception('network down'));
 
     await pumpScreen(tester);
     await tester.pumpAndSettle();
 
-    expect(find.text('Could not load this document\'s history.'), findsOneWidget);
+    expect(
+      find.text('Could not load this document\'s history.'),
+      findsOneWidget,
+    );
     expect(find.text('Retry'), findsOneWidget);
   });
 }

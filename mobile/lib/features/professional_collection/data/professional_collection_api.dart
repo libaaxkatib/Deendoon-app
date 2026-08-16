@@ -10,8 +10,9 @@ import '../domain/professional_collection_summary.dart';
 import '../domain/professional_collection_timeline_event.dart';
 import '../domain/request_message.dart';
 
-final professionalCollectionApiProvider =
-    Provider<ProfessionalCollectionApi>((ref) => ProfessionalCollectionApi(ref.read(dioProvider)));
+final professionalCollectionApiProvider = Provider<ProfessionalCollectionApi>(
+  (ref) => ProfessionalCollectionApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET/POST /professional-requests*` and
 /// `POST /collection-cases/{case}/professional-requests` — mirrors
@@ -41,26 +42,38 @@ class ProfessionalCollectionApi {
     String? notes,
     required bool declarationAccepted,
   }) async {
-    final response = await _dio.post('collection-cases/$caseId/professional-requests', data: {
-      'reasons': reasons,
-      'services': services,
-      'notes': notes,
-      'declaration_accepted': declarationAccepted,
-    });
-    return ProfessionalCollectionRequest.fromJson(response.data['data'] as Map<String, dynamic>);
+    final response = await _dio.post(
+      'collection-cases/$caseId/professional-requests',
+      data: {
+        'reasons': reasons,
+        'services': services,
+        'notes': notes,
+        'declaration_accepted': declarationAccepted,
+      },
+    );
+    return ProfessionalCollectionRequest.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
-  Future<ProfessionalCollectionRequestPage> list({required int page, String? status}) async {
-    final response = await _dio.get('professional-requests', queryParameters: {
-      'page': page,
-      'status': ?status,
-    });
-    return ProfessionalCollectionRequestPage.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<ProfessionalCollectionRequestPage> list({
+    required int page,
+    String? status,
+  }) async {
+    final response = await _dio.get(
+      'professional-requests',
+      queryParameters: {'page': page, 'status': ?status},
+    );
+    return ProfessionalCollectionRequestPage.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<ProfessionalCollectionRequest> show(String id) async {
     final response = await _dio.get('professional-requests/$id');
-    return ProfessionalCollectionRequest.fromJson(response.data['data'] as Map<String, dynamic>);
+    return ProfessionalCollectionRequest.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `GET /professional-requests/summary` — Business Owner-only (same
@@ -68,21 +81,33 @@ class ProfessionalCollectionApi {
   /// `{id}` route server-side, so "summary" is never swallowed as an id.
   Future<ProfessionalCollectionSummary> summary() async {
     final response = await _dio.get('professional-requests/summary');
-    return ProfessionalCollectionSummary.fromJson(response.data['data'] as Map<String, dynamic>);
+    return ProfessionalCollectionSummary.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<List<RequestMessage>> messages(String id) async {
     final response = await _dio.get('professional-requests/$id/messages');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => RequestMessage.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => RequestMessage.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// `PostRequestMessageRequest`: `content` required, max 5000 chars.
   /// BRL-080/DD-044: 409s if the Request is already terminal — surfaced as
   /// an `ApiException`, not handled here.
-  Future<RequestMessage> postMessage({required String id, required String content}) async {
-    final response = await _dio.post('professional-requests/$id/messages', data: {'content': content});
-    return RequestMessage.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<RequestMessage> postMessage({
+    required String id,
+    required String content,
+  }) async {
+    final response = await _dio.post(
+      'professional-requests/$id/messages',
+      data: {'content': content},
+    );
+    return RequestMessage.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `GET /professional-requests/{id}/documents` — the existing Receipt/
@@ -93,13 +118,21 @@ class ProfessionalCollectionApi {
   Future<List<DocumentSummary>> documents(String id) async {
     final response = await _dio.get('professional-requests/$id/documents');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => DocumentSummary.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => DocumentSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<ProfessionalCollectionAttachment>> attachments(String id) async {
     final response = await _dio.get('professional-requests/$id/attachments');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => ProfessionalCollectionAttachment.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map(
+          (e) => ProfessionalCollectionAttachment.fromJson(
+            e as Map<String, dynamic>,
+          ),
+        )
+        .toList();
   }
 
   /// `UploadProfessionalCollectionAttachmentRequest`: `file` required
@@ -115,8 +148,13 @@ class ProfessionalCollectionApi {
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath, filename: fileName),
     });
-    final response = await _dio.post('professional-requests/$id/attachments', data: formData);
-    return ProfessionalCollectionAttachment.fromJson(response.data['data'] as Map<String, dynamic>);
+    final response = await _dio.post(
+      'professional-requests/$id/attachments',
+      data: formData,
+    );
+    return ProfessionalCollectionAttachment.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `GET /professional-requests/{id}/timeline` — read-only for the
@@ -126,6 +164,12 @@ class ProfessionalCollectionApi {
   Future<List<ProfessionalCollectionTimelineEvent>> timeline(String id) async {
     final response = await _dio.get('professional-requests/$id/timeline');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => ProfessionalCollectionTimelineEvent.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map(
+          (e) => ProfessionalCollectionTimelineEvent.fromJson(
+            e as Map<String, dynamic>,
+          ),
+        )
+        .toList();
   }
 }

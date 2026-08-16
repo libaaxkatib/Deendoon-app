@@ -6,19 +6,19 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
 List<String> _monthNames(AppLocalizations l10n) => [
-      l10n.dateRangeMonthJan,
-      l10n.dateRangeMonthFeb,
-      l10n.dateRangeMonthMar,
-      l10n.dateRangeMonthApr,
-      l10n.dateRangeMonthMay,
-      l10n.dateRangeMonthJun,
-      l10n.dateRangeMonthJul,
-      l10n.dateRangeMonthAug,
-      l10n.dateRangeMonthSep,
-      l10n.dateRangeMonthOct,
-      l10n.dateRangeMonthNov,
-      l10n.dateRangeMonthDec,
-    ];
+  l10n.dateRangeMonthJan,
+  l10n.dateRangeMonthFeb,
+  l10n.dateRangeMonthMar,
+  l10n.dateRangeMonthApr,
+  l10n.dateRangeMonthMay,
+  l10n.dateRangeMonthJun,
+  l10n.dateRangeMonthJul,
+  l10n.dateRangeMonthAug,
+  l10n.dateRangeMonthSep,
+  l10n.dateRangeMonthOct,
+  l10n.dateRangeMonthNov,
+  l10n.dateRangeMonthDec,
+];
 
 /// Sprint 16.1 polish: a friendlier "May 1 – May 31, 2026" display instead
 /// of raw ISO dates — pure presentation formatting, no new date package,
@@ -46,7 +46,11 @@ class DateRangeField extends StatelessWidget {
   final DateTimeRange value;
   final ValueChanged<DateTimeRange> onChanged;
 
-  const DateRangeField({super.key, required this.value, required this.onChanged});
+  const DateRangeField({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
 
   Future<void> _pick(BuildContext context) async {
     final picked = await showDateRangePicker(
@@ -76,7 +80,11 @@ class DateRangeField extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          const Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.primary),
+          const Icon(
+            Icons.calendar_today_outlined,
+            size: 18,
+            color: AppColors.primary,
+          ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/storage_addon.dart';
@@ -20,11 +21,18 @@ import '../providers/subscription_actions.dart';
 /// Add-on requests (`SubscriptionController::storage()`'s `purchased_addons`
 /// is active-only), so a Cancel action can only ever be offered for a
 /// request created in the current session, using the id this call returns.
-Future<StorageAddon?> showRequestStorageAddonSheet(BuildContext context, String storagePackage, String packageLabel) {
+Future<StorageAddon?> showRequestStorageAddonSheet(
+  BuildContext context,
+  String storagePackage,
+  String packageLabel,
+) {
   return showModalBottomSheet<StorageAddon>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _RequestStorageAddonSheet(storagePackage: storagePackage, packageLabel: packageLabel),
+    builder: (_) => _RequestStorageAddonSheet(
+      storagePackage: storagePackage,
+      packageLabel: packageLabel,
+    ),
   );
 }
 
@@ -32,13 +40,18 @@ class _RequestStorageAddonSheet extends ConsumerStatefulWidget {
   final String storagePackage;
   final String packageLabel;
 
-  const _RequestStorageAddonSheet({required this.storagePackage, required this.packageLabel});
+  const _RequestStorageAddonSheet({
+    required this.storagePackage,
+    required this.packageLabel,
+  });
 
   @override
-  ConsumerState<_RequestStorageAddonSheet> createState() => _RequestStorageAddonSheetState();
+  ConsumerState<_RequestStorageAddonSheet> createState() =>
+      _RequestStorageAddonSheetState();
 }
 
-class _RequestStorageAddonSheetState extends ConsumerState<_RequestStorageAddonSheet> {
+class _RequestStorageAddonSheetState
+    extends ConsumerState<_RequestStorageAddonSheet> {
   final _formKey = GlobalKey<FormState>();
   final _paymentReferenceController = TextEditingController();
   bool _isLoading = false;
@@ -59,7 +72,9 @@ class _RequestStorageAddonSheetState extends ConsumerState<_RequestStorageAddonS
     });
 
     try {
-      final addon = await ref.read(subscriptionActionsProvider).requestStorageAddon(
+      final addon = await ref
+          .read(subscriptionActionsProvider)
+          .requestStorageAddon(
             storagePackage: widget.storagePackage,
             paymentReference: _paymentReferenceController.text.trim(),
           );
@@ -74,20 +89,17 @@ class _RequestStorageAddonSheetState extends ConsumerState<_RequestStorageAddonS
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.storageRequestAddonSheetTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.storageRequestAddonSheetTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 4),
             Text(
               l10n.storageRequestAddonDescription(widget.packageLabel),
@@ -97,20 +109,33 @@ class _RequestStorageAddonSheetState extends ConsumerState<_RequestStorageAddonS
             TextFormField(
               controller: _paymentReferenceController,
               maxLength: 100,
-              decoration: InputDecoration(labelText: l10n.subscriptionPaymentReferenceLabel),
+              decoration: InputDecoration(
+                labelText: l10n.subscriptionPaymentReferenceLabel,
+              ),
               validator: (value) {
                 final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty) return l10n.subscriptionPaymentReferenceRequiredValidator;
-                if (trimmed.length > 100) return l10n.subscriptionPaymentReferenceMaxLengthValidator;
+                if (trimmed.isEmpty) {
+                  return l10n.subscriptionPaymentReferenceRequiredValidator;
+                }
+                if (trimmed.length > 100) {
+                  return l10n.subscriptionPaymentReferenceMaxLengthValidator;
+                }
                 return null;
               },
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: l10n.professionalCollectionSubmitButton, isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(
+              label: l10n.professionalCollectionSubmitButton,
+              isLoading: _isLoading,
+              onPressed: _submit,
+            ),
           ],
         ),
       ),

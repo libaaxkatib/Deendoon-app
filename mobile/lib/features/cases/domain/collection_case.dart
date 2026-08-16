@@ -41,19 +41,19 @@ class CollectionCase {
   });
 
   factory CollectionCase.fromJson(Map<String, dynamic> json) => CollectionCase(
-        id: json['id'].toString(),
-        debtId: json['debt_id'].toString(),
-        customerId: json['customer_id']?.toString(),
-        customerName: json['customer_name'] as String?,
-        outstandingAmount: json['outstanding_amount'] as String?,
-        riskLevel: json['risk_level'] as String?,
-        referenceNumber: json['reference_number'] as String,
-        assignedOfficerUserId: json['assigned_officer_user_id']?.toString(),
-        caseStatus: json['case_status'] as String,
-        closureOutcome: json['closure_outcome'] as String?,
-        notes: json['notes'] as String?,
-        lastActivityAt: json['last_activity_at'] as String,
-        createdAt: json['created_at'] as String,
-        closedAt: json['closed_at'] as String?,
-      );
+    id: json['id'].toString(),
+    debtId: json['debt_id'].toString(),
+    customerId: json['customer_id']?.toString(),
+    customerName: json['customer_name'] as String?,
+    outstandingAmount: json['outstanding_amount'] as String?,
+    riskLevel: json['risk_level'] as String?,
+    referenceNumber: json['reference_number'] as String,
+    assignedOfficerUserId: json['assigned_officer_user_id']?.toString(),
+    caseStatus: json['case_status'] as String,
+    closureOutcome: json['closure_outcome'] as String?,
+    notes: json['notes'] as String?,
+    lastActivityAt: json['last_activity_at'] as String,
+    createdAt: json['created_at'] as String,
+    closedAt: json['closed_at'] as String?,
+  );
 }

@@ -65,7 +65,11 @@ class _StageRow extends StatelessWidget {
   final bool completed;
   final String? occurredAt;
 
-  const _StageRow({required this.label, required this.completed, required this.occurredAt});
+  const _StageRow({
+    required this.label,
+    required this.completed,
+    required this.occurredAt,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -78,9 +82,21 @@ class _StageRow extends StatelessWidget {
           size: 18,
         ),
         const SizedBox(width: 10),
-        Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTypography.body.copyWith(
+              color: context.colors.textPrimary,
+            ),
+          ),
+        ),
         if (occurredAt != null)
-          Text(occurredAt!, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+          Text(
+            occurredAt!,
+            style: AppTypography.caption.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
       ],
     );
   }

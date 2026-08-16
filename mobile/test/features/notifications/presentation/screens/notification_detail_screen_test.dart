@@ -25,7 +25,21 @@ final _storageNotification = AppNotification(
   createdAt: DateTime.parse('2026-08-01T09:00:00.000000Z'),
 );
 
-Future<void> _pumpScreen(WidgetTester tester, AppNotification notification) async {
+final _announcementNotification = AppNotification(
+  id: '3',
+  type: 'admin_announcement',
+  title: 'Scheduled maintenance',
+  message: 'The platform will be briefly unavailable tonight.',
+  relatedEntityType: 'announcement',
+  relatedEntityId: 'batch-1',
+  readAt: null,
+  createdAt: DateTime.parse('2026-08-01T09:00:00.000000Z'),
+);
+
+Future<void> _pumpScreen(
+  WidgetTester tester,
+  AppNotification notification,
+) async {
   final router = GoRouter(
     initialLocation: '/notifications/${notification.id}',
     routes: [
@@ -33,8 +47,14 @@ Future<void> _pumpScreen(WidgetTester tester, AppNotification notification) asyn
         path: '/notifications/:id',
         builder: (_, _) => NotificationDetailScreen(notification: notification),
       ),
-      GoRoute(path: '/account/subscription', builder: (_, _) => const Scaffold(body: Text('Subscription Screen'))),
-      GoRoute(path: '/account/storage', builder: (_, _) => const Scaffold(body: Text('Storage Screen'))),
+      GoRoute(
+        path: '/account/subscription',
+        builder: (_, _) => const Scaffold(body: Text('Subscription Screen')),
+      ),
+      GoRoute(
+        path: '/account/storage',
+        builder: (_, _) => const Scaffold(body: Text('Storage Screen')),
+      ),
     ],
   );
 
@@ -57,29 +77,47 @@ Future<void> _pumpScreen(WidgetTester tester, AppNotification notification) asyn
 }
 
 void main() {
-  testWidgets('a subscription_request_update notification renders its real label and opens the Subscription screen',
-      (tester) async {
-    await _pumpScreen(tester, _subscriptionNotification);
+  testWidgets(
+    'a subscription_request_update notification renders its real label and opens the Subscription screen',
+    (tester) async {
+      await _pumpScreen(tester, _subscriptionNotification);
 
-    expect(find.text('Subscription Update'), findsOneWidget);
-    expect(find.text('Open'), findsOneWidget);
+      expect(find.text('Subscription Update'), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
 
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Subscription Screen'), findsOneWidget);
-  });
+      expect(find.text('Subscription Screen'), findsOneWidget);
+    },
+  );
 
-  testWidgets('a storage_request_update notification renders its real label and opens the Storage screen',
-      (tester) async {
-    await _pumpScreen(tester, _storageNotification);
+  testWidgets(
+    'a storage_request_update notification renders its real label and opens the Storage screen',
+    (tester) async {
+      await _pumpScreen(tester, _storageNotification);
 
-    expect(find.text('Storage Add-on Update'), findsOneWidget);
-    expect(find.text('Open'), findsOneWidget);
+      expect(find.text('Storage Add-on Update'), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
 
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Storage Screen'), findsOneWidget);
-  });
+      expect(find.text('Storage Screen'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'an admin_announcement notification renders its real title/message and has no Open button',
+    (tester) async {
+      await _pumpScreen(tester, _announcementNotification);
+
+      expect(find.text('Scheduled maintenance'), findsOneWidget);
+      expect(
+        find.text('The platform will be briefly unavailable tonight.'),
+        findsOneWidget,
+      );
+      expect(find.text('Open'), findsNothing);
+    },
+  );
 }

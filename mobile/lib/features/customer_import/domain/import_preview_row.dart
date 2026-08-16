@@ -7,7 +7,8 @@ class ImportDuplicateMatch {
 
   const ImportDuplicateMatch({required this.customerId, required this.name});
 
-  factory ImportDuplicateMatch.fromJson(Map<String, dynamic> json) => ImportDuplicateMatch(
+  factory ImportDuplicateMatch.fromJson(Map<String, dynamic> json) =>
+      ImportDuplicateMatch(
         customerId: json['customer_id'].toString(),
         name: json['name'] as String,
       );
@@ -30,13 +31,18 @@ class ImportPreviewRow {
 
   bool get isValid => validationStatus == 'valid';
 
-  factory ImportPreviewRow.fromJson(Map<String, dynamic> json) => ImportPreviewRow(
+  factory ImportPreviewRow.fromJson(Map<String, dynamic> json) =>
+      ImportPreviewRow(
         rowNumber: json['row_number'] as int,
         data: json['data'] as Map<String, dynamic>,
         validationStatus: json['validation_status'] as String,
-        validationErrors: (json['validation_errors'] as List<dynamic>?)?.map((e) => e as String).toList(),
+        validationErrors: (json['validation_errors'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList(),
         duplicateMatch: json['duplicate_match'] != null
-            ? ImportDuplicateMatch.fromJson(json['duplicate_match'] as Map<String, dynamic>)
+            ? ImportDuplicateMatch.fromJson(
+                json['duplicate_match'] as Map<String, dynamic>,
+              )
             : null,
       );
 }

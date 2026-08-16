@@ -12,22 +12,22 @@ import '../providers/report_customers_provider.dart';
 import '../widgets/export_action.dart';
 
 Map<String?, String> _statusFilters(AppLocalizations l10n) => {
-      null: l10n.debtListFilterAll,
-      'active': l10n.statusActive,
-      'good_standing': l10n.statusGoodStanding,
-      'late_payer': l10n.statusLatePayer,
-      'high_risk': l10n.statusHighRisk,
-      'in_collection': l10n.statusInCollection,
-      'recovered': l10n.statusRecovered,
-      'blocked': l10n.statusBlocked,
-    };
+  null: l10n.debtListFilterAll,
+  'active': l10n.statusActive,
+  'good_standing': l10n.statusGoodStanding,
+  'late_payer': l10n.statusLatePayer,
+  'high_risk': l10n.statusHighRisk,
+  'in_collection': l10n.statusInCollection,
+  'recovered': l10n.statusRecovered,
+  'blocked': l10n.statusBlocked,
+};
 
 Map<String?, String> _riskFilters(AppLocalizations l10n) => {
-      null: l10n.reportRiskFilterAll,
-      'high': l10n.riskHigh,
-      'medium': l10n.riskMedium,
-      'low': l10n.riskLow,
-    };
+  null: l10n.reportRiskFilterAll,
+  'high': l10n.riskHigh,
+  'medium': l10n.riskMedium,
+  'low': l10n.riskLow,
+};
 
 /// §5.2 Reports — Customers category. `initialRiskLevel` pre-applies the
 /// risk filter when reached via §5.6's Risk Distribution drill-through
@@ -40,7 +40,8 @@ class ReportCustomersScreen extends ConsumerStatefulWidget {
   const ReportCustomersScreen({super.key, this.initialRiskLevel});
 
   @override
-  ConsumerState<ReportCustomersScreen> createState() => _ReportCustomersScreenState();
+  ConsumerState<ReportCustomersScreen> createState() =>
+      _ReportCustomersScreenState();
 }
 
 class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
@@ -52,7 +53,9 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
     _scrollController.addListener(_onScroll);
     if (widget.initialRiskLevel != null) {
       Future.microtask(
-        () => ref.read(reportCustomersProvider.notifier).filterByRiskLevel(widget.initialRiskLevel),
+        () => ref
+            .read(reportCustomersProvider.notifier)
+            .filterByRiskLevel(widget.initialRiskLevel),
       );
     }
   }
@@ -65,7 +68,8 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(reportCustomersProvider.notifier).loadMore();
     }
   }
@@ -91,7 +95,8 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
               filters: {
                 if (customersAsync.valueOrNull?.customerStatus != null)
                   'customer_status': customersAsync.valueOrNull!.customerStatus,
-                if (customersAsync.valueOrNull?.riskLevel != null) 'riskLevel': customersAsync.valueOrNull!.riskLevel,
+                if (customersAsync.valueOrNull?.riskLevel != null)
+                  'riskLevel': customersAsync.valueOrNull!.riskLevel,
               },
             ),
           ),
@@ -110,8 +115,12 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
                   for (final entry in statusFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
-                      selected: customersAsync.valueOrNull?.customerStatus == entry.key,
-                      onTap: () => ref.read(reportCustomersProvider.notifier).filterByStatus(entry.key),
+                      selected:
+                          customersAsync.valueOrNull?.customerStatus ==
+                          entry.key,
+                      onTap: () => ref
+                          .read(reportCustomersProvider.notifier)
+                          .filterByStatus(entry.key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -127,8 +136,11 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
                   for (final entry in riskFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
-                      selected: customersAsync.valueOrNull?.riskLevel == entry.key,
-                      onTap: () => ref.read(reportCustomersProvider.notifier).filterByRiskLevel(entry.key),
+                      selected:
+                          customersAsync.valueOrNull?.riskLevel == entry.key,
+                      onTap: () => ref
+                          .read(reportCustomersProvider.notifier)
+                          .filterByRiskLevel(entry.key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -150,26 +162,45 @@ class _ReportCustomersScreenState extends ConsumerState<ReportCustomersScreen> {
                     return Center(
                       child: Text(
                         l10n.reportCustomersEmptyState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(reportCustomersProvider.notifier).refresh(),
+                    onRefresh: () =>
+                        ref.read(reportCustomersProvider.notifier).refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
-                      itemCount: state.customers.length + (state.hasMore ? 1 : 0),
+                      itemCount:
+                          state.customers.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.customers.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(
+                                            reportCustomersProvider.notifier,
+                                          )
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final customer = state.customers[index];
-                        return CustomerCard(customer: customer, onTap: () => context.push('/customers/${customer.id}'));
+                        return CustomerCard(
+                          customer: customer,
+                          onTap: () =>
+                              context.push('/customers/${customer.id}'),
+                        );
                       },
                     ),
                   );
@@ -188,7 +219,11 @@ class _FilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +232,9 @@ class _FilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

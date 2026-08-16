@@ -8,7 +8,9 @@ import '../domain/reminder_page.dart';
 import '../domain/reminder_summary.dart';
 import '../../../core/models/sent_message.dart';
 
-final reminderApiProvider = Provider<ReminderApi>((ref) => ReminderApi(ref.read(dioProvider)));
+final reminderApiProvider = Provider<ReminderApi>(
+  (ref) => ReminderApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET/POST/PUT/PATCH/DELETE /reminders*` and the
 /// message-template/render endpoints it depends on for Send — mirrors
@@ -30,14 +32,16 @@ class ReminderApi {
 
   Future<ReminderSummary> summary() async {
     final response = await _dio.get('reminders/summary');
-    return ReminderSummary.fromJson(response.data['data'] as Map<String, dynamic>);
+    return ReminderSummary.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<ReminderPage> list({required int page, String? tab}) async {
-    final response = await _dio.get('reminders', queryParameters: {
-      'page': page,
-      'tab': ?tab,
-    });
+    final response = await _dio.get(
+      'reminders',
+      queryParameters: {'page': page, 'tab': ?tab},
+    );
     return ReminderPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -63,18 +67,21 @@ class ReminderApi {
     required List<String> deliveryMethods,
     String? notes,
   }) async {
-    final response = await _dio.post('reminders', data: {
-      'type': type,
-      'related_entity_type': relatedEntityType,
-      'related_entity_id': relatedEntityId,
-      'related_case_id': ?relatedCaseId,
-      'due_date': dueDate,
-      'amount_due': ?amountDue,
-      'timing_rule': timingRule,
-      'custom_fire_at': ?customFireAt,
-      'delivery_methods': deliveryMethods,
-      'notes': ?notes,
-    });
+    final response = await _dio.post(
+      'reminders',
+      data: {
+        'type': type,
+        'related_entity_type': relatedEntityType,
+        'related_entity_id': relatedEntityId,
+        'related_case_id': ?relatedCaseId,
+        'due_date': dueDate,
+        'amount_due': ?amountDue,
+        'timing_rule': timingRule,
+        'custom_fire_at': ?customFireAt,
+        'delivery_methods': deliveryMethods,
+        'notes': ?notes,
+      },
+    );
     return Reminder.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -95,18 +102,21 @@ class ReminderApi {
     List<String>? deliveryMethods,
     String? notes,
   }) async {
-    final response = await _dio.put('reminders/$id', data: {
-      'type': ?type,
-      'related_entity_type': ?relatedEntityType,
-      'related_entity_id': ?relatedEntityId,
-      'related_case_id': ?relatedCaseId,
-      'due_date': ?dueDate,
-      'amount_due': ?amountDue,
-      'timing_rule': ?timingRule,
-      'custom_fire_at': ?customFireAt,
-      'delivery_methods': ?deliveryMethods,
-      'notes': ?notes,
-    });
+    final response = await _dio.put(
+      'reminders/$id',
+      data: {
+        'type': ?type,
+        'related_entity_type': ?relatedEntityType,
+        'related_entity_id': ?relatedEntityId,
+        'related_case_id': ?relatedCaseId,
+        'due_date': ?dueDate,
+        'amount_due': ?amountDue,
+        'timing_rule': ?timingRule,
+        'custom_fire_at': ?customFireAt,
+        'delivery_methods': ?deliveryMethods,
+        'notes': ?notes,
+      },
+    );
     return Reminder.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -124,18 +134,27 @@ class ReminderApi {
     return Reminder.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
-  Future<SentMessage> send({required String id, required String channel, required String templateId}) async {
-    final response = await _dio.post('reminders/$id/send', data: {
-      'channel': channel,
-      'template_id': templateId,
-    });
+  Future<SentMessage> send({
+    required String id,
+    required String channel,
+    required String templateId,
+  }) async {
+    final response = await _dio.post(
+      'reminders/$id/send',
+      data: {'channel': channel, 'template_id': templateId},
+    );
     return SentMessage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
   Future<List<MessageTemplate>> messageTemplates({String? channel}) async {
-    final response = await _dio.get('message-templates', queryParameters: {'channel': ?channel});
+    final response = await _dio.get(
+      'message-templates',
+      queryParameters: {'channel': ?channel},
+    );
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => MessageTemplate.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => MessageTemplate.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// `POST /messages/render` — read-only preview, does not send anything.
@@ -145,11 +164,14 @@ class ReminderApi {
   /// resolveCustomer()`), so this is the most reliable source for the
   /// Message Preview screen's recipient row — more reliable than the
   /// client re-deriving it from `related_entity_type`/`related_entity_id`.
-  Future<Map<String, dynamic>> renderMessage({required String templateId, required String reminderId}) async {
-    final response = await _dio.post('messages/render', data: {
-      'template_id': templateId,
-      'reminder_id': reminderId,
-    });
+  Future<Map<String, dynamic>> renderMessage({
+    required String templateId,
+    required String reminderId,
+  }) async {
+    final response = await _dio.post(
+      'messages/render',
+      data: {'template_id': templateId, 'reminder_id': reminderId},
+    );
     return response.data['data'] as Map<String, dynamic>;
   }
 }

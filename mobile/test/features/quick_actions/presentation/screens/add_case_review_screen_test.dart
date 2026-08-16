@@ -105,10 +105,25 @@ Future<void> _pumpScreen(
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (_, _) => AddCaseReviewScreen(input: input)),
-      GoRoute(path: '/cases/:id', builder: (_, state) => Text('Case Detail ${state.pathParameters['id']}')),
-      GoRoute(path: '/customers/:id', builder: (_, state) => Text('Customer Detail ${state.pathParameters['id']}')),
-      GoRoute(path: '/debts/:id', builder: (_, state) => Text('Debt Detail ${state.pathParameters['id']}')),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => AddCaseReviewScreen(input: input),
+      ),
+      GoRoute(
+        path: '/cases/:id',
+        builder: (_, state) =>
+            Text('Case Detail ${state.pathParameters['id']}'),
+      ),
+      GoRoute(
+        path: '/customers/:id',
+        builder: (_, state) =>
+            Text('Customer Detail ${state.pathParameters['id']}'),
+      ),
+      GoRoute(
+        path: '/debts/:id',
+        builder: (_, state) =>
+            Text('Debt Detail ${state.pathParameters['id']}'),
+      ),
     ],
   );
 
@@ -146,117 +161,208 @@ void main() {
     mockDebtRepository = _MockDebtRepository();
   });
 
-  testWidgets('Existing Customer path: full success chains Debt then Case and navigates to Case Detail',
-      (tester) async {
-    when(() => mockDebtRepository.createDebt(customerId: '01CUST', amount: '500.00', dueDate: '2026-08-15', notes: null))
-        .thenAnswer((_) async => (debt: _debt, warning: null));
-    when(() => mockDebtRepository.openCase('01DEBT')).thenAnswer((_) async => _collectionCase);
+  testWidgets(
+    'Existing Customer path: full success chains Debt then Case and navigates to Case Detail',
+    (tester) async {
+      when(
+        () => mockDebtRepository.createDebt(
+          customerId: '01CUST',
+          amount: '500.00',
+          dueDate: '2026-08-15',
+          notes: null,
+        ),
+      ).thenAnswer((_) async => (debt: _debt, warning: null));
+      when(
+        () => mockDebtRepository.openCase('01DEBT'),
+      ).thenAnswer((_) async => _collectionCase);
 
-    await _pumpScreen(
-      tester,
-      input: const AddCaseReviewInput(existingCustomer: _existingCustomer, debtDraft: _debtDraft),
-      customerRepository: mockCustomerRepository,
-      debtRepository: mockDebtRepository,
-    );
+      await _pumpScreen(
+        tester,
+        input: const AddCaseReviewInput(
+          existingCustomer: _existingCustomer,
+          debtDraft: _debtDraft,
+        ),
+        customerRepository: mockCustomerRepository,
+        debtRepository: mockDebtRepository,
+      );
 
-    expect(find.text('Somali Builders'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
-    await tester.pumpAndSettle();
+      expect(find.text('Somali Builders'), findsOneWidget);
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
+      await tester.pumpAndSettle();
 
-    verifyNever(() => mockCustomerRepository.createCustomer(
+      verifyNever(
+        () => mockCustomerRepository.createCustomer(
           name: any(named: 'name'),
           phone: any(named: 'phone'),
           creditLimit: any(named: 'creditLimit'),
-        ));
-    verify(() => mockDebtRepository.createDebt(customerId: '01CUST', amount: '500.00', dueDate: '2026-08-15', notes: null))
-        .called(1);
-    verify(() => mockDebtRepository.openCase('01DEBT')).called(1);
-    expect(find.text('Case Detail 01CASE'), findsOneWidget);
-  });
+        ),
+      );
+      verify(
+        () => mockDebtRepository.createDebt(
+          customerId: '01CUST',
+          amount: '500.00',
+          dueDate: '2026-08-15',
+          notes: null,
+        ),
+      ).called(1);
+      verify(() => mockDebtRepository.openCase('01DEBT')).called(1);
+      expect(find.text('Case Detail 01CASE'), findsOneWidget);
+    },
+  );
 
-  testWidgets('New Customer path: full success chains Customer then Debt then Case', (tester) async {
-    when(() => mockCustomerRepository.createCustomer(name: 'New Traders', phone: '+252699999999', creditLimit: '1000.00'))
-        .thenAnswer((_) async => (customer: _newCustomer, warning: null));
-    when(() => mockDebtRepository.createDebt(customerId: '01NEW', amount: '500.00', dueDate: '2026-08-15', notes: null))
-        .thenAnswer((_) async => (debt: _debt, warning: null));
-    when(() => mockDebtRepository.openCase('01DEBT')).thenAnswer((_) async => _collectionCase);
+  testWidgets(
+    'New Customer path: full success chains Customer then Debt then Case',
+    (tester) async {
+      when(
+        () => mockCustomerRepository.createCustomer(
+          name: 'New Traders',
+          phone: '+252699999999',
+          creditLimit: '1000.00',
+        ),
+      ).thenAnswer((_) async => (customer: _newCustomer, warning: null));
+      when(
+        () => mockDebtRepository.createDebt(
+          customerId: '01NEW',
+          amount: '500.00',
+          dueDate: '2026-08-15',
+          notes: null,
+        ),
+      ).thenAnswer((_) async => (debt: _debt, warning: null));
+      when(
+        () => mockDebtRepository.openCase('01DEBT'),
+      ).thenAnswer((_) async => _collectionCase);
 
-    await _pumpScreen(
-      tester,
-      input: const AddCaseReviewInput(
-        customerDraft: CustomerDraft(name: 'New Traders', phone: '+252699999999', creditLimit: '1000.00'),
-        debtDraft: _debtDraft,
-      ),
-      customerRepository: mockCustomerRepository,
-      debtRepository: mockDebtRepository,
-    );
+      await _pumpScreen(
+        tester,
+        input: const AddCaseReviewInput(
+          customerDraft: CustomerDraft(
+            name: 'New Traders',
+            phone: '+252699999999',
+            creditLimit: '1000.00',
+          ),
+          debtDraft: _debtDraft,
+        ),
+        customerRepository: mockCustomerRepository,
+        debtRepository: mockDebtRepository,
+      );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Customer & Debt'));
-    await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, 'Create Customer & Debt'),
+      );
+      await tester.pumpAndSettle();
 
-    verify(() => mockCustomerRepository.createCustomer(name: 'New Traders', phone: '+252699999999', creditLimit: '1000.00'))
-        .called(1);
-    verify(() => mockDebtRepository.createDebt(customerId: '01NEW', amount: '500.00', dueDate: '2026-08-15', notes: null))
-        .called(1);
-    expect(find.text('Case Detail 01CASE'), findsOneWidget);
-  });
+      verify(
+        () => mockCustomerRepository.createCustomer(
+          name: 'New Traders',
+          phone: '+252699999999',
+          creditLimit: '1000.00',
+        ),
+      ).called(1);
+      verify(
+        () => mockDebtRepository.createDebt(
+          customerId: '01NEW',
+          amount: '500.00',
+          dueDate: '2026-08-15',
+          notes: null,
+        ),
+      ).called(1);
+      expect(find.text('Case Detail 01CASE'), findsOneWidget);
+    },
+  );
 
-  testWidgets('New Customer path: Debt creation failure surfaces the real error and a link to the created Customer',
-      (tester) async {
-    when(() => mockCustomerRepository.createCustomer(name: 'New Traders', phone: '+252699999999', creditLimit: '1000.00'))
-        .thenAnswer((_) async => (customer: _newCustomer, warning: null));
-    when(() => mockDebtRepository.createDebt(customerId: '01NEW', amount: '500.00', dueDate: '2026-08-15', notes: null))
-        .thenThrow(const ApiException(message: 'Credit limit exceeded'));
+  testWidgets(
+    'New Customer path: Debt creation failure surfaces the real error and a link to the created Customer',
+    (tester) async {
+      when(
+        () => mockCustomerRepository.createCustomer(
+          name: 'New Traders',
+          phone: '+252699999999',
+          creditLimit: '1000.00',
+        ),
+      ).thenAnswer((_) async => (customer: _newCustomer, warning: null));
+      when(
+        () => mockDebtRepository.createDebt(
+          customerId: '01NEW',
+          amount: '500.00',
+          dueDate: '2026-08-15',
+          notes: null,
+        ),
+      ).thenThrow(const ApiException(message: 'Credit limit exceeded'));
 
-    await _pumpScreen(
-      tester,
-      input: const AddCaseReviewInput(
-        customerDraft: CustomerDraft(name: 'New Traders', phone: '+252699999999', creditLimit: '1000.00'),
-        debtDraft: _debtDraft,
-      ),
-      customerRepository: mockCustomerRepository,
-      debtRepository: mockDebtRepository,
-    );
+      await _pumpScreen(
+        tester,
+        input: const AddCaseReviewInput(
+          customerDraft: CustomerDraft(
+            name: 'New Traders',
+            phone: '+252699999999',
+            creditLimit: '1000.00',
+          ),
+          debtDraft: _debtDraft,
+        ),
+        customerRepository: mockCustomerRepository,
+        debtRepository: mockDebtRepository,
+      );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Customer & Debt'));
-    await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(ElevatedButton, 'Create Customer & Debt'),
+      );
+      await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('The customer "New Traders" was created successfully'),
-      findsOneWidget,
-    );
-    expect(find.textContaining('Credit limit exceeded'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'The customer "New Traders" was created successfully',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Credit limit exceeded'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Open Customer'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Open Customer'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Customer Detail 01NEW'), findsOneWidget);
-  });
+      expect(find.text('Customer Detail 01NEW'), findsOneWidget);
+    },
+  );
 
-  testWidgets('Case creation failure surfaces the real error and a link to the created Debt, no archive call',
-      (tester) async {
-    when(() => mockDebtRepository.createDebt(customerId: '01CUST', amount: '500.00', dueDate: '2026-08-15', notes: null))
-        .thenAnswer((_) async => (debt: _debt, warning: null));
-    when(() => mockDebtRepository.openCase('01DEBT')).thenThrow(const ApiException(message: 'Server error'));
+  testWidgets(
+    'Case creation failure surfaces the real error and a link to the created Debt, no archive call',
+    (tester) async {
+      when(
+        () => mockDebtRepository.createDebt(
+          customerId: '01CUST',
+          amount: '500.00',
+          dueDate: '2026-08-15',
+          notes: null,
+        ),
+      ).thenAnswer((_) async => (debt: _debt, warning: null));
+      when(
+        () => mockDebtRepository.openCase('01DEBT'),
+      ).thenThrow(const ApiException(message: 'Server error'));
 
-    await _pumpScreen(
-      tester,
-      input: const AddCaseReviewInput(existingCustomer: _existingCustomer, debtDraft: _debtDraft),
-      customerRepository: mockCustomerRepository,
-      debtRepository: mockDebtRepository,
-    );
+      await _pumpScreen(
+        tester,
+        input: const AddCaseReviewInput(
+          existingCustomer: _existingCustomer,
+          debtDraft: _debtDraft,
+        ),
+        customerRepository: mockCustomerRepository,
+        debtRepository: mockDebtRepository,
+      );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('Debt DBT-0001 was created successfully'), findsOneWidget);
-    expect(find.textContaining('Server error'), findsOneWidget);
+      expect(
+        find.textContaining('Debt DBT-0001 was created successfully'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Server error'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Open Debt'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Open Debt'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Debt Detail 01DEBT'), findsOneWidget);
-  });
+      expect(find.text('Debt Detail 01DEBT'), findsOneWidget);
+    },
+  );
 
   group('deferred invoice upload (picked in the Debt Details step)', () {
     const draftWithInvoice = DebtDraft(
@@ -265,64 +371,111 @@ void main() {
       invoiceFile: (path: '/tmp/invoice.jpg', name: 'invoice.jpg'),
     );
 
-    testWidgets('uploads the picked invoice to the newly created debt id before opening the Case', (tester) async {
-      final mockAttachmentRepository = _MockAttachmentRepository();
-      when(() => mockDebtRepository.createDebt(customerId: '01CUST', amount: '500.00', dueDate: '2026-08-15', notes: null))
-          .thenAnswer((_) async => (debt: _debt, warning: null));
-      when(() => mockAttachmentRepository.uploadAttachment(
+    testWidgets(
+      'uploads the picked invoice to the newly created debt id before opening the Case',
+      (tester) async {
+        final mockAttachmentRepository = _MockAttachmentRepository();
+        when(
+          () => mockDebtRepository.createDebt(
+            customerId: '01CUST',
+            amount: '500.00',
+            dueDate: '2026-08-15',
+            notes: null,
+          ),
+        ).thenAnswer((_) async => (debt: _debt, warning: null));
+        when(
+          () => mockAttachmentRepository.uploadAttachment(
             entityPathPrefix: 'debts/01DEBT',
             filePath: '/tmp/invoice.jpg',
             fileName: 'invoice.jpg',
             description: 'Invoice',
-          )).thenAnswer((_) async => _uploadedInvoice);
-      when(() => mockDebtRepository.openCase('01DEBT')).thenAnswer((_) async => _collectionCase);
+          ),
+        ).thenAnswer((_) async => _uploadedInvoice);
+        when(
+          () => mockDebtRepository.openCase('01DEBT'),
+        ).thenAnswer((_) async => _collectionCase);
 
-      await _pumpScreen(
-        tester,
-        input: const AddCaseReviewInput(existingCustomer: _existingCustomer, debtDraft: draftWithInvoice),
-        customerRepository: mockCustomerRepository,
-        debtRepository: mockDebtRepository,
-        extraOverrides: [attachmentRepositoryProvider.overrideWithValue(mockAttachmentRepository)],
-      );
+        await _pumpScreen(
+          tester,
+          input: const AddCaseReviewInput(
+            existingCustomer: _existingCustomer,
+            debtDraft: draftWithInvoice,
+          ),
+          customerRepository: mockCustomerRepository,
+          debtRepository: mockDebtRepository,
+          extraOverrides: [
+            attachmentRepositoryProvider.overrideWithValue(
+              mockAttachmentRepository,
+            ),
+          ],
+        );
 
-      expect(find.text('Invoice: invoice.jpg'), findsOneWidget);
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
-      await tester.pumpAndSettle();
+        expect(find.text('Invoice: invoice.jpg'), findsOneWidget);
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
+        await tester.pumpAndSettle();
 
-      verify(() => mockAttachmentRepository.uploadAttachment(
+        verify(
+          () => mockAttachmentRepository.uploadAttachment(
             entityPathPrefix: 'debts/01DEBT',
             filePath: '/tmp/invoice.jpg',
             fileName: 'invoice.jpg',
             description: 'Invoice',
-          )).called(1);
-      expect(find.text('Case Detail 01CASE'), findsOneWidget);
-    });
+          ),
+        ).called(1);
+        expect(find.text('Case Detail 01CASE'), findsOneWidget);
+      },
+    );
 
-    testWidgets('a failed invoice upload does not block Debt/Case creation (best-effort)', (tester) async {
-      final mockAttachmentRepository = _MockAttachmentRepository();
-      when(() => mockDebtRepository.createDebt(customerId: '01CUST', amount: '500.00', dueDate: '2026-08-15', notes: null))
-          .thenAnswer((_) async => (debt: _debt, warning: null));
-      when(() => mockAttachmentRepository.uploadAttachment(
+    testWidgets(
+      'a failed invoice upload does not block Debt/Case creation (best-effort)',
+      (tester) async {
+        final mockAttachmentRepository = _MockAttachmentRepository();
+        when(
+          () => mockDebtRepository.createDebt(
+            customerId: '01CUST',
+            amount: '500.00',
+            dueDate: '2026-08-15',
+            notes: null,
+          ),
+        ).thenAnswer((_) async => (debt: _debt, warning: null));
+        when(
+          () => mockAttachmentRepository.uploadAttachment(
             entityPathPrefix: 'debts/01DEBT',
             filePath: '/tmp/invoice.jpg',
             fileName: 'invoice.jpg',
             description: 'Invoice',
-          )).thenThrow(const ApiException(message: 'Storage limit reached.', statusCode: 422));
-      when(() => mockDebtRepository.openCase('01DEBT')).thenAnswer((_) async => _collectionCase);
+          ),
+        ).thenThrow(
+          const ApiException(
+            message: 'Storage limit reached.',
+            statusCode: 422,
+          ),
+        );
+        when(
+          () => mockDebtRepository.openCase('01DEBT'),
+        ).thenAnswer((_) async => _collectionCase);
 
-      await _pumpScreen(
-        tester,
-        input: const AddCaseReviewInput(existingCustomer: _existingCustomer, debtDraft: draftWithInvoice),
-        customerRepository: mockCustomerRepository,
-        debtRepository: mockDebtRepository,
-        extraOverrides: [attachmentRepositoryProvider.overrideWithValue(mockAttachmentRepository)],
-      );
+        await _pumpScreen(
+          tester,
+          input: const AddCaseReviewInput(
+            existingCustomer: _existingCustomer,
+            debtDraft: draftWithInvoice,
+          ),
+          customerRepository: mockCustomerRepository,
+          debtRepository: mockDebtRepository,
+          extraOverrides: [
+            attachmentRepositoryProvider.overrideWithValue(
+              mockAttachmentRepository,
+            ),
+          ],
+        );
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
+        await tester.pumpAndSettle();
 
-      verify(() => mockDebtRepository.openCase('01DEBT')).called(1);
-      expect(find.text('Case Detail 01CASE'), findsOneWidget);
-    });
+        verify(() => mockDebtRepository.openCase('01DEBT')).called(1);
+        expect(find.text('Case Detail 01CASE'), findsOneWidget);
+      },
+    );
   });
 }

@@ -15,6 +15,7 @@ class ReportCreditRiskState {
   final int total;
   final String? riskLevel;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const ReportCreditRiskState({
     required this.customers,
@@ -23,6 +24,7 @@ class ReportCreditRiskState {
     required this.total,
     required this.riskLevel,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -34,6 +36,7 @@ class ReportCreditRiskState {
     int? total,
     String? riskLevel,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return ReportCreditRiskState(
       customers: customers ?? this.customers,
@@ -42,12 +45,15 @@ class ReportCreditRiskState {
       total: total ?? this.total,
       riskLevel: riskLevel ?? this.riskLevel,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final reportCreditRiskProvider =
-    AsyncNotifierProvider<ReportCreditRiskNotifier, ReportCreditRiskState>(ReportCreditRiskNotifier.new);
+    AsyncNotifierProvider<ReportCreditRiskNotifier, ReportCreditRiskState>(
+      ReportCreditRiskNotifier.new,
+    );
 
 class ReportCreditRiskNotifier extends AsyncNotifier<ReportCreditRiskState> {
   @override
@@ -62,30 +68,47 @@ class ReportCreditRiskNotifier extends AsyncNotifier<ReportCreditRiskState> {
 
   Future<void> refresh() async {
     final current = state.valueOrNull;
-    state = await AsyncValue.guard(() => _fetchFirstPage(riskLevel: current?.riskLevel));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(riskLevel: current?.riskLevel),
+    );
   }
 
   Future<void> loadMore() async {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
-      final next = await _repository.fetchReportCreditRisk(page: current.currentPage + 1, riskLevel: current.riskLevel);
-      state = AsyncData(current.copyWith(
-        customers: [...current.customers, ...next.customers],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      final next = await _repository.fetchReportCreditRisk(
+        page: current.currentPage + 1,
+        riskLevel: current.riskLevel,
+      );
+      state = AsyncData(
+        current.copyWith(
+          customers: [...current.customers, ...next.customers],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
-  Future<ReportCreditRiskState> _fetchFirstPage({required String? riskLevel}) async {
-    final page = await _repository.fetchReportCreditRisk(page: 1, riskLevel: riskLevel);
+  Future<ReportCreditRiskState> _fetchFirstPage({
+    required String? riskLevel,
+  }) async {
+    final page = await _repository.fetchReportCreditRisk(
+      page: 1,
+      riskLevel: riskLevel,
+    );
     return ReportCreditRiskState(
       customers: page.customers,
       currentPage: page.currentPage,

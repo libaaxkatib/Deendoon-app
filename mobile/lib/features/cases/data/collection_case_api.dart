@@ -6,7 +6,9 @@ import '../domain/case_history.dart';
 import '../domain/collection_case.dart';
 import '../domain/collection_case_page.dart';
 
-final collectionCaseApiProvider = Provider<CollectionCaseApi>((ref) => CollectionCaseApi(ref.read(dioProvider)));
+final collectionCaseApiProvider = Provider<CollectionCaseApi>(
+  (ref) => CollectionCaseApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET/PATCH/PUT/POST /collection-cases*` — mirrors
 /// `App\Http\Controllers\CollectionCaseController` exactly.
@@ -22,18 +24,25 @@ class CollectionCaseApi {
 
   const CollectionCaseApi(this._dio);
 
-  Future<CollectionCasePage> list({required int page, String? tab, String? customerId}) async {
-    final response = await _dio.get('collection-cases', queryParameters: {
-      'page': page,
-      'tab': ?tab,
-      'customer_id': ?customerId,
-    });
-    return CollectionCasePage.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<CollectionCasePage> list({
+    required int page,
+    String? tab,
+    String? customerId,
+  }) async {
+    final response = await _dio.get(
+      'collection-cases',
+      queryParameters: {'page': page, 'tab': ?tab, 'customer_id': ?customerId},
+    );
+    return CollectionCasePage.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<CollectionCase> show(String id) async {
     final response = await _dio.get('collection-cases/$id');
-    return CollectionCase.fromJson(response.data['data'] as Map<String, dynamic>);
+    return CollectionCase.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `RecordCollectionActivityRequest`: `details` is the only field, an
@@ -42,14 +51,25 @@ class CollectionCaseApi {
   /// there is no `type` param distinguishing "Add Follow-up" from "Mark
   /// Contacted" from "Record Visit" server-side.
   Future<void> recordActivity({required String caseId, String? details}) async {
-    await _dio.post('collection-cases/$caseId/activities', data: {'details': ?details});
+    await _dio.post(
+      'collection-cases/$caseId/activities',
+      data: {'details': ?details},
+    );
   }
 
   /// `CloseCollectionCaseRequest`: `closure_outcome` required, free text,
   /// max 50 chars — no backend-enforced enum (DD-024 is still pending).
-  Future<CollectionCase> close({required String caseId, required String closureOutcome}) async {
-    final response = await _dio.post('collection-cases/$caseId/close', data: {'closure_outcome': closureOutcome});
-    return CollectionCase.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<CollectionCase> close({
+    required String caseId,
+    required String closureOutcome,
+  }) async {
+    final response = await _dio.post(
+      'collection-cases/$caseId/close',
+      data: {'closure_outcome': closureOutcome},
+    );
+    return CollectionCase.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<CaseHistory> history(String caseId) async {
@@ -60,8 +80,16 @@ class CollectionCaseApi {
   /// `UpdateCollectionCaseRequest`: `notes` is the only editable field, a
   /// nullable free-text case annotation distinct from the Timeline's
   /// per-activity details.
-  Future<CollectionCase> updateNotes({required String caseId, String? notes}) async {
-    final response = await _dio.put('collection-cases/$caseId', data: {'notes': notes});
-    return CollectionCase.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<CollectionCase> updateNotes({
+    required String caseId,
+    String? notes,
+  }) async {
+    final response = await _dio.put(
+      'collection-cases/$caseId',
+      data: {'notes': notes},
+    );
+    return CollectionCase.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 }

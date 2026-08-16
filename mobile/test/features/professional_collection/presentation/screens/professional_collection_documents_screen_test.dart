@@ -9,7 +9,8 @@ import 'package:mobile/features/professional_collection/presentation/screens/pro
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
+class _MockProfessionalCollectionRepository extends Mock
+    implements ProfessionalCollectionRepository {}
 
 void main() {
   late _MockProfessionalCollectionRepository mockRepository;
@@ -21,7 +22,11 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          professionalCollectionRepositoryProvider.overrideWithValue(
+            mockRepository,
+          ),
+        ],
         child: const MaterialApp(
           locale: Locale('en'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -41,15 +46,17 @@ void main() {
   }
 
   testWidgets('renders the linked documents with real fields', (tester) async {
-    when(() => mockRepository.fetchDocuments('1')).thenAnswer((_) async => const [
-          DocumentSummary(
-            id: '1',
-            documentType: 'receipt',
-            referenceNumber: 'RCT-0001',
-            generatedAt: '2026-08-01T00:00:00.000000Z',
-            fileSize: 2000,
-          ),
-        ]);
+    when(() => mockRepository.fetchDocuments('1')).thenAnswer(
+      (_) async => const [
+        DocumentSummary(
+          id: '1',
+          documentType: 'receipt',
+          referenceNumber: 'RCT-0001',
+          generatedAt: '2026-08-01T00:00:00.000000Z',
+          fileSize: 2000,
+        ),
+      ],
+    );
 
     await pumpScreen(tester);
 
@@ -57,16 +64,23 @@ void main() {
     expect(find.text('Receipt'), findsOneWidget);
   });
 
-  testWidgets('shows the explicit empty state when nothing is linked yet', (tester) async {
+  testWidgets('shows the explicit empty state when nothing is linked yet', (
+    tester,
+  ) async {
     when(() => mockRepository.fetchDocuments('1')).thenAnswer((_) async => []);
 
     await pumpScreen(tester);
 
-    expect(find.text('No documents linked to this Request yet'), findsOneWidget);
+    expect(
+      find.text('No documents linked to this Request yet'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows a retry affordance when the fetch fails', (tester) async {
-    when(() => mockRepository.fetchDocuments('1')).thenThrow(Exception('network down'));
+    when(
+      () => mockRepository.fetchDocuments('1'),
+    ).thenThrow(Exception('network down'));
 
     await pumpScreen(tester);
 

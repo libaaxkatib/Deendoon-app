@@ -6,7 +6,8 @@ import '../../../../core/theme/deendoon_colors.dart';
 import '../../domain/collections_trend.dart';
 
 String _formatAxisValue(double value) {
-  if (value >= 1000) return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}K';
+  if (value >= 1000)
+    return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}K';
   if (value == value.roundToDouble()) return value.toStringAsFixed(0);
   return value.toStringAsFixed(1);
 }
@@ -25,7 +26,9 @@ class TrendLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final values = series.map((p) => double.tryParse(p.value) ?? 0.0).toList();
-    final maxValue = values.isEmpty ? 0.0 : values.reduce((a, b) => a > b ? a : b);
+    final maxValue = values.isEmpty
+        ? 0.0
+        : values.reduce((a, b) => a > b ? a : b);
     final safeMax = maxValue <= 0 ? 1.0 : maxValue;
 
     return Column(
@@ -44,13 +47,22 @@ class TrendLineChart extends StatelessWidget {
                   children: [
                     Text(
                       _formatAxisValue(safeMax),
-                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                      style: AppTypography.caption.copyWith(
+                        color: context.colors.textSecondary,
+                      ),
                     ),
                     Text(
                       _formatAxisValue(safeMax / 2),
-                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                      style: AppTypography.caption.copyWith(
+                        color: context.colors.textSecondary,
+                      ),
                     ),
-                    Text('0', style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                    Text(
+                      '0',
+                      style: AppTypography.caption.copyWith(
+                        color: context.colors.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -73,8 +85,18 @@ class TrendLineChart extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(series.first.date, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
-                Text(series.last.date, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                Text(
+                  series.first.date,
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+                Text(
+                  series.last.date,
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -96,8 +118,16 @@ class _TrendPainter extends CustomPainter {
       ..color = gridColor
       ..strokeWidth = 1;
     canvas.drawLine(Offset(0, 0), Offset(size.width, 0), gridPaint);
-    canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), gridPaint);
-    canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), gridPaint);
+    canvas.drawLine(
+      Offset(0, size.height / 2),
+      Offset(size.width, size.height / 2),
+      gridPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height),
+      Offset(size.width, size.height),
+      gridPaint,
+    );
 
     if (values.isEmpty) return;
 
@@ -130,7 +160,8 @@ class _TrendPainter extends CustomPainter {
       ..lineTo(points.last.dx, size.height)
       ..lineTo(points.first.dx, size.height)
       ..close();
-    final fillPaint = Paint()..color = AppColors.primary.withValues(alpha: 0.12);
+    final fillPaint = Paint()
+      ..color = AppColors.primary.withValues(alpha: 0.12);
     canvas.drawPath(fillPath, fillPaint);
 
     final endDotPaint = Paint()..color = AppColors.primary;

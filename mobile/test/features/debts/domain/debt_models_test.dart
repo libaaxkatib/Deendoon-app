@@ -5,17 +5,22 @@ import 'package:mobile/features/debts/domain/debt_page.dart';
 import 'package:mobile/features/debts/domain/debt_timeline.dart';
 import 'package:mobile/features/debts/domain/promise_to_pay.dart';
 
-Map<String, dynamic> _debtJson({String debtStatus = 'overdue', String dueDate = '2026-07-01'}) => {
-      'id': '01DEBT',
-      'customer_id': '01CUST',
-      'reference_number': 'DBT-0001',
-      'amount': '1000.00',
-      'due_date': dueDate,
-      'debt_status': debtStatus,
-      'remaining_balance': '400.00',
-      'recovery_stage': 3,
-      'notes': 'Some notes',
-    };
+Map<String, dynamic> _debtJson({
+  String debtStatus = 'overdue',
+  String dueDate = '2026-07-01',
+  String? archivedAt,
+}) => {
+  'id': '01DEBT',
+  'customer_id': '01CUST',
+  'reference_number': 'DBT-0001',
+  'amount': '1000.00',
+  'due_date': dueDate,
+  'debt_status': debtStatus,
+  'remaining_balance': '400.00',
+  'recovery_stage': 3,
+  'notes': 'Some notes',
+  'archived_at': archivedAt,
+};
 
 void main() {
   group('Debt', () {
@@ -34,7 +39,9 @@ void main() {
     });
 
     test('daysOverdue is positive for a past due_date on an open debt', () {
-      final debt = Debt.fromJson(_debtJson(debtStatus: 'overdue', dueDate: '2026-07-01'));
+      final debt = Debt.fromJson(
+        _debtJson(debtStatus: 'overdue', dueDate: '2026-07-01'),
+      );
 
       final days = debt.daysOverdue(now: DateTime(2026, 7, 28));
 
@@ -42,15 +49,33 @@ void main() {
     });
 
     test('daysOverdue is null when the due date is in the future', () {
-      final debt = Debt.fromJson(_debtJson(debtStatus: 'pending', dueDate: '2026-08-01'));
+      final debt = Debt.fromJson(
+        _debtJson(debtStatus: 'pending', dueDate: '2026-08-01'),
+      );
 
       expect(debt.daysOverdue(now: DateTime(2026, 7, 28)), isNull);
     });
 
     test('daysOverdue is null for a closed debt even past its due date', () {
-      final debt = Debt.fromJson(_debtJson(debtStatus: 'paid', dueDate: '2026-01-01'));
+      final debt = Debt.fromJson(
+        _debtJson(debtStatus: 'paid', dueDate: '2026-01-01'),
+      );
 
       expect(debt.daysOverdue(now: DateTime(2026, 7, 28)), isNull);
+    });
+
+    test('isArchived is false when archived_at is null', () {
+      final debt = Debt.fromJson(_debtJson());
+
+      expect(debt.isArchived, isFalse);
+    });
+
+    test('isArchived is true when archived_at is set', () {
+      final debt = Debt.fromJson(
+        _debtJson(archivedAt: '2026-08-01T00:00:00.000000Z'),
+      );
+
+      expect(debt.isArchived, isTrue);
     });
   });
 
@@ -58,7 +83,12 @@ void main() {
     test('parses the debts + pagination envelope from GET /debts', () {
       final page = DebtPage.fromJson({
         'debts': [_debtJson()],
-        'pagination': {'current_page': 1, 'per_page': 20, 'total': 5, 'last_page': 1},
+        'pagination': {
+          'current_page': 1,
+          'per_page': 20,
+          'total': 5,
+          'last_page': 1,
+        },
       });
 
       expect(page.debts, hasLength(1));
@@ -109,8 +139,16 @@ void main() {
       final timeline = DebtTimeline.fromJson({
         'debt_id': '01DEBT',
         'stages': [
-          {'event': 'debt_created', 'status': 'completed', 'occurred_at': '2026-07-01T00:00:00.000000Z'},
-          {'event': 'whatsapp_reminder', 'status': 'pending', 'occurred_at': null},
+          {
+            'event': 'debt_created',
+            'status': 'completed',
+            'occurred_at': '2026-07-01T00:00:00.000000Z',
+          },
+          {
+            'event': 'whatsapp_reminder',
+            'status': 'pending',
+            'occurred_at': null,
+          },
         ],
       });
 

@@ -8,5 +8,10 @@ class CustomerDraft {
   final String? address;
   final String creditLimit;
 
-  const CustomerDraft({required this.name, required this.phone, this.address, required this.creditLimit});
+  const CustomerDraft({
+    required this.name,
+    required this.phone,
+    this.address,
+    required this.creditLimit,
+  });
 }

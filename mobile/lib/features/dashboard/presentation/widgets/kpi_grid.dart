@@ -37,14 +37,19 @@ class KpiGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final kpis = ref.watch(dashboardKpisProvider);
-    final periodLabel = kpiPeriodDisplayLabel(l10n, ref.watch(kpiPeriodProvider));
+    final periodLabel = kpiPeriodDisplayLabel(
+      l10n,
+      ref.watch(kpiPeriodProvider),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            Expanded(child: Text(l10n.kpiOverviewTitle, style: AppTypography.heading)),
+            Expanded(
+              child: Text(l10n.kpiOverviewTitle, style: AppTypography.heading),
+            ),
             const KpiPeriodSelector(),
           ],
         ),
@@ -80,7 +85,8 @@ class KpiGrid extends ConsumerWidget {
                 label: l10n.kpiOverdueAmount,
                 value: data.overdueValue,
                 valueColor: AppColors.danger,
-                onTap: () => context.push('/analytics/reports/debts?status=overdue'),
+                onTap: () =>
+                    context.push('/analytics/reports/debts?status=overdue'),
               ),
               KpiCard(
                 icon: Icons.groups_outlined,

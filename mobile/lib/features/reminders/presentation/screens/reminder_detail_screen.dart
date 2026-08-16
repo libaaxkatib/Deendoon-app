@@ -53,7 +53,8 @@ class ReminderDetailScreen extends ConsumerStatefulWidget {
   const ReminderDetailScreen({super.key, required this.reminderId});
 
   @override
-  ConsumerState<ReminderDetailScreen> createState() => _ReminderDetailScreenState();
+  ConsumerState<ReminderDetailScreen> createState() =>
+      _ReminderDetailScreenState();
 }
 
 class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
@@ -67,8 +68,14 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
         title: Text(l10n.reminderDetailDeleteDialogTitle),
         content: Text(l10n.reminderDetailDeleteDialogContent),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.commonCancel)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.reminderDetailDeleteButton)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.reminderDetailDeleteButton),
+          ),
         ],
       ),
     );
@@ -98,18 +105,31 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   /// (Item 13) for a precise location; falls back to a text search on the
   /// customer's name when no address is on file (an older customer record,
   /// or one created without one — `address` is optional).
-  Future<void> _navigate(BuildContext context, String? customerName, String? customerAddress) async {
+  Future<void> _navigate(
+    BuildContext context,
+    String? customerName,
+    String? customerAddress,
+  ) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final query = (customerAddress != null && customerAddress.trim().isNotEmpty) ? customerAddress : customerName;
+    final query = (customerAddress != null && customerAddress.trim().isNotEmpty)
+        ? customerAddress
+        : customerName;
     if (query == null || query.trim().isEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderDetailNoAddressMessage)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.reminderDetailNoAddressMessage)),
+      );
       return;
     }
-    final uri = Uri.https('www.google.com', '/maps/search/', {'api': '1', 'query': query});
+    final uri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': query,
+    });
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderDetailMapsOpenError)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.reminderDetailMapsOpenError)),
+      );
     }
   }
 
@@ -126,7 +146,10 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _LogVisitOutcomeSheet(reminderId: widget.reminderId, initialNotes: existingNotes),
+      builder: (_) => _LogVisitOutcomeSheet(
+        reminderId: widget.reminderId,
+        initialNotes: existingNotes,
+      ),
     );
   }
 
@@ -150,7 +173,12 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   /// recorded. Otherwise falls back to launching the device dialer
   /// directly with the resolved customer's phone number (real action, no
   /// persistence — there is no non-debt call-logging endpoint).
-  Future<void> _placeCall(BuildContext context, String relatedEntityType, String relatedEntityId, String? phone) async {
+  Future<void> _placeCall(
+    BuildContext context,
+    String relatedEntityType,
+    String relatedEntityId,
+    String? phone,
+  ) async {
     if (relatedEntityType == 'debt') {
       await showLogReminderSheet(context, relatedEntityId, 'call');
       return;
@@ -158,12 +186,16 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     if (phone == null || phone.trim().isEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderNoPhoneNumberMessage)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.reminderNoPhoneNumberMessage)),
+      );
       return;
     }
     final launched = await launchUrl(Uri(scheme: 'tel', path: phone));
     if (!launched && context.mounted) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderCouldNotOpenDialerMessage)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.reminderCouldNotOpenDialerMessage)),
+      );
     }
   }
 
@@ -184,7 +216,9 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: reminderAsync.valueOrNull == null ? null : () => _delete(context, ref),
+            onPressed: reminderAsync.valueOrNull == null
+                ? null
+                : () => _delete(context, ref),
           ),
         ],
       ),
@@ -195,13 +229,17 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
             padding: const EdgeInsets.all(24),
             child: RetrySection(
               message: l10n.reminderDetailLoadError,
-              onRetry: () => ref.invalidate(reminderDetailProvider(widget.reminderId)),
+              onRetry: () =>
+                  ref.invalidate(reminderDetailProvider(widget.reminderId)),
             ),
           ),
         ),
         data: (reminder) {
-          final relatedAsync =
-              ref.watch(relatedEntityProvider('${reminder.relatedEntityType}:${reminder.relatedEntityId}'));
+          final relatedAsync = ref.watch(
+            relatedEntityProvider(
+              '${reminder.relatedEntityType}:${reminder.relatedEntityId}',
+            ),
+          );
           final isCompleted = reminder.status == 'completed';
           final isClientVisit = reminder.type == 'client_visit';
 
@@ -216,16 +254,25 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(reminder.title, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+                        Text(
+                          reminder.title,
+                          style: AppTypography.subheading.copyWith(
+                            color: context.colors.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           relatedAsync.valueOrNull?.name ?? '…',
-                          style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                          style: AppTypography.caption.copyWith(
+                            color: context.colors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           formatFriendlyDateTimeFromIso(reminder.dueDate),
-                          style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                          style: AppTypography.caption.copyWith(
+                            color: context.colors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -237,52 +284,91 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _InfoRow(label: l10n.reminderDetailTypeLabel, value: reminder.title),
+                    _InfoRow(
+                      label: l10n.reminderDetailTypeLabel,
+                      value: reminder.title,
+                    ),
                     const SizedBox(height: 12),
-                    _InfoRow(label: l10n.addEditDebtDueDateHeading, value: formatFriendlyDateTimeFromIso(reminder.dueDate)),
-                    if (_amountDueTypes.contains(reminder.type) && reminder.amountDue != null) ...[
+                    _InfoRow(
+                      label: l10n.addEditDebtDueDateHeading,
+                      value: formatFriendlyDateTimeFromIso(reminder.dueDate),
+                    ),
+                    if (_amountDueTypes.contains(reminder.type) &&
+                        reminder.amountDue != null) ...[
                       const SizedBox(height: 12),
-                      _InfoRow(label: l10n.reminderDetailAmountDueLabel, value: formatFriendlyAmount(reminder.amountDue!)),
+                      _InfoRow(
+                        label: l10n.reminderDetailAmountDueLabel,
+                        value: formatFriendlyAmount(reminder.amountDue!),
+                      ),
                     ],
                     if (reminder.relatedCaseId != null) ...[
                       const SizedBox(height: 12),
                       _InfoRow(
                         label: l10n.reminderDetailRelatedCaseLabel,
                         value: l10n.reminderDetailViewCaseLabel,
-                        onTap: () => context.push('/cases/${reminder.relatedCaseId}'),
+                        onTap: () =>
+                            context.push('/cases/${reminder.relatedCaseId}'),
                       ),
                     ],
                     const SizedBox(height: 12),
                     _InfoRow(
                       label: l10n.reminderDetailCreatedByLabel,
-                      value: l10n.reminderDetailCreatedByValue(reminder.createdByUserId),
+                      value: l10n.reminderDetailCreatedByValue(
+                        reminder.createdByUserId,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    _InfoRow(label: l10n.reminderDetailCreatedOnLabel, value: formatFriendlyDateTimeFromIso(reminder.createdAt)),
+                    _InfoRow(
+                      label: l10n.reminderDetailCreatedOnLabel,
+                      value: formatFriendlyDateTimeFromIso(reminder.createdAt),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
+              Text(
+                l10n.addEditDebtNotesHeading,
+                style: AppTypography.heading.copyWith(
+                  color: context.colors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 12),
               AppCard(
                 child: Text(
-                  (reminder.notes?.trim().isNotEmpty ?? false) ? reminder.notes! : l10n.reminderDetailNoNotesMessage,
-                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  (reminder.notes?.trim().isNotEmpty ?? false)
+                      ? reminder.notes!
+                      : l10n.reminderDetailNoNotesMessage,
+                  style: AppTypography.body.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
               if (isClientVisit) ...[
                 OutlinedButton.icon(
-                  onPressed: () => _navigate(context, relatedAsync.valueOrNull?.name, relatedAsync.valueOrNull?.address),
+                  onPressed: () => _navigate(
+                    context,
+                    relatedAsync.valueOrNull?.name,
+                    relatedAsync.valueOrNull?.address,
+                  ),
                   icon: const Icon(Icons.directions_outlined),
                   label: Text(l10n.reminderDetailNavigateButton),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  onPressed: reminder.checkedInAt != null ? null : () => _checkIn(context, ref),
-                  icon: Icon(reminder.checkedInAt != null ? Icons.check_circle : Icons.check_circle_outline),
-                  label: Text(reminder.checkedInAt != null ? l10n.reminderDetailCheckedInLabel : l10n.reminderDetailCheckInButton),
+                  onPressed: reminder.checkedInAt != null
+                      ? null
+                      : () => _checkIn(context, ref),
+                  icon: Icon(
+                    reminder.checkedInAt != null
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
+                  ),
+                  label: Text(
+                    reminder.checkedInAt != null
+                        ? l10n.reminderDetailCheckedInLabel
+                        : l10n.reminderDetailCheckInButton,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
@@ -321,7 +407,9 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                       child: _CommunicationActionButton(
                         icon: Icons.chat_outlined,
                         label: l10n.reminderDetailWhatsAppButton,
-                        onPressed: () => context.push('/reminders/${widget.reminderId}/send?channel=whatsapp'),
+                        onPressed: () => context.push(
+                          '/reminders/${widget.reminderId}/send?channel=whatsapp',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -329,7 +417,9 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                       child: _CommunicationActionButton(
                         icon: Icons.sms_outlined,
                         label: l10n.reminderDetailSmsButton,
-                        onPressed: () => context.push('/reminders/${widget.reminderId}/send?channel=sms'),
+                        onPressed: () => context.push(
+                          '/reminders/${widget.reminderId}/send?channel=sms',
+                        ),
                       ),
                     ),
                   ],
@@ -347,8 +437,12 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger, side: const BorderSide(color: AppColors.danger)),
-                  onPressed: () => context.push('/reminders/${widget.reminderId}/edit'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.danger,
+                    side: const BorderSide(color: AppColors.danger),
+                  ),
+                  onPressed: () =>
+                      context.push('/reminders/${widget.reminderId}/edit'),
                   child: Text(l10n.reminderDetailRescheduleButton),
                 ),
               ],
@@ -369,15 +463,27 @@ class _CommunicationActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
 
-  const _CommunicationActionButton({required this.icon, required this.label, required this.onPressed});
+  const _CommunicationActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: onPressed,
-      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12)),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+      ),
       icon: Icon(icon, size: 18),
-      label: Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+      label: Text(
+        label,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 13),
+      ),
     );
   }
 }
@@ -394,11 +500,14 @@ class _LogVisitOutcomeSheet extends ConsumerStatefulWidget {
   const _LogVisitOutcomeSheet({required this.reminderId, this.initialNotes});
 
   @override
-  ConsumerState<_LogVisitOutcomeSheet> createState() => _LogVisitOutcomeSheetState();
+  ConsumerState<_LogVisitOutcomeSheet> createState() =>
+      _LogVisitOutcomeSheetState();
 }
 
 class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
-  late final _outcomeController = TextEditingController(text: widget.initialNotes ?? '');
+  late final _outcomeController = TextEditingController(
+    text: widget.initialNotes ?? '',
+  );
   bool _isSaving = false;
   String? _error;
 
@@ -417,9 +526,13 @@ class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      await ref.read(reminderActionsProvider).update(id: widget.reminderId, notes: _outcomeController.text.trim());
+      await ref
+          .read(reminderActionsProvider)
+          .update(id: widget.reminderId, notes: _outcomeController.text.trim());
       navigator.pop();
-      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderDetailVisitOutcomeSavedMessage)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.reminderDetailVisitOutcomeSavedMessage)),
+      );
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -441,22 +554,36 @@ class _LogVisitOutcomeSheetState extends ConsumerState<_LogVisitOutcomeSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.reminderDetailLogVisitOutcomeLabel, style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
+          Text(
+            l10n.reminderDetailLogVisitOutcomeLabel,
+            style: AppTypography.heading.copyWith(
+              color: context.colors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _outcomeController,
             maxLines: 4,
-            decoration: InputDecoration(labelText: l10n.reminderDetailLogVisitOutcomeHint),
+            decoration: InputDecoration(
+              labelText: l10n.reminderDetailLogVisitOutcomeHint,
+            ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: _isSaving ? null : _save,
             child: _isSaving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : Text(l10n.commonSave),
           ),
         ],
@@ -478,7 +605,8 @@ class _SnoozeReminderSheet extends ConsumerStatefulWidget {
   const _SnoozeReminderSheet({required this.reminderId});
 
   @override
-  ConsumerState<_SnoozeReminderSheet> createState() => _SnoozeReminderSheetState();
+  ConsumerState<_SnoozeReminderSheet> createState() =>
+      _SnoozeReminderSheetState();
 }
 
 class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
@@ -494,9 +622,17 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      await ref.read(reminderActionsProvider).update(id: widget.reminderId, dueDate: dueDate.toIso8601String());
+      await ref
+          .read(reminderActionsProvider)
+          .update(id: widget.reminderId, dueDate: dueDate.toIso8601String());
       navigator.pop();
-      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderSnoozedUntilMessage(formatFriendlyDateTime(dueDate)))));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.reminderSnoozedUntilMessage(formatFriendlyDateTime(dueDate)),
+          ),
+        ),
+      );
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -506,13 +642,23 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
 
   Future<void> _pickCustom() async {
     final now = DateTime.now();
-    final date = await showDatePicker(context: context, initialDate: now, firstDate: now, lastDate: DateTime(now.year + 5));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
+    );
     if (date == null || !mounted) return;
 
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(now));
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(now),
+    );
     if (time == null) return;
 
-    await _snoozeUntil(DateTime(date.year, date.month, date.day, time.hour, time.minute));
+    await _snoozeUntil(
+      DateTime(date.year, date.month, date.day, time.hour, time.minute),
+    );
   }
 
   @override
@@ -531,10 +677,20 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.reminderSnoozeSheetTitle, style: AppTypography.heading.copyWith(color: context.colors.textPrimary)),
+          Text(
+            l10n.reminderSnoozeSheetTitle,
+            style: AppTypography.heading.copyWith(
+              color: context.colors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 16),
           if (_isSaving)
-            const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else ...[
             OutlinedButton(
               onPressed: () => _snoozeUntil(now.add(const Duration(hours: 1))),
@@ -542,7 +698,9 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
             ),
             const SizedBox(height: 8),
             OutlinedButton(
-              onPressed: () => _snoozeUntil(DateTime(now.year, now.month, now.day + 1, 9, 0)),
+              onPressed: () => _snoozeUntil(
+                DateTime(now.year, now.month, now.day + 1, 9, 0),
+              ),
               child: Text(l10n.reminderSnoozeTomorrow),
             ),
             const SizedBox(height: 8),
@@ -558,7 +716,10 @@ class _SnoozeReminderSheetState extends ConsumerState<_SnoozeReminderSheet> {
           ],
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
         ],
       ),
@@ -578,12 +739,21 @@ class _InfoRow extends StatelessWidget {
     final row = Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
         Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: AppTypography.body.copyWith(color: onTap != null ? AppColors.primary : context.colors.textPrimary),
+            style: AppTypography.body.copyWith(
+              color: onTap != null
+                  ? AppColors.primary
+                  : context.colors.textPrimary,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

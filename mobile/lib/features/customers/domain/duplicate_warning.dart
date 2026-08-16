@@ -15,7 +15,8 @@ class DuplicateWarning {
     required this.matchedCustomerId,
   });
 
-  factory DuplicateWarning.fromJson(Map<String, dynamic> json) => DuplicateWarning(
+  factory DuplicateWarning.fromJson(Map<String, dynamic> json) =>
+      DuplicateWarning(
         type: json['type'] as String,
         message: json['message'] as String,
         matchedCustomerId: json['matched_customer_id'].toString(),

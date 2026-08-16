@@ -11,7 +11,8 @@ import '../../../../l10n/generated/app_localizations.dart';
 // about it; the same cross-feature provider-reuse pattern the Cases
 // module already uses for Debt/Customer repositories (Sprint 13).
 import '../../../reminders/domain/message_template.dart';
-import '../../../reminders/presentation/providers/reminder_detail_providers.dart' show messageTemplatesProvider;
+import '../../../reminders/presentation/providers/reminder_detail_providers.dart'
+    show messageTemplatesProvider;
 import '../providers/document_actions.dart';
 
 /// Share (§8.8) — channel + template picker, sending via the real
@@ -29,7 +30,8 @@ class DocumentShareScreen extends ConsumerStatefulWidget {
   const DocumentShareScreen({super.key, required this.documentId});
 
   @override
-  ConsumerState<DocumentShareScreen> createState() => _DocumentShareScreenState();
+  ConsumerState<DocumentShareScreen> createState() =>
+      _DocumentShareScreenState();
 }
 
 class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
@@ -48,12 +50,16 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
     final router = GoRouter.of(context);
     final l10n = AppLocalizations.of(context);
     try {
-      await ref.read(documentActionsProvider).share(
+      await ref
+          .read(documentActionsProvider)
+          .share(
             documentId: widget.documentId,
             channel: _channel,
             templateId: _selectedTemplate!.id,
           );
-      messenger.showSnackBar(SnackBar(content: Text(l10n.documentSharedSuccessMessage)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.documentSharedSuccessMessage)),
+      );
       router.pop();
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -83,11 +89,18 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
           children: [
             SegmentedButton<String>(
               segments: [
-                ButtonSegment(value: 'whatsapp', label: Text(l10n.reminderDetailWhatsAppButton)),
-                ButtonSegment(value: 'sms', label: Text(l10n.reminderDetailSmsButton)),
+                ButtonSegment(
+                  value: 'whatsapp',
+                  label: Text(l10n.reminderDetailWhatsAppButton),
+                ),
+                ButtonSegment(
+                  value: 'sms',
+                  label: Text(l10n.reminderDetailSmsButton),
+                ),
               ],
               selected: {_channel},
-              onSelectionChanged: (selection) => _switchChannel(selection.first),
+              onSelectionChanged: (selection) =>
+                  _switchChannel(selection.first),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -95,18 +108,25 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => RetrySection(
                   message: l10n.messagePreviewTemplatesLoadError,
-                  onRetry: () => ref.invalidate(messageTemplatesProvider(_channel)),
+                  onRetry: () =>
+                      ref.invalidate(messageTemplatesProvider(_channel)),
                 ),
                 data: (templates) {
                   if (templates.isEmpty) {
                     return Center(
-                      child: Text(l10n.messagePreviewEmptyTemplatesState, style: AppTypography.body),
+                      child: Text(
+                        l10n.messagePreviewEmptyTemplatesState,
+                        style: AppTypography.body,
+                      ),
                     );
                   }
 
                   return ListView(
                     children: [
-                      Text(l10n.messagePreviewUseTemplateHeading, style: AppTypography.heading),
+                      Text(
+                        l10n.messagePreviewUseTemplateHeading,
+                        style: AppTypography.heading,
+                      ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -116,13 +136,19 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
                             ChoiceChip(
                               label: Text(template.name),
                               selected: _selectedTemplate?.id == template.id,
-                              onSelected: (_) => setState(() => _selectedTemplate = template),
+                              onSelected: (_) =>
+                                  setState(() => _selectedTemplate = template),
                             ),
                         ],
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: 12),
-                        Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
                       ],
                     ],
                   );
@@ -131,12 +157,20 @@ class _DocumentShareScreenState extends ConsumerState<DocumentShareScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: (_selectedTemplate == null || _isSending) ? null : _send,
+              onPressed: (_selectedTemplate == null || _isSending)
+                  ? null
+                  : _send,
               child: _isSending
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_channel == 'whatsapp'
-                      ? l10n.messagePreviewSendViaWhatsAppButton
-                      : l10n.messagePreviewSendViaSmsButton),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      _channel == 'whatsapp'
+                          ? l10n.messagePreviewSendViaWhatsAppButton
+                          : l10n.messagePreviewSendViaSmsButton,
+                    ),
             ),
           ],
         ),

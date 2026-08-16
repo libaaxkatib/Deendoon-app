@@ -19,10 +19,10 @@ class RecentCase {
   });
 
   factory RecentCase.fromJson(Map<String, dynamic> json) => RecentCase(
-        id: json['id'].toString(),
-        customerName: json['customer_name'] as String? ?? 'Unknown Customer',
-        outstandingAmount: json['outstanding_amount'] as String? ?? '0.00',
-        riskLevel: json['risk_level'] as String?,
-        lastActivityAt: DateTime.parse(json['last_activity_at'] as String),
-      );
+    id: json['id'].toString(),
+    customerName: json['customer_name'] as String? ?? 'Unknown Customer',
+    outstandingAmount: json['outstanding_amount'] as String? ?? '0.00',
+    riskLevel: json['risk_level'] as String?,
+    lastActivityAt: DateTime.parse(json['last_activity_at'] as String),
+  );
 }

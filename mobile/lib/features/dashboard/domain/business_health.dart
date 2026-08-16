@@ -14,7 +14,7 @@ class BusinessHealth {
   const BusinessHealth({required this.status, required this.score});
 
   factory BusinessHealth.fromJson(Map<String, dynamic> json) => BusinessHealth(
-        status: json['status'] as String,
-        score: json['score'] as int?,
-      );
+    status: json['status'] as String,
+    score: json['score'] as int?,
+  );
 }

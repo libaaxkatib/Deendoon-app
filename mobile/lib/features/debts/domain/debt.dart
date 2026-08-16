@@ -11,6 +11,7 @@ class Debt {
   final String remainingBalance;
   final int recoveryStage;
   final String? notes;
+  final String? archivedAt;
 
   const Debt({
     required this.id,
@@ -22,19 +23,23 @@ class Debt {
     required this.remainingBalance,
     required this.recoveryStage,
     required this.notes,
+    this.archivedAt,
   });
 
+  bool get isArchived => archivedAt != null;
+
   factory Debt.fromJson(Map<String, dynamic> json) => Debt(
-        id: json['id'].toString(),
-        customerId: json['customer_id'].toString(),
-        referenceNumber: json['reference_number'] as String,
-        amount: json['amount'] as String,
-        dueDate: json['due_date'] as String,
-        debtStatus: json['debt_status'] as String,
-        remainingBalance: json['remaining_balance'] as String,
-        recoveryStage: json['recovery_stage'] as int,
-        notes: json['notes'] as String?,
-      );
+    id: json['id'].toString(),
+    customerId: json['customer_id'].toString(),
+    referenceNumber: json['reference_number'] as String,
+    amount: json['amount'] as String,
+    dueDate: json['due_date'] as String,
+    debtStatus: json['debt_status'] as String,
+    remainingBalance: json['remaining_balance'] as String,
+    recoveryStage: json['recovery_stage'] as int,
+    notes: json['notes'] as String?,
+    archivedAt: json['archived_at'] as String?,
+  );
 
   /// Days between `due_date` and today — pure client-side date arithmetic
   /// on two already-real fields, not a business calculation (contrast with
@@ -48,9 +53,11 @@ class Debt {
     if (due == null) return null;
 
     final today = now ?? DateTime.now();
-    final days = DateTime(today.year, today.month, today.day)
-        .difference(DateTime(due.year, due.month, due.day))
-        .inDays;
+    final days = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(DateTime(due.year, due.month, due.day)).inDays;
     return days > 0 ? days : null;
   }
 }

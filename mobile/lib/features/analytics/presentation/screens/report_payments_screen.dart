@@ -17,10 +17,15 @@ class ReportPaymentsScreen extends ConsumerStatefulWidget {
   final String? initialDateFrom;
   final String? initialDateTo;
 
-  const ReportPaymentsScreen({super.key, this.initialDateFrom, this.initialDateTo});
+  const ReportPaymentsScreen({
+    super.key,
+    this.initialDateFrom,
+    this.initialDateTo,
+  });
 
   @override
-  ConsumerState<ReportPaymentsScreen> createState() => _ReportPaymentsScreenState();
+  ConsumerState<ReportPaymentsScreen> createState() =>
+      _ReportPaymentsScreenState();
 }
 
 class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
@@ -34,7 +39,9 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
     final to = DateTime.tryParse(widget.initialDateTo ?? '');
     if (from != null && to != null) {
       Future.microtask(
-        () => ref.read(reportPaymentsProvider.notifier).filterByDateRange(DateTimeRange(start: from, end: to)),
+        () => ref
+            .read(reportPaymentsProvider.notifier)
+            .filterByDateRange(DateTimeRange(start: from, end: to)),
       );
     }
   }
@@ -47,7 +54,8 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(reportPaymentsProvider.notifier).loadMore();
     }
   }
@@ -70,8 +78,13 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
               ref,
               reportType: 'payments',
               filters: {
-                if (currentRange != null) 'dateFrom': currentRange.start.toIso8601String().split('T').first,
-                if (currentRange != null) 'dateTo': currentRange.end.toIso8601String().split('T').first,
+                if (currentRange != null)
+                  'dateFrom': currentRange.start
+                      .toIso8601String()
+                      .split('T')
+                      .first,
+                if (currentRange != null)
+                  'dateTo': currentRange.end.toIso8601String().split('T').first,
               },
             ),
           ),
@@ -86,16 +99,26 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
               children: [
                 Expanded(
                   child: DateRangeField(
-                    value: currentRange ??
-                        DateTimeRange(start: DateTime.now().subtract(const Duration(days: 29)), end: DateTime.now()),
-                    onChanged: (range) => ref.read(reportPaymentsProvider.notifier).filterByDateRange(range),
+                    value:
+                        currentRange ??
+                        DateTimeRange(
+                          start: DateTime.now().subtract(
+                            const Duration(days: 29),
+                          ),
+                          end: DateTime.now(),
+                        ),
+                    onChanged: (range) => ref
+                        .read(reportPaymentsProvider.notifier)
+                        .filterByDateRange(range),
                   ),
                 ),
                 if (currentRange != null)
                   IconButton(
                     icon: const Icon(Icons.close),
                     tooltip: l10n.reportPaymentsClearDateFilterTooltip,
-                    onPressed: () => ref.read(reportPaymentsProvider.notifier).filterByDateRange(null),
+                    onPressed: () => ref
+                        .read(reportPaymentsProvider.notifier)
+                        .filterByDateRange(null),
                   ),
               ],
             ),
@@ -111,23 +134,41 @@ class _ReportPaymentsScreenState extends ConsumerState<ReportPaymentsScreen> {
                 ),
                 data: (state) {
                   if (state.payments.isEmpty) {
-                    return Center(child: Text(l10n.reportPaymentsEmptyState, style: AppTypography.body));
+                    return Center(
+                      child: Text(
+                        l10n.reportPaymentsEmptyState,
+                        style: AppTypography.body,
+                      ),
+                    );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(reportPaymentsProvider.notifier).refresh(),
+                    onRefresh: () =>
+                        ref.read(reportPaymentsProvider.notifier).refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
-                      itemCount: state.payments.length + (state.hasMore ? 1 : 0),
+                      itemCount:
+                          state.payments.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.payments.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(reportPaymentsProvider.notifier)
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
-                        return PaymentReportCard(payment: state.payments[index]);
+                        return PaymentReportCard(
+                          payment: state.payments[index],
+                        );
                       },
                     ),
                   );

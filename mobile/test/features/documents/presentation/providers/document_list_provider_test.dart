@@ -37,8 +37,16 @@ void main() {
   });
 
   test('build() fetches page 1 with no type filter and no search', () async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_documentOne], currentPage: 1, lastPage: 2, total: 30));
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [_documentOne],
+        currentPage: 1,
+        lastPage: 2,
+        total: 30,
+      ),
+    );
 
     final state = await container.read(documentListProvider.future);
 
@@ -47,14 +55,33 @@ void main() {
   });
 
   test('filterByType() re-fetches page 1 under the real type value', () async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_documentOne], currentPage: 1, lastPage: 1, total: 1));
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [_documentOne],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
     await container.read(documentListProvider.future);
 
-    when(() => mockRepository.fetchDocuments(page: 1, type: 'receipts', search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_documentTwo], currentPage: 1, lastPage: 1, total: 1));
+    when(
+      () =>
+          mockRepository.fetchDocuments(page: 1, type: 'receipts', search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [_documentTwo],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
-    await container.read(documentListProvider.notifier).filterByType('receipts');
+    await container
+        .read(documentListProvider.notifier)
+        .filterByType('receipts');
 
     final state = container.read(documentListProvider).value!;
     expect(state.documents, [_documentTwo]);
@@ -62,12 +89,32 @@ void main() {
   });
 
   test('search() re-fetches page 1 under the given query', () async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_documentOne], currentPage: 1, lastPage: 1, total: 1));
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [_documentOne],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
     await container.read(documentListProvider.future);
 
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: 'INV-000123'))
-        .thenAnswer((_) async => const DocumentPage(documents: [_documentOne], currentPage: 1, lastPage: 1, total: 1));
+    when(
+      () => mockRepository.fetchDocuments(
+        page: 1,
+        type: null,
+        search: 'INV-000123',
+      ),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [_documentOne],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await container.read(documentListProvider.notifier).search('INV-000123');
 
@@ -75,18 +122,111 @@ void main() {
     expect(state.search, 'INV-000123');
   });
 
-  test('loadMore() appends the next page and stops once lastPage is reached', () async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_documentOne], currentPage: 1, lastPage: 2, total: 2));
-    await container.read(documentListProvider.future);
+  test(
+    'loadMore() appends the next page and stops once lastPage is reached',
+    () async {
+      when(
+        () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_documentOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(documentListProvider.future);
 
-    when(() => mockRepository.fetchDocuments(page: 2, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_documentTwo], currentPage: 2, lastPage: 2, total: 2));
+      when(
+        () => mockRepository.fetchDocuments(page: 2, type: null, search: ''),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_documentTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
 
-    await container.read(documentListProvider.notifier).loadMore();
+      await container.read(documentListProvider.notifier).loadMore();
 
-    final state = container.read(documentListProvider).value!;
-    expect(state.documents, [_documentOne, _documentTwo]);
-    expect(state.hasMore, isFalse);
-  });
+      final state = container.read(documentListProvider).value!;
+      expect(state.documents, [_documentOne, _documentTwo]);
+      expect(state.hasMore, isFalse);
+    },
+  );
+
+  test(
+    'loadMore() sets loadMoreError and preserves existing state when the request fails',
+    () async {
+      when(
+        () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_documentOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(documentListProvider.future);
+
+      when(
+        () => mockRepository.fetchDocuments(page: 2, type: null, search: ''),
+      ).thenThrow(Exception('network error'));
+
+      await container.read(documentListProvider.notifier).loadMore();
+
+      final state = container.read(documentListProvider).value!;
+      expect(state.loadMoreError, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.documents, [_documentOne]);
+      expect(state.currentPage, 1);
+      expect(state.hasMore, isTrue);
+    },
+  );
+
+  test(
+    'loadMore() retried after a failure clears loadMoreError, re-requests the same page, and appends on success',
+    () async {
+      when(
+        () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_documentOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(documentListProvider.future);
+
+      when(
+        () => mockRepository.fetchDocuments(page: 2, type: null, search: ''),
+      ).thenThrow(Exception('network error'));
+      await container.read(documentListProvider.notifier).loadMore();
+      expect(container.read(documentListProvider).value!.loadMoreError, isTrue);
+
+      when(
+        () => mockRepository.fetchDocuments(page: 2, type: null, search: ''),
+      ).thenAnswer(
+        (_) async => const DocumentPage(
+          documents: [_documentTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      await container.read(documentListProvider.notifier).loadMore();
+
+      final state = container.read(documentListProvider).value!;
+      expect(state.loadMoreError, isFalse);
+      expect(state.documents, [_documentOne, _documentTwo]);
+      expect(state.hasMore, isFalse);
+      verify(
+        () => mockRepository.fetchDocuments(page: 2, type: null, search: ''),
+      ).called(2);
+    },
+  );
 }

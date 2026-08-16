@@ -16,11 +16,19 @@ class ProfessionalCollectionRequestPage {
     required this.total,
   });
 
-  factory ProfessionalCollectionRequestPage.fromJson(Map<String, dynamic> json) {
+  factory ProfessionalCollectionRequestPage.fromJson(
+    Map<String, dynamic> json,
+  ) {
     final pagination = json['pagination'] as Map<String, dynamic>;
     final items = json['professional_requests'] as List<dynamic>;
     return ProfessionalCollectionRequestPage(
-      requests: items.map((e) => ProfessionalCollectionRequest.fromJson(e as Map<String, dynamic>)).toList(),
+      requests: items
+          .map(
+            (e) => ProfessionalCollectionRequest.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
       currentPage: pagination['current_page'] as int,
       lastPage: pagination['last_page'] as int,
       total: pagination['total'] as int,

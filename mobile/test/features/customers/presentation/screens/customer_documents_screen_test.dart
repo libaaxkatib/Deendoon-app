@@ -20,12 +20,22 @@ const _document = DocumentSummary(
   fileSize: 1024,
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockCustomerRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockCustomerRepository repository,
+}) async {
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const CustomerDocumentsScreen(customerId: '1')),
-      GoRoute(path: '/documents/:id', builder: (_, state) => Text('Document Preview ${state.pathParameters['id']}')),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const CustomerDocumentsScreen(customerId: '1'),
+      ),
+      GoRoute(
+        path: '/documents/:id',
+        builder: (_, state) =>
+            Text('Document Preview ${state.pathParameters['id']}'),
+      ),
     ],
   );
 
@@ -57,7 +67,9 @@ void main() {
   });
 
   testWidgets('renders the customer-scoped document list', (tester) async {
-    when(() => mockRepository.fetchDocuments('1')).thenAnswer((_) async => [_document]);
+    when(
+      () => mockRepository.fetchDocuments('1'),
+    ).thenAnswer((_) async => [_document]);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -66,7 +78,9 @@ void main() {
     expect(find.text('Invoice'), findsOneWidget);
   });
 
-  testWidgets('shows the explicit empty state when there are no documents', (tester) async {
+  testWidgets('shows the explicit empty state when there are no documents', (
+    tester,
+  ) async {
     when(() => mockRepository.fetchDocuments('1')).thenAnswer((_) async => []);
 
     await _pumpScreen(tester, repository: mockRepository);
@@ -75,8 +89,12 @@ void main() {
     expect(find.text('No documents yet'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the list fails to load', (tester) async {
-    when(() => mockRepository.fetchDocuments('1')).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the list fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchDocuments('1'),
+    ).thenThrow(Exception('network down'));
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -85,8 +103,12 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('tapping a document opens the real Document Preview screen', (tester) async {
-    when(() => mockRepository.fetchDocuments('1')).thenAnswer((_) async => [_document]);
+  testWidgets('tapping a document opens the real Document Preview screen', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchDocuments('1'),
+    ).thenAnswer((_) async => [_document]);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();

@@ -13,7 +13,8 @@ class CollectionAnalytics {
     required this.averageDays,
   });
 
-  factory CollectionAnalytics.fromJson(Map<String, dynamic> json) => CollectionAnalytics(
+  factory CollectionAnalytics.fromJson(Map<String, dynamic> json) =>
+      CollectionAnalytics(
         collectionRate: (json['collection_rate'] as num).toDouble(),
         totalCollected: json['total_collected'] as String,
         averageDays: (json['average_days'] as num?)?.toDouble(),

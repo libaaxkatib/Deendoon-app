@@ -27,7 +27,9 @@ class AgingBucketDebtsScreen extends ConsumerWidget {
     final agingAsync = ref.watch(agingAnalysisProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(agingBucketLabels(l10n)[bucket] ?? l10n.debtListTitle)),
+      appBar: AppBar(
+        title: Text(agingBucketLabels(l10n)[bucket] ?? l10n.debtListTitle),
+      ),
       body: agingAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
@@ -37,11 +39,19 @@ class AgingBucketDebtsScreen extends ConsumerWidget {
           ),
         ),
         data: (aging) {
-          final matching = aging.debts.where((d) => d.agingBucket == bucket).toList();
-          final bucketTotalCount = aging.buckets[bucket]?.count ?? matching.length;
+          final matching = aging.debts
+              .where((d) => d.agingBucket == bucket)
+              .toList();
+          final bucketTotalCount =
+              aging.buckets[bucket]?.count ?? matching.length;
 
           if (matching.isEmpty) {
-            return Center(child: Text(l10n.agingBucketDebtsEmptyState, style: AppTypography.body));
+            return Center(
+              child: Text(
+                l10n.agingBucketDebtsEmptyState,
+                style: AppTypography.body,
+              ),
+            );
           }
 
           return Column(
@@ -51,7 +61,10 @@ class AgingBucketDebtsScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
-                    l10n.agingBucketDebtsShowingCountLabel(matching.length, bucketTotalCount),
+                    l10n.agingBucketDebtsShowingCountLabel(
+                      matching.length,
+                      bucketTotalCount,
+                    ),
                     style: AppTypography.caption,
                   ),
                 ),
@@ -62,7 +75,11 @@ class AgingBucketDebtsScreen extends ConsumerWidget {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final debt = matching[index].debt;
-                    return DebtCard(debt: debt, riskLevel: null, onTap: () => context.push('/debts/${debt.id}'));
+                    return DebtCard(
+                      debt: debt,
+                      riskLevel: null,
+                      onTap: () => context.push('/debts/${debt.id}'),
+                    );
                   },
                 ),
               ),

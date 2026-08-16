@@ -44,43 +44,379 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  test('build() fetches page 1 scoped to the customer id with no status filter', () async {
-    when(() => mockRepository.fetchDebts(page: 1, customerId: '01CUST', status: null, dateFrom: null, dateTo: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtOne], currentPage: 1, lastPage: 2, total: 30));
+  test(
+    'build() fetches page 1 scoped to the customer id with no status filter',
+    () async {
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 30,
+        ),
+      );
 
-    final state = await container.read(debtListProvider('01CUST').future);
+      final state = await container.read(debtListProvider('01CUST').future);
 
-    expect(state.debts, [_debtOne]);
-    expect(state.hasMore, isTrue);
-  });
+      expect(state.debts, [_debtOne]);
+      expect(state.hasMore, isTrue);
+    },
+  );
 
-  test('filterByStatus() re-fetches page 1 under the real debt_status value', () async {
-    when(() => mockRepository.fetchDebts(page: 1, customerId: '01CUST', status: null, dateFrom: null, dateTo: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtOne], currentPage: 1, lastPage: 1, total: 1));
-    await container.read(debtListProvider('01CUST').future);
+  test(
+    'filterByStatus() re-fetches page 1 under the real debt_status value',
+    () async {
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(debtListProvider('01CUST').future);
 
-    when(() => mockRepository.fetchDebts(page: 1, customerId: '01CUST', status: 'pending', dateFrom: null, dateTo: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtTwo], currentPage: 1, lastPage: 1, total: 1));
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: 'pending',
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtTwo],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await container.read(debtListProvider('01CUST').notifier).filterByStatus('pending');
+      await container
+          .read(debtListProvider('01CUST').notifier)
+          .filterByStatus('pending');
 
-    final state = container.read(debtListProvider('01CUST')).value!;
-    expect(state.debts, [_debtTwo]);
-    expect(state.status, 'pending');
-  });
+      final state = container.read(debtListProvider('01CUST')).value!;
+      expect(state.debts, [_debtTwo]);
+      expect(state.status, 'pending');
+    },
+  );
 
-  test('loadMore() appends the next page and stops once lastPage is reached', () async {
-    when(() => mockRepository.fetchDebts(page: 1, customerId: '01CUST', status: null, dateFrom: null, dateTo: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtOne], currentPage: 1, lastPage: 2, total: 2));
-    await container.read(debtListProvider('01CUST').future);
+  test(
+    'loadMore() appends the next page and stops once lastPage is reached',
+    () async {
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(debtListProvider('01CUST').future);
 
-    when(() => mockRepository.fetchDebts(page: 2, customerId: '01CUST', status: null, dateFrom: null, dateTo: null))
-        .thenAnswer((_) async => const DebtPage(debts: [_debtTwo], currentPage: 2, lastPage: 2, total: 2));
+      when(
+        () => mockRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
 
-    await container.read(debtListProvider('01CUST').notifier).loadMore();
+      await container.read(debtListProvider('01CUST').notifier).loadMore();
 
-    final state = container.read(debtListProvider('01CUST')).value!;
-    expect(state.debts, [_debtOne, _debtTwo]);
-    expect(state.hasMore, isFalse);
-  });
+      final state = container.read(debtListProvider('01CUST')).value!;
+      expect(state.debts, [_debtOne, _debtTwo]);
+      expect(state.hasMore, isFalse);
+    },
+  );
+
+  test(
+    'loadMore() sets loadMoreError and preserves existing state when the request fails',
+    () async {
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(debtListProvider('01CUST').future);
+
+      when(
+        () => mockRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenThrow(Exception('network error'));
+
+      await container.read(debtListProvider('01CUST').notifier).loadMore();
+
+      final state = container.read(debtListProvider('01CUST')).value!;
+      expect(state.loadMoreError, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.debts, [_debtOne]);
+      expect(state.currentPage, 1);
+      expect(state.hasMore, isTrue);
+    },
+  );
+
+  test(
+    'loadMore() retried after a failure clears loadMoreError, re-requests the same page, and appends on success',
+    () async {
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(debtListProvider('01CUST').future);
+
+      when(
+        () => mockRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenThrow(Exception('network error'));
+      await container.read(debtListProvider('01CUST').notifier).loadMore();
+      expect(
+        container.read(debtListProvider('01CUST')).value!.loadMoreError,
+        isTrue,
+      );
+
+      when(
+        () => mockRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      await container.read(debtListProvider('01CUST').notifier).loadMore();
+
+      final state = container.read(debtListProvider('01CUST')).value!;
+      expect(state.loadMoreError, isFalse);
+      expect(state.debts, [_debtOne, _debtTwo]);
+      expect(state.hasMore, isFalse);
+      verify(
+        () => mockRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).called(2);
+    },
+  );
+
+  test(
+    'toggleIncludeArchived() re-fetches page 1 with a real includeArchived query param',
+    () async {
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(debtListProvider('01CUST').future);
+
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+          includeArchived: true,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne, _debtTwo],
+          currentPage: 1,
+          lastPage: 1,
+          total: 2,
+        ),
+      );
+
+      await container
+          .read(debtListProvider('01CUST').notifier)
+          .toggleIncludeArchived();
+
+      final state = container.read(debtListProvider('01CUST')).value!;
+      expect(state.includeArchived, isTrue);
+      expect(state.debts, [_debtOne, _debtTwo]);
+
+      // Toggling again goes back to the default (excluded) filter.
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+
+      await container
+          .read(debtListProvider('01CUST').notifier)
+          .toggleIncludeArchived();
+
+      expect(
+        container.read(debtListProvider('01CUST')).value!.includeArchived,
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'Mobile Fix #14: an external invalidate() followed by a re-read rebuilds cleanly '
+    'instead of throwing LateInitializationError (regression test for the previous '
+    '`late final customerId` field, now replaced by the family arg)',
+    () async {
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+
+      final firstState = await container.read(
+        debtListProvider('01CUST').future,
+      );
+      expect(firstState.debts, [_debtOne]);
+
+      // Simulates DebtActions.archive()/restore()/update()/create()/
+      // recordPayment(), all of which call this exact invalidate() from
+      // outside the notifier.
+      container.invalidate(debtListProvider('01CUST'));
+
+      when(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debtOne, _debtTwo],
+          currentPage: 1,
+          lastPage: 1,
+          total: 2,
+        ),
+      );
+
+      final secondState = await container.read(
+        debtListProvider('01CUST').future,
+      );
+
+      expect(secondState.debts, [_debtOne, _debtTwo]);
+      verify(
+        () => mockRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).called(2);
+    },
+  );
 }

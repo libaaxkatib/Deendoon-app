@@ -49,7 +49,10 @@ const _emptyResults = SearchResults(
   collectionCases: [],
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockSearchRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockSearchRepository repository,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -83,29 +86,40 @@ void main() {
     mockRepository = _MockSearchRepository();
   });
 
-  testWidgets('shows the no-search-yet state when nothing has been searched', (tester) async {
+  testWidgets('shows the no-search-yet state when nothing has been searched', (
+    tester,
+  ) async {
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
 
     expect(find.text('Search Deendoon'), findsOneWidget);
   });
 
-  testWidgets('submitting a query calls the real search endpoint and shows results', (tester) async {
-    when(() => mockRepository.search('asad')).thenAnswer((_) async => _resultsWithCustomer);
+  testWidgets(
+    'submitting a query calls the real search endpoint and shows results',
+    (tester) async {
+      when(
+        () => mockRepository.search('asad'),
+      ).thenAnswer((_) async => _resultsWithCustomer);
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'asad');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'asad');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Asad Mohamed'), findsOneWidget);
-    verify(() => mockRepository.search('asad')).called(1);
-  });
+      expect(find.text('Asad Mohamed'), findsOneWidget);
+      verify(() => mockRepository.search('asad')).called(1);
+    },
+  );
 
-  testWidgets('typing debounces before firing the real search call', (tester) async {
-    when(() => mockRepository.search('asad')).thenAnswer((_) async => _resultsWithCustomer);
+  testWidgets('typing debounces before firing the real search call', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.search('asad'),
+    ).thenAnswer((_) async => _resultsWithCustomer);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -120,8 +134,12 @@ void main() {
     verify(() => mockRepository.search('asad')).called(1);
   });
 
-  testWidgets('shows the honest empty state when a real search finds nothing', (tester) async {
-    when(() => mockRepository.search('zzz')).thenAnswer((_) async => _emptyResults);
+  testWidgets('shows the honest empty state when a real search finds nothing', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.search('zzz'),
+    ).thenAnswer((_) async => _emptyResults);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -133,9 +151,12 @@ void main() {
     expect(find.text('No results found'), findsOneWidget);
   });
 
-  testWidgets('shows the real server error message and retries on tap', (tester) async {
-    when(() => mockRepository.search('asad'))
-        .thenThrow(const ApiException(message: 'Something went wrong. Please try again.'));
+  testWidgets('shows the real server error message and retries on tap', (
+    tester,
+  ) async {
+    when(() => mockRepository.search('asad')).thenThrow(
+      const ApiException(message: 'Something went wrong. Please try again.'),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -144,17 +165,26 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
-    expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
+    expect(
+      find.text('Something went wrong. Please try again.'),
+      findsOneWidget,
+    );
 
-    when(() => mockRepository.search('asad')).thenAnswer((_) async => _resultsWithCustomer);
+    when(
+      () => mockRepository.search('asad'),
+    ).thenAnswer((_) async => _resultsWithCustomer);
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
 
     expect(find.text('Asad Mohamed'), findsOneWidget);
   });
 
-  testWidgets('filtering to the Customers chip still shows customer results', (tester) async {
-    when(() => mockRepository.search('asad')).thenAnswer((_) async => _resultsWithCustomer);
+  testWidgets('filtering to the Customers chip still shows customer results', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.search('asad'),
+    ).thenAnswer((_) async => _resultsWithCustomer);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -169,31 +199,38 @@ void main() {
     expect(find.text('Asad Mohamed'), findsOneWidget);
   });
 
-  testWidgets('a completed search is saved to Recent Searches and can be re-run', (tester) async {
-    when(() => mockRepository.search('asad')).thenAnswer((_) async => _resultsWithCustomer);
+  testWidgets(
+    'a completed search is saved to Recent Searches and can be re-run',
+    (tester) async {
+      when(
+        () => mockRepository.search('asad'),
+      ).thenAnswer((_) async => _resultsWithCustomer);
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'asad');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'asad');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.close));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Recent Searches'), findsOneWidget);
-    expect(find.text('asad'), findsOneWidget);
+      expect(find.text('Recent Searches'), findsOneWidget);
+      expect(find.text('asad'), findsOneWidget);
 
-    await tester.tap(find.text('asad'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('asad'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Asad Mohamed'), findsOneWidget);
-    verify(() => mockRepository.search('asad')).called(2);
-  });
+      expect(find.text('Asad Mohamed'), findsOneWidget);
+      verify(() => mockRepository.search('asad')).called(2);
+    },
+  );
 
   testWidgets('Clear removes every recent search', (tester) async {
-    when(() => mockRepository.search('asad')).thenAnswer((_) async => _resultsWithCustomer);
+    when(
+      () => mockRepository.search('asad'),
+    ).thenAnswer((_) async => _resultsWithCustomer);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();

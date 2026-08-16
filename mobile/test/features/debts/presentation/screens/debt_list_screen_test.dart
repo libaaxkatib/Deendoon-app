@@ -9,6 +9,7 @@ import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
 import 'package:mobile/features/debts/domain/debt_page.dart';
+import 'package:mobile/features/debts/presentation/providers/debt_list_provider.dart';
 import 'package:mobile/features/debts/presentation/screens/debt_list_screen.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
@@ -50,6 +51,19 @@ const _debt = Debt(
   remainingBalance: '400.00',
   recoveryStage: 3,
   notes: null,
+);
+
+const _archivedDebt = Debt(
+  id: '2',
+  customerId: '01CUST',
+  referenceNumber: 'DBT-0002',
+  amount: '500.00',
+  dueDate: '2020-02-01',
+  debtStatus: 'pending',
+  remainingBalance: '500.00',
+  recoveryStage: 1,
+  notes: null,
+  archivedAt: '2026-06-01T00:00:00.000000Z',
 );
 
 Future<void> _pumpScreen(
@@ -226,6 +240,231 @@ void main() {
         ),
       ).called(1);
       expect(find.text('No debts with this status'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the Show Archived chip includes archived debts via a real query param',
+    (tester) async {
+      when(
+        () => mockDebtRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockDebtRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+          includeArchived: true,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt, _archivedDebt],
+          currentPage: 1,
+          lastPage: 1,
+          total: 2,
+        ),
+      );
+
+      await _pumpScreen(
+        tester,
+        debtRepository: mockDebtRepository,
+        customerRepository: mockCustomerRepository,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilterChip, 'Show Archived'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => mockDebtRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+          includeArchived: true,
+        ),
+      ).called(1);
+      expect(find.text('DBT-0002'), findsOneWidget);
+      expect(find.text('Archived'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Restore'), findsOneWidget);
+    },
+  );
+
+  testWidgets('tapping Restore on an archived debt calls the real endpoint', (
+    tester,
+  ) async {
+    when(
+      () => mockDebtRepository.fetchDebts(
+        page: 1,
+        customerId: '01CUST',
+        status: null,
+        dateFrom: null,
+        dateTo: null,
+        includeArchived: true,
+      ),
+    ).thenAnswer(
+      (_) async => const DebtPage(
+        debts: [_archivedDebt],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
+    when(
+      () => mockDebtRepository.restoreDebt('2'),
+    ).thenAnswer((_) async => _archivedDebt);
+
+    await _pumpScreen(
+      tester,
+      debtRepository: mockDebtRepository,
+      customerRepository: mockCustomerRepository,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'Show Archived'));
+    await tester.pumpAndSettle();
+
+    when(
+      () => mockDebtRepository.fetchDebts(
+        page: 1,
+        customerId: '01CUST',
+        status: null,
+        dateFrom: null,
+        dateTo: null,
+      ),
+    ).thenAnswer(
+      (_) async =>
+          const DebtPage(debts: [], currentPage: 1, lastPage: 1, total: 0),
+    );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Restore'));
+    await tester.pumpAndSettle();
+
+    verify(() => mockDebtRepository.restoreDebt('2')).called(1);
+    expect(find.text('Debt restored successfully'), findsOneWidget);
+
+    // Mobile Fix #14 regression: the list must actually rebuild with the
+    // fresh (now-empty) data DebtActions.restore()'s invalidate() causes,
+    // not silently fall into the load-error/retry state — which is exactly
+    // what the pre-existing `late final customerId` bug produced, and what
+    // this test previously never asserted on.
+    expect(find.text('No debts yet'), findsOneWidget);
+    expect(find.text('Could not load debts.'), findsNothing);
+    expect(find.widgetWithText(OutlinedButton, 'Restore'), findsNothing);
+  });
+
+  testWidgets(
+    'Mobile Fix #12: a failed load-more shows the retry state and a retry appends the next page without losing existing records',
+    (tester) async {
+      when(
+        () => mockDebtRepository.fetchDebts(
+          page: 1,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      when(
+        () => mockDebtRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenThrow(Exception('network error'));
+
+      final container = ProviderContainer(
+        overrides: [
+          debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+          customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      tester.view.physicalSize = const Size(400, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+            home: DebtListScreen(customerId: '01CUST'),
+          ),
+        ),
+      );
+      // Not pumpAndSettle: with hasMore true the footer's steady-state
+      // spinner is an indeterminate CircularProgressIndicator, which
+      // animates forever and would make pumpAndSettle time out.
+      await tester.pump();
+      await tester.pump();
+
+      await container.read(debtListProvider('01CUST').notifier).loadMore();
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't load more. Tap to retry."), findsOneWidget);
+      expect(find.text('DBT-0001'), findsOneWidget);
+
+      when(
+        () => mockDebtRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_archivedDebt],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't load more. Tap to retry."), findsNothing);
+      expect(find.text('DBT-0001'), findsOneWidget);
+      expect(find.text('DBT-0002'), findsOneWidget);
+      verify(
+        () => mockDebtRepository.fetchDebts(
+          page: 2,
+          customerId: '01CUST',
+          status: null,
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).called(2);
     },
   );
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/password_field.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -13,7 +14,8 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
 
   @override
-  ConsumerState<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+  ConsumerState<ChangePasswordScreen> createState() =>
+      _ChangePasswordScreenState();
 }
 
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
@@ -27,6 +29,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
+  Map<String, dynamic>? _fieldErrors;
 
   @override
   void dispose() {
@@ -37,6 +40,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   }
 
   Future<void> _submit() async {
+    setState(() => _fieldErrors = null);
     if (_formKey.currentState?.validate() != true) return;
 
     setState(() {
@@ -46,13 +50,19 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     });
 
     try {
-      final message = await ref.read(authRepositoryProvider).changePassword(
+      final message = await ref
+          .read(authRepositoryProvider)
+          .changePassword(
             currentPassword: _currentController.text,
             newPassword: _newController.text,
           );
       setState(() => _successMessage = message);
     } on ApiException catch (e) {
-      setState(() => _errorMessage = e.detailedMessage);
+      setState(() {
+        _errorMessage = e.detailedMessage;
+        _fieldErrors = e.fieldErrors;
+      });
+      _formKey.currentState?.validate();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -72,22 +82,38 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
+                PasswordField(
                   controller: _currentController,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: l10n.changePasswordCurrentLabel),
+                  labelText: l10n.changePasswordCurrentLabel,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.changePasswordCurrentRequired;
+                    final backendError = ApiException.fieldErrorFor(
+                      _fieldErrors,
+                      'current_password',
+                    );
+                    if (backendError != null) return backendError;
+                    if (value == null || value.isEmpty) {
+                      return l10n.changePasswordCurrentRequired;
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                PasswordField(
                   controller: _newController,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: l10n.resetPasswordNewPasswordLabel),
+                  labelText: l10n.resetPasswordNewPasswordLabel,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.changePasswordNewRequired;
+                    final backendPasswordError =
+                        ApiException.splitConfirmedFieldError(
+                          _fieldErrors,
+                          'password',
+                        );
+                    final backendError =
+                        backendPasswordError.other ??
+                        backendPasswordError.confirmationMismatch;
+                    if (backendError != null) return backendError;
+                    if (value == null || value.isEmpty) {
+                      return l10n.changePasswordNewRequired;
+                    }
                     if (value.length < _minPasswordLength) {
                       return l10n.authPasswordMinLength(_minPasswordLength);
                     }
@@ -95,22 +121,38 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                PasswordField(
                   controller: _confirmController,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: l10n.resetPasswordConfirmLabel),
+                  labelText: l10n.resetPasswordConfirmLabel,
                   validator: (value) {
-                    if (value != _newController.text) return l10n.authPasswordsMismatch;
+                    final backendError = ApiException.splitConfirmedFieldError(
+                      _fieldErrors,
+                      'password',
+                    ).confirmationMismatch;
+                    if (backendError != null) return backendError;
+                    if (value != _newController.text) {
+                      return l10n.authPasswordsMismatch;
+                    }
                     return null;
                   },
                 ),
-                if (_errorMessage != null) ...[
+                // See ForgotPasswordForm: only shown for errors that aren't per-field.
+                if (_errorMessage != null &&
+                    (_fieldErrors == null || _fieldErrors!.isEmpty)) ...[
                   const SizedBox(height: 12),
-                  Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ],
                 if (_successMessage != null) ...[
                   const SizedBox(height: 12),
-                  Text(_successMessage!, style: const TextStyle(color: Colors.green)),
+                  Text(
+                    _successMessage!,
+                    style: const TextStyle(color: Colors.green),
+                  ),
                 ],
                 const SizedBox(height: 24),
                 PrimaryButton(

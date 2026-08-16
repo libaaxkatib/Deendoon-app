@@ -26,12 +26,21 @@ class ReminderCard extends ConsumerWidget {
   final VoidCallback onTap;
   final VoidCallback onComplete;
 
-  const ReminderCard({super.key, required this.reminder, required this.onTap, required this.onComplete});
+  const ReminderCard({
+    super.key,
+    required this.reminder,
+    required this.onTap,
+    required this.onComplete,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final relatedAsync = ref.watch(relatedEntityProvider('${reminder.relatedEntityType}:${reminder.relatedEntityId}'));
+    final relatedAsync = ref.watch(
+      relatedEntityProvider(
+        '${reminder.relatedEntityType}:${reminder.relatedEntityId}',
+      ),
+    );
     final isCompleted = reminder.status == 'completed';
 
     return AppCard(
@@ -45,7 +54,12 @@ class ReminderCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(reminder.title, style: AppTypography.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  reminder.title,
+                  style: AppTypography.body,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 ReminderTypeBadge(type: reminder.type),
                 const SizedBox(height: 4),
@@ -77,9 +91,20 @@ class ReminderCard extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primary),
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
                       const SizedBox(width: 4),
-                      Text(l10n.reminderCardCompleteButton, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text(
+                        l10n.reminderCardCompleteButton,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),

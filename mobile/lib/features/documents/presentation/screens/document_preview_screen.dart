@@ -22,13 +22,14 @@ import '../providers/document_detail_providers.dart';
 /// `pdfx`'s built-in `PhotoView` gallery) only ever zooms in from there.
 final _fitWidthBuilders = PdfViewBuilders<DefaultBuilderOptions>(
   options: const DefaultBuilderOptions(),
-  pageBuilder: (context, pageImage, index, document) => PhotoViewGalleryPageOptions(
-    imageProvider: PdfPageImageProvider(pageImage, index, document.id),
-    minScale: PhotoViewComputedScale.contained,
-    initialScale: PhotoViewComputedScale.contained,
-    maxScale: PhotoViewComputedScale.contained * 4.0,
-    heroAttributes: PhotoViewHeroAttributes(tag: '${document.id}-$index'),
-  ),
+  pageBuilder: (context, pageImage, index, document) =>
+      PhotoViewGalleryPageOptions(
+        imageProvider: PdfPageImageProvider(pageImage, index, document.id),
+        minScale: PhotoViewComputedScale.contained,
+        initialScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.contained * 4.0,
+        heroAttributes: PhotoViewHeroAttributes(tag: '${document.id}-$index'),
+      ),
 );
 
 /// Preview (§8.6) — a full-screen document viewer with Download (§8.7)
@@ -54,7 +55,8 @@ class DocumentPreviewScreen extends ConsumerStatefulWidget {
   const DocumentPreviewScreen({super.key, required this.documentId});
 
   @override
-  ConsumerState<DocumentPreviewScreen> createState() => _DocumentPreviewScreenState();
+  ConsumerState<DocumentPreviewScreen> createState() =>
+      _DocumentPreviewScreenState();
 }
 
 class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
@@ -63,7 +65,9 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
   String? _pdfError;
 
   Future<Uint8List> _loadBytes() async {
-    final bytes = await ref.read(documentActionsProvider).fetchBytes(widget.documentId);
+    final bytes = await ref
+        .read(documentActionsProvider)
+        .fetchBytes(widget.documentId);
     return Uint8List.fromList(bytes);
   }
 
@@ -87,11 +91,12 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
     final l10n = AppLocalizations.of(context);
     try {
       final bytes = await _ensureBytes();
-      final path = await ref.read(documentActionsProvider).saveToDevice(
-            referenceNumber: referenceNumber,
-            bytes: bytes,
-          );
-      messenger.showSnackBar(SnackBar(content: Text(l10n.exportSavedToPathMessage(path))));
+      final path = await ref
+          .read(documentActionsProvider)
+          .saveToDevice(referenceNumber: referenceNumber, bytes: bytes);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.exportSavedToPathMessage(path))),
+      );
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -110,26 +115,31 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(documentAsync.valueOrNull != null
-            ? '${documentAsync.valueOrNull!.referenceNumber}.pdf'
-            : l10n.documentPreviewFallbackTitle),
+        title: Text(
+          documentAsync.valueOrNull != null
+              ? '${documentAsync.valueOrNull!.referenceNumber}.pdf'
+              : l10n.documentPreviewFallbackTitle,
+        ),
         actions: documentAsync.valueOrNull == null
             ? null
             : [
                 IconButton(
                   icon: const Icon(Icons.download_outlined),
                   tooltip: l10n.documentDownloadTooltip,
-                  onPressed: () => _download(documentAsync.valueOrNull!.referenceNumber),
+                  onPressed: () =>
+                      _download(documentAsync.valueOrNull!.referenceNumber),
                 ),
                 IconButton(
                   icon: const Icon(Icons.share_outlined),
                   tooltip: l10n.documentShareTooltip,
-                  onPressed: () => context.push('/documents/${widget.documentId}/share'),
+                  onPressed: () =>
+                      context.push('/documents/${widget.documentId}/share'),
                 ),
                 IconButton(
                   icon: const Icon(Icons.history_outlined),
                   tooltip: l10n.documentHistoryTooltip,
-                  onPressed: () => context.push('/documents/${widget.documentId}/history'),
+                  onPressed: () =>
+                      context.push('/documents/${widget.documentId}/history'),
                 ),
               ],
       ),
@@ -140,7 +150,8 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
             padding: const EdgeInsets.all(24),
             child: RetrySection(
               message: l10n.documentPreviewLoadError,
-              onRetry: () => ref.invalidate(documentDetailProvider(widget.documentId)),
+              onRetry: () =>
+                  ref.invalidate(documentDetailProvider(widget.documentId)),
             ),
           ),
         ),
@@ -164,7 +175,10 @@ class _DocumentPreviewScreenState extends ConsumerState<DocumentPreviewScreen> {
                     ),
                   ),
                 )
-              : PdfView(controller: _pdfController!, builders: _fitWidthBuilders);
+              : PdfView(
+                  controller: _pdfController!,
+                  builders: _fitWidthBuilders,
+                );
         },
       ),
     );

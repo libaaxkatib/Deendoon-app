@@ -34,7 +34,12 @@ class StorageUsageCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.documentStorageUsageTitle, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            Text(
+              l10n.documentStorageUsageTitle,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -51,7 +56,9 @@ class StorageUsageCard extends ConsumerWidget {
                 formatFileSize(context, usage.usedBytes),
                 formatFileSize(context, usage.totalBytes),
               ),
-              style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+              style: AppTypography.caption.copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
           ],
         ),

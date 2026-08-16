@@ -11,7 +11,9 @@ import '../domain/collections_trend.dart';
 import '../domain/payment_page.dart';
 import '../domain/risk_distribution.dart';
 
-final analyticsApiProvider = Provider<AnalyticsApi>((ref) => AnalyticsApi(ref.read(dioProvider)));
+final analyticsApiProvider = Provider<AnalyticsApi>(
+  (ref) => AnalyticsApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET /reports/*` — mirrors `ReportController`
 /// exactly (Sprint 16 backend audit). `reports/customers`, `reports/debts`,
@@ -25,26 +27,41 @@ class AnalyticsApi {
 
   const AnalyticsApi(this._dio);
 
-  Future<CollectionAnalytics> collectionAnalytics({required String dateFrom, required String dateTo}) async {
-    final response = await _dio.get('reports/collection-analytics', queryParameters: {
-      'dateFrom': dateFrom,
-      'dateTo': dateTo,
-    });
-    return CollectionAnalytics.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<CollectionAnalytics> collectionAnalytics({
+    required String dateFrom,
+    required String dateTo,
+  }) async {
+    final response = await _dio.get(
+      'reports/collection-analytics',
+      queryParameters: {'dateFrom': dateFrom, 'dateTo': dateTo},
+    );
+    return CollectionAnalytics.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<RiskDistribution> riskDistribution() async {
     final response = await _dio.get('reports/risk-distribution');
-    return RiskDistribution.fromJson(response.data['data'] as Map<String, dynamic>);
+    return RiskDistribution.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
-  Future<CollectionsTrend> collectionsTrend({required String dateFrom, required String dateTo}) async {
-    final response = await _dio.get('reports/collections-trend', queryParameters: {
-      'dateFrom': dateFrom,
-      'dateTo': dateTo,
-      'metric': 'collected_amount',
-    });
-    return CollectionsTrend.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<CollectionsTrend> collectionsTrend({
+    required String dateFrom,
+    required String dateTo,
+  }) async {
+    final response = await _dio.get(
+      'reports/collections-trend',
+      queryParameters: {
+        'dateFrom': dateFrom,
+        'dateTo': dateTo,
+        'metric': 'collected_amount',
+      },
+    );
+    return CollectionsTrend.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `perPage: 100` (the backend's documented max, `ApiResponse::perPage()`)
@@ -53,8 +70,13 @@ class AnalyticsApi {
   /// request as far as the backend allows instead of settling for its
   /// 15-row default.
   Future<AgingAnalysis> agingAnalysis() async {
-    final response = await _dio.get('reports/aging-analysis', queryParameters: {'perPage': 100});
-    return AgingAnalysis.fromJson(response.data['data'] as Map<String, dynamic>);
+    final response = await _dio.get(
+      'reports/aging-analysis',
+      queryParameters: {'perPage': 100},
+    );
+    return AgingAnalysis.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<CustomerPage> reportCustomers({
@@ -62,11 +84,14 @@ class AnalyticsApi {
     String? customerStatus,
     String? riskLevel,
   }) async {
-    final response = await _dio.get('reports/customers', queryParameters: {
-      'page': page,
-      'customer_status': ?customerStatus,
-      'riskLevel': ?riskLevel,
-    });
+    final response = await _dio.get(
+      'reports/customers',
+      queryParameters: {
+        'page': page,
+        'customer_status': ?customerStatus,
+        'riskLevel': ?riskLevel,
+      },
+    );
     return CustomerPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -79,32 +104,43 @@ class AnalyticsApi {
     String? paidDateTo,
     int? perPage,
   }) async {
-    final response = await _dio.get('reports/debts', queryParameters: {
-      'page': page,
-      'status': ?status,
-      'dateFrom': ?dateFrom,
-      'dateTo': ?dateTo,
-      'paidDateFrom': ?paidDateFrom,
-      'paidDateTo': ?paidDateTo,
-      'perPage': ?perPage,
-    });
+    final response = await _dio.get(
+      'reports/debts',
+      queryParameters: {
+        'page': page,
+        'status': ?status,
+        'dateFrom': ?dateFrom,
+        'dateTo': ?dateTo,
+        'paidDateFrom': ?paidDateFrom,
+        'paidDateTo': ?paidDateTo,
+        'perPage': ?perPage,
+      },
+    );
     return DebtPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
-  Future<CollectionCasePage> reportCollectionCases({required int page, String? status}) async {
-    final response = await _dio.get('reports/collection-cases', queryParameters: {
-      'page': page,
-      'status': ?status,
-    });
-    return CollectionCasePage.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<CollectionCasePage> reportCollectionCases({
+    required int page,
+    String? status,
+  }) async {
+    final response = await _dio.get(
+      'reports/collection-cases',
+      queryParameters: {'page': page, 'status': ?status},
+    );
+    return CollectionCasePage.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
-  Future<PaymentPage> reportPayments({required int page, String? dateFrom, String? dateTo}) async {
-    final response = await _dio.get('reports/payments', queryParameters: {
-      'page': page,
-      'dateFrom': ?dateFrom,
-      'dateTo': ?dateTo,
-    });
+  Future<PaymentPage> reportPayments({
+    required int page,
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    final response = await _dio.get(
+      'reports/payments',
+      queryParameters: {'page': page, 'dateFrom': ?dateFrom, 'dateTo': ?dateTo},
+    );
     return PaymentPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
@@ -112,11 +148,14 @@ class AnalyticsApi {
   /// as `reports/customers` (`ReportController::creditRisk()` calls the
   /// exact same private `customersQuery()`), just ordered by
   /// `credit_score` desc server-side.
-  Future<CustomerPage> reportCreditRisk({required int page, String? riskLevel}) async {
-    final response = await _dio.get('reports/credit-risk', queryParameters: {
-      'page': page,
-      'riskLevel': ?riskLevel,
-    });
+  Future<CustomerPage> reportCreditRisk({
+    required int page,
+    String? riskLevel,
+  }) async {
+    final response = await _dio.get(
+      'reports/credit-risk',
+      queryParameters: {'page': page, 'riskLevel': ?riskLevel},
+    );
     return CustomerPage.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 

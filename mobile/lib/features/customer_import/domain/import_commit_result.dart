@@ -7,9 +7,14 @@ class ImportResultRow {
   final String outcome;
   final String? customerId;
 
-  const ImportResultRow({required this.rowNumber, required this.outcome, required this.customerId});
+  const ImportResultRow({
+    required this.rowNumber,
+    required this.outcome,
+    required this.customerId,
+  });
 
-  factory ImportResultRow.fromJson(Map<String, dynamic> json) => ImportResultRow(
+  factory ImportResultRow.fromJson(Map<String, dynamic> json) =>
+      ImportResultRow(
         rowNumber: json['row_number'] as int,
         outcome: json['outcome'] as String,
         customerId: json['customer_id']?.toString(),
@@ -35,7 +40,8 @@ class ImportCommitResult {
     required this.message,
   });
 
-  factory ImportCommitResult.fromJson(Map<String, dynamic> json) => ImportCommitResult(
+  factory ImportCommitResult.fromJson(Map<String, dynamic> json) =>
+      ImportCommitResult(
         batchId: json['batch_id'].toString(),
         status: json['status'] as String,
         results: (json['results'] as List<dynamic>)

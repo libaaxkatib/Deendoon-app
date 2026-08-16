@@ -4,13 +4,16 @@ import 'package:mobile/features/documents/domain/document_event.dart';
 import 'package:mobile/features/documents/domain/document_page.dart';
 import 'package:mobile/features/documents/domain/storage_usage.dart';
 
-Map<String, dynamic> _documentJson({String documentType = 'invoice', int? fileSize = 2048}) => {
-      'id': '01DOC',
-      'document_type': documentType,
-      'reference_number': 'INV-000123',
-      'generated_at': '2026-07-20T10:00:00.000000Z',
-      'file_size': fileSize,
-    };
+Map<String, dynamic> _documentJson({
+  String documentType = 'invoice',
+  int? fileSize = 2048,
+}) => {
+  'id': '01DOC',
+  'document_type': documentType,
+  'reference_number': 'INV-000123',
+  'generated_at': '2026-07-20T10:00:00.000000Z',
+  'file_size': fileSize,
+};
 
 void main() {
   group('DocumentSummary', () {
@@ -35,7 +38,12 @@ void main() {
     test('parses the documents + pagination envelope from GET /documents', () {
       final page = DocumentPage.fromJson({
         'documents': [_documentJson()],
-        'pagination': {'current_page': 1, 'per_page': 15, 'total': 42, 'last_page': 3},
+        'pagination': {
+          'current_page': 1,
+          'per_page': 15,
+          'total': 42,
+          'last_page': 3,
+        },
       });
 
       expect(page.documents, hasLength(1));

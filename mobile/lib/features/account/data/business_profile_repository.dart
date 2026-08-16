@@ -5,8 +5,9 @@ import '../../../core/network/api_exception.dart';
 import '../domain/business_profile.dart';
 import 'business_profile_api.dart';
 
-final businessProfileRepositoryProvider =
-    Provider<BusinessProfileRepository>((ref) => BusinessProfileRepository(ref.read(businessProfileApiProvider)));
+final businessProfileRepositoryProvider = Provider<BusinessProfileRepository>(
+  (ref) => BusinessProfileRepository(ref.read(businessProfileApiProvider)),
+);
 
 /// Translates raw Dio failures into `ApiException` — same pattern as
 /// `CustomerRepository`/`DebtRepository`. No caching, no calculation: each
@@ -24,14 +25,15 @@ class BusinessProfileRepository {
     String? contactEmail,
     String? contactPhone,
     MultipartFile? logo,
-  }) =>
-      _guard(() => _api.update(
-            businessName: businessName,
-            address: address,
-            contactEmail: contactEmail,
-            contactPhone: contactPhone,
-            logo: logo,
-          ));
+  }) => _guard(
+    () => _api.update(
+      businessName: businessName,
+      address: address,
+      contactEmail: contactEmail,
+      contactPhone: contactPhone,
+      logo: logo,
+    ),
+  );
 
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {

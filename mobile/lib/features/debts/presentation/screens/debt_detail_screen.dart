@@ -18,6 +18,7 @@ import '../widgets/debt_payment_history.dart';
 import '../widgets/debt_summary_card.dart';
 import '../widgets/debt_timeline_section.dart';
 import '../widgets/log_reminder_sheet.dart';
+import '../widgets/open_case_button.dart';
 import '../widgets/promise_to_pay_history_section.dart';
 import '../widgets/promise_to_pay_sheet.dart';
 import '../widgets/record_payment_sheet.dart';
@@ -46,6 +47,52 @@ class DebtDetailScreen extends ConsumerWidget {
 
   const DebtDetailScreen({super.key, required this.debtId});
 
+  /// Archiving soft-deletes the debt — same confirm-dialog pattern as
+  /// `CustomerDetailScreen._archive`. There is nowhere useful to stay
+  /// after a successful archive (every other section here assumes an
+  /// active debt), so this pops back to the Debt List — restoring it is
+  /// only possible from there, via the "Show Archived" filter.
+  Future<void> _archive(
+    BuildContext context,
+    WidgetRef ref,
+    String customerId,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.debtArchiveTitle),
+        content: Text(l10n.debtArchiveDialogContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.debtArchiveConfirmButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    try {
+      await ref
+          .read(debtActionsProvider)
+          .archive(debtId: debtId, customerId: customerId);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.debtArchivedSuccessfully)),
+      );
+      router.pop();
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   /// Bare confirm-and-submit generation (Statement) — same pattern as
   /// "Open Case": no dialog, since generating an extra document is not a
   /// destructive action. Success/failure both surface as a snackbar; the
@@ -61,9 +108,13 @@ class DebtDetailScreen extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await action();
-      messenger.showSnackBar(SnackBar(content: Text(l10n.debtDetailGenerateSuccessMessage(label))));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.debtDetailGenerateSuccessMessage(label))),
+      );
     } on Object {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.debtDetailGenerateErrorMessage(label))));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.debtDetailGenerateErrorMessage(label))),
+      );
     }
   }
 
@@ -85,14 +136,18 @@ class DebtDetailScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(attachmentRepositoryProvider).uploadAttachment(
+      await ref
+          .read(attachmentRepositoryProvider)
+          .uploadAttachment(
             entityPathPrefix: 'debts/$debtId',
             filePath: file.path,
             fileName: file.name,
             description: 'Invoice',
           );
       ref.invalidate(attachmentsProvider('debts/$debtId'));
-      messenger.showSnackBar(SnackBar(content: Text(l10n.debtDetailInvoiceAttachedSuccess)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.debtDetailInvoiceAttachedSuccess)),
+      );
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -102,15 +157,24 @@ class DebtDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final debtAsync = ref.watch(debtDetailProvider(debtId));
+    final debtValue = debtAsync.valueOrNull;
+    final isArchived = debtValue?.isArchived ?? false;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(debtAsync.valueOrNull?.referenceNumber ?? l10n.debtDetailTitle),
+        title: Text(debtValue?.referenceNumber ?? l10n.debtDetailTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: l10n.addEditDebtEditTitle,
             onPressed: () => context.push('/debts/$debtId/edit'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.archive_outlined),
+            tooltip: l10n.debtArchiveTitle,
+            onPressed: debtValue == null || isArchived
+                ? null
+                : () => _archive(context, ref, debtValue.customerId),
           ),
         ],
       ),
@@ -136,12 +200,17 @@ class DebtDetailScreen extends ConsumerWidget {
             ),
           ),
           data: (debt) {
-            final customerAsync = ref.watch(customerDetailProvider(debt.customerId));
+            final customerAsync = ref.watch(
+              customerDetailProvider(debt.customerId),
+            );
 
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(l10n.debtDetailCustomerInfoHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailCustomerInfoHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 customerAsync.when(
                   loading: () => const Padding(
@@ -150,12 +219,16 @@ class DebtDetailScreen extends ConsumerWidget {
                   ),
                   error: (error, _) => RetrySection(
                     message: l10n.debtDetailCustomerLoadError,
-                    onRetry: () => ref.invalidate(customerDetailProvider(debt.customerId)),
+                    onRetry: () =>
+                        ref.invalidate(customerDetailProvider(debt.customerId)),
                   ),
                   data: (customer) => CustomerInfoCard(customer: customer),
                 ),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailSummaryHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailSummaryHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 DebtSummaryCard(debt: debt),
                 const SizedBox(height: 24),
@@ -163,7 +236,11 @@ class DebtDetailScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => showRecordPaymentSheet(context, debtId),
+                        onPressed: () => showRecordPaymentSheet(
+                          context,
+                          debtId,
+                          debt.customerId,
+                        ),
                         child: Text(l10n.quickActionRecordPayment),
                       ),
                     ),
@@ -177,35 +254,27 @@ class DebtDetailScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final router = GoRouter.of(context);
-                    try {
-                      final collectionCase = await ref.read(debtActionsProvider).openCase(debtId);
-                      messenger.showSnackBar(SnackBar(content: Text(l10n.debtDetailCaseOpenedSuccess)));
-                      router.push('/cases/${collectionCase.id}');
-                    } on ApiException catch (e) {
-                      messenger.showSnackBar(SnackBar(content: Text(e.message)));
-                    }
-                  },
-                  child: Text(l10n.debtDetailOpenCaseButton),
-                ),
+                OpenCaseButton(debtId: debtId, customerId: debt.customerId),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailLogReminderHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailLogReminderHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => showLogReminderSheet(context, debtId, 'whatsapp'),
+                        onPressed: () =>
+                            showLogReminderSheet(context, debtId, 'whatsapp'),
                         child: Text(l10n.debtDetailLogWhatsAppButton),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => showLogReminderSheet(context, debtId, 'sms'),
+                        onPressed: () =>
+                            showLogReminderSheet(context, debtId, 'sms'),
                         child: Text(l10n.debtDetailLogSmsButton),
                       ),
                     ),
@@ -213,7 +282,8 @@ class DebtDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: () => showLogReminderSheet(context, debtId, 'call'),
+                  onPressed: () =>
+                      showLogReminderSheet(context, debtId, 'call'),
                   child: Text(l10n.debtDetailLogCallButton),
                 ),
                 const SizedBox(height: 12),
@@ -221,42 +291,60 @@ class DebtDetailScreen extends ConsumerWidget {
                   onPressed: customerAsync.valueOrNull?.isReadOnly ?? false
                       ? null
                       : () => context.push(
-                            '/reminders/new',
-                            extra: ReminderEntityPreset(
-                              type: 'debt',
-                              id: debtId,
-                              label: l10n.debtDetailReminderPresetLabel(debt.referenceNumber),
+                          '/reminders/new',
+                          extra: ReminderEntityPreset(
+                            type: 'debt',
+                            id: debtId,
+                            label: l10n.debtDetailReminderPresetLabel(
+                              debt.referenceNumber,
                             ),
                           ),
+                        ),
                   icon: const Icon(Icons.add_alarm_outlined),
                   label: Text(l10n.quickActionAddReminder),
                 ),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailPaymentHistoryHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailPaymentHistoryHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 DebtPaymentHistory(debtId: debtId),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailFollowUpTimelineHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailFollowUpTimelineHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 DebtTimelineSection(debtId: debtId),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailPromiseToPayHistoryHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailPromiseToPayHistoryHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 PromiseToPayHistorySection(debtId: debtId),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailGenerateDocumentsHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailGenerateDocumentsHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () => _generate(
                     context,
                     ref,
                     l10n.documentTypeStatement,
-                    () => ref.read(debtActionsProvider).generateStatement(debtId),
+                    () =>
+                        ref.read(debtActionsProvider).generateStatement(debtId),
                   ),
                   child: Text(l10n.customerDetailGenerateStatementButton),
                 ),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailRelatedDocumentsHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailRelatedDocumentsHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 DebtDocumentsSection(debtId: debtId),
                 const SizedBox(height: 24),
@@ -269,7 +357,11 @@ class DebtDetailScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _attachInvoice(context, ref, ref.read(attachmentCameraProvider)),
+                        onPressed: () => _attachInvoice(
+                          context,
+                          ref,
+                          ref.read(attachmentCameraProvider),
+                        ),
                         icon: const Icon(Icons.camera_alt_outlined),
                         label: Text(l10n.debtScanInvoiceButton),
                       ),
@@ -277,7 +369,11 @@ class DebtDetailScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _attachInvoice(context, ref, ref.read(attachmentFilePickerProvider)),
+                        onPressed: () => _attachInvoice(
+                          context,
+                          ref,
+                          ref.read(attachmentFilePickerProvider),
+                        ),
                         icon: const Icon(Icons.upload_file_outlined),
                         label: Text(l10n.debtUploadInvoiceButton),
                       ),
@@ -285,7 +381,10 @@ class DebtDetailScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Text(l10n.debtDetailRelatedCaseHeading, style: AppTypography.heading),
+                Text(
+                  l10n.debtDetailRelatedCaseHeading,
+                  style: AppTypography.heading,
+                ),
                 const SizedBox(height: 12),
                 RelatedCaseSection(debtId: debtId),
               ],

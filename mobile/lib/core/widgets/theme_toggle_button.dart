@@ -36,7 +36,9 @@ class ThemeToggleButton extends ConsumerWidget {
       icon: Icon(isDarkNow ? Icons.wb_sunny_rounded : Icons.nightlight_round),
       tooltip: isDarkNow ? l10n.themeSwitchToLight : l10n.themeSwitchToDark,
       onPressed: () {
-        ref.read(themeModeProvider.notifier).setThemeMode(isDarkNow ? ThemeMode.light : ThemeMode.dark);
+        ref
+            .read(themeModeProvider.notifier)
+            .setThemeMode(isDarkNow ? ThemeMode.light : ThemeMode.dark);
       },
     );
   }

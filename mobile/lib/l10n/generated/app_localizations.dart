@@ -218,6 +218,36 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get comingSoon;
 
+  /// No description provided for @biometricLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Deendoon'**
+  String get biometricLockTitle;
+
+  /// No description provided for @biometricLockPromptReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to access your account'**
+  String get biometricLockPromptReason;
+
+  /// No description provided for @biometricLockFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Try again or use your password.'**
+  String get biometricLockFailedMessage;
+
+  /// No description provided for @usePasswordInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Password Instead'**
+  String get usePasswordInstead;
+
+  /// No description provided for @biometricEnableFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify your biometrics. Please try again.'**
+  String get biometricEnableFailedMessage;
+
   /// No description provided for @defaultCreditLimit.
   ///
   /// In en, this message translates to:
@@ -289,6 +319,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get retry;
+
+  /// No description provided for @paginationLoadMoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more. Tap to retry.'**
+  String get paginationLoadMoreError;
 
   /// No description provided for @fieldRequired.
   ///
@@ -512,6 +548,12 @@ abstract class AppLocalizations {
   /// **'Expired'**
   String get statusExpired;
 
+  /// No description provided for @statusResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get statusResolved;
+
   /// No description provided for @themeSwitchToLight.
   ///
   /// In en, this message translates to:
@@ -607,6 +649,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Passwords do not match'**
   String get authPasswordsMismatch;
+
+  /// No description provided for @passwordFieldShowTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get passwordFieldShowTooltip;
+
+  /// No description provided for @passwordFieldHideTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get passwordFieldHideTooltip;
 
   /// No description provided for @loginAppName.
   ///
@@ -1189,6 +1243,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uploading is not available at this stage of the Request.'**
   String get professionalCollectionUploadUnavailableMessage;
+
+  /// No description provided for @attachmentDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Attachment'**
+  String get attachmentDeleteTitle;
+
+  /// No description provided for @attachmentDeleteDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This attachment will be permanently deleted. This cannot be undone.'**
+  String get attachmentDeleteDialogContent;
+
+  /// No description provided for @attachmentDeleteConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get attachmentDeleteConfirmButton;
+
+  /// No description provided for @attachmentDeletedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment deleted successfully'**
+  String get attachmentDeletedSuccessfully;
 
   /// No description provided for @professionalCollectionMessagesTitle.
   ///
@@ -1958,6 +2036,30 @@ abstract class AppLocalizations {
   /// **'No debts with this status'**
   String get debtListEmptyFilteredState;
 
+  /// No description provided for @debtListShowArchivedFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Archived'**
+  String get debtListShowArchivedFilter;
+
+  /// No description provided for @debtRestoredSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt restored successfully'**
+  String get debtRestoredSuccessfully;
+
+  /// No description provided for @debtCardRestoreButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get debtCardRestoreButton;
+
+  /// No description provided for @debtCardArchivedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get debtCardArchivedBadge;
+
   /// No description provided for @addEditDebtAddTitle.
   ///
   /// In en, this message translates to:
@@ -1981,6 +2083,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load this debt.'**
   String get debtDetailLoadError;
+
+  /// No description provided for @debtArchiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive Debt'**
+  String get debtArchiveTitle;
+
+  /// No description provided for @debtArchiveDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This debt will no longer appear in the default list. This can be undone later.'**
+  String get debtArchiveDialogContent;
+
+  /// No description provided for @debtArchiveConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get debtArchiveConfirmButton;
+
+  /// No description provided for @debtArchivedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt archived successfully'**
+  String get debtArchivedSuccessfully;
 
   /// Shown after a document (e.g. Statement) is generated from the Debt Detail screen
   ///
@@ -3218,6 +3344,48 @@ abstract class AppLocalizations {
   /// **'Storage Add-on Update'**
   String get notificationTypeStorageAddonUpdate;
 
+  /// No description provided for @notificationTypeSupportTicketCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Ticket Created'**
+  String get notificationTypeSupportTicketCreated;
+
+  /// No description provided for @notificationTypeSupportTicketReplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Ticket Reply'**
+  String get notificationTypeSupportTicketReplied;
+
+  /// No description provided for @notificationTypeSupportTicketStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Ticket Status Update'**
+  String get notificationTypeSupportTicketStatusChanged;
+
+  /// No description provided for @notificationTypeSupportTicketClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Ticket Closed'**
+  String get notificationTypeSupportTicketClosed;
+
+  /// No description provided for @notificationTypeSupportTicketReopened.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Ticket Reopened'**
+  String get notificationTypeSupportTicketReopened;
+
+  /// No description provided for @notificationTypeAdminAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement'**
+  String get notificationTypeAdminAnnouncement;
+
+  /// No description provided for @notificationDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get notificationDeleteAction;
+
   /// No description provided for @globalSearchTitle.
   ///
   /// In en, this message translates to:
@@ -4439,6 +4607,66 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get accountLogout;
 
+  /// No description provided for @accountCloseAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Account'**
+  String get accountCloseAccount;
+
+  /// No description provided for @closeAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Account'**
+  String get closeAccountTitle;
+
+  /// No description provided for @closeAccountWarningHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'What happens when you close your account'**
+  String get closeAccountWarningHeading;
+
+  /// No description provided for @closeAccountWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account will be archived and your business will be suspended immediately. You will be signed out and will no longer be able to log in. Your customers, debts, payments, documents, and history are kept — nothing is deleted. To reopen your account, contact Deendoon Support.'**
+  String get closeAccountWarningBody;
+
+  /// No description provided for @closeAccountPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to confirm'**
+  String get closeAccountPasswordLabel;
+
+  /// No description provided for @closeAccountPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get closeAccountPasswordRequired;
+
+  /// No description provided for @closeAccountButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Close My Account'**
+  String get closeAccountButton;
+
+  /// No description provided for @closeAccountConfirmDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close your account?'**
+  String get closeAccountConfirmDialogTitle;
+
+  /// No description provided for @closeAccountConfirmDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This will immediately sign you out and block access to your business. This cannot be undone by you — only Deendoon Support can reopen it.'**
+  String get closeAccountConfirmDialogContent;
+
+  /// No description provided for @closeAccountConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, Close Account'**
+  String get closeAccountConfirmButton;
+
   /// No description provided for @profileTitle.
   ///
   /// In en, this message translates to:
@@ -4858,6 +5086,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unsupported file type. Only .xlsx and .xls files are supported.'**
   String get bulkImportUnsupportedFileTypeError;
+
+  /// No description provided for @supportTicketListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Tickets'**
+  String get supportTicketListTitle;
+
+  /// No description provided for @supportTicketListLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your tickets.'**
+  String get supportTicketListLoadError;
+
+  /// No description provided for @supportTicketListEmptyState.
+  ///
+  /// In en, this message translates to:
+  /// **'No tickets yet.'**
+  String get supportTicketListEmptyState;
+
+  /// No description provided for @supportTicketListEmptyFilteredState.
+  ///
+  /// In en, this message translates to:
+  /// **'No tickets match this status.'**
+  String get supportTicketListEmptyFilteredState;
+
+  /// No description provided for @supportTicketCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Ticket'**
+  String get supportTicketCreateTitle;
+
+  /// No description provided for @supportTicketCreateValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in the subject and description.'**
+  String get supportTicketCreateValidationError;
+
+  /// No description provided for @supportTicketSubjectLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get supportTicketSubjectLabel;
+
+  /// No description provided for @supportTicketSubjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Briefly describe the issue'**
+  String get supportTicketSubjectHint;
+
+  /// No description provided for @supportTicketDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get supportTicketDescriptionLabel;
+
+  /// No description provided for @supportTicketDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Give as much detail as you can'**
+  String get supportTicketDescriptionHint;
+
+  /// No description provided for @supportTicketPriorityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get supportTicketPriorityLabel;
+
+  /// No description provided for @supportTicketCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get supportTicketCategoryLabel;
+
+  /// No description provided for @supportTicketSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Ticket'**
+  String get supportTicketSubmitButton;
+
+  /// No description provided for @supportTicketDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket'**
+  String get supportTicketDetailTitle;
+
+  /// No description provided for @supportTicketDetailLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this ticket.'**
+  String get supportTicketDetailLoadError;
+
+  /// No description provided for @supportTicketClosedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This ticket is closed — new replies are not accepted.'**
+  String get supportTicketClosedNotice;
+
+  /// Shown on a closed ticket's detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Closed on {date}'**
+  String supportTicketClosedAtLabel(String date);
+
+  /// Shown on a ticket that has been reopened at least once
+  ///
+  /// In en, this message translates to:
+  /// **'Reopened on {date}'**
+  String supportTicketReopenedAtLabel(String date);
+
+  /// No description provided for @supportTicketAttachmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get supportTicketAttachmentsTitle;
+
+  /// No description provided for @supportTicketAttachmentsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load attachments.'**
+  String get supportTicketAttachmentsLoadError;
+
+  /// No description provided for @supportTicketNoAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'No attachments uploaded.'**
+  String get supportTicketNoAttachments;
+
+  /// No description provided for @supportTicketUploadButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach File'**
+  String get supportTicketUploadButton;
+
+  /// No description provided for @supportTicketConversationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get supportTicketConversationTitle;
+
+  /// No description provided for @supportTicketConversationLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the conversation.'**
+  String get supportTicketConversationLoadError;
+
+  /// No description provided for @supportTicketNoRepliesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No replies yet.'**
+  String get supportTicketNoRepliesYet;
+
+  /// No description provided for @supportTicketReplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a reply'**
+  String get supportTicketReplyHint;
+
+  /// No description provided for @supportTicketMessageSenderYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get supportTicketMessageSenderYou;
+
+  /// No description provided for @supportTicketMessageSenderDeendoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Deendoon Support'**
+  String get supportTicketMessageSenderDeendoon;
+
+  /// No description provided for @supportTicketPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get supportTicketPriorityLow;
+
+  /// No description provided for @supportTicketPriorityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get supportTicketPriorityMedium;
+
+  /// No description provided for @supportTicketPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get supportTicketPriorityHigh;
+
+  /// No description provided for @supportTicketPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get supportTicketPriorityUrgent;
+
+  /// No description provided for @supportTicketCategoryTechnicalIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical Issue'**
+  String get supportTicketCategoryTechnicalIssue;
+
+  /// No description provided for @supportTicketCategoryPaymentBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment / Billing'**
+  String get supportTicketCategoryPaymentBilling;
+
+  /// No description provided for @supportTicketCategoryAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get supportTicketCategoryAccount;
+
+  /// No description provided for @supportTicketCategorySubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get supportTicketCategorySubscription;
+
+  /// No description provided for @supportTicketCategoryDebtRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt & Recovery'**
+  String get supportTicketCategoryDebtRecovery;
+
+  /// No description provided for @supportTicketCategoryProfessionalCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional Collection'**
+  String get supportTicketCategoryProfessionalCollection;
+
+  /// No description provided for @supportTicketCategoryFeatureRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Request'**
+  String get supportTicketCategoryFeatureRequest;
+
+  /// No description provided for @supportTicketCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get supportTicketCategoryOther;
+
+  /// No description provided for @supportTicketContactCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Deendoon Support'**
+  String get supportTicketContactCardTitle;
+
+  /// No description provided for @supportTicketContactPhoneButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get supportTicketContactPhoneButton;
+
+  /// No description provided for @supportTicketContactWhatsAppButton.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get supportTicketContactWhatsAppButton;
+
+  /// No description provided for @supportTicketContactEmailButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get supportTicketContactEmailButton;
+
+  /// No description provided for @supportTicketContactLaunchError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open that. Please try again.'**
+  String get supportTicketContactLaunchError;
 }
 
 class _AppLocalizationsDelegate

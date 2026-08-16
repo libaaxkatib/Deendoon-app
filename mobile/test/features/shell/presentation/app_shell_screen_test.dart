@@ -25,13 +25,49 @@ Future<void> _pumpShell(WidgetTester tester, {required Locale locale}) async {
     initialLocation: '/home',
     routes: [
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => AppShellScreen(navigationShell: shell),
+        builder: (context, state, shell) =>
+            AppShellScreen(navigationShell: shell),
         branches: [
-          StatefulShellBranch(routes: [GoRoute(path: '/home', builder: (_, _) => const Text('Home Branch'))]),
-          StatefulShellBranch(routes: [GoRoute(path: '/analytics', builder: (_, _) => const Text('Analytics Branch'))]),
-          StatefulShellBranch(routes: [GoRoute(path: '/cases', builder: (_, _) => const Text('Cases Branch'))]),
-          StatefulShellBranch(routes: [GoRoute(path: '/reminders', builder: (_, _) => const Text('Reminders Branch'))]),
-          StatefulShellBranch(routes: [GoRoute(path: '/documents', builder: (_, _) => const Text('Documents Branch'))]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (_, _) => const Text('Home Branch'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/analytics',
+                builder: (_, _) => const Text('Analytics Branch'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/cases',
+                builder: (_, _) => const Text('Cases Branch'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/reminders',
+                builder: (_, _) => const Text('Reminders Branch'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/documents',
+                builder: (_, _) => const Text('Documents Branch'),
+              ),
+            ],
+          ),
         ],
       ),
     ],
@@ -51,7 +87,9 @@ Future<void> _pumpShell(WidgetTester tester, {required Locale locale}) async {
 }
 
 void main() {
-  testWidgets('English locale shows the English bottom-nav labels', (tester) async {
+  testWidgets('English locale shows the English bottom-nav labels', (
+    tester,
+  ) async {
     await _pumpShell(tester, locale: const Locale('en'));
 
     expect(find.text('Home'), findsOneWidget);
@@ -61,20 +99,23 @@ void main() {
     expect(find.text('Documents'), findsOneWidget);
   });
 
-  testWidgets('Somali locale switches the bottom navigation labels, not just Settings', (tester) async {
-    await _pumpShell(tester, locale: const Locale('so'));
+  testWidgets(
+    'Somali locale switches the bottom navigation labels, not just Settings',
+    (tester) async {
+      await _pumpShell(tester, locale: const Locale('so'));
 
-    expect(find.text('Guriga'), findsOneWidget); // Home
-    expect(find.text('Falanqaynta'), findsOneWidget); // Analytics
-    expect(find.text('Kiisaska'), findsOneWidget); // Cases
-    expect(find.text('Xasuusinta'), findsOneWidget); // Reminders
-    expect(find.text('Dukumentiyada'), findsOneWidget); // Documents
+      expect(find.text('Guriga'), findsOneWidget); // Home
+      expect(find.text('Falanqaynta'), findsOneWidget); // Analytics
+      expect(find.text('Kiisaska'), findsOneWidget); // Cases
+      expect(find.text('Xasuusinta'), findsOneWidget); // Reminders
+      expect(find.text('Dukumentiyada'), findsOneWidget); // Documents
 
-    // No English bottom-nav label leaked through under Somali.
-    expect(find.text('Home'), findsNothing);
-    expect(find.text('Analytics'), findsNothing);
-    expect(find.text('Cases'), findsNothing);
-    expect(find.text('Reminders'), findsNothing);
-    expect(find.text('Documents'), findsNothing);
-  });
+      // No English bottom-nav label leaked through under Somali.
+      expect(find.text('Home'), findsNothing);
+      expect(find.text('Analytics'), findsNothing);
+      expect(find.text('Cases'), findsNothing);
+      expect(find.text('Reminders'), findsNothing);
+      expect(find.text('Documents'), findsNothing);
+    },
+  );
 }

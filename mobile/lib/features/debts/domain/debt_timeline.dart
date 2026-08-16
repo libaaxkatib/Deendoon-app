@@ -15,7 +15,8 @@ class DebtTimelineStage {
     required this.occurredAt,
   });
 
-  factory DebtTimelineStage.fromJson(Map<String, dynamic> json) => DebtTimelineStage(
+  factory DebtTimelineStage.fromJson(Map<String, dynamic> json) =>
+      DebtTimelineStage(
         event: json['event'] as String,
         status: json['status'] as String,
         occurredAt: json['occurred_at'] as String?,
@@ -29,9 +30,9 @@ class DebtTimeline {
   const DebtTimeline({required this.debtId, required this.stages});
 
   factory DebtTimeline.fromJson(Map<String, dynamic> json) => DebtTimeline(
-        debtId: json['debt_id'].toString(),
-        stages: (json['stages'] as List<dynamic>)
-            .map((e) => DebtTimelineStage.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    debtId: json['debt_id'].toString(),
+    stages: (json['stages'] as List<dynamic>)
+        .map((e) => DebtTimelineStage.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }

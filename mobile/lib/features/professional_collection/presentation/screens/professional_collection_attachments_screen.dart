@@ -26,18 +26,27 @@ import '../providers/professional_collection_detail_providers.dart';
 class ProfessionalCollectionAttachmentsScreen extends ConsumerStatefulWidget {
   final String requestId;
 
-  const ProfessionalCollectionAttachmentsScreen({super.key, required this.requestId});
+  const ProfessionalCollectionAttachmentsScreen({
+    super.key,
+    required this.requestId,
+  });
 
   @override
   ConsumerState<ProfessionalCollectionAttachmentsScreen> createState() =>
       _ProfessionalCollectionAttachmentsScreenState();
 }
 
-class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<ProfessionalCollectionAttachmentsScreen> {
+class _ProfessionalCollectionAttachmentsScreenState
+    extends ConsumerState<ProfessionalCollectionAttachmentsScreen> {
   bool _isUploading = false;
   String? _error;
 
-  static const _canUploadStatuses = {'submitted', 'under_review', 'need_more_information', 'accepted'};
+  static const _canUploadStatuses = {
+    'submitted',
+    'under_review',
+    'need_more_information',
+    'accepted',
+  };
 
   Future<void> _pickAndUpload() async {
     setState(() => _error = null);
@@ -47,7 +56,9 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
 
     setState(() => _isUploading = true);
     try {
-      await ref.read(professionalCollectionActionsProvider).uploadAttachment(
+      await ref
+          .read(professionalCollectionActionsProvider)
+          .uploadAttachment(
             requestId: widget.requestId,
             filePath: file.path,
             fileName: file.name,
@@ -62,9 +73,15 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final attachmentsAsync = ref.watch(professionalCollectionAttachmentsProvider(widget.requestId));
-    final requestAsync = ref.watch(professionalCollectionDetailProvider(widget.requestId));
-    final canUpload = _canUploadStatuses.contains(requestAsync.valueOrNull?.status);
+    final attachmentsAsync = ref.watch(
+      professionalCollectionAttachmentsProvider(widget.requestId),
+    );
+    final requestAsync = ref.watch(
+      professionalCollectionDetailProvider(widget.requestId),
+    );
+    final canUpload = _canUploadStatuses.contains(
+      requestAsync.valueOrNull?.status,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.customerDetailAttachmentsButton)),
@@ -73,21 +90,34 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                ref.invalidate(professionalCollectionAttachmentsProvider(widget.requestId));
-                await ref.read(professionalCollectionAttachmentsProvider(widget.requestId).future);
+                ref.invalidate(
+                  professionalCollectionAttachmentsProvider(widget.requestId),
+                );
+                await ref.read(
+                  professionalCollectionAttachmentsProvider(
+                    widget.requestId,
+                  ).future,
+                );
               },
               child: attachmentsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: RetrySection(
                     message: l10n.professionalCollectionAttachmentsLoadError,
-                    onRetry: () => ref.invalidate(professionalCollectionAttachmentsProvider(widget.requestId)),
+                    onRetry: () => ref.invalidate(
+                      professionalCollectionAttachmentsProvider(
+                        widget.requestId,
+                      ),
+                    ),
                   ),
                 ),
                 data: (attachments) {
                   if (attachments.isEmpty) {
                     return Center(
-                      child: Text(l10n.professionalCollectionAttachmentsEmptyState, style: AppTypography.body),
+                      child: Text(
+                        l10n.professionalCollectionAttachmentsEmptyState,
+                        style: AppTypography.body,
+                      ),
                     );
                   }
 
@@ -106,9 +136,15 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(attachment.originalFilename, style: AppTypography.body),
+                                  Text(
+                                    attachment.originalFilename,
+                                    style: AppTypography.body,
+                                  ),
                                   const SizedBox(height: 2),
-                                  Text(attachment.createdAt.split('T').first, style: AppTypography.caption),
+                                  Text(
+                                    attachment.createdAt.split('T').first,
+                                    style: AppTypography.caption,
+                                  ),
                                 ],
                               ),
                             ),
@@ -129,7 +165,12 @@ class _ProfessionalCollectionAttachmentsScreenState extends ConsumerState<Profes
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_error != null) ...[
-                      Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                     ],
                     PrimaryButton(

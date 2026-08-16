@@ -20,7 +20,11 @@ class AvatarInitial extends StatelessWidget {
       backgroundColor: context.colors.primary.withValues(alpha: 0.15),
       child: Text(
         initial,
-        style: TextStyle(color: context.colors.primary, fontWeight: FontWeight.w700, fontSize: radius * 0.82),
+        style: TextStyle(
+          color: context.colors.primary,
+          fontWeight: FontWeight.w700,
+          fontSize: radius * 0.82,
+        ),
       ),
     );
   }

@@ -9,10 +9,10 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/document_detail_providers.dart';
 
 Map<String, String> _eventTypeLabels(AppLocalizations l10n) => {
-      'generated': l10n.documentEventGenerated,
-      'downloaded': l10n.documentEventDownloaded,
-      'regenerated': l10n.documentEventRegenerated,
-    };
+  'generated': l10n.documentEventGenerated,
+  'downloaded': l10n.documentEventDownloaded,
+  'regenerated': l10n.documentEventRegenerated,
+};
 
 /// Document History (P2.5) — `GET /documents/{id}/history`
 /// (`DocumentEventResource`): actor, action, and timestamp for every real,
@@ -44,13 +44,19 @@ class DocumentHistoryScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               child: RetrySection(
                 message: l10n.documentHistoryLoadError,
-                onRetry: () => ref.invalidate(documentHistoryProvider(documentId)),
+                onRetry: () =>
+                    ref.invalidate(documentHistoryProvider(documentId)),
               ),
             ),
           ),
           data: (events) {
             if (events.isEmpty) {
-              return Center(child: Text(l10n.documentHistoryEmptyState, style: AppTypography.body));
+              return Center(
+                child: Text(
+                  l10n.documentHistoryEmptyState,
+                  style: AppTypography.body,
+                ),
+              );
             }
 
             return ListView.separated(
@@ -67,11 +73,17 @@ class DocumentHistoryScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_eventTypeLabels(l10n)[event.eventType] ?? event.eventType, style: AppTypography.body),
+                            Text(
+                              _eventTypeLabels(l10n)[event.eventType] ??
+                                  event.eventType,
+                              style: AppTypography.body,
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               event.userId != null
-                                  ? l10n.reminderDetailCreatedByValue(event.userId!)
+                                  ? l10n.reminderDetailCreatedByValue(
+                                      event.userId!,
+                                    )
                                   : l10n.documentHistorySystemLabel,
                               style: AppTypography.caption,
                             ),
@@ -79,7 +91,10 @@ class DocumentHistoryScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(formatFriendlyDateTimeFromIso(event.occurredAt), style: AppTypography.caption),
+                      Text(
+                        formatFriendlyDateTimeFromIso(event.occurredAt),
+                        style: AppTypography.caption,
+                      ),
                     ],
                   ),
                 );

@@ -13,6 +13,7 @@ class CustomerListState {
   final String search;
   final bool includeArchived;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const CustomerListState({
     required this.customers,
@@ -22,6 +23,7 @@ class CustomerListState {
     required this.search,
     required this.includeArchived,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -34,6 +36,7 @@ class CustomerListState {
     String? search,
     bool? includeArchived,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return CustomerListState(
       customers: customers ?? this.customers,
@@ -43,16 +46,20 @@ class CustomerListState {
       search: search ?? this.search,
       includeArchived: includeArchived ?? this.includeArchived,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final customerListProvider =
-    AsyncNotifierProvider<CustomerListNotifier, CustomerListState>(CustomerListNotifier.new);
+    AsyncNotifierProvider<CustomerListNotifier, CustomerListState>(
+      CustomerListNotifier.new,
+    );
 
 class CustomerListNotifier extends AsyncNotifier<CustomerListState> {
   @override
-  Future<CustomerListState> build() => _fetchFirstPage(search: '', includeArchived: false);
+  Future<CustomerListState> build() =>
+      _fetchFirstPage(search: '', includeArchived: false);
 
   CustomerRepository get _repository => ref.read(customerRepositoryProvider);
 
@@ -61,7 +68,9 @@ class CustomerListNotifier extends AsyncNotifier<CustomerListState> {
   Future<void> search(String query) async {
     final includeArchived = state.valueOrNull?.includeArchived ?? false;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(search: query, includeArchived: includeArchived));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(search: query, includeArchived: includeArchived),
+    );
   }
 
   /// "Show Archived" filter chip — a real `includeArchived` query param
@@ -71,13 +80,17 @@ class CustomerListNotifier extends AsyncNotifier<CustomerListState> {
     final search = state.valueOrNull?.search ?? '';
     final includeArchived = !(state.valueOrNull?.includeArchived ?? false);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _fetchFirstPage(search: search, includeArchived: includeArchived));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(search: search, includeArchived: includeArchived),
+    );
   }
 
   Future<void> refresh() async {
     final search = state.valueOrNull?.search ?? '';
     final includeArchived = state.valueOrNull?.includeArchived ?? false;
-    state = await AsyncValue.guard(() => _fetchFirstPage(search: search, includeArchived: includeArchived));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(search: search, includeArchived: includeArchived),
+    );
   }
 
   /// Guards against duplicate/concurrent requests and against requesting
@@ -86,29 +99,43 @@ class CustomerListNotifier extends AsyncNotifier<CustomerListState> {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
       final next = await _repository.fetchCustomers(
         page: current.currentPage + 1,
         search: current.search,
         includeArchived: current.includeArchived,
       );
-      state = AsyncData(current.copyWith(
-        customers: [...current.customers, ...next.customers],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      state = AsyncData(
+        current.copyWith(
+          customers: [...current.customers, ...next.customers],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      // Keep the already-loaded page; just stop the "loading more" spinner
-      // so the user can retry by scrolling again.
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      // Keep the already-loaded page; surface the failure via
+      // loadMoreError so the footer can offer a retry (Mobile Fix #12).
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
-  Future<CustomerListState> _fetchFirstPage({required String search, required bool includeArchived}) async {
-    final page = await _repository.fetchCustomers(page: 1, search: search, includeArchived: includeArchived);
+  Future<CustomerListState> _fetchFirstPage({
+    required String search,
+    required bool includeArchived,
+  }) async {
+    final page = await _repository.fetchCustomers(
+      page: 1,
+      search: search,
+      includeArchived: includeArchived,
+    );
     return CustomerListState(
       customers: page.customers,
       currentPage: page.currentPage,

@@ -19,7 +19,8 @@ final biometricSupportedProvider = FutureProvider<bool>(
 /// biometric prompt — see `BiometricLoginTile` in the Settings screen.
 class BiometricEnabledNotifier extends AsyncNotifier<bool> {
   @override
-  Future<bool> build() => ref.read(biometricPreferenceStorageProvider).readEnabled();
+  Future<bool> build() =>
+      ref.read(biometricPreferenceStorageProvider).readEnabled();
 
   Future<void> setEnabled(bool enabled) async {
     state = AsyncData(enabled);
@@ -27,4 +28,7 @@ class BiometricEnabledNotifier extends AsyncNotifier<bool> {
   }
 }
 
-final biometricEnabledProvider = AsyncNotifierProvider<BiometricEnabledNotifier, bool>(BiometricEnabledNotifier.new);
+final biometricEnabledProvider =
+    AsyncNotifierProvider<BiometricEnabledNotifier, bool>(
+      BiometricEnabledNotifier.new,
+    );

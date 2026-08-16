@@ -16,7 +16,8 @@ class MessageTemplate {
     required this.updatedAt,
   });
 
-  factory MessageTemplate.fromJson(Map<String, dynamic> json) => MessageTemplate(
+  factory MessageTemplate.fromJson(Map<String, dynamic> json) =>
+      MessageTemplate(
         id: json['id'].toString(),
         name: json['name'] as String,
         channel: json['channel'] as String,

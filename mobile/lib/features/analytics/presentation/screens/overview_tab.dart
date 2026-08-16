@@ -26,10 +26,10 @@ const _riskColors = <String, Color>{
 };
 
 Map<String, String> _riskLabels(AppLocalizations l10n) => {
-      'high': l10n.overviewRiskLabelHigh,
-      'medium': l10n.overviewRiskLabelMedium,
-      'low': l10n.overviewRiskLabelLow,
-    };
+  'high': l10n.overviewRiskLabelHigh,
+  'medium': l10n.overviewRiskLabelMedium,
+  'low': l10n.overviewRiskLabelLow,
+};
 
 const _agingColors = <String, Color>{
   'current': AppColors.success,
@@ -65,7 +65,8 @@ class OverviewTab extends ConsumerWidget {
       children: [
         DateRangeField(
           value: range,
-          onChanged: (next) => ref.read(overviewDateRangeProvider.notifier).state = next,
+          onChanged: (next) =>
+              ref.read(overviewDateRangeProvider.notifier).state = next,
         ),
         const SizedBox(height: 28),
         _SectionTitle(l10n.overviewSectionCollectionAnalytics),
@@ -97,7 +98,10 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: AppTypography.heading.copyWith(fontSize: 18, color: context.colors.textPrimary),
+      style: AppTypography.heading.copyWith(
+        fontSize: 18,
+        color: context.colors.textPrimary,
+      ),
     );
   }
 }
@@ -139,7 +143,9 @@ class _CollectionAnalyticsRow extends ConsumerWidget {
               child: KpiCard(
                 label: l10n.overviewKpiTotalCollected,
                 value: analytics.totalCollected,
-                onTap: () => context.push('/analytics/reports/payments?dateFrom=$dateFrom&dateTo=$dateTo'),
+                onTap: () => context.push(
+                  '/analytics/reports/payments?dateFrom=$dateFrom&dateTo=$dateTo',
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -215,7 +221,11 @@ class _AgingAnalysisSection extends ConsumerWidget {
                 for (final key in agingBucketOrder)
                   DonutSegment(
                     label: labels[key]!,
-                    value: double.tryParse(aging.buckets[key]?.totalRemainingBalance ?? '0') ?? 0,
+                    value:
+                        double.tryParse(
+                          aging.buckets[key]?.totalRemainingBalance ?? '0',
+                        ) ??
+                        0,
                     color: _agingColors[key]!,
                   ),
               ],
@@ -230,7 +240,11 @@ class _AgingAnalysisSection extends ConsumerWidget {
                       context,
                       l10n,
                       key,
-                      aging.buckets[key] ?? const AgingBucket(count: 0, totalRemainingBalance: '0.00'),
+                      aging.buckets[key] ??
+                          const AgingBucket(
+                            count: 0,
+                            totalRemainingBalance: '0.00',
+                          ),
                       total,
                       labels,
                     ),
@@ -257,7 +271,10 @@ class _AgingAnalysisSection extends ConsumerWidget {
     return DonutLegendRow(
       color: _agingColors[key]!,
       label: labels[key]!,
-      value: l10n.overviewAgingLegendValue(bucket.count, bucket.totalRemainingBalance),
+      value: l10n.overviewAgingLegendValue(
+        bucket.count,
+        bucket.totalRemainingBalance,
+      ),
       percentage: percentage,
       onTap: () => context.push('/analytics/reports/debts/aging/$key'),
     );
@@ -283,7 +300,10 @@ class _RiskDistributionSection extends ConsumerWidget {
         onRetry: () => ref.invalidate(riskDistributionProvider),
       ),
       data: (distribution) {
-        final totalCustomers = distribution.segments.fold<int>(0, (sum, s) => sum + s.customerCount);
+        final totalCustomers = distribution.segments.fold<int>(
+          0,
+          (sum, s) => sum + s.customerCount,
+        );
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -296,7 +316,9 @@ class _RiskDistributionSection extends ConsumerWidget {
                   DonutSegment(
                     label: riskLabels[segment.riskLevel] ?? segment.riskLevel,
                     value: segment.customerCount.toDouble(),
-                    color: _riskColors[segment.riskLevel] ?? context.colors.textSecondary,
+                    color:
+                        _riskColors[segment.riskLevel] ??
+                        context.colors.textSecondary,
                   ),
               ],
             ),
@@ -307,11 +329,17 @@ class _RiskDistributionSection extends ConsumerWidget {
                 children: [
                   for (final segment in distribution.segments)
                     DonutLegendRow(
-                      color: _riskColors[segment.riskLevel] ?? context.colors.textSecondary,
+                      color:
+                          _riskColors[segment.riskLevel] ??
+                          context.colors.textSecondary,
                       label: riskLabels[segment.riskLevel] ?? segment.riskLevel,
-                      value: l10n.overviewRiskLegendValue(segment.customerCount),
+                      value: l10n.overviewRiskLegendValue(
+                        segment.customerCount,
+                      ),
                       percentage: segment.percentage,
-                      onTap: () => context.push('/analytics/reports/customers?riskLevel=${segment.riskLevel}'),
+                      onTap: () => context.push(
+                        '/analytics/reports/customers?riskLevel=${segment.riskLevel}',
+                      ),
                     ),
                 ],
               ),

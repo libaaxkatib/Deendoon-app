@@ -15,7 +15,8 @@ class ReminderTypeIcon extends StatelessWidget {
 
   const ReminderTypeIcon({super.key, required this.type, this.size = 40});
 
-  static (IconData, Color) _iconAndColor(BuildContext context, String type) => switch (type) {
+  static (IconData, Color) _iconAndColor(BuildContext context, String type) =>
+      switch (type) {
         'client_visit' => (Icons.location_on_outlined, AppColors.accent),
         'follow_up_call' => (Icons.call_outlined, AppColors.warning),
         'payment_due' => (Icons.payments_outlined, AppColors.success),
@@ -30,7 +31,10 @@ class ReminderTypeIcon extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
       child: Icon(icon, color: color, size: size * 0.5),
     );
   }

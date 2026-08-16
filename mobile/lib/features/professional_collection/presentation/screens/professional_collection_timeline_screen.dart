@@ -16,31 +16,45 @@ import '../providers/professional_collection_detail_providers.dart';
 class ProfessionalCollectionTimelineScreen extends ConsumerWidget {
   final String requestId;
 
-  const ProfessionalCollectionTimelineScreen({super.key, required this.requestId});
+  const ProfessionalCollectionTimelineScreen({
+    super.key,
+    required this.requestId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final timelineAsync = ref.watch(professionalCollectionTimelineProvider(requestId));
+    final timelineAsync = ref.watch(
+      professionalCollectionTimelineProvider(requestId),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.professionalCollectionTimelineTitle)),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(professionalCollectionTimelineProvider(requestId));
-          await ref.read(professionalCollectionTimelineProvider(requestId).future);
+          await ref.read(
+            professionalCollectionTimelineProvider(requestId).future,
+          );
         },
         child: timelineAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
             child: RetrySection(
               message: l10n.professionalCollectionTimelineLoadError,
-              onRetry: () => ref.invalidate(professionalCollectionTimelineProvider(requestId)),
+              onRetry: () => ref.invalidate(
+                professionalCollectionTimelineProvider(requestId),
+              ),
             ),
           ),
           data: (events) {
             if (events.isEmpty) {
-              return Center(child: Text(l10n.professionalCollectionTimelineEmptyState, style: AppTypography.body));
+              return Center(
+                child: Text(
+                  l10n.professionalCollectionTimelineEmptyState,
+                  style: AppTypography.body,
+                ),
+              );
             }
 
             return ListView.separated(
@@ -56,19 +70,33 @@ class ProfessionalCollectionTimelineScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(child: Text(event.eventType, style: AppTypography.body)),
-                          Text(event.occurredAt.split('T').first, style: AppTypography.caption),
+                          Expanded(
+                            child: Text(
+                              event.eventType,
+                              style: AppTypography.body,
+                            ),
+                          ),
+                          Text(
+                            event.occurredAt.split('T').first,
+                            style: AppTypography.caption,
+                          ),
                         ],
                       ),
-                      if (event.notes != null && event.notes!.trim().isNotEmpty) ...[
+                      if (event.notes != null &&
+                          event.notes!.trim().isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(event.notes!, style: AppTypography.caption),
                       ],
-                      if (event.outcome != null && event.outcome!.trim().isNotEmpty) ...[
+                      if (event.outcome != null &&
+                          event.outcome!.trim().isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
-                          l10n.professionalCollectionTimelineOutcomeLabel(event.outcome!),
-                          style: AppTypography.caption.copyWith(color: AppColors.primary),
+                          l10n.professionalCollectionTimelineOutcomeLabel(
+                            event.outcome!,
+                          ),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.primary,
+                          ),
                         ),
                       ],
                     ],

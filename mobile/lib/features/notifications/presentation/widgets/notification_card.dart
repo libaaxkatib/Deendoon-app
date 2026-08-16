@@ -15,7 +15,11 @@ class NotificationCard extends StatelessWidget {
   final AppNotification notification;
   final VoidCallback onTap;
 
-  const NotificationCard({super.key, required this.notification, required this.onTap});
+  const NotificationCard({
+    super.key,
+    required this.notification,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,16 +35,20 @@ class NotificationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  notificationTypeLabel(context, notification.type),
+                  notification.title ??
+                      notificationTypeLabel(context, notification.type),
                   style: notification.isRead
                       ? AppTypography.body
-                      : AppTypography.body.copyWith(fontWeight: FontWeight.w700),
+                      : AppTypography.body.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${notification.relatedEntityType} · ${_formatTimestamp(notification.createdAt)}',
+                  notification.message ??
+                      '${notification.relatedEntityType} · ${_formatTimestamp(notification.createdAt)}',
                   style: AppTypography.caption,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -54,7 +62,10 @@ class NotificationCard extends StatelessWidget {
               width: 8,
               height: 8,
               margin: const EdgeInsets.only(top: 4),
-              decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
             ),
           ],
         ],

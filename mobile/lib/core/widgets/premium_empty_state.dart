@@ -13,7 +13,12 @@ class PremiumEmptyState extends StatelessWidget {
   final String title;
   final String message;
 
-  const PremiumEmptyState({super.key, required this.icon, required this.title, required this.message});
+  const PremiumEmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,18 +40,26 @@ class PremiumEmptyState extends StatelessWidget {
                   ],
                 ),
               ),
-              child: Icon(icon, size: 36, color: context.colors.primary.withValues(alpha: 0.85)),
+              child: Icon(
+                icon,
+                size: 36,
+                color: context.colors.primary.withValues(alpha: 0.85),
+              ),
             ),
             const SizedBox(height: 20),
             Text(
               title,
-              style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+              style: AppTypography.subheading.copyWith(
+                color: context.colors.textPrimary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+              style: AppTypography.caption.copyWith(
+                color: context.colors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

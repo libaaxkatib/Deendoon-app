@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final biometricPreferenceStorageProvider =
-    Provider<BiometricPreferenceStorage>((ref) => const BiometricPreferenceStorage());
+final biometricPreferenceStorageProvider = Provider<BiometricPreferenceStorage>(
+  (ref) => const BiometricPreferenceStorage(),
+);
 
 /// Persists the user's local choice to require biometric login. Device-only
 /// — there is no backend field for this (Settings §Security).

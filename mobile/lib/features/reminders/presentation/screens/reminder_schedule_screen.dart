@@ -22,29 +22,35 @@ const _reminderTypeKeys = <String>[
 ];
 
 String _reminderTypeLabel(AppLocalizations l10n, String type) => switch (type) {
-      'client_visit' => l10n.reminderTypeClientVisit,
-      'follow_up_call' => l10n.reminderTypeFollowUpCall,
-      'payment_due' => l10n.reminderTypePaymentDue,
-      'contract_renewal' => l10n.reminderTypeContractRenewal,
-      'promise_to_pay' => l10n.promiseToPayTitle,
-      _ => type,
-    };
+  'client_visit' => l10n.reminderTypeClientVisit,
+  'follow_up_call' => l10n.reminderTypeFollowUpCall,
+  'payment_due' => l10n.reminderTypePaymentDue,
+  'contract_renewal' => l10n.reminderTypeContractRenewal,
+  'promise_to_pay' => l10n.promiseToPayTitle,
+  _ => type,
+};
 
 const _amountDueTypes = {'payment_due', 'promise_to_pay'};
 
-const _timingRuleKeys = <String>['one_day_before', 'same_day', 'one_hour_before', 'custom'];
+const _timingRuleKeys = <String>[
+  'one_day_before',
+  'same_day',
+  'one_hour_before',
+  'custom',
+];
 
 String _timingRuleLabel(AppLocalizations l10n, String rule) => switch (rule) {
-      'one_day_before' => l10n.reminderTimingOneDayBefore,
-      'same_day' => l10n.reminderTimingSameDay,
-      'one_hour_before' => l10n.reminderTimingOneHourBefore,
-      'custom' => l10n.reminderTimingCustomTime,
-      _ => rule,
-    };
+  'one_day_before' => l10n.reminderTimingOneDayBefore,
+  'same_day' => l10n.reminderTimingSameDay,
+  'one_hour_before' => l10n.reminderTimingOneHourBefore,
+  'custom' => l10n.reminderTimingCustomTime,
+  _ => rule,
+};
 
 const _deliveryMethodKeys = <String>['in_app', 'push', 'whatsapp', 'sms'];
 
-String _deliveryMethodLabel(AppLocalizations l10n, String method) => switch (method) {
+String _deliveryMethodLabel(AppLocalizations l10n, String method) =>
+    switch (method) {
       'in_app' => l10n.reminderDeliveryInApp,
       'push' => l10n.reminderDeliveryPush,
       'whatsapp' => l10n.reminderDeliveryWhatsApp,
@@ -77,10 +83,12 @@ class ReminderScheduleScreen extends ConsumerStatefulWidget {
   const ReminderScheduleScreen({super.key, this.reminderId, this.entityPreset});
 
   @override
-  ConsumerState<ReminderScheduleScreen> createState() => _ReminderScheduleScreenState();
+  ConsumerState<ReminderScheduleScreen> createState() =>
+      _ReminderScheduleScreenState();
 }
 
-class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen> {
+class _ReminderScheduleScreenState
+    extends ConsumerState<ReminderScheduleScreen> {
   bool get _isEdit => widget.reminderId != null;
   bool get _hasEntityPreset => widget.entityPreset != null;
 
@@ -109,12 +117,15 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
     if (_prefilled) return;
     _prefilled = true;
     _type = reminder.type as String;
-    _relatedEntityLabel = '${reminder.relatedEntityType} (${reminder.relatedEntityId})';
+    _relatedEntityLabel =
+        '${reminder.relatedEntityType} (${reminder.relatedEntityId})';
     _dueDate = DateTime.tryParse(reminder.dueDate as String);
     _amountController.text = (reminder.amountDue as String?) ?? '';
     _timingRule = reminder.timingRule as String;
     final customFireAt = reminder.customFireAt as String?;
-    _customFireAt = customFireAt != null ? DateTime.tryParse(customFireAt) : null;
+    _customFireAt = customFireAt != null
+        ? DateTime.tryParse(customFireAt)
+        : null;
     _deliveryMethods.addAll((reminder.deliveryMethods as List<String>));
     _notesController.text = (reminder.notes as String?) ?? '';
   }
@@ -124,7 +135,10 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
     if (customer != null) setState(() => _selectedCustomer = customer);
   }
 
-  Future<void> _pickDateTime({required DateTime? initial, required ValueChanged<DateTime> onPicked}) async {
+  Future<void> _pickDateTime({
+    required DateTime? initial,
+    required ValueChanged<DateTime> onPicked,
+  }) async {
     final now = DateTime.now();
     final date = await showDatePicker(
       context: context,
@@ -136,7 +150,9 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
 
     final time = await showTimePicker(
       context: context,
-      initialTime: initial != null ? TimeOfDay.fromDateTime(initial) : TimeOfDay.now(),
+      initialTime: initial != null
+          ? TimeOfDay.fromDateTime(initial)
+          : TimeOfDay.now(),
     );
     if (time == null) return;
 
@@ -165,12 +181,18 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
       setState(() => _error = l10n.reminderScheduleCustomFireRequiredValidator);
       return;
     }
-    if (_timingRule == 'custom' && _customFireAt != null && _customFireAt!.isAfter(_dueDate!)) {
-      setState(() => _error = l10n.reminderScheduleCustomFireBeforeDueValidator);
+    if (_timingRule == 'custom' &&
+        _customFireAt != null &&
+        _customFireAt!.isAfter(_dueDate!)) {
+      setState(
+        () => _error = l10n.reminderScheduleCustomFireBeforeDueValidator,
+      );
       return;
     }
     if (_deliveryMethods.isEmpty) {
-      setState(() => _error = l10n.reminderScheduleDeliveryMethodRequiredValidator);
+      setState(
+        () => _error = l10n.reminderScheduleDeliveryMethodRequiredValidator,
+      );
       return;
     }
 
@@ -181,26 +203,42 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
       final carriesAmount = _type != null && _amountDueTypes.contains(_type);
 
       if (_isEdit) {
-        await ref.read(reminderActionsProvider).update(
+        await ref
+            .read(reminderActionsProvider)
+            .update(
               id: widget.reminderId!,
               dueDate: _isoOf(_dueDate!),
               amountDue: carriesAmount && amount.isNotEmpty ? amount : null,
               timingRule: _timingRule,
-              customFireAt: _timingRule == 'custom' ? _isoOf(_customFireAt!) : null,
+              customFireAt: _timingRule == 'custom'
+                  ? _isoOf(_customFireAt!)
+                  : null,
               deliveryMethods: _deliveryMethods.toList(),
-              notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+              notes: _notesController.text.trim().isEmpty
+                  ? null
+                  : _notesController.text.trim(),
             );
       } else {
-        await ref.read(reminderActionsProvider).create(
+        await ref
+            .read(reminderActionsProvider)
+            .create(
               type: _type!,
-              relatedEntityType: _hasEntityPreset ? widget.entityPreset!.type : 'customer',
-              relatedEntityId: _hasEntityPreset ? widget.entityPreset!.id : _selectedCustomer!.id,
+              relatedEntityType: _hasEntityPreset
+                  ? widget.entityPreset!.type
+                  : 'customer',
+              relatedEntityId: _hasEntityPreset
+                  ? widget.entityPreset!.id
+                  : _selectedCustomer!.id,
               dueDate: _isoOf(_dueDate!),
               amountDue: carriesAmount && amount.isNotEmpty ? amount : null,
               timingRule: _timingRule,
-              customFireAt: _timingRule == 'custom' ? _isoOf(_customFireAt!) : null,
+              customFireAt: _timingRule == 'custom'
+                  ? _isoOf(_customFireAt!)
+                  : null,
               deliveryMethods: _deliveryMethods.toList(),
-              notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+              notes: _notesController.text.trim().isEmpty
+                  ? null
+                  : _notesController.text.trim(),
             );
       }
       if (mounted) router.pop();
@@ -215,15 +253,26 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     if (_isEdit) {
-      final reminderAsync = ref.watch(reminderDetailProvider(widget.reminderId!));
+      final reminderAsync = ref.watch(
+        reminderDetailProvider(widget.reminderId!),
+      );
       return reminderAsync.when(
         loading: () => Scaffold(
-          appBar: AppBar(title: Text(l10n.reminderScheduleRescheduleLoadingTitle)),
+          appBar: AppBar(
+            title: Text(l10n.reminderScheduleRescheduleLoadingTitle),
+          ),
           body: const Center(child: CircularProgressIndicator()),
         ),
         error: (error, _) => Scaffold(
-          appBar: AppBar(title: Text(l10n.reminderScheduleRescheduleLoadingTitle)),
-          body: Center(child: Text(l10n.reminderDetailLoadError, style: AppTypography.body)),
+          appBar: AppBar(
+            title: Text(l10n.reminderScheduleRescheduleLoadingTitle),
+          ),
+          body: Center(
+            child: Text(
+              l10n.reminderDetailLoadError,
+              style: AppTypography.body,
+            ),
+          ),
         ),
         data: (reminder) {
           _prefillFromExisting(reminder);
@@ -240,123 +289,179 @@ class _ReminderScheduleScreenState extends ConsumerState<ReminderScheduleScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? l10n.reminderScheduleRescheduleTitle : l10n.reminderScheduleTitle),
+        title: Text(
+          _isEdit
+              ? l10n.reminderScheduleRescheduleTitle
+              : l10n.reminderScheduleTitle,
+        ),
         actions: [
           IconButton(
             icon: _isSaving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Icon(Icons.save_outlined),
             onPressed: _isSaving ? null : _save,
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (!_isEdit) ...[
-            Text(l10n.reminderScheduleTypeHeading, style: AppTypography.heading),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (!_isEdit) ...[
+              Text(
+                l10n.reminderScheduleTypeHeading,
+                style: AppTypography.heading,
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final typeKey in _reminderTypeKeys)
+                    ChoiceChip(
+                      label: Text(_reminderTypeLabel(l10n, typeKey)),
+                      selected: _type == typeKey,
+                      onSelected: (_) => setState(() => _type = typeKey),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                l10n.reminderScheduleRelatedToHeading,
+                style: AppTypography.heading,
+              ),
+              const SizedBox(height: 12),
+              if (_hasEntityPreset)
+                Text(widget.entityPreset!.label, style: AppTypography.body)
+              else
+                OutlinedButton(
+                  onPressed: _pickCustomer,
+                  child: Text(
+                    _selectedCustomer?.name ?? l10n.customerListSelectTitle,
+                  ),
+                ),
+            ] else ...[
+              Text(l10n.reminderDetailTypeLabel, style: AppTypography.heading),
+              const SizedBox(height: 8),
+              Text(
+                _type != null ? _reminderTypeLabel(l10n, _type!) : '',
+                style: AppTypography.body,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.reminderScheduleRelatedToHeading,
+                style: AppTypography.caption,
+              ),
+              const SizedBox(height: 4),
+              Text(_relatedEntityLabel ?? '', style: AppTypography.body),
+            ],
+            const SizedBox(height: 20),
+            Text(l10n.addEditDebtDueDateHeading, style: AppTypography.heading),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => _pickDateTime(
+                initial: _dueDate,
+                onPicked: (dt) => setState(() => _dueDate = dt),
+              ),
+              child: Text(
+                _dueDate == null
+                    ? l10n.addEditDebtSelectDueDateButton
+                    : formatFriendlyDateTime(_dueDate!),
+              ),
+            ),
+            if (carriesAmount) ...[
+              const SizedBox(height: 20),
+              Text(
+                l10n.reminderDetailAmountDueLabel,
+                style: AppTypography.heading,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(hintText: l10n.creditLimitHint),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Text(
+              l10n.reminderScheduleTimingHeading,
+              style: AppTypography.heading,
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final typeKey in _reminderTypeKeys)
+                for (final ruleKey in _timingRuleKeys)
                   ChoiceChip(
-                    label: Text(_reminderTypeLabel(l10n, typeKey)),
-                    selected: _type == typeKey,
-                    onSelected: (_) => setState(() => _type = typeKey),
+                    label: Text(_timingRuleLabel(l10n, ruleKey)),
+                    selected: _timingRule == ruleKey,
+                    onSelected: (_) => setState(() => _timingRule = ruleKey),
                   ),
               ],
             ),
-            const SizedBox(height: 20),
-            Text(l10n.reminderScheduleRelatedToHeading, style: AppTypography.heading),
-            const SizedBox(height: 12),
-            if (_hasEntityPreset)
-              Text(widget.entityPreset!.label, style: AppTypography.body)
-            else
+            if (_timingRule == 'custom') ...[
+              const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: _pickCustomer,
-                child: Text(_selectedCustomer?.name ?? l10n.customerListSelectTitle),
+                onPressed: () => _pickDateTime(
+                  initial: _customFireAt,
+                  onPicked: (dt) => setState(() => _customFireAt = dt),
+                ),
+                child: Text(
+                  _customFireAt == null
+                      ? l10n.reminderScheduleSelectCustomFireTimeButton
+                      : formatFriendlyDateTime(_customFireAt!),
+                ),
               ),
-          ] else ...[
-            Text(l10n.reminderDetailTypeLabel, style: AppTypography.heading),
-            const SizedBox(height: 8),
-            Text(_type != null ? _reminderTypeLabel(l10n, _type!) : '', style: AppTypography.body),
-            const SizedBox(height: 12),
-            Text(l10n.reminderScheduleRelatedToHeading, style: AppTypography.caption),
-            const SizedBox(height: 4),
-            Text(_relatedEntityLabel ?? '', style: AppTypography.body),
-          ],
-          const SizedBox(height: 20),
-          Text(l10n.addEditDebtDueDateHeading, style: AppTypography.heading),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => _pickDateTime(initial: _dueDate, onPicked: (dt) => setState(() => _dueDate = dt)),
-            child: Text(_dueDate == null ? l10n.addEditDebtSelectDueDateButton : formatFriendlyDateTime(_dueDate!)),
-          ),
-          if (carriesAmount) ...[
+            ],
             const SizedBox(height: 20),
-            Text(l10n.reminderDetailAmountDueLabel, style: AppTypography.heading),
+            Text(
+              l10n.reminderScheduleDeliveryMethodsHeading,
+              style: AppTypography.heading,
+            ),
+            const SizedBox(height: 12),
+            for (final methodKey in _deliveryMethodKeys)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(_deliveryMethodLabel(l10n, methodKey)),
+                value: _deliveryMethods.contains(methodKey),
+                onChanged: (checked) => setState(() {
+                  if (checked ?? false) {
+                    _deliveryMethods.add(methodKey);
+                  } else {
+                    _deliveryMethods.remove(methodKey);
+                  }
+                }),
+              ),
+            const SizedBox(height: 20),
+            Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading),
             const SizedBox(height: 12),
             TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(hintText: l10n.creditLimitHint),
+              controller: _notesController,
+              maxLines: 3,
+              decoration: InputDecoration(hintText: l10n.addEditDebtNotesHint),
             ),
-          ],
-          const SizedBox(height: 20),
-          Text(l10n.reminderScheduleTimingHeading, style: AppTypography.heading),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final ruleKey in _timingRuleKeys)
-                ChoiceChip(
-                  label: Text(_timingRuleLabel(l10n, ruleKey)),
-                  selected: _timingRule == ruleKey,
-                  onSelected: (_) => setState(() => _timingRule = ruleKey),
-                ),
+            if (_error != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
-          ),
-          if (_timingRule == 'custom') ...[
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () => _pickDateTime(initial: _customFireAt, onPicked: (dt) => setState(() => _customFireAt = dt)),
-              child: Text(_customFireAt == null ? l10n.reminderScheduleSelectCustomFireTimeButton : formatFriendlyDateTime(_customFireAt!)),
+            const SizedBox(height: 20),
+            PrimaryButton(
+              label: l10n.commonSave,
+              isLoading: _isSaving,
+              onPressed: _save,
             ),
           ],
-          const SizedBox(height: 20),
-          Text(l10n.reminderScheduleDeliveryMethodsHeading, style: AppTypography.heading),
-          const SizedBox(height: 12),
-          for (final methodKey in _deliveryMethodKeys)
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(_deliveryMethodLabel(l10n, methodKey)),
-              value: _deliveryMethods.contains(methodKey),
-              onChanged: (checked) => setState(() {
-                if (checked ?? false) {
-                  _deliveryMethods.add(methodKey);
-                } else {
-                  _deliveryMethods.remove(methodKey);
-                }
-              }),
-            ),
-          const SizedBox(height: 20),
-          Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _notesController,
-            maxLines: 3,
-            decoration: InputDecoration(hintText: l10n.addEditDebtNotesHint),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 16),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ],
-          const SizedBox(height: 20),
-          PrimaryButton(label: l10n.commonSave, isLoading: _isSaving, onPressed: _save),
-        ],
+        ),
       ),
     );
   }

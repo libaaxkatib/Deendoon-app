@@ -9,7 +9,9 @@ import '../domain/subscription_change_request_page.dart';
 import '../domain/subscription_plan.dart';
 import '../domain/subscription_storage.dart';
 
-final subscriptionApiProvider = Provider<SubscriptionApi>((ref) => SubscriptionApi(ref.read(dioProvider)));
+final subscriptionApiProvider = Provider<SubscriptionApi>(
+  (ref) => SubscriptionApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET/POST /subscription*` — mirrors
 /// `App\Http\Controllers\SubscriptionController` exactly, Business Owner
@@ -31,15 +33,24 @@ class SubscriptionApi {
   Future<List<SubscriptionPlan>> fetchPlans() async {
     final response = await _dio.get('subscription/plans');
     final data = response.data['data'] as List<dynamic>;
-    return data.map((e) => SubscriptionPlan.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => SubscriptionPlan.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// `SubscriptionController::changeRequests()` — always the authenticated
   /// tenant's own requests, no `status` filter (unlike the Platform Admin
   /// Approval Center's equivalent).
-  Future<SubscriptionChangeRequestPage> fetchChangeRequests({required int page}) async {
-    final response = await _dio.get('subscription/change-requests', queryParameters: {'page': page});
-    return SubscriptionChangeRequestPage.fromJson(response.data['data'] as Map<String, dynamic>);
+  Future<SubscriptionChangeRequestPage> fetchChangeRequests({
+    required int page,
+  }) async {
+    final response = await _dio.get(
+      'subscription/change-requests',
+      queryParameters: {'page': page},
+    );
+    return SubscriptionChangeRequestPage.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `SubscriptionUpgradeRequestRequest`: both fields required. 409s if a
@@ -50,21 +61,30 @@ class SubscriptionApi {
     required String requestedPlanId,
     required String paymentReference,
   }) async {
-    final response = await _dio.post('subscription/upgrade-request', data: {
-      'requested_plan_id': requestedPlanId,
-      'payment_reference': paymentReference,
-    });
-    return SubscriptionChangeRequest.fromJson(response.data['data'] as Map<String, dynamic>);
+    final response = await _dio.post(
+      'subscription/upgrade-request',
+      data: {
+        'requested_plan_id': requestedPlanId,
+        'payment_reference': paymentReference,
+      },
+    );
+    return SubscriptionChangeRequest.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<SubscriptionChangeRequest> cancelChangeRequest(String id) async {
     final response = await _dio.post('subscription/change-requests/$id/cancel');
-    return SubscriptionChangeRequest.fromJson(response.data['data'] as Map<String, dynamic>);
+    return SubscriptionChangeRequest.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<SubscriptionStorage> fetchStorage() async {
     final response = await _dio.get('subscription/storage');
-    return SubscriptionStorage.fromJson(response.data['data'] as Map<String, dynamic>);
+    return SubscriptionStorage.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// `StorageAddonRequestRequest`: `storagePackage` must be one of
@@ -75,15 +95,20 @@ class SubscriptionApi {
     required String storagePackage,
     required String paymentReference,
   }) async {
-    final response = await _dio.post('subscription/storage-addon-request', data: {
-      'storage_package': storagePackage,
-      'payment_reference': paymentReference,
-    });
+    final response = await _dio.post(
+      'subscription/storage-addon-request',
+      data: {
+        'storage_package': storagePackage,
+        'payment_reference': paymentReference,
+      },
+    );
     return StorageAddon.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
   Future<StorageAddon> cancelStorageAddon(String id) async {
-    final response = await _dio.post('subscription/storage-addon-requests/$id/cancel');
+    final response = await _dio.post(
+      'subscription/storage-addon-requests/$id/cancel',
+    );
     return StorageAddon.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 }

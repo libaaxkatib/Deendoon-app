@@ -7,8 +7,9 @@ import '../domain/collection_case.dart';
 import '../domain/collection_case_page.dart';
 import 'collection_case_api.dart';
 
-final collectionCaseRepositoryProvider =
-    Provider<CollectionCaseRepository>((ref) => CollectionCaseRepository(ref.read(collectionCaseApiProvider)));
+final collectionCaseRepositoryProvider = Provider<CollectionCaseRepository>(
+  (ref) => CollectionCaseRepository(ref.read(collectionCaseApiProvider)),
+);
 
 /// Translates raw Dio failures into `ApiException` — same pattern as
 /// every other repository in the app. No caching, no business logic.
@@ -17,8 +18,11 @@ class CollectionCaseRepository {
 
   const CollectionCaseRepository(this._api);
 
-  Future<CollectionCasePage> fetchCases({required int page, String? tab, String? customerId}) =>
-      _guard(() => _api.list(page: page, tab: tab, customerId: customerId));
+  Future<CollectionCasePage> fetchCases({
+    required int page,
+    String? tab,
+    String? customerId,
+  }) => _guard(() => _api.list(page: page, tab: tab, customerId: customerId));
 
   /// Flat, unpaginated read for the Customer Detail screen's "Cases" list —
   /// same style as `CustomerRepository.fetchDocuments`/`fetchPayments`
@@ -34,10 +38,14 @@ class CollectionCaseRepository {
   Future<void> recordActivity({required String caseId, String? details}) =>
       _guard(() => _api.recordActivity(caseId: caseId, details: details));
 
-  Future<CollectionCase> close({required String caseId, required String closureOutcome}) =>
+  Future<CollectionCase> close({
+    required String caseId,
+    required String closureOutcome,
+  }) =>
       _guard(() => _api.close(caseId: caseId, closureOutcome: closureOutcome));
 
-  Future<CaseHistory> fetchHistory(String caseId) => _guard(() => _api.history(caseId));
+  Future<CaseHistory> fetchHistory(String caseId) =>
+      _guard(() => _api.history(caseId));
 
   Future<CollectionCase> updateNotes({required String caseId, String? notes}) =>
       _guard(() => _api.updateNotes(caseId: caseId, notes: notes));

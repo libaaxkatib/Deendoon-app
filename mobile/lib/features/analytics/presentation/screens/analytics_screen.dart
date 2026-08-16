@@ -40,8 +40,9 @@ class AnalyticsScreen extends ConsumerWidget {
       body: subscriptionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => const _AnalyticsTabs(),
-        data: (subscription) =>
-            subscription.analyticsEnabled ? const _AnalyticsTabs() : const _AnalyticsLockedState(),
+        data: (subscription) => subscription.analyticsEnabled
+            ? const _AnalyticsTabs()
+            : const _AnalyticsLockedState(),
       ),
     );
   }
@@ -66,13 +67,18 @@ class _AnalyticsTabs extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               indicatorSize: TabBarIndicatorSize.tab,
-              indicatorPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+              indicatorPadding: const EdgeInsets.symmetric(
+                horizontal: 2,
+                vertical: 2,
+              ),
               dividerColor: Colors.transparent,
               splashBorderRadius: BorderRadius.circular(20),
               labelColor: context.colors.background,
               unselectedLabelColor: context.colors.textSecondary,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
               tabs: [
                 Tab(text: l10n.analyticsTabOverview),
                 Tab(text: l10n.analyticsTabReports),
@@ -82,11 +88,7 @@ class _AnalyticsTabs extends StatelessWidget {
           ),
           const Expanded(
             child: TabBarView(
-              children: [
-                OverviewTab(),
-                ReportsTab(),
-                TrendsTab(),
-              ],
+              children: [OverviewTab(), ReportsTab(), TrendsTab()],
             ),
           ),
         ],
@@ -112,18 +114,27 @@ class _AnalyticsLockedState extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.lock_outline, color: AppColors.warning, size: 20),
+                  const Icon(
+                    Icons.lock_outline,
+                    color: AppColors.warning,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     l10n.analyticsNotIncludedTitle,
-                    style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 l10n.analyticsNotIncludedMessage,
-                style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(

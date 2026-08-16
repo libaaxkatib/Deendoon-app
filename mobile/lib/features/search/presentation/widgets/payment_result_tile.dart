@@ -14,7 +14,11 @@ class PaymentResultTile extends StatelessWidget {
   final Payment payment;
   final VoidCallback onTap;
 
-  const PaymentResultTile({super.key, required this.payment, required this.onTap});
+  const PaymentResultTile({
+    super.key,
+    required this.payment,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +32,10 @@ class PaymentResultTile extends StatelessWidget {
               children: [
                 Text(
                   payment.amount,
-                  style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 16),
+                  style: AppTypography.subheading.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(

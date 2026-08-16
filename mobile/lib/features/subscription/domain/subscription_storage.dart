@@ -20,7 +20,8 @@ class SubscriptionStorage {
     required this.remainingStorageGb,
   });
 
-  factory SubscriptionStorage.fromJson(Map<String, dynamic> json) => SubscriptionStorage(
+  factory SubscriptionStorage.fromJson(Map<String, dynamic> json) =>
+      SubscriptionStorage(
         storageUsageBytes: json['storage_usage_bytes'] as int,
         storageUsageGb: (json['storage_usage_gb'] as num).toDouble(),
         storageLimitGb: json['storage_limit_gb'] as int?,

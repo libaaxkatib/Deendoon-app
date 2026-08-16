@@ -16,7 +16,9 @@ void main() {
   setUp(() {
     mockRepository = _MockAnalyticsRepository();
     container = ProviderContainer(
-      overrides: [analyticsRepositoryProvider.overrideWithValue(mockRepository)],
+      overrides: [
+        analyticsRepositoryProvider.overrideWithValue(mockRepository),
+      ],
     );
     addTearDown(container.dispose);
   });
@@ -25,9 +27,17 @@ void main() {
     final range = container.read(overviewDateRangeProvider);
     final dateFrom = range.start.toIso8601String().split('T').first;
     final dateTo = range.end.toIso8601String().split('T').first;
-    const analytics = CollectionAnalytics(collectionRate: 40.0, totalCollected: '400.00', averageDays: 10.0);
-    when(() => mockRepository.fetchCollectionAnalytics(dateFrom: dateFrom, dateTo: dateTo))
-        .thenAnswer((_) async => analytics);
+    const analytics = CollectionAnalytics(
+      collectionRate: 40.0,
+      totalCollected: '400.00',
+      averageDays: 10.0,
+    );
+    when(
+      () => mockRepository.fetchCollectionAnalytics(
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+      ),
+    ).thenAnswer((_) async => analytics);
 
     final result = await container.read(collectionAnalyticsProvider.future);
 
@@ -36,15 +46,36 @@ void main() {
 
   test('recomputes when overviewDateRangeProvider changes', () async {
     final initialRange = container.read(overviewDateRangeProvider);
-    when(() => mockRepository.fetchCollectionAnalytics(
-          dateFrom: initialRange.start.toIso8601String().split('T').first,
-          dateTo: initialRange.end.toIso8601String().split('T').first,
-        )).thenAnswer((_) async => const CollectionAnalytics(collectionRate: 10.0, totalCollected: '100.00', averageDays: null));
+    when(
+      () => mockRepository.fetchCollectionAnalytics(
+        dateFrom: initialRange.start.toIso8601String().split('T').first,
+        dateTo: initialRange.end.toIso8601String().split('T').first,
+      ),
+    ).thenAnswer(
+      (_) async => const CollectionAnalytics(
+        collectionRate: 10.0,
+        totalCollected: '100.00',
+        averageDays: null,
+      ),
+    );
     await container.read(collectionAnalyticsProvider.future);
 
-    final newRange = DateTimeRange(start: DateTime(2026, 1, 1), end: DateTime(2026, 1, 31));
-    when(() => mockRepository.fetchCollectionAnalytics(dateFrom: '2026-01-01', dateTo: '2026-01-31'))
-        .thenAnswer((_) async => const CollectionAnalytics(collectionRate: 90.0, totalCollected: '900.00', averageDays: 5.0));
+    final newRange = DateTimeRange(
+      start: DateTime(2026, 1, 1),
+      end: DateTime(2026, 1, 31),
+    );
+    when(
+      () => mockRepository.fetchCollectionAnalytics(
+        dateFrom: '2026-01-01',
+        dateTo: '2026-01-31',
+      ),
+    ).thenAnswer(
+      (_) async => const CollectionAnalytics(
+        collectionRate: 90.0,
+        totalCollected: '900.00',
+        averageDays: 5.0,
+      ),
+    );
 
     container.read(overviewDateRangeProvider.notifier).state = newRange;
     final result = await container.read(collectionAnalyticsProvider.future);

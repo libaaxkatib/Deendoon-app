@@ -7,12 +7,15 @@ import 'package:mobile/features/auth/domain/auth_state.dart';
 import 'package:mobile/features/auth/domain/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockAuthRepository extends Mock implements AuthRepository {}
 
 const _user = User(id: '1', name: 'Test User', email: 'test@example.com');
 
-final _interceptorProvider = Provider<AuthInterceptor>((ref) => AuthInterceptor(ref));
+final _interceptorProvider = Provider<AuthInterceptor>(
+  (ref) => AuthInterceptor(ref),
+);
 
 /// Captures the [RequestOptions] passed to `next()` without reaching into
 /// `_BaseHandler`'s `@protected future` from outside the dio package.
@@ -45,6 +48,9 @@ void main() {
   late AuthInterceptor interceptor;
 
   setUp(() {
+    // Mobile Fix #17: forceLogout() now also clears the biometric
+    // preference via the real SharedPreferences-backed storage.
+    SharedPreferences.setMockInitialValues({});
     mockRepository = _MockAuthRepository();
     when(() => mockRepository.logout()).thenAnswer((_) async {});
 
@@ -57,14 +63,16 @@ void main() {
   });
 
   RequestOptions optionsWithAuthHeader() => RequestOptions(
-        path: '/reminders',
-        headers: {'Authorization': 'Bearer old-token'},
-      );
+    path: '/reminders',
+    headers: {'Authorization': 'Bearer old-token'},
+  );
 
   group('onRequest', () {
     test('attaches the bearer token when authenticated', () {
-      container.read(authProvider.notifier).state =
-          const Authenticated(user: _user, token: 'live-token');
+      container.read(authProvider.notifier).state = const Authenticated(
+        user: _user,
+        token: 'live-token',
+      );
 
       final options = RequestOptions(path: '/customers');
       final handler = _CapturingRequestHandler();
@@ -87,56 +95,78 @@ void main() {
   });
 
   group('onError', () {
-    test('forces logout on a 401 for a request that carried a token while authenticated', () async {
-      container.read(authProvider.notifier).state =
-          const Authenticated(user: _user, token: 'live-token');
+    test(
+      'forces logout on a 401 for a request that carried a token while authenticated',
+      () async {
+        container.read(authProvider.notifier).state = const Authenticated(
+          user: _user,
+          token: 'live-token',
+        );
 
-      final error = DioException(
-        requestOptions: optionsWithAuthHeader(),
-        response: Response(requestOptions: optionsWithAuthHeader(), statusCode: 401),
-        type: DioExceptionType.badResponse,
-      );
+        final error = DioException(
+          requestOptions: optionsWithAuthHeader(),
+          response: Response(
+            requestOptions: optionsWithAuthHeader(),
+            statusCode: 401,
+          ),
+          type: DioExceptionType.badResponse,
+        );
 
-      interceptor.onError(error, _CapturingErrorHandler());
-      // forceLogout() is fire-and-forget from onError (never awaited by the
-      // interceptor itself), so let its microtasks drain before asserting.
-      await Future<void>.delayed(Duration.zero);
+        interceptor.onError(error, _CapturingErrorHandler());
+        // forceLogout() is fire-and-forget from onError (never awaited by the
+        // interceptor itself), so let its microtasks drain before asserting.
+        await Future<void>.delayed(Duration.zero);
 
-      verify(() => mockRepository.logout()).called(1);
-      expect(container.read(authProvider), isA<Unauthenticated>());
-    });
+        verify(() => mockRepository.logout()).called(1);
+        expect(container.read(authProvider), isA<Unauthenticated>());
+      },
+    );
 
-    test('does not force logout on a 401 from an unauthenticated request (e.g. bad login)', () async {
-      container.read(authProvider.notifier).state = const Unauthenticated();
+    test(
+      'does not force logout on a 401 from an unauthenticated request (e.g. bad login)',
+      () async {
+        container.read(authProvider.notifier).state = const Unauthenticated();
 
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/login'),
-        response: Response(requestOptions: RequestOptions(path: '/login'), statusCode: 401),
-        type: DioExceptionType.badResponse,
-      );
+        final error = DioException(
+          requestOptions: RequestOptions(path: '/login'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/login'),
+            statusCode: 401,
+          ),
+          type: DioExceptionType.badResponse,
+        );
 
-      interceptor.onError(error, _CapturingErrorHandler());
-      await Future<void>.delayed(Duration.zero);
+        interceptor.onError(error, _CapturingErrorHandler());
+        await Future<void>.delayed(Duration.zero);
 
-      verifyNever(() => mockRepository.logout());
-      expect(container.read(authProvider), isA<Unauthenticated>());
-    });
+        verifyNever(() => mockRepository.logout());
+        expect(container.read(authProvider), isA<Unauthenticated>());
+      },
+    );
 
-    test('does not force logout on a non-401 error even when authenticated', () async {
-      container.read(authProvider.notifier).state =
-          const Authenticated(user: _user, token: 'live-token');
+    test(
+      'does not force logout on a non-401 error even when authenticated',
+      () async {
+        container.read(authProvider.notifier).state = const Authenticated(
+          user: _user,
+          token: 'live-token',
+        );
 
-      final error = DioException(
-        requestOptions: optionsWithAuthHeader(),
-        response: Response(requestOptions: optionsWithAuthHeader(), statusCode: 500),
-        type: DioExceptionType.badResponse,
-      );
+        final error = DioException(
+          requestOptions: optionsWithAuthHeader(),
+          response: Response(
+            requestOptions: optionsWithAuthHeader(),
+            statusCode: 500,
+          ),
+          type: DioExceptionType.badResponse,
+        );
 
-      interceptor.onError(error, _CapturingErrorHandler());
-      await Future<void>.delayed(Duration.zero);
+        interceptor.onError(error, _CapturingErrorHandler());
+        await Future<void>.delayed(Duration.zero);
 
-      verifyNever(() => mockRepository.logout());
-      expect(container.read(authProvider), isA<Authenticated>());
-    });
+        verifyNever(() => mockRepository.logout());
+        expect(container.read(authProvider), isA<Authenticated>());
+      },
+    );
   });
 }

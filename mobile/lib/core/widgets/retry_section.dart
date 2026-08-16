@@ -19,7 +19,10 @@ class RetrySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(message, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        Text(
+          message,
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
         const SizedBox(height: 8),
         OutlinedButton(onPressed: onRetry, child: Text(l10n.retry)),
       ],
@@ -55,7 +58,9 @@ class SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+            style: AppTypography.heading.copyWith(
+              color: context.colors.textPrimary,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),

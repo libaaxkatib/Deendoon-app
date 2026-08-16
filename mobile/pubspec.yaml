@@ -63,6 +63,12 @@ dev_dependencies:
   mocktail: ^1.0.4
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.6
+  # Already resolved transitively via url_launcher (see pubspec.lock) —
+  # declared explicitly here only so test code can substitute a fake
+  # UrlLauncherPlatform (Mobile Fix #8's contact_deendoon_card_test.dart),
+  # the officially-supported way to test url_launcher calls without
+  # touching production code. Not a new package in the dependency graph.
+  url_launcher_platform_interface: ^2.3.2
 
 # Generates mipmap-*/ic_launcher.png from the existing approved Deendoon
 # logo (assets/deendoon_logo.png) — run `dart run flutter_launcher_icons`

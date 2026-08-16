@@ -21,7 +21,9 @@ class DashboardGreeting extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final auth = ref.watch(authProvider);
-    final name = auth is Authenticated ? auth.user.name : l10n.dashboardGreetingFallbackName;
+    final name = auth is Authenticated
+        ? auth.user.name
+        : l10n.dashboardGreetingFallbackName;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -34,7 +36,11 @@ class DashboardGreeting extends ConsumerWidget {
           children: [
             Text(
               _greeting(l10n, DateTime.now().hour),
-              style: AppTypography.caption.copyWith(fontSize: 11, height: 1, color: context.colors.textSecondary),
+              style: AppTypography.caption.copyWith(
+                fontSize: 11,
+                height: 1,
+                color: context.colors.textSecondary,
+              ),
             ),
             Text(
               '$name 👋',
@@ -48,7 +54,11 @@ class DashboardGreeting extends ConsumerWidget {
           ],
         ),
         const SizedBox(width: 2),
-        Icon(Icons.chevron_right, size: 18, color: context.colors.textSecondary),
+        Icon(
+          Icons.chevron_right,
+          size: 18,
+          color: context.colors.textSecondary,
+        ),
       ],
     );
   }

@@ -56,8 +56,14 @@ class CustomerDetailScreen extends ConsumerWidget {
         title: Text(l10n.customerArchiveTitle),
         content: Text(l10n.customerArchiveDialogContent),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.commonCancel)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.customerArchiveConfirmButton)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.customerArchiveConfirmButton),
+          ),
         ],
       ),
     );
@@ -68,7 +74,9 @@ class CustomerDetailScreen extends ConsumerWidget {
     final router = GoRouter.of(context);
     try {
       await ref.read(customerActionsProvider).archive(customerId);
-      messenger.showSnackBar(SnackBar(content: Text(l10n.customerArchivedSuccessfully)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.customerArchivedSuccessfully)),
+      );
       router.pop();
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
@@ -85,7 +93,9 @@ class CustomerDetailScreen extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(customerActionsProvider).generateStatement(customerId);
-      messenger.showSnackBar(SnackBar(content: Text(l10n.customerStatementGeneratedSuccessfully)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.customerStatementGeneratedSuccessfully)),
+      );
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -105,13 +115,21 @@ class CustomerDetailScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: isReadOnly ? l10n.customerReadOnlyTooltip : l10n.customerEditTitle,
-            onPressed: customer == null || isReadOnly ? null : () => context.push('/customers/$customerId/edit'),
+            tooltip: isReadOnly
+                ? l10n.customerReadOnlyTooltip
+                : l10n.customerEditTitle,
+            onPressed: customer == null || isReadOnly
+                ? null
+                : () => context.push('/customers/$customerId/edit'),
           ),
           IconButton(
             icon: const Icon(Icons.archive_outlined),
-            tooltip: isReadOnly ? l10n.customerReadOnlyTooltip : l10n.customerArchiveTitle,
-            onPressed: customer == null || isReadOnly ? null : () => _archive(context, ref),
+            tooltip: isReadOnly
+                ? l10n.customerReadOnlyTooltip
+                : l10n.customerArchiveTitle,
+            onPressed: customer == null || isReadOnly
+                ? null
+                : () => _archive(context, ref),
           ),
         ],
       ),
@@ -128,7 +146,8 @@ class CustomerDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               child: RetrySection(
                 message: l10n.customerDetailLoadError,
-                onRetry: () => ref.invalidate(customerDetailProvider(customerId)),
+                onRetry: () =>
+                    ref.invalidate(customerDetailProvider(customerId)),
               ),
             ),
           ),
@@ -139,17 +158,28 @@ class CustomerDetailScreen extends ConsumerWidget {
                 customer: customer,
                 onEditCreditLimit: customer.isReadOnly
                     ? null
-                    : () => showCreditLimitSheet(context, customerId, customer.creditLimit),
+                    : () => showCreditLimitSheet(
+                        context,
+                        customerId,
+                        customer.creditLimit,
+                      ),
                 onEditStatus: customer.isReadOnly
                     ? null
-                    : () => showCustomerStatusSheet(context, customerId, customer.customerStatus),
+                    : () => showCustomerStatusSheet(
+                        context,
+                        customerId,
+                        customer.customerStatus,
+                      ),
               ),
               if (customer.isReadOnly) ...[
                 const SizedBox(height: 16),
                 const _CustomerReadOnlyBanner(),
               ],
               const SizedBox(height: 24),
-              Text(l10n.customerDetailRecentPaymentsHeading, style: AppTypography.heading),
+              Text(
+                l10n.customerDetailRecentPaymentsHeading,
+                style: AppTypography.heading,
+              ),
               const SizedBox(height: 12),
               CustomerRecentPayments(customerId: customerId),
               const SizedBox(height: 24),
@@ -162,14 +192,16 @@ class CustomerDetailScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => context.push('/customers/$customerId/cases'),
+                      onPressed: () =>
+                          context.push('/customers/$customerId/cases'),
                       child: Text(l10n.navCases),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => context.push('/customers/$customerId/documents'),
+                      onPressed: () =>
+                          context.push('/customers/$customerId/documents'),
                       child: Text(l10n.navDocuments),
                     ),
                   ),
@@ -177,12 +209,17 @@ class CustomerDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => context.push('/customers/$customerId/attachments', extra: !customer.isReadOnly),
+                onPressed: () => context.push(
+                  '/customers/$customerId/attachments',
+                  extra: !customer.isReadOnly,
+                ),
                 child: Text(l10n.customerDetailAttachmentsButton),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: customer.isReadOnly ? null : () => _generateStatement(context, ref),
+                onPressed: customer.isReadOnly
+                    ? null
+                    : () => _generateStatement(context, ref),
                 child: Text(l10n.customerDetailGenerateStatementButton),
               ),
               const SizedBox(height: 12),
@@ -190,9 +227,13 @@ class CustomerDetailScreen extends ConsumerWidget {
                 onPressed: customer.isReadOnly
                     ? null
                     : () => context.push(
-                          '/reminders/new',
-                          extra: ReminderEntityPreset(type: 'customer', id: customerId, label: customer.name),
+                        '/reminders/new',
+                        extra: ReminderEntityPreset(
+                          type: 'customer',
+                          id: customerId,
+                          label: customer.name,
                         ),
+                      ),
                 icon: const Icon(Icons.add_alarm_outlined),
                 label: Text(l10n.quickActionAddReminder),
               ),
@@ -227,7 +268,10 @@ class _CustomerReadOnlyBanner extends StatelessWidget {
               children: [
                 Text(
                   l10n.customerReadOnlyBannerTitle,
-                  style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(

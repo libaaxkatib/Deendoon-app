@@ -21,10 +21,19 @@ class UnavailableSection extends StatelessWidget {
     return AppCard(
       child: Row(
         children: [
-          Icon(Icons.info_outline, color: context.colors.textSecondary, size: 20),
+          Icon(
+            Icons.info_outline,
+            color: context.colors.textSecondary,
+            size: 20,
+          ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(reason, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+            child: Text(
+              reason,
+              style: AppTypography.caption.copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
           ),
         ],
       ),

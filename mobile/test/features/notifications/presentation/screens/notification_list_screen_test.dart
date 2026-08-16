@@ -11,7 +11,8 @@ import 'package:mobile/features/notifications/presentation/screens/notification_
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockNotificationRepository extends Mock implements NotificationRepository {}
+class _MockNotificationRepository extends Mock
+    implements NotificationRepository {}
 
 final _unread = AppNotification(
   id: '1',
@@ -30,12 +31,12 @@ void main() {
   });
 
   Future<void> pumpScreen(WidgetTester tester) async {
-    // The filter chip row is a horizontally-scrolling list of 10 chips —
+    // The filter chip row is a horizontally-scrolling list of 16 chips —
     // wider than the default 800px test viewport, so chips past that
     // width are never materialized in the element tree (not just
     // off-screen for tap purposes). Widened here so every chip's
     // existence and selected state can be asserted directly.
-    tester.view.physicalSize = const Size(3200, 800);
+    tester.view.physicalSize = const Size(4800, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -43,13 +44,18 @@ void main() {
     final router = GoRouter(
       initialLocation: '/notifications',
       routes: [
-        GoRoute(path: '/notifications', builder: (_, _) => const NotificationListScreen()),
+        GoRoute(
+          path: '/notifications',
+          builder: (_, _) => const NotificationListScreen(),
+        ),
       ],
     );
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [notificationRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          notificationRepositoryProvider.overrideWithValue(mockRepository),
+        ],
         child: MaterialApp.router(
           routerConfig: router,
           locale: const Locale('en'),
@@ -67,20 +73,37 @@ void main() {
     );
   }
 
-  testWidgets('shows the explicit empty state when there are no notifications', (tester) async {
-    when(() => mockRepository.fetchNotifications(page: 1, type: null)).thenAnswer(
-      (_) async => const NotificationPage(notifications: [], currentPage: 1, lastPage: 1, total: 0),
-    );
+  testWidgets(
+    'shows the explicit empty state when there are no notifications',
+    (tester) async {
+      when(
+        () => mockRepository.fetchNotifications(page: 1, type: null),
+      ).thenAnswer(
+        (_) async => const NotificationPage(
+          notifications: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
 
-    await pumpScreen(tester);
-    await tester.pumpAndSettle();
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
 
-    expect(find.text('No notifications yet'), findsOneWidget);
-  });
+      expect(find.text('No notifications yet'), findsOneWidget);
+    },
+  );
 
   testWidgets('renders a notification with its type label', (tester) async {
-    when(() => mockRepository.fetchNotifications(page: 1, type: null)).thenAnswer(
-      (_) async => NotificationPage(notifications: [_unread], currentPage: 1, lastPage: 1, total: 1),
+    when(
+      () => mockRepository.fetchNotifications(page: 1, type: null),
+    ).thenAnswer(
+      (_) async => NotificationPage(
+        notifications: [_unread],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
     );
 
     await pumpScreen(tester);
@@ -92,79 +115,197 @@ void main() {
     expect(find.text('Mark all read'), findsOneWidget);
   });
 
-  testWidgets('renders the All chip plus one chip per real notification type', (tester) async {
-    when(() => mockRepository.fetchNotifications(page: 1, type: null)).thenAnswer(
-      (_) async => const NotificationPage(notifications: [], currentPage: 1, lastPage: 1, total: 0),
+  testWidgets('renders the All chip plus one chip per real notification type', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchNotifications(page: 1, type: null),
+    ).thenAnswer(
+      (_) async => const NotificationPage(
+        notifications: [],
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+      ),
     );
 
     await pumpScreen(tester);
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(ChoiceChip, 'All'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Credit Limit Reached'), findsOneWidget);
+    expect(
+      find.widgetWithText(ChoiceChip, 'Credit Limit Reached'),
+      findsOneWidget,
+    );
     expect(find.widgetWithText(ChoiceChip, 'Payment Received'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Document Available'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Collection Assignment'), findsOneWidget);
+    expect(
+      find.widgetWithText(ChoiceChip, 'Document Available'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Collection Assignment'),
+      findsOneWidget,
+    );
     expect(find.widgetWithText(ChoiceChip, 'Reminder Sent'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Promise to Pay Due'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Collection Request Update'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Subscription Update'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Storage Add-on Update'), findsOneWidget);
+    expect(
+      find.widgetWithText(ChoiceChip, 'Promise to Pay Due'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Collection Request Update'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Subscription Update'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Storage Add-on Update'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Support Ticket Created'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Support Ticket Reply'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Support Ticket Status Update'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Support Ticket Closed'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(ChoiceChip, 'Support Ticket Reopened'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(ChoiceChip, 'Announcement'), findsOneWidget);
   });
 
   testWidgets('the All chip is selected by default', (tester) async {
-    when(() => mockRepository.fetchNotifications(page: 1, type: null)).thenAnswer(
-      (_) async => const NotificationPage(notifications: [], currentPage: 1, lastPage: 1, total: 0),
+    when(
+      () => mockRepository.fetchNotifications(page: 1, type: null),
+    ).thenAnswer(
+      (_) async => const NotificationPage(
+        notifications: [],
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+      ),
     );
 
     await pumpScreen(tester);
     await tester.pumpAndSettle();
 
-    final allChip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'All'));
+    final allChip = tester.widget<ChoiceChip>(
+      find.widgetWithText(ChoiceChip, 'All'),
+    );
     expect(allChip.selected, isTrue);
   });
 
-  testWidgets('tapping a type chip calls the real endpoint with that type and selects the chip', (tester) async {
-    when(() => mockRepository.fetchNotifications(page: 1, type: null)).thenAnswer(
-      (_) async => const NotificationPage(notifications: [], currentPage: 1, lastPage: 1, total: 0),
-    );
-    when(() => mockRepository.fetchNotifications(page: 1, type: 'payment_received')).thenAnswer(
-      (_) async => NotificationPage(notifications: [_unread], currentPage: 1, lastPage: 1, total: 1),
-    );
+  testWidgets(
+    'tapping a type chip calls the real endpoint with that type and selects the chip',
+    (tester) async {
+      when(
+        () => mockRepository.fetchNotifications(page: 1, type: null),
+      ).thenAnswer(
+        (_) async => const NotificationPage(
+          notifications: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
+      when(
+        () => mockRepository.fetchNotifications(
+          page: 1,
+          type: 'payment_received',
+        ),
+      ).thenAnswer(
+        (_) async => NotificationPage(
+          notifications: [_unread],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await pumpScreen(tester);
-    await tester.pumpAndSettle();
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Payment Received'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Payment Received'));
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchNotifications(page: 1, type: 'payment_received')).called(1);
-    final paymentChip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Payment Received'));
-    expect(paymentChip.selected, isTrue);
-    final allChip = tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'All'));
-    expect(allChip.selected, isFalse);
-  });
+      verify(
+        () => mockRepository.fetchNotifications(
+          page: 1,
+          type: 'payment_received',
+        ),
+      ).called(1);
+      final paymentChip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Payment Received'),
+      );
+      expect(paymentChip.selected, isTrue);
+      final allChip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'All'),
+      );
+      expect(allChip.selected, isFalse);
+    },
+  );
 
-  testWidgets('shows a filter-specific empty state when a type filter has no results', (tester) async {
-    when(() => mockRepository.fetchNotifications(page: 1, type: null)).thenAnswer(
-      (_) async => const NotificationPage(notifications: [], currentPage: 1, lastPage: 1, total: 0),
-    );
-    when(() => mockRepository.fetchNotifications(page: 1, type: 'document_available')).thenAnswer(
-      (_) async => const NotificationPage(notifications: [], currentPage: 1, lastPage: 1, total: 0),
-    );
+  testWidgets(
+    'shows a filter-specific empty state when a type filter has no results',
+    (tester) async {
+      when(
+        () => mockRepository.fetchNotifications(page: 1, type: null),
+      ).thenAnswer(
+        (_) async => const NotificationPage(
+          notifications: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
+      when(
+        () => mockRepository.fetchNotifications(
+          page: 1,
+          type: 'document_available',
+        ),
+      ).thenAnswer(
+        (_) async => const NotificationPage(
+          notifications: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
 
-    await pumpScreen(tester);
-    await tester.pumpAndSettle();
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Document Available'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Document Available'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('No Document Available notifications'), findsOneWidget);
-  });
+      expect(find.text('No Document Available notifications'), findsOneWidget);
+    },
+  );
 
-  testWidgets('tapping "Mark all read" calls the real endpoint', (tester) async {
-    when(() => mockRepository.fetchNotifications(page: 1, type: null)).thenAnswer(
-      (_) async => NotificationPage(notifications: [_unread], currentPage: 1, lastPage: 1, total: 1),
+  testWidgets('tapping "Mark all read" calls the real endpoint', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchNotifications(page: 1, type: null),
+    ).thenAnswer(
+      (_) async => NotificationPage(
+        notifications: [_unread],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
     );
     when(() => mockRepository.markAllRead()).thenAnswer((_) async {});
 
@@ -177,4 +318,36 @@ void main() {
     verify(() => mockRepository.markAllRead()).called(1);
     expect(find.text('Mark all read'), findsNothing);
   });
+
+  testWidgets(
+    'swiping a notification deletes it via the real endpoint and removes it from the list',
+    (tester) async {
+      when(
+        () => mockRepository.fetchNotifications(page: 1, type: null),
+      ).thenAnswer(
+        (_) async => NotificationPage(
+          notifications: [_unread],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockRepository.deleteNotification('1'),
+      ).thenAnswer((_) async {});
+
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
+
+      // A velocity-based fling triggers Dismissible regardless of how wide
+      // the (test-widened, see pumpScreen) viewport is — a fixed-distance
+      // drag would need to be a large fraction of that width to cross the
+      // dismiss threshold.
+      await tester.fling(find.byType(Dismissible), const Offset(-300, 0), 1000);
+      await tester.pumpAndSettle();
+
+      verify(() => mockRepository.deleteNotification('1')).called(1);
+      expect(find.byType(Dismissible), findsNothing);
+    },
+  );
 }

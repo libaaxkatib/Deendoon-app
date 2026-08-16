@@ -11,7 +11,8 @@ import 'package:mobile/features/cases/presentation/screens/case_list_screen.dart
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockCollectionCaseRepository extends Mock implements CollectionCaseRepository {}
+class _MockCollectionCaseRepository extends Mock
+    implements CollectionCaseRepository {}
 
 const _case = CollectionCase(
   id: '1',
@@ -42,7 +43,9 @@ Future<void> _pumpScreen(
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [collectionCaseRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        collectionCaseRepositoryProvider.overrideWithValue(repository),
+      ],
       child: MaterialApp(
         locale: const Locale('en'),
         supportedLocales: AppLocalizations.supportedLocales,
@@ -68,8 +71,14 @@ void main() {
   });
 
   testWidgets('renders case cards with real fields', (tester) async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+      (_) async => const CollectionCasePage(
+        cases: [_case],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -80,9 +89,17 @@ void main() {
     expect(find.text('Unassigned'), findsOneWidget);
   });
 
-  testWidgets('shows the explicit empty state when there are no cases', (tester) async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [], currentPage: 1, lastPage: 1, total: 0));
+  testWidgets('shows the explicit empty state when there are no cases', (
+    tester,
+  ) async {
+    when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+      (_) async => const CollectionCasePage(
+        cases: [],
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+      ),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -90,8 +107,12 @@ void main() {
     expect(find.text('No collection cases yet'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the list fails to load', (tester) async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null)).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the list fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchCases(page: 1, tab: null),
+    ).thenThrow(Exception('network down'));
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -100,75 +121,135 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('tapping a tab filter chip triggers a real API call with that tab', (tester) async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1));
-    when(() => mockRepository.fetchCases(page: 1, tab: 'high_risk'))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [], currentPage: 1, lastPage: 1, total: 0));
-
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.widgetWithText(ChoiceChip, 'High Risk'));
-    await tester.pumpAndSettle();
-
-    verify(() => mockRepository.fetchCases(page: 1, tab: 'high_risk')).called(1);
-    expect(find.text('No cases match this filter'), findsOneWidget);
-  });
-
-  testWidgets('an initialTab constructor argument applies the filter on first load', (tester) async {
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1));
-    when(() => mockRepository.fetchCases(page: 1, tab: 'high_risk'))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [], currentPage: 1, lastPage: 1, total: 0));
-
-    await _pumpScreen(tester, repository: mockRepository, initialTab: 'high_risk');
-    await tester.pumpAndSettle();
-
-    verify(() => mockRepository.fetchCases(page: 1, tab: 'high_risk')).called(1);
-    expect(find.text('No cases match this filter'), findsOneWidget);
-  });
-
-  testWidgets('the Professional Collection Requests icon opens the real list screen', (tester) async {
-    tester.view.physicalSize = const Size(400, 1400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    when(() => mockRepository.fetchCases(page: 1, tab: null))
-        .thenAnswer((_) async => const CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1));
-
-    final router = GoRouter(
-      initialLocation: '/',
-      routes: [
-        GoRoute(path: '/', builder: (_, _) => const CaseListScreen()),
-        GoRoute(path: '/professional-requests', builder: (_, _) => const Text('Professional Collection Requests Screen')),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [collectionCaseRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp.router(
-          routerConfig: router,
-          locale: const Locale('en'),
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            SomaliMaterialLocalizationsDelegate(),
-            SomaliCupertinoLocalizationsDelegate(),
-          ],
+  testWidgets(
+    'tapping a tab filter chip triggers a real API call with that tab',
+    (tester) async {
+      when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_case],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      when(
+        () => mockRepository.fetchCases(page: 1, tab: 'high_risk'),
+      ).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
 
-    await tester.tap(find.byTooltip('Professional Collection Requests'));
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Professional Collection Requests Screen'), findsOneWidget);
-  });
+      await tester.tap(find.widgetWithText(ChoiceChip, 'High Risk'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => mockRepository.fetchCases(page: 1, tab: 'high_risk'),
+      ).called(1);
+      expect(find.text('No cases match this filter'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'an initialTab constructor argument applies the filter on first load',
+    (tester) async {
+      when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_case],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      when(
+        () => mockRepository.fetchCases(page: 1, tab: 'high_risk'),
+      ).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
+
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        initialTab: 'high_risk',
+      );
+      await tester.pumpAndSettle();
+
+      verify(
+        () => mockRepository.fetchCases(page: 1, tab: 'high_risk'),
+      ).called(1);
+      expect(find.text('No cases match this filter'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the Professional Collection Requests icon opens the real list screen',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      when(() => mockRepository.fetchCases(page: 1, tab: null)).thenAnswer(
+        (_) async => const CollectionCasePage(
+          cases: [_case],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const CaseListScreen()),
+          GoRoute(
+            path: '/professional-requests',
+            builder: (_, _) =>
+                const Text('Professional Collection Requests Screen'),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            collectionCaseRepositoryProvider.overrideWithValue(mockRepository),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              SomaliMaterialLocalizationsDelegate(),
+              SomaliCupertinoLocalizationsDelegate(),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Professional Collection Requests'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Professional Collection Requests Screen'),
+        findsOneWidget,
+      );
+    },
+  );
 }

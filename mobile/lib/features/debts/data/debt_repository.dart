@@ -12,7 +12,9 @@ import '../domain/debt_timeline.dart';
 import '../domain/promise_to_pay.dart';
 import 'debt_api.dart';
 
-final debtRepositoryProvider = Provider<DebtRepository>((ref) => DebtRepository(ref.read(debtApiProvider)));
+final debtRepositoryProvider = Provider<DebtRepository>(
+  (ref) => DebtRepository(ref.read(debtApiProvider)),
+);
 
 /// Translates raw Dio failures into `ApiException` — same pattern as
 /// every other repository in the app. No caching, no calculation beyond
@@ -28,22 +30,32 @@ class DebtRepository {
     String? status,
     String? dateFrom,
     String? dateTo,
-  }) =>
-      _guard(() => _api.list(
-            page: page,
-            customerId: customerId,
-            status: status,
-            dateFrom: dateFrom,
-            dateTo: dateTo,
-          ));
+    bool includeArchived = false,
+  }) => _guard(
+    () => _api.list(
+      page: page,
+      customerId: customerId,
+      status: status,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+      includeArchived: includeArchived,
+    ),
+  );
 
   Future<Debt> fetchDebt(String id) => _guard(() => _api.show(id));
 
-  Future<List<Payment>> fetchPayments(String debtId) => _guard(() => _api.payments(debtId));
+  Future<void> archiveDebt(String id) => _guard(() => _api.archive(id));
 
-  Future<List<DocumentSummary>> fetchDocuments(String debtId) => _guard(() => _api.documents(debtId));
+  Future<Debt> restoreDebt(String id) => _guard(() => _api.restore(id));
 
-  Future<DebtTimeline> fetchTimeline(String debtId) => _guard(() => _api.timeline(debtId));
+  Future<List<Payment>> fetchPayments(String debtId) =>
+      _guard(() => _api.payments(debtId));
+
+  Future<List<DocumentSummary>> fetchDocuments(String debtId) =>
+      _guard(() => _api.documents(debtId));
+
+  Future<DebtTimeline> fetchTimeline(String debtId) =>
+      _guard(() => _api.timeline(debtId));
 
   Future<Payment> recordPayment({
     required String debtId,
@@ -51,22 +63,28 @@ class DebtRepository {
     required String paymentDate,
     String? paymentMethod,
     String? referenceNotes,
-  }) =>
-      _guard(() => _api.recordPayment(
-            debtId: debtId,
-            amount: amount,
-            paymentDate: paymentDate,
-            paymentMethod: paymentMethod,
-            referenceNotes: referenceNotes,
-          ));
+  }) => _guard(
+    () => _api.recordPayment(
+      debtId: debtId,
+      amount: amount,
+      paymentDate: paymentDate,
+      paymentMethod: paymentMethod,
+      referenceNotes: referenceNotes,
+    ),
+  );
 
-  Future<PromiseToPay> promiseToPay({required String debtId, required String promisedDate}) =>
-      _guard(() => _api.promiseToPay(debtId: debtId, promisedDate: promisedDate));
+  Future<PromiseToPay> promiseToPay({
+    required String debtId,
+    required String promisedDate,
+  }) => _guard(
+    () => _api.promiseToPay(debtId: debtId, promisedDate: promisedDate),
+  );
 
   Future<List<PromiseToPay>> fetchPromiseToPayHistory(String debtId) =>
       _guard(() => _api.promiseToPayHistory(debtId));
 
-  Future<PromiseToPay> fetchPromiseToPayById(String id) => _guard(() => _api.showPromiseToPay(id));
+  Future<PromiseToPay> fetchPromiseToPayById(String id) =>
+      _guard(() => _api.showPromiseToPay(id));
 
   /// Null means "no related case yet" (the real 404 the backend returns
   /// for a debt with no Collection Case) — not an error state.
@@ -79,20 +97,32 @@ class DebtRepository {
     }
   }
 
-  Future<CollectionCase> openCase(String debtId) => _guard(() => _api.openCase(debtId));
+  Future<CollectionCase> openCase(String debtId) =>
+      _guard(() => _api.openCase(debtId));
 
   Future<DebtSaveResult> createDebt({
     required String customerId,
     required String amount,
     required String dueDate,
     String? notes,
-  }) =>
-      _guard(() => _api.store(customerId: customerId, amount: amount, dueDate: dueDate, notes: notes));
+  }) => _guard(
+    () => _api.store(
+      customerId: customerId,
+      amount: amount,
+      dueDate: dueDate,
+      notes: notes,
+    ),
+  );
 
-  Future<Debt> updateDebt({required String debtId, required String dueDate, String? notes}) =>
+  Future<Debt> updateDebt({
+    required String debtId,
+    required String dueDate,
+    String? notes,
+  }) =>
       _guard(() => _api.update(debtId: debtId, dueDate: dueDate, notes: notes));
 
-  Future<DocumentSummary> generateStatement(String debtId) => _guard(() => _api.generateStatement(debtId));
+  Future<DocumentSummary> generateStatement(String debtId) =>
+      _guard(() => _api.generateStatement(debtId));
 
   Future<Debt> logWhatsAppReminder({required String debtId, String? details}) =>
       _guard(() => _api.logWhatsAppReminder(debtId: debtId, details: details));

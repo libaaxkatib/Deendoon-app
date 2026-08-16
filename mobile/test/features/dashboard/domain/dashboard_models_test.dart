@@ -29,24 +29,27 @@ void main() {
   });
 
   group('TodaysOverview', () {
-    test('reads total_due_today and the three per_type counts the UI needs', () {
-      final overview = TodaysOverview.fromJson({
-        'total_due_today': 7,
-        'per_type': {
-          'client_visit': 2,
-          'follow_up_call': 3,
-          'payment_due': 1,
-          'contract_renewal': 1,
-          'promise_to_pay': 0,
-        },
-        'overdue_count': 4,
-      });
+    test(
+      'reads total_due_today and the three per_type counts the UI needs',
+      () {
+        final overview = TodaysOverview.fromJson({
+          'total_due_today': 7,
+          'per_type': {
+            'client_visit': 2,
+            'follow_up_call': 3,
+            'payment_due': 1,
+            'contract_renewal': 1,
+            'promise_to_pay': 0,
+          },
+          'overdue_count': 4,
+        });
 
-      expect(overview.totalDueToday, 7);
-      expect(overview.paymentsDue, 1);
-      expect(overview.clientVisits, 2);
-      expect(overview.followUpCalls, 3);
-    });
+        expect(overview.totalDueToday, 7);
+        expect(overview.paymentsDue, 1);
+        expect(overview.clientVisits, 2);
+        expect(overview.followUpCalls, 3);
+      },
+    );
 
     test('defaults an absent per_type key to zero rather than throwing', () {
       final overview = TodaysOverview.fromJson({
@@ -62,25 +65,31 @@ void main() {
   });
 
   group('RecentCase', () {
-    test('parses the CollectionCaseResource fields the Recent Cases section renders', () {
-      final recentCase = RecentCase.fromJson({
-        'id': '01ABC',
-        'debt_id': '01DEF',
-        'customer_id': '01GHI',
-        'customer_name': 'Somali Builders',
-        'outstanding_amount': '800.00',
-        'risk_level': 'high',
-        'reference_number': 'CASE-0001',
-        'case_status': 'open',
-        'last_activity_at': '2026-07-28T10:00:00.000000Z',
-      });
+    test(
+      'parses the CollectionCaseResource fields the Recent Cases section renders',
+      () {
+        final recentCase = RecentCase.fromJson({
+          'id': '01ABC',
+          'debt_id': '01DEF',
+          'customer_id': '01GHI',
+          'customer_name': 'Somali Builders',
+          'outstanding_amount': '800.00',
+          'risk_level': 'high',
+          'reference_number': 'CASE-0001',
+          'case_status': 'open',
+          'last_activity_at': '2026-07-28T10:00:00.000000Z',
+        });
 
-      expect(recentCase.id, '01ABC');
-      expect(recentCase.customerName, 'Somali Builders');
-      expect(recentCase.outstandingAmount, '800.00');
-      expect(recentCase.riskLevel, 'high');
-      expect(recentCase.lastActivityAt, DateTime.parse('2026-07-28T10:00:00.000000Z'));
-    });
+        expect(recentCase.id, '01ABC');
+        expect(recentCase.customerName, 'Somali Builders');
+        expect(recentCase.outstandingAmount, '800.00');
+        expect(recentCase.riskLevel, 'high');
+        expect(
+          recentCase.lastActivityAt,
+          DateTime.parse('2026-07-28T10:00:00.000000Z'),
+        );
+      },
+    );
 
     test('falls back gracefully when risk_level is null', () {
       final recentCase = RecentCase.fromJson({

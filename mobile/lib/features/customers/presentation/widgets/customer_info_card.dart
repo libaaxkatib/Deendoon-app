@@ -20,7 +20,12 @@ class CustomerInfoCard extends StatelessWidget {
   final VoidCallback? onEditCreditLimit;
   final VoidCallback? onEditStatus;
 
-  const CustomerInfoCard({super.key, required this.customer, this.onEditCreditLimit, this.onEditStatus});
+  const CustomerInfoCard({
+    super.key,
+    required this.customer,
+    this.onEditCreditLimit,
+    this.onEditStatus,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,17 +44,27 @@ class CustomerInfoCard extends StatelessWidget {
                   children: [
                     Text(
                       customer.name,
-                      style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                      style: AppTypography.subheading.copyWith(
+                        color: context.colors.textPrimary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(customer.phone, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
-                    if (customer.address != null && customer.address!.trim().isNotEmpty) ...[
+                    Text(
+                      customer.phone,
+                      style: AppTypography.caption.copyWith(
+                        color: context.colors.textSecondary,
+                      ),
+                    ),
+                    if (customer.address != null &&
+                        customer.address!.trim().isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         customer.address!,
-                        style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                        style: AppTypography.caption.copyWith(
+                          color: context.colors.textSecondary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -80,12 +95,20 @@ class CustomerInfoCard extends StatelessWidget {
             ],
           ),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: l10n.customerInfoOutstandingBalanceLabel, value: customer.outstandingBalance),
+          _InfoRow(
+            label: l10n.customerInfoOutstandingBalanceLabel,
+            value: customer.outstandingBalance,
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(child: _InfoRow(label: l10n.creditLimitLabel, value: customer.creditLimit)),
+              Expanded(
+                child: _InfoRow(
+                  label: l10n.creditLimitLabel,
+                  value: customer.creditLimit,
+                ),
+              ),
               if (onEditCreditLimit != null)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 18),
@@ -97,12 +120,16 @@ class CustomerInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _InfoRow(label: l10n.customerInfoRemainingCreditLabel, value: customer.remainingCredit),
+          _InfoRow(
+            label: l10n.customerInfoRemainingCreditLabel,
+            value: customer.remainingCredit,
+          ),
           if (customer.creditScore != null) ...[
             const SizedBox(height: 12),
             _InfoRow(
               label: l10n.customerInfoCreditScoreLabel,
-              value: '${customer.creditScore}${customer.creditScoreBand != null ? ' (${customer.creditScoreBand})' : ''}',
+              value:
+                  '${customer.creditScore}${customer.creditScoreBand != null ? ' (${customer.creditScoreBand})' : ''}',
             ),
           ],
         ],
@@ -122,8 +149,16 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
-        Text(value, style: AppTypography.body.copyWith(color: AppColors.primary)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTypography.body.copyWith(color: AppColors.primary),
+        ),
       ],
     );
   }

@@ -53,23 +53,25 @@ class Reminder {
   });
 
   factory Reminder.fromJson(Map<String, dynamic> json) => Reminder(
-        id: json['id'].toString(),
-        type: json['type'] as String,
-        title: json['title'] as String,
-        relatedEntityType: json['related_entity_type'] as String,
-        relatedEntityId: json['related_entity_id'].toString(),
-        relatedCaseId: json['related_case_id']?.toString(),
-        dueDate: json['due_date'] as String,
-        amountDue: json['amount_due'] as String?,
-        timingRule: json['timing_rule'] as String,
-        customFireAt: json['custom_fire_at'] as String?,
-        deliveryMethods: (json['delivery_methods'] as List<dynamic>).map((e) => e as String).toList(),
-        notes: json['notes'] as String?,
-        status: json['status'] as String,
-        createdByUserId: json['created_by_user_id'].toString(),
-        createdAt: json['created_at'] as String,
-        updatedAt: json['updated_at'] as String,
-        completedAt: json['completed_at'] as String?,
-        checkedInAt: json['checked_in_at'] as String?,
-      );
+    id: json['id'].toString(),
+    type: json['type'] as String,
+    title: json['title'] as String,
+    relatedEntityType: json['related_entity_type'] as String,
+    relatedEntityId: json['related_entity_id'].toString(),
+    relatedCaseId: json['related_case_id']?.toString(),
+    dueDate: json['due_date'] as String,
+    amountDue: json['amount_due'] as String?,
+    timingRule: json['timing_rule'] as String,
+    customFireAt: json['custom_fire_at'] as String?,
+    deliveryMethods: (json['delivery_methods'] as List<dynamic>)
+        .map((e) => e as String)
+        .toList(),
+    notes: json['notes'] as String?,
+    status: json['status'] as String,
+    createdByUserId: json['created_by_user_id'].toString(),
+    createdAt: json['created_at'] as String,
+    updatedAt: json['updated_at'] as String,
+    completedAt: json['completed_at'] as String?,
+    checkedInAt: json['checked_in_at'] as String?,
+  );
 }

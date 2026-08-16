@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/case_actions.dart';
@@ -12,18 +13,23 @@ import '../providers/case_actions.dart';
 /// (DD-024 is still pending per the controller's own docblock) — this is
 /// a plain text field, not a fixed dropdown pretending to be
 /// server-validated.
-Future<void> showCloseCaseSheet(BuildContext context, String caseId) {
+Future<void> showCloseCaseSheet(
+  BuildContext context,
+  String caseId,
+  String debtId,
+) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _CloseCaseSheet(caseId: caseId),
+    builder: (_) => _CloseCaseSheet(caseId: caseId, debtId: debtId),
   );
 }
 
 class _CloseCaseSheet extends ConsumerStatefulWidget {
   final String caseId;
+  final String debtId;
 
-  const _CloseCaseSheet({required this.caseId});
+  const _CloseCaseSheet({required this.caseId, required this.debtId});
 
   @override
   ConsumerState<_CloseCaseSheet> createState() => _CloseCaseSheetState();
@@ -50,8 +56,11 @@ class _CloseCaseSheetState extends ConsumerState<_CloseCaseSheet> {
     });
 
     try {
-      await ref.read(caseActionsProvider).close(
+      await ref
+          .read(caseActionsProvider)
+          .close(
             caseId: widget.caseId,
+            debtId: widget.debtId,
             closureOutcome: _outcomeController.text.trim(),
           );
       if (mounted) Navigator.of(context).pop();
@@ -65,34 +74,41 @@ class _CloseCaseSheetState extends ConsumerState<_CloseCaseSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.closeCaseTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.closeCaseTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _outcomeController,
               maxLength: 50,
-              decoration: InputDecoration(labelText: l10n.closeCaseSheetReasonLabel),
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? l10n.closeCaseSheetReasonRequiredValidator : null,
+              decoration: InputDecoration(
+                labelText: l10n.closeCaseSheetReasonLabel,
+              ),
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? l10n.closeCaseSheetReasonRequiredValidator
+                  : null,
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: l10n.closeCaseTitle, isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(
+              label: l10n.closeCaseTitle,
+              isLoading: _isLoading,
+              onPressed: _submit,
+            ),
           ],
         ),
       ),

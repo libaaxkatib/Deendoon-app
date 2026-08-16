@@ -6,7 +6,8 @@ import '../../domain/reminder.dart';
 import '../../domain/reminder_summary.dart';
 
 final reminderDetailProvider = FutureProvider.family<Reminder, String>(
-  (ref, reminderId) => ref.watch(reminderRepositoryProvider).fetchReminder(reminderId),
+  (ref, reminderId) =>
+      ref.watch(reminderRepositoryProvider).fetchReminder(reminderId),
 );
 
 final reminderSummaryProvider = FutureProvider<ReminderSummary>(
@@ -16,6 +17,9 @@ final reminderSummaryProvider = FutureProvider<ReminderSummary>(
 /// Message templates for a given channel — independent, family-keyed so a
 /// WhatsApp fetch failure doesn't affect an already-loaded SMS list (or
 /// vice versa) if the user toggles channels.
-final messageTemplatesProvider = FutureProvider.family<List<MessageTemplate>, String>(
-  (ref, channel) => ref.watch(reminderRepositoryProvider).fetchMessageTemplates(channel: channel),
-);
+final messageTemplatesProvider =
+    FutureProvider.family<List<MessageTemplate>, String>(
+      (ref, channel) => ref
+          .watch(reminderRepositoryProvider)
+          .fetchMessageTemplates(channel: channel),
+    );

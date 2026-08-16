@@ -57,7 +57,7 @@ void main() {
           localizationsDelegates: _localizationsDelegates,
           home: Builder(
             builder: (context) => ElevatedButton(
-              onPressed: () => showRecordPaymentSheet(context, '1'),
+              onPressed: () => showRecordPaymentSheet(context, '1', '01CUST'),
               child: const Text('Open Sheet'),
             ),
           ),
@@ -115,7 +115,7 @@ void main() {
           localizationsDelegates: _localizationsDelegates,
           home: Builder(
             builder: (context) => ElevatedButton(
-              onPressed: () => showRecordPaymentSheet(context, '1'),
+              onPressed: () => showRecordPaymentSheet(context, '1', '01CUST'),
               child: const Text('Open Sheet'),
             ),
           ),
@@ -143,4 +143,67 @@ void main() {
       ),
     ).called(1);
   });
+
+  testWidgets(
+    'Mobile Fix #5: Save Payment stays reachable and tappable on a short viewport with a system nav bar inset',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 500);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.padding = const FakeViewPadding(bottom: 48);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPadding);
+
+      when(
+        () => mockRepository.recordPayment(
+          debtId: '1',
+          amount: '100.00',
+          paymentDate: any(named: 'paymentDate'),
+          paymentMethod: null,
+          referenceNotes: null,
+        ),
+      ).thenAnswer((_) async => _payment);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [debtRepositoryProvider.overrideWithValue(mockRepository)],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+            home: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showRecordPaymentSheet(context, '1', '01CUST'),
+                child: const Text('Open Sheet'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Amount'),
+        '100.00',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(ElevatedButton, 'Save Payment'),
+      );
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Save Payment'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => mockRepository.recordPayment(
+          debtId: '1',
+          amount: '100.00',
+          paymentDate: any(named: 'paymentDate'),
+          paymentMethod: null,
+          referenceNotes: null,
+        ),
+      ).called(1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

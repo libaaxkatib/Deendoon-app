@@ -9,9 +9,11 @@ import '../../domain/collection_case.dart';
 /// Dashboard, Debt Detail): a failure fetching history doesn't blank out
 /// the already-loaded case.
 final caseDetailProvider = FutureProvider.family<CollectionCase, String>(
-  (ref, caseId) => ref.watch(collectionCaseRepositoryProvider).fetchCase(caseId),
+  (ref, caseId) =>
+      ref.watch(collectionCaseRepositoryProvider).fetchCase(caseId),
 );
 
 final caseHistoryProvider = FutureProvider.family<CaseHistory, String>(
-  (ref, caseId) => ref.watch(collectionCaseRepositoryProvider).fetchHistory(caseId),
+  (ref, caseId) =>
+      ref.watch(collectionCaseRepositoryProvider).fetchHistory(caseId),
 );

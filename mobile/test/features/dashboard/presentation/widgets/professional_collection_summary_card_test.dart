@@ -20,7 +20,8 @@ const _localizationsDelegates = [
   SomaliCupertinoLocalizationsDelegate(),
 ];
 
-class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
+class _MockProfessionalCollectionRepository extends Mock
+    implements ProfessionalCollectionRepository {}
 
 const _emptySummary = ProfessionalCollectionSummary(
   countsByStatus: {
@@ -77,31 +78,48 @@ void main() {
     mockRepository = _MockProfessionalCollectionRepository();
   });
 
-  testWidgets('shows the honest empty state when nothing has ever been submitted', (tester) async {
-    when(() => mockRepository.fetchSummary()).thenAnswer((_) async => _emptySummary);
+  testWidgets(
+    'shows the honest empty state when nothing has ever been submitted',
+    (tester) async {
+      when(
+        () => mockRepository.fetchSummary(),
+      ).thenAnswer((_) async => _emptySummary);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: const MaterialApp(
-          locale: Locale('en'),
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: _localizationsDelegates,
-          home: Scaffold(body: ProfessionalCollectionSummaryCard()),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            professionalCollectionRepositoryProvider.overrideWithValue(
+              mockRepository,
+            ),
+          ],
+          child: const MaterialApp(
+            locale: Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+            home: Scaffold(body: ProfessionalCollectionSummaryCard()),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('No cases submitted to Deendoon yet'), findsOneWidget);
-  });
+      expect(find.text('No cases submitted to Deendoon yet'), findsOneWidget);
+    },
+  );
 
-  testWidgets('renders real Active/Recovered counts and the latest Request', (tester) async {
-    when(() => mockRepository.fetchSummary()).thenAnswer((_) async => _summaryWithLatest);
+  testWidgets('renders real Active/Recovered counts and the latest Request', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchSummary(),
+    ).thenAnswer((_) async => _summaryWithLatest);
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          professionalCollectionRepositoryProvider.overrideWithValue(
+            mockRepository,
+          ),
+        ],
         child: const MaterialApp(
           locale: Locale('en'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -117,23 +135,36 @@ void main() {
     expect(find.text('Assigned'), findsOneWidget);
   });
 
-  testWidgets('tapping the latest Request navigates to its detail screen', (tester) async {
-    when(() => mockRepository.fetchSummary()).thenAnswer((_) async => _summaryWithLatest);
+  testWidgets('tapping the latest Request navigates to its detail screen', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchSummary(),
+    ).thenAnswer((_) async => _summaryWithLatest);
 
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const Scaffold(body: ProfessionalCollectionSummaryCard())),
+        GoRoute(
+          path: '/',
+          builder: (_, _) =>
+              const Scaffold(body: ProfessionalCollectionSummaryCard()),
+        ),
         GoRoute(
           path: '/professional-requests/:id',
-          builder: (_, state) => Text('Request Detail ${state.pathParameters['id']}'),
+          builder: (_, state) =>
+              Text('Request Detail ${state.pathParameters['id']}'),
         ),
       ],
     );
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          professionalCollectionRepositoryProvider.overrideWithValue(
+            mockRepository,
+          ),
+        ],
         child: MaterialApp.router(
           routerConfig: router,
           locale: const Locale('en'),
@@ -150,20 +181,35 @@ void main() {
     expect(find.text('Request Detail 01PCR'), findsOneWidget);
   });
 
-  testWidgets('View All opens the real Professional Collection list', (tester) async {
-    when(() => mockRepository.fetchSummary()).thenAnswer((_) async => _emptySummary);
+  testWidgets('View All opens the real Professional Collection list', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchSummary(),
+    ).thenAnswer((_) async => _emptySummary);
 
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const Scaffold(body: ProfessionalCollectionSummaryCard())),
-        GoRoute(path: '/professional-requests', builder: (_, _) => const Text('Professional Collection List')),
+        GoRoute(
+          path: '/',
+          builder: (_, _) =>
+              const Scaffold(body: ProfessionalCollectionSummaryCard()),
+        ),
+        GoRoute(
+          path: '/professional-requests',
+          builder: (_, _) => const Text('Professional Collection List'),
+        ),
       ],
     );
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          professionalCollectionRepositoryProvider.overrideWithValue(
+            mockRepository,
+          ),
+        ],
         child: MaterialApp.router(
           routerConfig: router,
           locale: const Locale('en'),
@@ -180,12 +226,20 @@ void main() {
     expect(find.text('Professional Collection List'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the summary fails to load', (tester) async {
-    when(() => mockRepository.fetchSummary()).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the summary fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchSummary(),
+    ).thenThrow(Exception('network down'));
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          professionalCollectionRepositoryProvider.overrideWithValue(
+            mockRepository,
+          ),
+        ],
         child: const MaterialApp(
           locale: Locale('en'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -196,7 +250,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Could not load Professional Collection summary.'), findsOneWidget);
+    expect(
+      find.text('Could not load Professional Collection summary.'),
+      findsOneWidget,
+    );
     expect(find.text('Retry'), findsOneWidget);
   });
 }

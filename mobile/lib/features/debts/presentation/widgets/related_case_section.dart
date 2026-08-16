@@ -34,7 +34,10 @@ class RelatedCaseSection extends ConsumerWidget {
         if (collectionCase == null) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(l10n.debtRelatedCaseEmptyState, style: AppTypography.body),
+            child: Text(
+              l10n.debtRelatedCaseEmptyState,
+              style: AppTypography.body,
+            ),
           );
         }
 

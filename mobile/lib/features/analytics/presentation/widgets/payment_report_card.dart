@@ -30,7 +30,10 @@ class PaymentReportCard extends StatelessWidget {
               children: [
                 Text(
                   payment.amount,
-                  style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 16),
+                  style: AppTypography.subheading.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(

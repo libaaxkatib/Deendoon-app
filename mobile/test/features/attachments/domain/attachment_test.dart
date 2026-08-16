@@ -41,20 +41,23 @@ void main() {
       expect(attachment.description, isNull);
     });
 
-    test('parses a CollectionCaseAttachmentResource shape (collection_case_id)', () {
-      final attachment = Attachment.fromJson({
-        'id': '1',
-        'collection_case_id': '01CASE',
-        'uploaded_by_user_id': '01USER',
-        'original_filename': 'evidence.pdf',
-        'mime_type': 'application/pdf',
-        'file_size': 3000,
-        'description': null,
-        'created_at': '2026-08-01T00:00:00.000000Z',
-      });
+    test(
+      'parses a CollectionCaseAttachmentResource shape (collection_case_id)',
+      () {
+        final attachment = Attachment.fromJson({
+          'id': '1',
+          'collection_case_id': '01CASE',
+          'uploaded_by_user_id': '01USER',
+          'original_filename': 'evidence.pdf',
+          'mime_type': 'application/pdf',
+          'file_size': 3000,
+          'description': null,
+          'created_at': '2026-08-01T00:00:00.000000Z',
+        });
 
-      expect(attachment.entityId, '01CASE');
-      expect(attachment.originalFilename, 'evidence.pdf');
-    });
+        expect(attachment.entityId, '01CASE');
+        expect(attachment.originalFilename, 'evidence.pdf');
+      },
+    );
   });
 }

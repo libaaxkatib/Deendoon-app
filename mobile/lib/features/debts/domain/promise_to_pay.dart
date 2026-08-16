@@ -19,10 +19,10 @@ class PromiseToPay {
   });
 
   factory PromiseToPay.fromJson(Map<String, dynamic> json) => PromiseToPay(
-        id: json['id'].toString(),
-        debtId: json['debt_id'].toString(),
-        promisedDate: json['promised_date'] as String,
-        status: json['status'] as String,
-        createdAt: json['created_at'] as String,
-      );
+    id: json['id'].toString(),
+    debtId: json['debt_id'].toString(),
+    promisedDate: json['promised_date'] as String,
+    status: json['status'] as String,
+    createdAt: json['created_at'] as String,
+  );
 }

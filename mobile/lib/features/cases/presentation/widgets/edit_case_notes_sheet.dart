@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/case_actions.dart';
@@ -10,11 +11,16 @@ import '../providers/case_actions.dart';
 /// `notes` nullable free text, no length limit server-side). Notes is
 /// editable regardless of Case status — `CollectionCasePolicy::manage`
 /// only checks role and the Customer's read-only state, not `case_status`.
-Future<void> showEditCaseNotesSheet(BuildContext context, String caseId, {String? currentNotes}) {
+Future<void> showEditCaseNotesSheet(
+  BuildContext context,
+  String caseId, {
+  String? currentNotes,
+}) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _EditCaseNotesSheet(caseId: caseId, currentNotes: currentNotes),
+    builder: (_) =>
+        _EditCaseNotesSheet(caseId: caseId, currentNotes: currentNotes),
   );
 }
 
@@ -25,12 +31,15 @@ class _EditCaseNotesSheet extends ConsumerStatefulWidget {
   const _EditCaseNotesSheet({required this.caseId, required this.currentNotes});
 
   @override
-  ConsumerState<_EditCaseNotesSheet> createState() => _EditCaseNotesSheetState();
+  ConsumerState<_EditCaseNotesSheet> createState() =>
+      _EditCaseNotesSheetState();
 }
 
 class _EditCaseNotesSheetState extends ConsumerState<_EditCaseNotesSheet> {
   final _formKey = GlobalKey<FormState>();
-  late final _notesController = TextEditingController(text: widget.currentNotes ?? '');
+  late final _notesController = TextEditingController(
+    text: widget.currentNotes ?? '',
+  );
   bool _isLoading = false;
   String? _error;
 
@@ -50,7 +59,9 @@ class _EditCaseNotesSheetState extends ConsumerState<_EditCaseNotesSheet> {
 
     try {
       final trimmed = _notesController.text.trim();
-      await ref.read(caseActionsProvider).updateNotes(
+      await ref
+          .read(caseActionsProvider)
+          .updateNotes(
             caseId: widget.caseId,
             notes: trimmed.isEmpty ? null : trimmed,
           );
@@ -65,33 +76,39 @@ class _EditCaseNotesSheetState extends ConsumerState<_EditCaseNotesSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.caseNotesEditTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.caseNotesEditTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
-              decoration: InputDecoration(labelText: l10n.addEditDebtNotesHeading),
+              decoration: InputDecoration(
+                labelText: l10n.addEditDebtNotesHeading,
+              ),
               maxLines: 5,
               minLines: 3,
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: l10n.editCaseNotesSaveButton, isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(
+              label: l10n.editCaseNotesSaveButton,
+              isLoading: _isLoading,
+              onPressed: _submit,
+            ),
           ],
         ),
       ),

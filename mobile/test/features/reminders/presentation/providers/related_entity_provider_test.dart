@@ -15,7 +15,8 @@ class _MockCustomerRepository extends Mock implements CustomerRepository {}
 
 class _MockDebtRepository extends Mock implements DebtRepository {}
 
-class _MockCollectionCaseRepository extends Mock implements CollectionCaseRepository {}
+class _MockCollectionCaseRepository extends Mock
+    implements CollectionCaseRepository {}
 
 const _customer = Customer(
   id: '01CUST',
@@ -62,18 +63,26 @@ void main() {
     mockCustomerRepository = _MockCustomerRepository();
     mockDebtRepository = _MockDebtRepository();
     mockCollectionCaseRepository = _MockCollectionCaseRepository();
-    container = ProviderContainer(overrides: [
-      customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
-      debtRepositoryProvider.overrideWithValue(mockDebtRepository),
-      collectionCaseRepositoryProvider.overrideWithValue(mockCollectionCaseRepository),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        customerRepositoryProvider.overrideWithValue(mockCustomerRepository),
+        debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+        collectionCaseRepositoryProvider.overrideWithValue(
+          mockCollectionCaseRepository,
+        ),
+      ],
+    );
     addTearDown(container.dispose);
   });
 
   test('customer type resolves the real customer name/phone/address', () async {
-    when(() => mockCustomerRepository.fetchCustomer('01CUST')).thenAnswer((_) async => _customer);
+    when(
+      () => mockCustomerRepository.fetchCustomer('01CUST'),
+    ).thenAnswer((_) async => _customer);
 
-    final result = await container.read(relatedEntityProvider('customer:01CUST').future);
+    final result = await container.read(
+      relatedEntityProvider('customer:01CUST').future,
+    );
 
     expect(result.name, 'Somali Builders');
     expect(result.resolved, isTrue);
@@ -82,8 +91,12 @@ void main() {
   });
 
   test('debt type resolves through the debt to its customer', () async {
-    when(() => mockDebtRepository.fetchDebt('1')).thenAnswer((_) async => _debt);
-    when(() => mockCustomerRepository.fetchCustomer('01CUST')).thenAnswer((_) async => _customer);
+    when(
+      () => mockDebtRepository.fetchDebt('1'),
+    ).thenAnswer((_) async => _debt);
+    when(
+      () => mockCustomerRepository.fetchCustomer('01CUST'),
+    ).thenAnswer((_) async => _customer);
 
     final result = await container.read(relatedEntityProvider('debt:1').future);
 
@@ -91,58 +104,84 @@ void main() {
     expect(result.address, '123 Market Street');
   });
 
-  test('collection_case type uses the embedded customer_name (no address available)', () async {
-    const collectionCase = CollectionCase(
-      id: '01CASE',
-      debtId: '1',
-      customerId: '01CUST',
-      customerName: 'Somali Builders',
-      outstandingAmount: '1000.00',
-      riskLevel: 'low',
-      referenceNumber: 'COL-0001',
-      assignedOfficerUserId: null,
-      caseStatus: 'open',
-      closureOutcome: null,
-      notes: null,
-      lastActivityAt: '2026-08-01T10:00:00.000000Z',
-      createdAt: '2026-08-01T10:00:00.000000Z',
-      closedAt: null,
-    );
-    when(() => mockCollectionCaseRepository.fetchCase('01CASE')).thenAnswer((_) async => collectionCase);
+  test(
+    'collection_case type uses the embedded customer_name (no address available)',
+    () async {
+      const collectionCase = CollectionCase(
+        id: '01CASE',
+        debtId: '1',
+        customerId: '01CUST',
+        customerName: 'Somali Builders',
+        outstandingAmount: '1000.00',
+        riskLevel: 'low',
+        referenceNumber: 'COL-0001',
+        assignedOfficerUserId: null,
+        caseStatus: 'open',
+        closureOutcome: null,
+        notes: null,
+        lastActivityAt: '2026-08-01T10:00:00.000000Z',
+        createdAt: '2026-08-01T10:00:00.000000Z',
+        closedAt: null,
+      );
+      when(
+        () => mockCollectionCaseRepository.fetchCase('01CASE'),
+      ).thenAnswer((_) async => collectionCase);
 
-    final result = await container.read(relatedEntityProvider('collection_case:01CASE').future);
+      final result = await container.read(
+        relatedEntityProvider('collection_case:01CASE').future,
+      );
 
-    expect(result.name, 'Somali Builders');
-    expect(result.resolved, isTrue);
-    expect(result.address, isNull);
-  });
+      expect(result.name, 'Somali Builders');
+      expect(result.resolved, isTrue);
+      expect(result.address, isNull);
+    },
+  );
 
-  test('promise_to_pay type resolves the real customer name via promise -> debt -> customer (Item 14)', () async {
-    when(() => mockDebtRepository.fetchPromiseToPayById('01PROMISE')).thenAnswer((_) async => _promise);
-    when(() => mockDebtRepository.fetchDebt('1')).thenAnswer((_) async => _debt);
-    when(() => mockCustomerRepository.fetchCustomer('01CUST')).thenAnswer((_) async => _customer);
+  test(
+    'promise_to_pay type resolves the real customer name via promise -> debt -> customer (Item 14)',
+    () async {
+      when(
+        () => mockDebtRepository.fetchPromiseToPayById('01PROMISE'),
+      ).thenAnswer((_) async => _promise);
+      when(
+        () => mockDebtRepository.fetchDebt('1'),
+      ).thenAnswer((_) async => _debt);
+      when(
+        () => mockCustomerRepository.fetchCustomer('01CUST'),
+      ).thenAnswer((_) async => _customer);
 
-    final result = await container.read(relatedEntityProvider('promise_to_pay:01PROMISE').future);
+      final result = await container.read(
+        relatedEntityProvider('promise_to_pay:01PROMISE').future,
+      );
 
-    expect(result.name, 'Somali Builders');
-    expect(result.resolved, isTrue);
-    expect(result.address, '123 Market Street');
-  });
+      expect(result.name, 'Somali Builders');
+      expect(result.resolved, isTrue);
+      expect(result.address, '123 Market Street');
+    },
+  );
 
   test('an unknown type falls back to the raw type, unresolved', () async {
-    final result = await container.read(relatedEntityProvider('something_else:1').future);
+    final result = await container.read(
+      relatedEntityProvider('something_else:1').future,
+    );
 
     expect(result.name, 'something_else');
     expect(result.resolved, isFalse);
   });
 
-  test('a dangling reference (404) resolves to "Not available", unresolved', () async {
-    when(() => mockCustomerRepository.fetchCustomer('01MISSING'))
-        .thenThrow(const ApiException(message: 'Not found.', statusCode: 404));
+  test(
+    'a dangling reference (404) resolves to "Not available", unresolved',
+    () async {
+      when(
+        () => mockCustomerRepository.fetchCustomer('01MISSING'),
+      ).thenThrow(const ApiException(message: 'Not found.', statusCode: 404));
 
-    final result = await container.read(relatedEntityProvider('customer:01MISSING').future);
+      final result = await container.read(
+        relatedEntityProvider('customer:01MISSING').future,
+      );
 
-    expect(result.name, 'Not available');
-    expect(result.resolved, isFalse);
-  });
+      expect(result.name, 'Not available');
+      expect(result.resolved, isFalse);
+    },
+  );
 }

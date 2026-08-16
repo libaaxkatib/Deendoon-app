@@ -25,11 +25,23 @@ Future<void> showExportSheet(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(l10n.exportActionSheetTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(
+              l10n.exportActionSheetTitle,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
-          ListTile(title: Text(l10n.exportFormatPdf), onTap: () => Navigator.pop(context, 'pdf')),
-          ListTile(title: Text(l10n.exportFormatExcel), onTap: () => Navigator.pop(context, 'excel')),
-          ListTile(title: Text(l10n.exportFormatCsv), onTap: () => Navigator.pop(context, 'csv')),
+          ListTile(
+            title: Text(l10n.exportFormatPdf),
+            onTap: () => Navigator.pop(context, 'pdf'),
+          ),
+          ListTile(
+            title: Text(l10n.exportFormatExcel),
+            onTap: () => Navigator.pop(context, 'excel'),
+          ),
+          ListTile(
+            title: Text(l10n.exportFormatCsv),
+            onTap: () => Navigator.pop(context, 'csv'),
+          ),
         ],
       ),
     ),
@@ -42,7 +54,9 @@ Future<void> showExportSheet(
     final path = await ref
         .read(reportExportActionsProvider)
         .export(reportType: reportType, format: format, filters: filters);
-    messenger.showSnackBar(SnackBar(content: Text(l10n.exportSavedToPathMessage(path))));
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.exportSavedToPathMessage(path))),
+    );
   } on ApiException catch (e) {
     messenger.showSnackBar(SnackBar(content: Text(e.message)));
   }

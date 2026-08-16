@@ -20,9 +20,18 @@ Future<void> _pumpGrid(WidgetTester tester) async {
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const Scaffold(body: QuickActionsGrid())),
-      GoRoute(path: '/reminders/new', builder: (_, _) => const Text('Reminder Schedule Screen')),
-      GoRoute(path: '/search', builder: (_, _) => const Text('Global Search Screen')),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const Scaffold(body: QuickActionsGrid()),
+      ),
+      GoRoute(
+        path: '/reminders/new',
+        builder: (_, _) => const Text('Reminder Schedule Screen'),
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (_, _) => const Text('Global Search Screen'),
+      ),
     ],
   );
 
@@ -49,31 +58,40 @@ void main() {
     expect(find.text('Global Search'), findsOneWidget);
   });
 
-  testWidgets('tapping Add Reminder navigates directly to Reminder Scheduling', (tester) async {
-    await _pumpGrid(tester);
+  testWidgets(
+    'tapping Add Reminder navigates directly to Reminder Scheduling',
+    (tester) async {
+      await _pumpGrid(tester);
 
-    await tester.tap(find.text('Add Reminder'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Reminder'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Reminder Schedule Screen'), findsOneWidget);
-  });
+      expect(find.text('Reminder Schedule Screen'), findsOneWidget);
+    },
+  );
 
-  testWidgets('tapping Global Search navigates to the real Global Search screen', (tester) async {
-    await _pumpGrid(tester);
+  testWidgets(
+    'tapping Global Search navigates to the real Global Search screen',
+    (tester) async {
+      await _pumpGrid(tester);
 
-    await tester.tap(find.text('Global Search'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Global Search'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Global Search Screen'), findsOneWidget);
-  });
+      expect(find.text('Global Search Screen'), findsOneWidget);
+    },
+  );
 
-  testWidgets('tapping Add Case opens the entry sheet with both starting points', (tester) async {
-    await _pumpGrid(tester);
+  testWidgets(
+    'tapping Add Case opens the entry sheet with both starting points',
+    (tester) async {
+      await _pumpGrid(tester);
 
-    await tester.tap(find.text('Add Case'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Case'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Existing Customer'), findsOneWidget);
-    expect(find.text('New Customer'), findsOneWidget);
-  });
+      expect(find.text('Existing Customer'), findsOneWidget);
+      expect(find.text('New Customer'), findsOneWidget);
+    },
+  );
 }

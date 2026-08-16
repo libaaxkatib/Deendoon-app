@@ -12,9 +12,11 @@ import 'package:mobile/features/professional_collection/presentation/screens/pro
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
+class _MockProfessionalCollectionRepository extends Mock
+    implements ProfessionalCollectionRepository {}
 
-ProfessionalCollectionRequest _request({required String status}) => ProfessionalCollectionRequest(
+ProfessionalCollectionRequest _request({required String status}) =>
+    ProfessionalCollectionRequest(
       id: '1',
       collectionCaseId: '01CASE',
       referenceNumber: 'PCR-0001',
@@ -35,7 +37,9 @@ void main() {
 
   setUp(() {
     mockRepository = _MockProfessionalCollectionRepository();
-    when(() => mockRepository.fetchAttachments('1')).thenAnswer((_) async => []);
+    when(
+      () => mockRepository.fetchAttachments('1'),
+    ).thenAnswer((_) async => []);
   });
 
   Future<void> pumpScreen(
@@ -45,8 +49,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          professionalCollectionRepositoryProvider.overrideWithValue(mockRepository),
-          attachmentFilePickerProvider.overrideWithValue(() async => pickedFile),
+          professionalCollectionRepositoryProvider.overrideWithValue(
+            mockRepository,
+          ),
+          attachmentFilePickerProvider.overrideWithValue(
+            () async => pickedFile,
+          ),
         ],
         child: const MaterialApp(
           locale: Locale('en'),
@@ -67,83 +75,151 @@ void main() {
   }
 
   testWidgets('renders existing attachments with real fields', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _request(status: 'submitted'));
-    when(() => mockRepository.fetchAttachments('1')).thenAnswer((_) async => const [
-          ProfessionalCollectionAttachment(
-            id: '1',
-            professionalCollectionRequestId: '1',
-            timelineEventId: null,
-            uploadedByUserId: '01USER',
-            originalFilename: 'evidence.pdf',
-            mimeType: 'application/pdf',
-            fileSize: 1500,
-            createdAt: '2026-08-01T00:00:00.000000Z',
-          ),
-        ]);
+    when(
+      () => mockRepository.fetchRequest('1'),
+    ).thenAnswer((_) async => _request(status: 'submitted'));
+    when(() => mockRepository.fetchAttachments('1')).thenAnswer(
+      (_) async => const [
+        ProfessionalCollectionAttachment(
+          id: '1',
+          professionalCollectionRequestId: '1',
+          timelineEventId: null,
+          uploadedByUserId: '01USER',
+          originalFilename: 'evidence.pdf',
+          mimeType: 'application/pdf',
+          fileSize: 1500,
+          createdAt: '2026-08-01T00:00:00.000000Z',
+        ),
+      ],
+    );
 
     await pumpScreen(tester);
 
     expect(find.text('evidence.pdf'), findsOneWidget);
   });
 
-  testWidgets('offers upload when the Request is pre-Assigned (submitted)', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _request(status: 'submitted'));
+  testWidgets('offers upload when the Request is pre-Assigned (submitted)', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchRequest('1'),
+    ).thenAnswer((_) async => _request(status: 'submitted'));
 
     await pumpScreen(tester);
 
-    expect(find.widgetWithText(ElevatedButton, 'Upload Attachment'), findsOneWidget);
+    expect(
+      find.widgetWithText(ElevatedButton, 'Upload Attachment'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('hides upload once the Request is assigned to the recovery team', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _request(status: 'assigned'));
+  testWidgets(
+    'hides upload once the Request is assigned to the recovery team',
+    (tester) async {
+      when(
+        () => mockRepository.fetchRequest('1'),
+      ).thenAnswer((_) async => _request(status: 'assigned'));
 
-    await pumpScreen(tester);
+      await pumpScreen(tester);
 
-    expect(find.widgetWithText(ElevatedButton, 'Upload Attachment'), findsNothing);
-    expect(find.text('Uploading is not available at this stage of the Request.'), findsOneWidget);
-  });
+      expect(
+        find.widgetWithText(ElevatedButton, 'Upload Attachment'),
+        findsNothing,
+      );
+      expect(
+        find.text('Uploading is not available at this stage of the Request.'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('hides upload once the Request is closed', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _request(status: 'closed'));
+    when(
+      () => mockRepository.fetchRequest('1'),
+    ).thenAnswer((_) async => _request(status: 'closed'));
 
     await pumpScreen(tester);
 
-    expect(find.widgetWithText(ElevatedButton, 'Upload Attachment'), findsNothing);
+    expect(
+      find.widgetWithText(ElevatedButton, 'Upload Attachment'),
+      findsNothing,
+    );
   });
 
-  testWidgets('picking a file uploads it and refreshes the list', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _request(status: 'submitted'));
-    when(() => mockRepository.uploadAttachment(id: '1', filePath: '/tmp/evidence.pdf', fileName: 'evidence.pdf'))
-        .thenAnswer((_) async => const ProfessionalCollectionAttachment(
-              id: '1',
-              professionalCollectionRequestId: '1',
-              timelineEventId: null,
-              uploadedByUserId: '01USER',
-              originalFilename: 'evidence.pdf',
-              mimeType: 'application/pdf',
-              fileSize: 1500,
-              createdAt: '2026-08-01T00:00:00.000000Z',
-            ));
+  testWidgets('picking a file uploads it and refreshes the list', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchRequest('1'),
+    ).thenAnswer((_) async => _request(status: 'submitted'));
+    when(
+      () => mockRepository.uploadAttachment(
+        id: '1',
+        filePath: '/tmp/evidence.pdf',
+        fileName: 'evidence.pdf',
+      ),
+    ).thenAnswer(
+      (_) async => const ProfessionalCollectionAttachment(
+        id: '1',
+        professionalCollectionRequestId: '1',
+        timelineEventId: null,
+        uploadedByUserId: '01USER',
+        originalFilename: 'evidence.pdf',
+        mimeType: 'application/pdf',
+        fileSize: 1500,
+        createdAt: '2026-08-01T00:00:00.000000Z',
+      ),
+    );
 
-    await pumpScreen(tester, pickedFile: (path: '/tmp/evidence.pdf', name: 'evidence.pdf'));
+    await pumpScreen(
+      tester,
+      pickedFile: (path: '/tmp/evidence.pdf', name: 'evidence.pdf'),
+    );
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Upload Attachment'));
     await tester.pumpAndSettle();
 
-    verify(() => mockRepository.uploadAttachment(id: '1', filePath: '/tmp/evidence.pdf', fileName: 'evidence.pdf'))
-        .called(1);
+    verify(
+      () => mockRepository.uploadAttachment(
+        id: '1',
+        filePath: '/tmp/evidence.pdf',
+        fileName: 'evidence.pdf',
+      ),
+    ).called(1);
   });
 
-  testWidgets('shows the exact backend error when upload fails', (tester) async {
-    when(() => mockRepository.fetchRequest('1')).thenAnswer((_) async => _request(status: 'submitted'));
-    when(() => mockRepository.uploadAttachment(id: '1', filePath: '/tmp/evidence.pdf', fileName: 'evidence.pdf'))
-        .thenThrow(const ApiException(message: 'The file must be a file of type: pdf, jpg, jpeg, png, doc, docx.'));
+  testWidgets('shows the exact backend error when upload fails', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchRequest('1'),
+    ).thenAnswer((_) async => _request(status: 'submitted'));
+    when(
+      () => mockRepository.uploadAttachment(
+        id: '1',
+        filePath: '/tmp/evidence.pdf',
+        fileName: 'evidence.pdf',
+      ),
+    ).thenThrow(
+      const ApiException(
+        message:
+            'The file must be a file of type: pdf, jpg, jpeg, png, doc, docx.',
+      ),
+    );
 
-    await pumpScreen(tester, pickedFile: (path: '/tmp/evidence.pdf', name: 'evidence.pdf'));
+    await pumpScreen(
+      tester,
+      pickedFile: (path: '/tmp/evidence.pdf', name: 'evidence.pdf'),
+    );
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Upload Attachment'));
     await tester.pumpAndSettle();
 
-    expect(find.text('The file must be a file of type: pdf, jpg, jpeg, png, doc, docx.'), findsOneWidget);
+    expect(
+      find.text(
+        'The file must be a file of type: pdf, jpg, jpeg, png, doc, docx.',
+      ),
+      findsOneWidget,
+    );
   });
 }

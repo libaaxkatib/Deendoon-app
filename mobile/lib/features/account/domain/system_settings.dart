@@ -43,20 +43,26 @@ class SystemSettings {
   });
 
   factory SystemSettings.fromJson(Map<String, dynamic> json) {
-    final notificationSettings = json['notification_settings'] as Map<String, dynamic>?;
+    final notificationSettings =
+        json['notification_settings'] as Map<String, dynamic>?;
 
     return SystemSettings(
       id: json['id'].toString(),
       defaultCreditLimit: json['default_credit_limit'].toString(),
       creditLimitReminderEnabled: json['credit_limit_reminder_enabled'] as bool,
-      softLimitWarningThreshold: json['soft_limit_warning_threshold']?.toString(),
+      softLimitWarningThreshold: json['soft_limit_warning_threshold']
+          ?.toString(),
       whatsappReminderDays: _intList(json['whatsapp_reminder_days']),
       smsReminderDays: _intList(json['sms_reminder_days']),
       callReminderDays: _intList(json['call_reminder_days']),
-      professionalCollectionThresholdDays: (json['professional_collection_threshold_days'] as num?)?.toInt(),
-      pushNotificationsEnabled: notificationSettings?['push_enabled'] as bool? ?? false,
-      reminderNotificationsEnabled: notificationSettings?['reminder_enabled'] as bool? ?? false,
-      paymentNotificationsEnabled: notificationSettings?['payment_enabled'] as bool? ?? false,
+      professionalCollectionThresholdDays:
+          (json['professional_collection_threshold_days'] as num?)?.toInt(),
+      pushNotificationsEnabled:
+          notificationSettings?['push_enabled'] as bool? ?? false,
+      reminderNotificationsEnabled:
+          notificationSettings?['reminder_enabled'] as bool? ?? false,
+      paymentNotificationsEnabled:
+          notificationSettings?['payment_enabled'] as bool? ?? false,
     );
   }
 

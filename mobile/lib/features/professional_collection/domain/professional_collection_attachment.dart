@@ -23,14 +23,17 @@ class ProfessionalCollectionAttachment {
     required this.createdAt,
   });
 
-  factory ProfessionalCollectionAttachment.fromJson(Map<String, dynamic> json) => ProfessionalCollectionAttachment(
-        id: json['id'].toString(),
-        professionalCollectionRequestId: json['professional_collection_request_id'].toString(),
-        timelineEventId: json['timeline_event_id']?.toString(),
-        uploadedByUserId: json['uploaded_by_user_id']?.toString(),
-        originalFilename: json['original_filename'] as String,
-        mimeType: json['mime_type'] as String,
-        fileSize: json['file_size'] as int,
-        createdAt: json['created_at'] as String,
-      );
+  factory ProfessionalCollectionAttachment.fromJson(
+    Map<String, dynamic> json,
+  ) => ProfessionalCollectionAttachment(
+    id: json['id'].toString(),
+    professionalCollectionRequestId: json['professional_collection_request_id']
+        .toString(),
+    timelineEventId: json['timeline_event_id']?.toString(),
+    uploadedByUserId: json['uploaded_by_user_id']?.toString(),
+    originalFilename: json['original_filename'] as String,
+    mimeType: json['mime_type'] as String,
+    fileSize: json['file_size'] as int,
+    createdAt: json['created_at'] as String,
+  );
 }

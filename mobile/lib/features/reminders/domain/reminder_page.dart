@@ -20,7 +20,9 @@ class ReminderPage {
     final pagination = json['pagination'] as Map<String, dynamic>;
     final items = json['reminders'] as List<dynamic>;
     return ReminderPage(
-      reminders: items.map((e) => Reminder.fromJson(e as Map<String, dynamic>)).toList(),
+      reminders: items
+          .map((e) => Reminder.fromJson(e as Map<String, dynamic>))
+          .toList(),
       currentPage: pagination['current_page'] as int,
       lastPage: pagination['last_page'] as int,
       total: pagination['total'] as int,

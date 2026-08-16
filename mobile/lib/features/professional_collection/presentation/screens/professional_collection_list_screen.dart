@@ -12,16 +12,16 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/professional_collection_list_provider.dart';
 
 Map<String?, String> _statusFilters(AppLocalizations l10n) => <String?, String>{
-      null: l10n.debtListFilterAll,
-      'submitted': l10n.statusSubmitted,
-      'under_review': l10n.statusUnderReview,
-      'need_more_information': l10n.statusNeedMoreInformation,
-      'accepted': l10n.statusAccepted,
-      'assigned': l10n.statusAssigned,
-      'in_progress': l10n.statusInProgress,
-      'recovered': l10n.statusRecovered,
-      'closed': l10n.statusClosed,
-    };
+  null: l10n.debtListFilterAll,
+  'submitted': l10n.statusSubmitted,
+  'under_review': l10n.statusUnderReview,
+  'need_more_information': l10n.statusNeedMoreInformation,
+  'accepted': l10n.statusAccepted,
+  'assigned': l10n.statusAssigned,
+  'in_progress': l10n.statusInProgress,
+  'recovered': l10n.statusRecovered,
+  'closed': l10n.statusClosed,
+};
 
 /// Professional Collection Requests List — tenant-wide, reached from the
 /// Cases tab (mirrors the existing "Browse Customers" icon pattern on
@@ -34,10 +34,12 @@ class ProfessionalCollectionListScreen extends ConsumerStatefulWidget {
   const ProfessionalCollectionListScreen({super.key});
 
   @override
-  ConsumerState<ProfessionalCollectionListScreen> createState() => _ProfessionalCollectionListScreenState();
+  ConsumerState<ProfessionalCollectionListScreen> createState() =>
+      _ProfessionalCollectionListScreenState();
 }
 
-class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalCollectionListScreen> {
+class _ProfessionalCollectionListScreenState
+    extends ConsumerState<ProfessionalCollectionListScreen> {
   final _scrollController = ScrollController();
 
   @override
@@ -54,7 +56,8 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(professionalCollectionListProvider.notifier).loadMore();
     }
   }
@@ -80,7 +83,9 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                     _StatusFilterChip(
                       label: entry.value,
                       selected: requestsAsync.valueOrNull?.status == entry.key,
-                      onTap: () => ref.read(professionalCollectionListProvider.notifier).filterByStatus(entry.key),
+                      onTap: () => ref
+                          .read(professionalCollectionListProvider.notifier)
+                          .filterByStatus(entry.key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -94,7 +99,8 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                 error: (error, _) => Center(
                   child: RetrySection(
                     message: l10n.professionalCollectionListLoadError,
-                    onRetry: () => ref.invalidate(professionalCollectionListProvider),
+                    onRetry: () =>
+                        ref.invalidate(professionalCollectionListProvider),
                   ),
                 ),
                 data: (state) {
@@ -104,27 +110,46 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                         state.status == null
                             ? l10n.professionalCollectionListEmptyState
                             : l10n.professionalCollectionListEmptyFilteredState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(professionalCollectionListProvider.notifier).refresh(),
+                    onRefresh: () => ref
+                        .read(professionalCollectionListProvider.notifier)
+                        .refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
-                      itemCount: state.requests.length + (state.hasMore ? 1 : 0),
+                      itemCount:
+                          state.requests.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.requests.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(
+                                            professionalCollectionListProvider
+                                                .notifier,
+                                          )
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final request = state.requests[index];
                         return AppCard(
-                          onTap: () => context.push('/professional-requests/${request.id}'),
+                          onTap: () => context.push(
+                            '/professional-requests/${request.id}',
+                          ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -134,12 +159,16 @@ class _ProfessionalCollectionListScreenState extends ConsumerState<ProfessionalC
                                   children: [
                                     Text(
                                       request.referenceNumber,
-                                      style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                                      style: AppTypography.body.copyWith(
+                                        color: context.colors.textPrimary,
+                                      ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       request.createdAt.split('T').first,
-                                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                                      style: AppTypography.caption.copyWith(
+                                        color: context.colors.textSecondary,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -167,7 +196,11 @@ class _StatusFilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _StatusFilterChip({required this.label, required this.selected, required this.onTap});
+  const _StatusFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +209,9 @@ class _StatusFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

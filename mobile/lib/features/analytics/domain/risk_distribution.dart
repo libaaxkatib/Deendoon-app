@@ -14,10 +14,10 @@ class RiskSegment {
   });
 
   factory RiskSegment.fromJson(Map<String, dynamic> json) => RiskSegment(
-        riskLevel: json['risk_level'] as String,
-        customerCount: json['customer_count'] as int,
-        percentage: (json['percentage'] as num).toDouble(),
-      );
+    riskLevel: json['risk_level'] as String,
+    customerCount: json['customer_count'] as int,
+    percentage: (json['percentage'] as num).toDouble(),
+  );
 }
 
 class RiskDistribution {
@@ -28,7 +28,9 @@ class RiskDistribution {
   factory RiskDistribution.fromJson(Map<String, dynamic> json) {
     final segments = json['segments'] as List<dynamic>;
     return RiskDistribution(
-      segments: segments.map((e) => RiskSegment.fromJson(e as Map<String, dynamic>)).toList(),
+      segments: segments
+          .map((e) => RiskSegment.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

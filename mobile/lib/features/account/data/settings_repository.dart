@@ -5,8 +5,9 @@ import '../../../core/network/api_exception.dart';
 import '../domain/system_settings.dart';
 import 'settings_api.dart';
 
-final settingsRepositoryProvider =
-    Provider<SettingsRepository>((ref) => SettingsRepository(ref.read(settingsApiProvider)));
+final settingsRepositoryProvider = Provider<SettingsRepository>(
+  (ref) => SettingsRepository(ref.read(settingsApiProvider)),
+);
 
 class SettingsRepository {
   final SettingsApi _api;
@@ -25,19 +26,20 @@ class SettingsRepository {
     required bool pushNotificationsEnabled,
     required bool reminderNotificationsEnabled,
     required bool paymentNotificationsEnabled,
-  }) =>
-      _guard(() => _api.update(
-            defaultCreditLimit: defaultCreditLimit,
-            creditLimitReminderEnabled: creditLimitReminderEnabled,
-            softLimitWarningThreshold: softLimitWarningThreshold,
-            whatsappReminderDays: whatsappReminderDays,
-            smsReminderDays: smsReminderDays,
-            callReminderDays: callReminderDays,
-            professionalCollectionThresholdDays: professionalCollectionThresholdDays,
-            pushNotificationsEnabled: pushNotificationsEnabled,
-            reminderNotificationsEnabled: reminderNotificationsEnabled,
-            paymentNotificationsEnabled: paymentNotificationsEnabled,
-          ));
+  }) => _guard(
+    () => _api.update(
+      defaultCreditLimit: defaultCreditLimit,
+      creditLimitReminderEnabled: creditLimitReminderEnabled,
+      softLimitWarningThreshold: softLimitWarningThreshold,
+      whatsappReminderDays: whatsappReminderDays,
+      smsReminderDays: smsReminderDays,
+      callReminderDays: callReminderDays,
+      professionalCollectionThresholdDays: professionalCollectionThresholdDays,
+      pushNotificationsEnabled: pushNotificationsEnabled,
+      reminderNotificationsEnabled: reminderNotificationsEnabled,
+      paymentNotificationsEnabled: paymentNotificationsEnabled,
+    ),
+  );
 
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {

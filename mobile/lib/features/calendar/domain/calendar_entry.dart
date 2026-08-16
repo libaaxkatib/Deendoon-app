@@ -28,10 +28,10 @@ class CalendarEntry {
   });
 
   factory CalendarEntry.fromJson(Map<String, dynamic> json) => CalendarEntry(
-        type: json['type'] as String,
-        date: json['date'] as String,
-        relatedEntityType: json['related_entity_type'] as String,
-        relatedEntityId: json['related_entity_id'].toString(),
-        label: json['label'] as String?,
-      );
+    type: json['type'] as String,
+    date: json['date'] as String,
+    relatedEntityType: json['related_entity_type'] as String,
+    relatedEntityId: json['related_entity_id'].toString(),
+    label: json['label'] as String?,
+  );
 }

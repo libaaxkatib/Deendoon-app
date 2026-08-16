@@ -11,9 +11,9 @@ class AgingBucket {
   const AgingBucket({required this.count, required this.totalRemainingBalance});
 
   factory AgingBucket.fromJson(Map<String, dynamic> json) => AgingBucket(
-        count: json['count'] as int,
-        totalRemainingBalance: json['total_remaining_balance'] as String,
-      );
+    count: json['count'] as int,
+    totalRemainingBalance: json['total_remaining_balance'] as String,
+  );
 }
 
 /// A `DebtResource` row from `GET /reports/aging-analysis`, with the
@@ -26,9 +26,9 @@ class AgingDebt {
   const AgingDebt({required this.debt, required this.agingBucket});
 
   factory AgingDebt.fromJson(Map<String, dynamic> json) => AgingDebt(
-        debt: Debt.fromJson(json),
-        agingBucket: json['aging_bucket'] as String,
-      );
+    debt: Debt.fromJson(json),
+    agingBucket: json['aging_bucket'] as String,
+  );
 }
 
 /// `buckets` totals are computed over every matching open debt regardless
@@ -57,8 +57,13 @@ class AgingAnalysis {
     final debts = json['debts'] as List<dynamic>;
     final pagination = json['pagination'] as Map<String, dynamic>;
     return AgingAnalysis(
-      buckets: buckets.map((key, value) => MapEntry(key, AgingBucket.fromJson(value as Map<String, dynamic>))),
-      debts: debts.map((e) => AgingDebt.fromJson(e as Map<String, dynamic>)).toList(),
+      buckets: buckets.map(
+        (key, value) =>
+            MapEntry(key, AgingBucket.fromJson(value as Map<String, dynamic>)),
+      ),
+      debts: debts
+          .map((e) => AgingDebt.fromJson(e as Map<String, dynamic>))
+          .toList(),
       currentPage: pagination['current_page'] as int,
       lastPage: pagination['last_page'] as int,
       total: pagination['total'] as int,
@@ -69,12 +74,18 @@ class AgingAnalysis {
 /// The 5 real bucket keys, in the exact order the approved UI board lists
 /// them (§5.5) — used to drive both the donut segments and the legend
 /// rows, so the two never drift out of sync.
-const agingBucketOrder = <String>['current', '1_30', '31_60', '61_90', 'over_90'];
+const agingBucketOrder = <String>[
+  'current',
+  '1_30',
+  '31_60',
+  '61_90',
+  'over_90',
+];
 
 Map<String, String> agingBucketLabels(AppLocalizations l10n) => {
-      'current': l10n.agingBucketCurrentLabel,
-      '1_30': l10n.agingBucket1To30Label,
-      '31_60': l10n.agingBucket31To60Label,
-      '61_90': l10n.agingBucket61To90Label,
-      'over_90': l10n.agingBucketOver90Label,
-    };
+  'current': l10n.agingBucketCurrentLabel,
+  '1_30': l10n.agingBucket1To30Label,
+  '31_60': l10n.agingBucket31To60Label,
+  '61_90': l10n.agingBucket61To90Label,
+  'over_90': l10n.agingBucketOver90Label,
+};

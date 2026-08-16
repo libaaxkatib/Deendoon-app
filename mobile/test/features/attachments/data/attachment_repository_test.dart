@@ -28,11 +28,18 @@ void main() {
     repository = AttachmentRepository(mockApi);
   });
 
-  test('fetchAttachments delegates the entity path prefix to the api', () async {
-    when(() => mockApi.list('customers/01CUST')).thenAnswer((_) async => [_attachment]);
+  test(
+    'fetchAttachments delegates the entity path prefix to the api',
+    () async {
+      when(
+        () => mockApi.list('customers/01CUST'),
+      ).thenAnswer((_) async => [_attachment]);
 
-    expect(await repository.fetchAttachments('customers/01CUST'), [_attachment]);
-  });
+      expect(await repository.fetchAttachments('customers/01CUST'), [
+        _attachment,
+      ]);
+    },
+  );
 
   test('fetchAttachments throws ApiException on failure', () async {
     when(() => mockApi.list('customers/01CUST')).thenThrow(
@@ -41,7 +48,12 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: '/customers/01CUST/attachments'),
           statusCode: 404,
-          data: {'success': false, 'message': 'Not found.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'Not found.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -49,41 +61,55 @@ void main() {
 
     expect(
       () => repository.fetchAttachments('customers/01CUST'),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 404)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 404),
+      ),
     );
   });
 
-  test('uploadAttachment delegates the exact file path, name, and description to the api', () async {
-    when(() => mockApi.upload(
+  test(
+    'uploadAttachment delegates the exact file path, name, and description to the api',
+    () async {
+      when(
+        () => mockApi.upload(
           entityPathPrefix: 'customers/01CUST',
           filePath: '/tmp/id-card.pdf',
           fileName: 'id-card.pdf',
           description: 'ID card',
-        )).thenAnswer((_) async => _attachment);
+        ),
+      ).thenAnswer((_) async => _attachment);
 
-    final result = await repository.uploadAttachment(
-      entityPathPrefix: 'customers/01CUST',
-      filePath: '/tmp/id-card.pdf',
-      fileName: 'id-card.pdf',
-      description: 'ID card',
-    );
+      final result = await repository.uploadAttachment(
+        entityPathPrefix: 'customers/01CUST',
+        filePath: '/tmp/id-card.pdf',
+        fileName: 'id-card.pdf',
+        description: 'ID card',
+      );
 
-    expect(result, _attachment);
-  });
+      expect(result, _attachment);
+    },
+  );
 
   test('uploadAttachment throws ApiException on a read-only 403', () async {
-    when(() => mockApi.upload(
-          entityPathPrefix: 'customers/01CUST',
-          filePath: '/tmp/id-card.pdf',
-          fileName: 'id-card.pdf',
-          description: null,
-        )).thenThrow(
+    when(
+      () => mockApi.upload(
+        entityPathPrefix: 'customers/01CUST',
+        filePath: '/tmp/id-card.pdf',
+        fileName: 'id-card.pdf',
+        description: null,
+      ),
+    ).thenThrow(
       DioException(
         requestOptions: RequestOptions(path: '/customers/01CUST/attachments'),
         response: Response(
           requestOptions: RequestOptions(path: '/customers/01CUST/attachments'),
           statusCode: 403,
-          data: {'success': false, 'message': 'This action is unauthorized.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'This action is unauthorized.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -95,7 +121,52 @@ void main() {
         filePath: '/tmp/id-card.pdf',
         fileName: 'id-card.pdf',
       ),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403),
+      ),
     );
   });
+
+  test('deleteAttachment delegates to the api', () async {
+    when(
+      () => mockApi.delete('customers/01CUST', '1'),
+    ).thenAnswer((_) async {});
+
+    await repository.deleteAttachment('customers/01CUST', '1');
+
+    verify(() => mockApi.delete('customers/01CUST', '1')).called(1);
+  });
+
+  test(
+    'deleteAttachment throws ApiException on a 403 (not the uploader)',
+    () async {
+      when(() => mockApi.delete('customers/01CUST', '1')).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(
+            path: '/customers/01CUST/attachments/1',
+          ),
+          response: Response(
+            requestOptions: RequestOptions(
+              path: '/customers/01CUST/attachments/1',
+            ),
+            statusCode: 403,
+            data: {
+              'success': false,
+              'message': 'This action is unauthorized.',
+              'data': null,
+              'errors': null,
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      expect(
+        () => repository.deleteAttachment('customers/01CUST', '1'),
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403),
+        ),
+      );
+    },
+  );
 }

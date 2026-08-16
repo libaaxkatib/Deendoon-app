@@ -26,21 +26,31 @@ import '../providers/professional_collection_detail_providers.dart';
 class ProfessionalCollectionDetailScreen extends ConsumerWidget {
   final String requestId;
 
-  const ProfessionalCollectionDetailScreen({super.key, required this.requestId});
+  const ProfessionalCollectionDetailScreen({
+    super.key,
+    required this.requestId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final requestAsync = ref.watch(professionalCollectionDetailProvider(requestId));
+    final requestAsync = ref.watch(
+      professionalCollectionDetailProvider(requestId),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(requestAsync.valueOrNull?.referenceNumber ?? l10n.professionalCollectionDetailTitle),
+        title: Text(
+          requestAsync.valueOrNull?.referenceNumber ??
+              l10n.professionalCollectionDetailTitle,
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(professionalCollectionDetailProvider(requestId));
-          await ref.read(professionalCollectionDetailProvider(requestId).future);
+          await ref.read(
+            professionalCollectionDetailProvider(requestId).future,
+          );
         },
         child: requestAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -49,7 +59,9 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               child: RetrySection(
                 message: l10n.professionalCollectionDetailLoadError,
-                onRetry: () => ref.invalidate(professionalCollectionDetailProvider(requestId)),
+                onRetry: () => ref.invalidate(
+                  professionalCollectionDetailProvider(requestId),
+                ),
               ),
             ),
           ),
@@ -65,16 +77,24 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                       children: [
                         Text(
                           request.referenceNumber,
-                          style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                          style: AppTypography.subheading.copyWith(
+                            color: context.colors.textPrimary,
+                          ),
                         ),
                         StatusBadge(status: request.status),
                       ],
                     ),
                     Divider(height: 32, color: context.colors.background),
-                    _InfoRow(label: l10n.professionalCollectionSubmittedByLabel, value: request.submittedByUserId),
+                    _InfoRow(
+                      label: l10n.professionalCollectionSubmittedByLabel,
+                      value: request.submittedByUserId,
+                    ),
                     if (request.actionedByUserId != null) ...[
                       const SizedBox(height: 12),
-                      _InfoRow(label: l10n.professionalCollectionActionedByLabel, value: request.actionedByUserId!),
+                      _InfoRow(
+                        label: l10n.professionalCollectionActionedByLabel,
+                        value: request.actionedByUserId!,
+                      ),
                     ],
                     const SizedBox(height: 12),
                     _InfoRow(
@@ -91,14 +111,16 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                     if (request.declarationAcceptedAt != null) ...[
                       const SizedBox(height: 12),
                       _InfoRow(
-                        label: l10n.professionalCollectionDeclarationAcceptedLabel,
+                        label:
+                            l10n.professionalCollectionDeclarationAcceptedLabel,
                         value: request.declarationAcceptedAt!.split('T').first,
                       ),
                     ],
                     if (request.declarationAcceptedBy != null) ...[
                       const SizedBox(height: 12),
                       _InfoRow(
-                        label: l10n.professionalCollectionDeclarationAcceptedByLabel,
+                        label: l10n
+                            .professionalCollectionDeclarationAcceptedByLabel,
                         value: request.declarationAcceptedBy!,
                       ),
                     ],
@@ -108,49 +130,71 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               Text(
                 l10n.professionalCollectionReasonsForTransferHeading,
-                style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                style: AppTypography.heading.copyWith(
+                  color: context.colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               if (request.reasons.isEmpty)
-                UnavailableSection(reason: l10n.professionalCollectionNoReasonsRecorded)
+                UnavailableSection(
+                  reason: l10n.professionalCollectionNoReasonsRecorded,
+                )
               else
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [for (final reason in request.reasons) Chip(label: Text(reason))],
+                  children: [
+                    for (final reason in request.reasons)
+                      Chip(label: Text(reason)),
+                  ],
                 ),
               const SizedBox(height: 24),
               Text(
                 l10n.professionalCollectionRequestedServicesHeading,
-                style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                style: AppTypography.heading.copyWith(
+                  color: context.colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               if (request.requestedServices.isEmpty)
-                UnavailableSection(reason: l10n.professionalCollectionNoRequestedServicesRecorded)
+                UnavailableSection(
+                  reason:
+                      l10n.professionalCollectionNoRequestedServicesRecorded,
+                )
               else
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [for (final service in request.requestedServices) Chip(label: Text(service))],
+                  children: [
+                    for (final service in request.requestedServices)
+                      Chip(label: Text(service)),
+                  ],
                 ),
               const SizedBox(height: 24),
               Text(
                 l10n.addEditDebtNotesHeading,
-                style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                style: AppTypography.heading.copyWith(
+                  color: context.colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               if (request.notes == null || request.notes!.trim().isEmpty)
-                UnavailableSection(reason: l10n.professionalCollectionNoNotesRecorded)
+                UnavailableSection(
+                  reason: l10n.professionalCollectionNoNotesRecorded,
+                )
               else
                 AppCard(
                   child: Text(
                     request.notes!,
-                    style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                    style: AppTypography.body.copyWith(
+                      color: context.colors.textPrimary,
+                    ),
                   ),
                 ),
               const SizedBox(height: 16),
               OutlinedButton(
-                onPressed: () => context.push('/cases/${request.collectionCaseId}'),
+                onPressed: () =>
+                    context.push('/cases/${request.collectionCaseId}'),
                 child: Text(l10n.professionalCollectionViewCaseButton),
               ),
               const SizedBox(height: 12),
@@ -158,14 +202,18 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => context.push('/professional-requests/$requestId/documents'),
+                      onPressed: () => context.push(
+                        '/professional-requests/$requestId/documents',
+                      ),
                       child: Text(l10n.navDocuments),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => context.push('/professional-requests/$requestId/attachments'),
+                      onPressed: () => context.push(
+                        '/professional-requests/$requestId/attachments',
+                      ),
                       child: Text(l10n.customerDetailAttachmentsButton),
                     ),
                   ),
@@ -173,12 +221,14 @@ class ProfessionalCollectionDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => context.push('/professional-requests/$requestId/timeline'),
+                onPressed: () =>
+                    context.push('/professional-requests/$requestId/timeline'),
                 child: Text(l10n.professionalCollectionViewTimelineButton),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () => context.push('/professional-requests/$requestId/messages'),
+                onPressed: () =>
+                    context.push('/professional-requests/$requestId/messages'),
                 child: Text(l10n.professionalCollectionViewMessagesButton),
               ),
             ],
@@ -200,7 +250,12 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

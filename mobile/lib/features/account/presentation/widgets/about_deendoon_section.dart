@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -10,7 +11,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/app_card.dart';
-import '../../../../core/widgets/coming_soon.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
 /// Profile screen's "About Deendoon" section. Version and build number are
@@ -23,10 +23,9 @@ import '../../../../l10n/generated/app_localizations.dart';
 /// listing for this app's actual package id on Android (constructed from
 /// `package_info_plus`, not invented) — iOS shows an honest "not yet
 /// published" message until an App Store ID is assigned post-submission.
-/// Contact Support stays on the app's `showComingSoon` convention: no real
-/// support email/phone/WhatsApp number exists anywhere in this project yet,
-/// and wiring one up would mean inventing a destination nobody actually
-/// monitors — this is a pending Product Owner decision, not a build gap.
+/// Contact Support now opens the real Support & Tickets module (Module 7,
+/// Decision 10) — the Product Owner has since approved real static
+/// contact numbers/email, and a real ticket system exists to route to.
 ///
 /// The brand mark is the real logo asset (`assets/deendoon_logo.png`,
 /// declared in `pubspec.yaml`) rather than a text wordmark or placeholder.
@@ -42,21 +41,29 @@ class AboutDeendoonSection extends StatelessWidget {
   Future<void> _rateApp(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final isIOS = !kIsWeb && (Platform.isIOS || defaultTargetPlatform == TargetPlatform.iOS);
+    final isIOS =
+        !kIsWeb &&
+        (Platform.isIOS || defaultTargetPlatform == TargetPlatform.iOS);
     if (isIOS) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.aboutDeendoonNotPublishedMessage)));
+        ..showSnackBar(
+          SnackBar(content: Text(l10n.aboutDeendoonNotPublishedMessage)),
+        );
       return;
     }
 
     final info = await PackageInfo.fromPlatform();
-    final uri = Uri.parse('https://play.google.com/store/apps/details?id=${info.packageName}');
+    final uri = Uri.parse(
+      'https://play.google.com/store/apps/details?id=${info.packageName}',
+    );
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.aboutDeendoonPlayStoreOpenError)));
+        ..showSnackBar(
+          SnackBar(content: Text(l10n.aboutDeendoonPlayStoreOpenError)),
+        );
     }
   }
 
@@ -87,7 +94,9 @@ class AboutDeendoonSection extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 l10n.aboutDeendoonTagline,
-                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                style: AppTypography.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -98,21 +107,30 @@ class AboutDeendoonSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionHeader(icon: Icons.info_outline, title: l10n.aboutDeendoonIntroHeading),
+              _SectionHeader(
+                icon: Icons.info_outline,
+                title: l10n.aboutDeendoonIntroHeading,
+              ),
               const SizedBox(height: 12),
               Text(
                 l10n.aboutDeendoonIntroParagraph1,
-                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 l10n.aboutDeendoonIntroParagraph2,
-                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 l10n.aboutDeendoonIntroParagraph3,
-                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -122,7 +140,10 @@ class AboutDeendoonSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionHeader(icon: Icons.star, title: l10n.aboutDeendoonBenefitsHeading),
+              _SectionHeader(
+                icon: Icons.star,
+                title: l10n.aboutDeendoonBenefitsHeading,
+              ),
               const SizedBox(height: 4),
               _BulletItem(l10n.aboutDeendoonBenefit1),
               _BulletItem(l10n.aboutDeendoonBenefit2),
@@ -138,11 +159,16 @@ class AboutDeendoonSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionHeader(icon: Icons.check_circle, title: l10n.aboutDeendoonConclusionHeading),
+              _SectionHeader(
+                icon: Icons.check_circle,
+                title: l10n.aboutDeendoonConclusionHeading,
+              ),
               const SizedBox(height: 12),
               Text(
                 l10n.aboutDeendoonConclusionParagraph,
-                style: AppTypography.body.copyWith(color: context.colors.textSecondary),
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -152,7 +178,10 @@ class AboutDeendoonSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionHeader(icon: Icons.info_outline, title: l10n.aboutDeendoonInfoHeading),
+              _SectionHeader(
+                icon: Icons.info_outline,
+                title: l10n.aboutDeendoonInfoHeading,
+              ),
               const SizedBox(height: 12),
               FutureBuilder<PackageInfo>(
                 future: PackageInfo.fromPlatform(),
@@ -160,9 +189,15 @@ class AboutDeendoonSection extends StatelessWidget {
                   final info = snapshot.data;
                   return Column(
                     children: [
-                      _InfoRow(label: l10n.aboutDeendoonVersionLabel, value: info?.version ?? '—'),
+                      _InfoRow(
+                        label: l10n.aboutDeendoonVersionLabel,
+                        value: info?.version ?? '—',
+                      ),
                       const SizedBox(height: 8),
-                      _InfoRow(label: l10n.aboutDeendoonBuildNumberLabel, value: info?.buildNumber ?? '—'),
+                      _InfoRow(
+                        label: l10n.aboutDeendoonBuildNumberLabel,
+                        value: info?.buildNumber ?? '—',
+                      ),
                     ],
                   );
                 },
@@ -200,7 +235,7 @@ class AboutDeendoonSection extends StatelessWidget {
             _AboutRow(
               icon: Icons.support_agent_outlined,
               label: l10n.aboutDeendoonContactSupportLabel,
-              onTap: () => showComingSoon(context, l10n.aboutDeendoonContactSupportLabel),
+              onTap: () => context.push('/support/tickets'),
             ),
             _AboutRow(
               icon: Icons.star_outline,
@@ -233,7 +268,11 @@ class _MenuGroup extends StatelessWidget {
           for (final row in children) ...[
             row,
             if (!row.isLast)
-              Divider(height: 1, indent: 56, color: context.colors.textSecondary.withValues(alpha: 0.12)),
+              Divider(
+                height: 1,
+                indent: 56,
+                color: context.colors.textSecondary.withValues(alpha: 0.12),
+              ),
           ],
         ],
       ),
@@ -247,7 +286,12 @@ class _AboutRow extends StatelessWidget {
   final VoidCallback onTap;
   final bool isLast;
 
-  const _AboutRow({required this.icon, required this.label, required this.onTap, this.isLast = false});
+  const _AboutRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isLast = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -259,8 +303,19 @@ class _AboutRow extends StatelessWidget {
           children: [
             Icon(icon, color: context.colors.textSecondary, size: 20),
             const SizedBox(width: 16),
-            Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
-            Icon(Icons.chevron_right, size: 20, color: context.colors.textSecondary),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textPrimary,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: context.colors.textSecondary,
+            ),
           ],
         ),
       ),
@@ -285,7 +340,10 @@ class _SectionHeader extends StatelessWidget {
         Container(
           width: 26,
           height: 26,
-          decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
+          decoration: const BoxDecoration(
+            color: AppColors.success,
+            shape: BoxShape.circle,
+          ),
           child: Icon(icon, color: Colors.white, size: 15),
         ),
         const SizedBox(width: 10),
@@ -321,11 +379,21 @@ class _BulletItem extends StatelessWidget {
             width: 20,
             height: 20,
             margin: const EdgeInsets.only(top: 1),
-            decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: AppColors.success,
+              shape: BoxShape.circle,
+            ),
             child: const Icon(Icons.check, color: Colors.white, size: 13),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(text, style: AppTypography.body.copyWith(color: context.colors.textSecondary))),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -345,11 +413,18 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.body.copyWith(color: context.colors.textSecondary)),
+        Text(
+          label,
+          style: AppTypography.body.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
         Flexible(
           child: Text(
             value,
-            style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+            style: AppTypography.body.copyWith(
+              color: context.colors.textPrimary,
+            ),
             textAlign: TextAlign.right,
           ),
         ),

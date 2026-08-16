@@ -5,7 +5,9 @@ import '../../data/customer_import_repository.dart';
 import '../../domain/customer_import_state.dart';
 
 final customerImportProvider =
-    NotifierProvider<CustomerImportNotifier, CustomerImportState>(CustomerImportNotifier.new);
+    NotifierProvider<CustomerImportNotifier, CustomerImportState>(
+      CustomerImportNotifier.new,
+    );
 
 /// The backend's `ImportCustomersRequest` accepts only these two
 /// extensions (`mimes:xlsx,xls`) — `.csv` is not supported server-side
@@ -16,7 +18,8 @@ class CustomerImportNotifier extends Notifier<CustomerImportState> {
   @override
   CustomerImportState build() => const ImportInitial();
 
-  CustomerImportRepository get _repository => ref.read(customerImportRepositoryProvider);
+  CustomerImportRepository get _repository =>
+      ref.read(customerImportRepositoryProvider);
 
   void selectFile({
     required String path,
@@ -24,7 +27,9 @@ class CustomerImportNotifier extends Notifier<CustomerImportState> {
     required int size,
     required String unsupportedFileTypeMessage,
   }) {
-    final extension = name.contains('.') ? name.split('.').last.toLowerCase() : '';
+    final extension = name.contains('.')
+        ? name.split('.').last.toLowerCase()
+        : '';
     if (!importAllowedExtensions.contains(extension)) {
       state = ImportFailed(message: unsupportedFileTypeMessage);
       return;
@@ -47,7 +52,10 @@ class CustomerImportNotifier extends Notifier<CustomerImportState> {
 
     state = ImportRunning(fileName: current.fileName);
     try {
-      final preview = await _repository.previewImport(filePath: current.filePath, fileName: current.fileName);
+      final preview = await _repository.previewImport(
+        filePath: current.filePath,
+        fileName: current.fileName,
+      );
       final result = await _repository.commitImport(batchId: preview.batchId);
       state = ImportSucceeded(preview: preview, result: result);
     } on ApiException catch (e) {

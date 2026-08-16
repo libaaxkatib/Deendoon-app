@@ -32,14 +32,22 @@ class CaseListScreen extends ConsumerStatefulWidget {
 class _CaseListScreenState extends ConsumerState<CaseListScreen> {
   final _scrollController = ScrollController();
 
-  static const _tabKeys = <String?>[null, 'high_risk', 'follow_up', 'promise_due'];
+  static const _tabKeys = <String?>[
+    null,
+    'high_risk',
+    'follow_up',
+    'promise_due',
+  ];
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     if (widget.initialTab != null) {
-      Future.microtask(() => ref.read(caseListProvider.notifier).filterByTab(widget.initialTab));
+      Future.microtask(
+        () =>
+            ref.read(caseListProvider.notifier).filterByTab(widget.initialTab),
+      );
     }
   }
 
@@ -51,7 +59,8 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(caseListProvider.notifier).loadMore();
     }
   }
@@ -97,7 +106,8 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
                     _TabFilterChip(
                       label: tabLabels[key]!,
                       selected: casesAsync.valueOrNull?.tab == key,
-                      onTap: () => ref.read(caseListProvider.notifier).filterByTab(key),
+                      onTap: () =>
+                          ref.read(caseListProvider.notifier).filterByTab(key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -118,23 +128,37 @@ class _CaseListScreenState extends ConsumerState<CaseListScreen> {
                   if (state.cases.isEmpty) {
                     return Center(
                       child: Text(
-                        state.tab == null ? l10n.customerCasesEmptyState : l10n.caseListEmptyFilteredState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        state.tab == null
+                            ? l10n.customerCasesEmptyState
+                            : l10n.caseListEmptyFilteredState,
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(caseListProvider.notifier).refresh(),
+                    onRefresh: () =>
+                        ref.read(caseListProvider.notifier).refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
                       itemCount: state.cases.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.cases.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(caseListProvider.notifier)
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final item = state.cases[index];
@@ -161,7 +185,11 @@ class _TabFilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabFilterChip({required this.label, required this.selected, required this.onTap});
+  const _TabFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +198,9 @@ class _TabFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

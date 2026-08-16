@@ -38,10 +38,15 @@ class AddEditCustomerScreen extends ConsumerStatefulWidget {
   /// screen/fields/validation rather than a duplicate form.
   final bool deferSubmit;
 
-  const AddEditCustomerScreen({super.key, this.customerId, this.deferSubmit = false});
+  const AddEditCustomerScreen({
+    super.key,
+    this.customerId,
+    this.deferSubmit = false,
+  });
 
   @override
-  ConsumerState<AddEditCustomerScreen> createState() => _AddEditCustomerScreenState();
+  ConsumerState<AddEditCustomerScreen> createState() =>
+      _AddEditCustomerScreenState();
 }
 
 class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
@@ -95,7 +100,9 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
 
     _duplicateDebounce = Timer(const Duration(milliseconds: 500), () async {
       try {
-        final warning = await ref.read(customerActionsProvider).checkDuplicate(name: name, phone: phone);
+        final warning = await ref
+            .read(customerActionsProvider)
+            .checkDuplicate(name: name, phone: phone);
         if (mounted) setState(() => _liveDuplicateWarning = warning);
       } catch (_) {
         // Best-effort pre-check only — a failure here must never block typing
@@ -115,7 +122,10 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
         title: Text(l10n.addEditCustomerDuplicateTitle),
         content: Text(warning.message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.commonOk)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.commonOk),
+          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(l10n.addEditCustomerViewExistingButton),
@@ -139,12 +149,14 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     final creditLimit = _creditLimitController.text.trim();
 
     if (widget.deferSubmit) {
-      GoRouter.of(context).pop(CustomerDraft(
-        name: name,
-        phone: phone,
-        address: address.isEmpty ? null : address,
-        creditLimit: creditLimit,
-      ));
+      GoRouter.of(context).pop(
+        CustomerDraft(
+          name: name,
+          phone: phone,
+          address: address.isEmpty ? null : address,
+          creditLimit: creditLimit,
+        ),
+      );
       return;
     }
 
@@ -156,19 +168,23 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     final router = GoRouter.of(context);
     try {
       final result = _isEdit
-          ? await ref.read(customerActionsProvider).update(
-                id: widget.customerId!,
-                name: name,
-                phone: phone,
-                address: address.isEmpty ? null : address,
-                creditLimit: creditLimit,
-              )
-          : await ref.read(customerActionsProvider).create(
-                name: name,
-                phone: phone,
-                address: address.isEmpty ? null : address,
-                creditLimit: creditLimit,
-              );
+          ? await ref
+                .read(customerActionsProvider)
+                .update(
+                  id: widget.customerId!,
+                  name: name,
+                  phone: phone,
+                  address: address.isEmpty ? null : address,
+                  creditLimit: creditLimit,
+                )
+          : await ref
+                .read(customerActionsProvider)
+                .create(
+                  name: name,
+                  phone: phone,
+                  address: address.isEmpty ? null : address,
+                  creditLimit: creditLimit,
+                );
 
       if (!mounted) return;
       // Clear the saving spinner before the (possibly modal) duplicate
@@ -197,7 +213,9 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     if (_isEdit) {
-      final customerAsync = ref.watch(customerDetailProvider(widget.customerId!));
+      final customerAsync = ref.watch(
+        customerDetailProvider(widget.customerId!),
+      );
       return customerAsync.when(
         loading: () => Scaffold(
           appBar: AppBar(title: Text(l10n.customerEditTitle)),
@@ -205,7 +223,12 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
         ),
         error: (error, _) => Scaffold(
           appBar: AppBar(title: Text(l10n.customerEditTitle)),
-          body: Center(child: Text(l10n.customerDetailLoadError, style: AppTypography.body)),
+          body: Center(
+            child: Text(
+              l10n.customerDetailLoadError,
+              style: AppTypography.body,
+            ),
+          ),
         ),
         data: (customer) {
           _prefillFromExisting(customer);
@@ -219,68 +242,94 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
   Widget _buildForm(BuildContext context, AppLocalizations l10n) {
     final title = _isEdit
         ? l10n.customerEditTitle
-        : (widget.deferSubmit ? l10n.customerDetailsTitle : l10n.customerAddTitle);
+        : (widget.deferSubmit
+              ? l10n.customerDetailsTitle
+              : l10n.customerAddTitle);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _nameController,
-              maxLength: 255,
-              decoration: InputDecoration(labelText: l10n.addEditCustomerNameLabel),
-              onChanged: (_) => _onIdentifyingFieldChanged(),
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? l10n.addEditCustomerNameRequired : null,
-            ),
-            TextFormField(
-              controller: _phoneController,
-              maxLength: 30,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(labelText: l10n.addEditCustomerPhoneLabel),
-              onChanged: (_) => _onIdentifyingFieldChanged(),
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? l10n.addEditCustomerPhoneRequired : null,
-            ),
-            if (_liveDuplicateWarning != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _liveDuplicateWarning!.message,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _nameController,
+                maxLength: 255,
+                decoration: InputDecoration(
+                  labelText: l10n.addEditCustomerNameLabel,
+                ),
+                onChanged: (_) => _onIdentifyingFieldChanged(),
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? l10n.addEditCustomerNameRequired
+                    : null,
+              ),
+              TextFormField(
+                controller: _phoneController,
+                maxLength: 30,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: l10n.addEditCustomerPhoneLabel,
+                ),
+                onChanged: (_) => _onIdentifyingFieldChanged(),
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? l10n.addEditCustomerPhoneRequired
+                    : null,
+              ),
+              if (_liveDuplicateWarning != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _liveDuplicateWarning!.message,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _addressController,
+                maxLength: 500,
+                decoration: InputDecoration(
+                  labelText: l10n.addEditCustomerAddressLabel,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _creditLimitController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l10n.creditLimitLabel,
+                  hintText: l10n.creditLimitHint,
+                ),
+                validator: (value) {
+                  final trimmed = value?.trim() ?? '';
+                  if (trimmed.isEmpty) return l10n.creditLimitRequiredValidator;
+                  final parsed = double.tryParse(trimmed);
+                  if (parsed == null || parsed < 0) {
+                    return l10n.creditLimitInvalidValidator;
+                  }
+                  return null;
+                },
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              const SizedBox(height: 20),
+              PrimaryButton(
+                label: _isEdit
+                    ? l10n.saveChanges
+                    : (widget.deferSubmit
+                          ? l10n.addEditCustomerContinueButton
+                          : l10n.customerAddTitle),
+                isLoading: _isSaving,
+                onPressed: _save,
               ),
             ],
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _addressController,
-              maxLength: 500,
-              decoration: InputDecoration(labelText: l10n.addEditCustomerAddressLabel),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _creditLimitController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: l10n.creditLimitLabel, hintText: l10n.creditLimitHint),
-              validator: (value) {
-                final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty) return l10n.creditLimitRequiredValidator;
-                final parsed = double.tryParse(trimmed);
-                if (parsed == null || parsed < 0) return l10n.creditLimitInvalidValidator;
-                return null;
-              },
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ],
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: _isEdit ? l10n.saveChanges : (widget.deferSubmit ? l10n.addEditCustomerContinueButton : l10n.customerAddTitle),
-              isLoading: _isSaving,
-              onPressed: _save,
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -42,17 +42,25 @@ class ProfessionalCollectionRequest {
 
   bool get isTerminal => status == 'recovered' || status == 'closed';
 
-  factory ProfessionalCollectionRequest.fromJson(Map<String, dynamic> json) => ProfessionalCollectionRequest(
+  factory ProfessionalCollectionRequest.fromJson(Map<String, dynamic> json) =>
+      ProfessionalCollectionRequest(
         id: json['id'].toString(),
         collectionCaseId: json['collection_case_id'].toString(),
         referenceNumber: json['reference_number'] as String,
         status: json['status'] as String,
         submittedByUserId: json['submitted_by_user_id'].toString(),
         actionedByUserId: json['actioned_by_user_id']?.toString(),
-        reasons: (json['reasons'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+        reasons:
+            (json['reasons'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            const [],
         notes: json['notes'] as String?,
         requestedServices:
-            (json['requested_services'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+            (json['requested_services'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            const [],
         declarationAcceptedAt: json['declaration_accepted_at'] as String?,
         declarationAcceptedBy: json['declaration_accepted_by']?.toString(),
         createdAt: json['created_at'] as String,

@@ -60,7 +60,10 @@ final _payment = Payment(
   paymentMethod: 'cash',
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockCustomerRepository mockRepository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockCustomerRepository mockRepository,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -86,30 +89,44 @@ void main() {
     mockRepository = _MockCustomerRepository();
   });
 
-  testWidgets('renders customer info and recent payments from the real backend fields', (tester) async {
-    when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _customer);
-    when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => [_payment]);
+  testWidgets(
+    'renders customer info and recent payments from the real backend fields',
+    (tester) async {
+      when(
+        () => mockRepository.fetchCustomer('1'),
+      ).thenAnswer((_) async => _customer);
+      when(
+        () => mockRepository.fetchPayments('1'),
+      ).thenAnswer((_) async => [_payment]);
 
-    await _pumpScreen(tester, mockRepository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, mockRepository: mockRepository);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Somali Builders'), findsWidgets); // AppBar title + info card
-    expect(find.text('+252612345678'), findsOneWidget);
-    expect(find.text('800.00'), findsOneWidget);
-    expect(find.text('5000.00'), findsOneWidget);
-    expect(find.text('4200.00'), findsOneWidget);
-    expect(find.text('720 (good)'), findsOneWidget);
-    expect(find.text('250.00'), findsOneWidget);
-    expect(find.text('cash'), findsOneWidget);
+      expect(
+        find.text('Somali Builders'),
+        findsWidgets,
+      ); // AppBar title + info card
+      expect(find.text('+252612345678'), findsOneWidget);
+      expect(find.text('800.00'), findsOneWidget);
+      expect(find.text('5000.00'), findsOneWidget);
+      expect(find.text('4200.00'), findsOneWidget);
+      expect(find.text('720 (good)'), findsOneWidget);
+      expect(find.text('250.00'), findsOneWidget);
+      expect(find.text('cash'), findsOneWidget);
 
-    // Active Cases / Recent Follow-ups are deliberately not rendered — no
-    // backend endpoint scopes either to a single customer.
-    expect(find.textContaining('Active Cases'), findsNothing);
-    expect(find.textContaining('Follow-up'), findsNothing);
-  });
+      // Active Cases / Recent Follow-ups are deliberately not rendered — no
+      // backend endpoint scopes either to a single customer.
+      expect(find.textContaining('Active Cases'), findsNothing);
+      expect(find.textContaining('Follow-up'), findsNothing);
+    },
+  );
 
-  testWidgets('shows the explicit empty state when there are no payments', (tester) async {
-    when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _customer);
+  testWidgets('shows the explicit empty state when there are no payments', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchCustomer('1'),
+    ).thenAnswer((_) async => _customer);
     when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
 
     await _pumpScreen(tester, mockRepository: mockRepository);
@@ -118,8 +135,12 @@ void main() {
     expect(find.text('No recent payments'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the customer fails to load', (tester) async {
-    when(() => mockRepository.fetchCustomer('1')).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the customer fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchCustomer('1'),
+    ).thenThrow(Exception('network down'));
     when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
 
     await _pumpScreen(tester, mockRepository: mockRepository);
@@ -136,12 +157,16 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _customer);
+      when(
+        () => mockRepository.fetchCustomer('1'),
+      ).thenAnswer((_) async => _customer);
       when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
+          overrides: [
+            customerRepositoryProvider.overrideWithValue(mockRepository),
+          ],
           child: MaterialApp.router(
             routerConfig: router,
             locale: const Locale('en'),
@@ -157,8 +182,14 @@ void main() {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-          GoRoute(path: '/customers/1/edit', builder: (_, _) => const Text('Edit Customer Screen')),
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+          ),
+          GoRoute(
+            path: '/customers/1/edit',
+            builder: (_, _) => const Text('Edit Customer Screen'),
+          ),
         ],
       );
       await pumpWithRouter(tester, router);
@@ -169,12 +200,20 @@ void main() {
       expect(find.text('Edit Customer Screen'), findsOneWidget);
     });
 
-    testWidgets('Documents opens the customer-scoped Documents screen', (tester) async {
+    testWidgets('Documents opens the customer-scoped Documents screen', (
+      tester,
+    ) async {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-          GoRoute(path: '/customers/1/documents', builder: (_, _) => const Text('Customer Documents Screen')),
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+          ),
+          GoRoute(
+            path: '/customers/1/documents',
+            builder: (_, _) => const Text('Customer Documents Screen'),
+          ),
         ],
       );
       await pumpWithRouter(tester, router);
@@ -189,8 +228,14 @@ void main() {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-          GoRoute(path: '/customers/1/cases', builder: (_, _) => const Text('Customer Cases Screen')),
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+          ),
+          GoRoute(
+            path: '/customers/1/cases',
+            builder: (_, _) => const Text('Customer Cases Screen'),
+          ),
         ],
       );
       await pumpWithRouter(tester, router);
@@ -201,133 +246,202 @@ void main() {
       expect(find.text('Customer Cases Screen'), findsOneWidget);
     });
 
-    testWidgets('Attachments opens the customer-scoped Attachments screen with canUpload true', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-          GoRoute(
-            path: '/customers/1/attachments',
-            builder: (_, state) => Text('Attachments Screen — canUpload=${state.extra}'),
+    testWidgets(
+      'Attachments opens the customer-scoped Attachments screen with canUpload true',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+            GoRoute(
+              path: '/customers/1/attachments',
+              builder: (_, state) =>
+                  Text('Attachments Screen — canUpload=${state.extra}'),
+            ),
+          ],
+        );
+        await pumpWithRouter(tester, router);
+
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Attachments'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Attachments Screen — canUpload=true'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'Archive asks for confirmation, calls the real endpoint, and pops back on success',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (_, _) =>
+                  const Scaffold(body: Text('Customer List Screen')),
+            ),
+            GoRoute(
+              path: '/detail',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+          ],
+        );
+        when(
+          () => mockRepository.archiveCustomer('1'),
+        ).thenAnswer((_) async {});
+        await pumpWithRouter(tester, router);
+        router.push('/detail');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byTooltip('Archive Customer'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            'This customer will no longer appear in the default list. This can be undone later.',
           ),
-        ],
-      );
-      await pumpWithRouter(tester, router);
+          findsOneWidget,
+        );
+        await tester.tap(find.widgetWithText(TextButton, 'Archive'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Attachments'));
-      await tester.pumpAndSettle();
+        verify(() => mockRepository.archiveCustomer('1')).called(1);
+        expect(find.text('Customer List Screen'), findsOneWidget);
+        expect(find.text('Customer archived successfully'), findsOneWidget);
+      },
+    );
 
-      expect(find.text('Attachments Screen — canUpload=true'), findsOneWidget);
-    });
+    testWidgets(
+      'Archive does nothing when the confirmation dialog is cancelled',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+          ],
+        );
+        await pumpWithRouter(tester, router);
 
-    testWidgets('Archive asks for confirmation, calls the real endpoint, and pops back on success', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const Scaffold(body: Text('Customer List Screen'))),
-          GoRoute(path: '/detail', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-        ],
-      );
-      when(() => mockRepository.archiveCustomer('1')).thenAnswer((_) async {});
-      await pumpWithRouter(tester, router);
-      router.push('/detail');
-      await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Archive Customer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Archive Customer'));
-      await tester.pumpAndSettle();
+        verifyNever(() => mockRepository.archiveCustomer(any()));
+        expect(find.byType(CustomerDetailScreen), findsOneWidget);
+      },
+    );
 
-      expect(find.text('This customer will no longer appear in the default list. This can be undone later.'),
-          findsOneWidget);
-      await tester.tap(find.widgetWithText(TextButton, 'Archive'));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'editing the Credit Limit opens the sheet and calls the dedicated endpoint',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+          ],
+        );
+        when(
+          () =>
+              mockRepository.updateCreditLimit(id: '1', creditLimit: '6000.00'),
+        ).thenAnswer((_) async => _customer);
+        await pumpWithRouter(tester, router);
 
-      verify(() => mockRepository.archiveCustomer('1')).called(1);
-      expect(find.text('Customer List Screen'), findsOneWidget);
-      expect(find.text('Customer archived successfully'), findsOneWidget);
-    });
+        await tester.tap(find.byTooltip('Edit Credit Limit'));
+        await tester.pumpAndSettle();
 
-    testWidgets('Archive does nothing when the confirmation dialog is cancelled', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-        ],
-      );
-      await pumpWithRouter(tester, router);
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Credit Limit'),
+          '6000.00',
+        );
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Archive Customer'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-      await tester.pumpAndSettle();
+        verify(
+          () =>
+              mockRepository.updateCreditLimit(id: '1', creditLimit: '6000.00'),
+        ).called(1);
+      },
+    );
 
-      verifyNever(() => mockRepository.archiveCustomer(any()));
-      expect(find.byType(CustomerDetailScreen), findsOneWidget);
-    });
+    testWidgets(
+      'changing the Customer Status opens the sheet and calls the dedicated endpoint',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+          ],
+        );
+        when(
+          () =>
+              mockRepository.updateStatus(id: '1', customerStatus: 'high_risk'),
+        ).thenAnswer((_) async => _customer);
+        await pumpWithRouter(tester, router);
 
-    testWidgets('editing the Credit Limit opens the sheet and calls the dedicated endpoint', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-        ],
-      );
-      when(() => mockRepository.updateCreditLimit(id: '1', creditLimit: '6000.00')).thenAnswer((_) async => _customer);
-      await pumpWithRouter(tester, router);
+        await tester.tap(find.byTooltip('Change Customer Status'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Edit Credit Limit'));
-      await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(RadioListTile<String>, 'High Risk'),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextFormField, 'Credit Limit'), '6000.00');
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
-      await tester.pumpAndSettle();
+        verify(
+          () =>
+              mockRepository.updateStatus(id: '1', customerStatus: 'high_risk'),
+        ).called(1);
+      },
+    );
 
-      verify(() => mockRepository.updateCreditLimit(id: '1', creditLimit: '6000.00')).called(1);
-    });
+    testWidgets(
+      'Generate Statement calls the real endpoint and shows a success snackbar',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+          ],
+        );
+        const statement = DocumentSummary(
+          id: '1',
+          documentType: 'statement',
+          referenceNumber: 'STM-0001',
+          generatedAt: '2026-08-01T00:00:00.000000Z',
+          fileSize: 3000,
+        );
+        when(
+          () => mockRepository.generateStatement('1'),
+        ).thenAnswer((_) async => statement);
+        await pumpWithRouter(tester, router);
 
-    testWidgets('changing the Customer Status opens the sheet and calls the dedicated endpoint', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-        ],
-      );
-      when(() => mockRepository.updateStatus(id: '1', customerStatus: 'high_risk')).thenAnswer((_) async => _customer);
-      await pumpWithRouter(tester, router);
+        await tester.tap(find.text('Generate Statement'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Change Customer Status'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.widgetWithText(RadioListTile<String>, 'High Risk'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
-      await tester.pumpAndSettle();
-
-      verify(() => mockRepository.updateStatus(id: '1', customerStatus: 'high_risk')).called(1);
-    });
-
-    testWidgets('Generate Statement calls the real endpoint and shows a success snackbar', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-        ],
-      );
-      const statement = DocumentSummary(
-        id: '1',
-        documentType: 'statement',
-        referenceNumber: 'STM-0001',
-        generatedAt: '2026-08-01T00:00:00.000000Z',
-        fileSize: 3000,
-      );
-      when(() => mockRepository.generateStatement('1')).thenAnswer((_) async => statement);
-      await pumpWithRouter(tester, router);
-
-      await tester.tap(find.text('Generate Statement'));
-      await tester.pumpAndSettle();
-
-      verify(() => mockRepository.generateStatement('1')).called(1);
-      expect(find.text('Statement generated successfully'), findsOneWidget);
-    });
+        verify(() => mockRepository.generateStatement('1')).called(1);
+        expect(find.text('Statement generated successfully'), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'a read-only customer shows the banner, disables Edit/Archive/Generate Statement/Credit Limit edit',
@@ -335,8 +449,14 @@ void main() {
         final router = GoRouter(
           initialLocation: '/',
           routes: [
-            GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-            GoRoute(path: '/account/subscription', builder: (_, _) => const Text('Subscription Screen')),
+            GoRoute(
+              path: '/',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+            GoRoute(
+              path: '/account/subscription',
+              builder: (_, _) => const Text('Subscription Screen'),
+            ),
           ],
         );
         tester.view.physicalSize = const Size(400, 1600);
@@ -344,11 +464,17 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _readOnlyCustomer);
-        when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
+        when(
+          () => mockRepository.fetchCustomer('1'),
+        ).thenAnswer((_) async => _readOnlyCustomer);
+        when(
+          () => mockRepository.fetchPayments('1'),
+        ).thenAnswer((_) async => []);
         await tester.pumpWidget(
           ProviderScope(
-            overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
+            overrides: [
+              customerRepositoryProvider.overrideWithValue(mockRepository),
+            ],
             child: MaterialApp.router(
               routerConfig: router,
               locale: const Locale('en'),
@@ -361,14 +487,22 @@ void main() {
 
         expect(find.text('Read-only Customer'), findsOneWidget);
 
-        final editButton = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.edit_outlined));
+        final editButton = tester.widget<IconButton>(
+          find.widgetWithIcon(IconButton, Icons.edit_outlined),
+        );
         expect(editButton.onPressed, isNull);
-        final archiveButton = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.archive_outlined));
+        final archiveButton = tester.widget<IconButton>(
+          find.widgetWithIcon(IconButton, Icons.archive_outlined),
+        );
         expect(archiveButton.onPressed, isNull);
 
-        expect(find.widgetWithText(OutlinedButton, 'Generate Statement'), findsOneWidget);
-        final generateStatementButton =
-            tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Generate Statement'));
+        expect(
+          find.widgetWithText(OutlinedButton, 'Generate Statement'),
+          findsOneWidget,
+        );
+        final generateStatementButton = tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, 'Generate Statement'),
+        );
         expect(generateStatementButton.onPressed, isNull);
 
         // Credit Limit's and Customer Status's edit icons are both hidden
@@ -383,40 +517,56 @@ void main() {
       },
     );
 
-    testWidgets('a read-only customer navigates to Attachments with canUpload false', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const CustomerDetailScreen(customerId: '1')),
-          GoRoute(
-            path: '/customers/1/attachments',
-            builder: (_, state) => Text('Attachments Screen — canUpload=${state.extra}'),
+    testWidgets(
+      'a read-only customer navigates to Attachments with canUpload false',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (_, _) => const CustomerDetailScreen(customerId: '1'),
+            ),
+            GoRoute(
+              path: '/customers/1/attachments',
+              builder: (_, state) =>
+                  Text('Attachments Screen — canUpload=${state.extra}'),
+            ),
+          ],
+        );
+        when(
+          () => mockRepository.fetchCustomer('1'),
+        ).thenAnswer((_) async => _readOnlyCustomer);
+        when(
+          () => mockRepository.fetchPayments('1'),
+        ).thenAnswer((_) async => []);
+        tester.view.physicalSize = const Size(400, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              customerRepositoryProvider.overrideWithValue(mockRepository),
+            ],
+            child: MaterialApp.router(
+              routerConfig: router,
+              locale: const Locale('en'),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: _localizationsDelegates,
+            ),
           ),
-        ],
-      );
-      when(() => mockRepository.fetchCustomer('1')).thenAnswer((_) async => _readOnlyCustomer);
-      when(() => mockRepository.fetchPayments('1')).thenAnswer((_) async => []);
-      tester.view.physicalSize = const Size(400, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [customerRepositoryProvider.overrideWithValue(mockRepository)],
-          child: MaterialApp.router(
-            routerConfig: router,
-            locale: const Locale('en'),
-            supportedLocales: AppLocalizations.supportedLocales,
-            localizationsDelegates: _localizationsDelegates,
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Attachments'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Attachments'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Attachments Screen — canUpload=false'), findsOneWidget);
-    });
+        expect(
+          find.text('Attachments Screen — canUpload=false'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

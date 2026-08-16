@@ -28,7 +28,8 @@ class TrendsTab extends ConsumerWidget {
       children: [
         DateRangeField(
           value: range,
-          onChanged: (next) => ref.read(trendsDateRangeProvider.notifier).state = next,
+          onChanged: (next) =>
+              ref.read(trendsDateRangeProvider.notifier).state = next,
         ),
         const SizedBox(height: 28),
         AppCard(

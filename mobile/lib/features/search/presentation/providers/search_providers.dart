@@ -7,7 +7,9 @@ import '../../domain/search_results.dart';
 /// `null` = no search performed yet (distinct from an empty
 /// [SearchResults], which means a real search ran and found nothing).
 final globalSearchProvider =
-    AsyncNotifierProvider<GlobalSearchNotifier, SearchResults?>(GlobalSearchNotifier.new);
+    AsyncNotifierProvider<GlobalSearchNotifier, SearchResults?>(
+      GlobalSearchNotifier.new,
+    );
 
 class GlobalSearchNotifier extends AsyncNotifier<SearchResults?> {
   String _lastQuery = '';
@@ -30,7 +32,9 @@ class GlobalSearchNotifier extends AsyncNotifier<SearchResults?> {
     }
 
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(searchRepositoryProvider).search(trimmed));
+    state = await AsyncValue.guard(
+      () => ref.read(searchRepositoryProvider).search(trimmed),
+    );
 
     if (state.hasValue) {
       await ref.read(recentSearchesProvider.notifier).add(trimmed);
@@ -44,11 +48,14 @@ class GlobalSearchNotifier extends AsyncNotifier<SearchResults?> {
 }
 
 final recentSearchesProvider =
-    AsyncNotifierProvider<RecentSearchesNotifier, List<String>>(RecentSearchesNotifier.new);
+    AsyncNotifierProvider<RecentSearchesNotifier, List<String>>(
+      RecentSearchesNotifier.new,
+    );
 
 class RecentSearchesNotifier extends AsyncNotifier<List<String>> {
   @override
-  Future<List<String>> build() => ref.read(recentSearchesStorageProvider).readAll();
+  Future<List<String>> build() =>
+      ref.read(recentSearchesStorageProvider).readAll();
 
   Future<void> add(String query) async {
     final updated = await ref.read(recentSearchesStorageProvider).add(query);

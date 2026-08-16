@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final localeStorageProvider = Provider<LocaleStorage>((ref) => const LocaleStorage());
+final localeStorageProvider = Provider<LocaleStorage>(
+  (ref) => const LocaleStorage(),
+);
 
 /// Persists the user's chosen app language across restarts (Sprint 2 —
 /// Settings §General). No backend sync: language is a device-local

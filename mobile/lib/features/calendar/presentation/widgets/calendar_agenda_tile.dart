@@ -20,10 +20,10 @@ class CalendarAgendaTile extends StatelessWidget {
   const CalendarAgendaTile({super.key, required this.entry});
 
   String? get _destination => switch (entry.relatedEntityType) {
-        'debt' => '/debts/${entry.relatedEntityId}',
-        'reminder' => '/reminders/${entry.relatedEntityId}',
-        _ => null,
-      };
+    'debt' => '/debts/${entry.relatedEntityId}',
+    'reminder' => '/reminders/${entry.relatedEntityId}',
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,10 @@ class CalendarAgendaTile extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
@@ -47,13 +50,21 @@ class CalendarAgendaTile extends StatelessWidget {
               children: [
                 Text(
                   calendarEntryTitle(context, entry),
-                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.body.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
-                Text(entry.relatedEntityType, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                Text(
+                  entry.relatedEntityType,
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
-          if (destination != null) Icon(Icons.chevron_right, color: context.colors.textSecondary),
+          if (destination != null)
+            Icon(Icons.chevron_right, color: context.colors.textSecondary),
         ],
       ),
     );

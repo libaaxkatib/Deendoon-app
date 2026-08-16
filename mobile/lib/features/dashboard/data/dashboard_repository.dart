@@ -8,8 +8,9 @@ import '../domain/recent_case.dart';
 import '../domain/todays_overview.dart';
 import 'dashboard_api.dart';
 
-final dashboardRepositoryProvider =
-    Provider<DashboardRepository>((ref) => DashboardRepository(ref.read(dashboardApiProvider)));
+final dashboardRepositoryProvider = Provider<DashboardRepository>(
+  (ref) => DashboardRepository(ref.read(dashboardApiProvider)),
+);
 
 /// Translates raw Dio failures into `ApiException` — same pattern as
 /// `AuthRepository`. No caching, no calculation: each method is a direct
@@ -19,12 +20,19 @@ class DashboardRepository {
 
   const DashboardRepository(this._api);
 
-  Future<BusinessHealth> fetchBusinessHealth() => _guard(() => _api.businessHealth());
+  Future<BusinessHealth> fetchBusinessHealth() =>
+      _guard(() => _api.businessHealth());
 
-  Future<DashboardKpis> fetchKpis({String period = 'month', String? dateFrom, String? dateTo}) =>
-      _guard(() => _api.kpis(period: period, dateFrom: dateFrom, dateTo: dateTo));
+  Future<DashboardKpis> fetchKpis({
+    String period = 'month',
+    String? dateFrom,
+    String? dateTo,
+  }) => _guard(
+    () => _api.kpis(period: period, dateFrom: dateFrom, dateTo: dateTo),
+  );
 
-  Future<TodaysOverview> fetchTodaysOverview() => _guard(() => _api.todaysOverview());
+  Future<TodaysOverview> fetchTodaysOverview() =>
+      _guard(() => _api.todaysOverview());
 
   Future<List<RecentCase>> fetchRecentCases({int limit = 5}) =>
       _guard(() => _api.recentCases(limit: limit));

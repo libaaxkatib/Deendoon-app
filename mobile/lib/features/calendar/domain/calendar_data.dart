@@ -9,13 +9,17 @@ class CalendarData {
   final String to;
   final List<CalendarEntry> entries;
 
-  const CalendarData({required this.from, required this.to, required this.entries});
+  const CalendarData({
+    required this.from,
+    required this.to,
+    required this.entries,
+  });
 
   factory CalendarData.fromJson(Map<String, dynamic> json) => CalendarData(
-        from: json['from'] as String,
-        to: json['to'] as String,
-        entries: (json['entries'] as List<dynamic>)
-            .map((e) => CalendarEntry.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    from: json['from'] as String,
+    to: json['to'] as String,
+    entries: (json['entries'] as List<dynamic>)
+        .map((e) => CalendarEntry.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }

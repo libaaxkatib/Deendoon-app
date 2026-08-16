@@ -8,9 +8,11 @@ import 'package:mobile/features/customer_import/domain/import_preview.dart';
 import 'package:mobile/features/customer_import/presentation/providers/customer_import_provider.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockCustomerImportRepository extends Mock implements CustomerImportRepository {}
+class _MockCustomerImportRepository extends Mock
+    implements CustomerImportRepository {}
 
-const _unsupportedFileTypeMessage = 'Unsupported file type. Only .xlsx and .xls files are supported.';
+const _unsupportedFileTypeMessage =
+    'Unsupported file type. Only .xlsx and .xls files are supported.';
 
 void main() {
   late _MockCustomerImportRepository mockRepository;
@@ -19,7 +21,9 @@ void main() {
   setUp(() {
     mockRepository = _MockCustomerImportRepository();
     container = ProviderContainer(
-      overrides: [customerImportRepositoryProvider.overrideWithValue(mockRepository)],
+      overrides: [
+        customerImportRepositoryProvider.overrideWithValue(mockRepository),
+      ],
     );
     addTearDown(container.dispose);
   });
@@ -44,7 +48,9 @@ void main() {
   });
 
   test('selectFile with an unsupported extension moves to ImportFailed', () {
-    container.read(customerImportProvider.notifier).selectFile(
+    container
+        .read(customerImportProvider.notifier)
+        .selectFile(
           path: '/tmp/customers.csv',
           name: 'customers.csv',
           size: 100,
@@ -58,55 +64,82 @@ void main() {
   test('clear resets to ImportInitial', () {
     final notifier = container.read(customerImportProvider.notifier);
     notifier.selectFile(
-          path: '/tmp/customers.xlsx',
-          name: 'customers.xlsx',
-          size: 2048,
-          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
-        );
+      path: '/tmp/customers.xlsx',
+      name: 'customers.xlsx',
+      size: 2048,
+      unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+    );
     notifier.clear();
 
     expect(container.read(customerImportProvider), isA<ImportInitial>());
   });
 
-  test('startImport previews then commits, ending in ImportSucceeded with real aggregated outcomes', () async {
-    const preview = ImportPreview(batchId: '01BATCH', status: 'preview', rows: []);
-    const commitResult = ImportCommitResult(
-      batchId: '01BATCH',
-      status: 'committed',
-      results: [],
-      message: 'Import committed successfully',
-    );
-    when(() => mockRepository.previewImport(filePath: '/tmp/customers.xlsx', fileName: 'customers.xlsx'))
-        .thenAnswer((_) async => preview);
-    when(() => mockRepository.commitImport(batchId: '01BATCH')).thenAnswer((_) async => commitResult);
+  test(
+    'startImport previews then commits, ending in ImportSucceeded with real aggregated outcomes',
+    () async {
+      const preview = ImportPreview(
+        batchId: '01BATCH',
+        status: 'preview',
+        rows: [],
+      );
+      const commitResult = ImportCommitResult(
+        batchId: '01BATCH',
+        status: 'committed',
+        results: [],
+        message: 'Import committed successfully',
+      );
+      when(
+        () => mockRepository.previewImport(
+          filePath: '/tmp/customers.xlsx',
+          fileName: 'customers.xlsx',
+        ),
+      ).thenAnswer((_) async => preview);
+      when(
+        () => mockRepository.commitImport(batchId: '01BATCH'),
+      ).thenAnswer((_) async => commitResult);
 
-    final notifier = container.read(customerImportProvider.notifier);
-    notifier.selectFile(
-          path: '/tmp/customers.xlsx',
-          name: 'customers.xlsx',
-          size: 2048,
-          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
-        );
+      final notifier = container.read(customerImportProvider.notifier);
+      notifier.selectFile(
+        path: '/tmp/customers.xlsx',
+        name: 'customers.xlsx',
+        size: 2048,
+        unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+      );
 
-    await notifier.startImport();
+      await notifier.startImport();
 
-    final state = container.read(customerImportProvider) as ImportSucceeded;
-    expect(state.result.status, 'committed');
-    verify(() => mockRepository.previewImport(filePath: '/tmp/customers.xlsx', fileName: 'customers.xlsx')).called(1);
-    verify(() => mockRepository.commitImport(batchId: '01BATCH')).called(1);
-  });
+      final state = container.read(customerImportProvider) as ImportSucceeded;
+      expect(state.result.status, 'committed');
+      verify(
+        () => mockRepository.previewImport(
+          filePath: '/tmp/customers.xlsx',
+          fileName: 'customers.xlsx',
+        ),
+      ).called(1);
+      verify(() => mockRepository.commitImport(batchId: '01BATCH')).called(1);
+    },
+  );
 
   test('startImport surfaces a real backend error as ImportFailed', () async {
-    when(() => mockRepository.previewImport(filePath: any(named: 'filePath'), fileName: any(named: 'fileName')))
-        .thenThrow(const ApiException(message: 'The uploaded file could not be read.', statusCode: 422));
+    when(
+      () => mockRepository.previewImport(
+        filePath: any(named: 'filePath'),
+        fileName: any(named: 'fileName'),
+      ),
+    ).thenThrow(
+      const ApiException(
+        message: 'The uploaded file could not be read.',
+        statusCode: 422,
+      ),
+    );
 
     final notifier = container.read(customerImportProvider.notifier);
     notifier.selectFile(
-          path: '/tmp/customers.xlsx',
-          name: 'customers.xlsx',
-          size: 2048,
-          unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
-        );
+      path: '/tmp/customers.xlsx',
+      name: 'customers.xlsx',
+      size: 2048,
+      unsupportedFileTypeMessage: _unsupportedFileTypeMessage,
+    );
 
     await notifier.startImport();
 
@@ -120,6 +153,11 @@ void main() {
     await notifier.startImport();
 
     expect(container.read(customerImportProvider), isA<ImportInitial>());
-    verifyNever(() => mockRepository.previewImport(filePath: any(named: 'filePath'), fileName: any(named: 'fileName')));
+    verifyNever(
+      () => mockRepository.previewImport(
+        filePath: any(named: 'filePath'),
+        fileName: any(named: 'fileName'),
+      ),
+    );
   });
 }

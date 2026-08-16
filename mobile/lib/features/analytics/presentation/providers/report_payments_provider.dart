@@ -18,6 +18,7 @@ class ReportPaymentsState {
   final int total;
   final DateTimeRange? dateRange;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const ReportPaymentsState({
     required this.payments,
@@ -26,6 +27,7 @@ class ReportPaymentsState {
     required this.total,
     required this.dateRange,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -38,6 +40,7 @@ class ReportPaymentsState {
     DateTimeRange? dateRange,
     bool clearDateRange = false,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return ReportPaymentsState(
       payments: payments ?? this.payments,
@@ -46,12 +49,15 @@ class ReportPaymentsState {
       total: total ?? this.total,
       dateRange: clearDateRange ? null : (dateRange ?? this.dateRange),
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final reportPaymentsProvider =
-    AsyncNotifierProvider<ReportPaymentsNotifier, ReportPaymentsState>(ReportPaymentsNotifier.new);
+    AsyncNotifierProvider<ReportPaymentsNotifier, ReportPaymentsState>(
+      ReportPaymentsNotifier.new,
+    );
 
 class ReportPaymentsNotifier extends AsyncNotifier<ReportPaymentsState> {
   @override
@@ -66,33 +72,48 @@ class ReportPaymentsNotifier extends AsyncNotifier<ReportPaymentsState> {
 
   Future<void> refresh() async {
     final current = state.valueOrNull;
-    state = await AsyncValue.guard(() => _fetchFirstPage(dateRange: current?.dateRange));
+    state = await AsyncValue.guard(
+      () => _fetchFirstPage(dateRange: current?.dateRange),
+    );
   }
 
   Future<void> loadMore() async {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
       final next = await _repository.fetchReportPayments(
         page: current.currentPage + 1,
-        dateFrom: current.dateRange != null ? _isoDate(current.dateRange!.start) : null,
-        dateTo: current.dateRange != null ? _isoDate(current.dateRange!.end) : null,
+        dateFrom: current.dateRange != null
+            ? _isoDate(current.dateRange!.start)
+            : null,
+        dateTo: current.dateRange != null
+            ? _isoDate(current.dateRange!.end)
+            : null,
       );
-      state = AsyncData(current.copyWith(
-        payments: [...current.payments, ...next.payments],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      state = AsyncData(
+        current.copyWith(
+          payments: [...current.payments, ...next.payments],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
-  Future<ReportPaymentsState> _fetchFirstPage({required DateTimeRange? dateRange}) async {
+  Future<ReportPaymentsState> _fetchFirstPage({
+    required DateTimeRange? dateRange,
+  }) async {
     final page = await _repository.fetchReportPayments(
       page: 1,
       dateFrom: dateRange != null ? _isoDate(dateRange.start) : null,

@@ -10,7 +10,8 @@ import 'package:mobile/features/account/presentation/screens/business_profile_sc
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockBusinessProfileRepository extends Mock implements BusinessProfileRepository {}
+class _MockBusinessProfileRepository extends Mock
+    implements BusinessProfileRepository {}
 
 const _profile = BusinessProfile(
   id: '1',
@@ -21,7 +22,10 @@ const _profile = BusinessProfile(
   contactPhone: '+252612345678',
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockBusinessProfileRepository repository}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockBusinessProfileRepository repository,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -29,7 +33,9 @@ Future<void> _pumpScreen(WidgetTester tester, {required _MockBusinessProfileRepo
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [businessProfileRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        businessProfileRepositoryProvider.overrideWithValue(repository),
+      ],
       child: MaterialApp(
         locale: const Locale('en'),
         supportedLocales: AppLocalizations.supportedLocales,
@@ -54,8 +60,12 @@ void main() {
     mockRepository = _MockBusinessProfileRepository();
   });
 
-  testWidgets('shows a retry affordance when the profile fails to load', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the profile fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchBusinessProfile(),
+    ).thenThrow(Exception('network down'));
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -64,8 +74,12 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('prefills the form with the real business profile', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenAnswer((_) async => _profile);
+  testWidgets('prefills the form with the real business profile', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchBusinessProfile(),
+    ).thenAnswer((_) async => _profile);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -76,8 +90,12 @@ void main() {
     expect(find.text('+252612345678'), findsOneWidget);
   });
 
-  testWidgets('shows the honest "no logo" affordance when none is on file', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenAnswer((_) async => _profile);
+  testWidgets('shows the honest "no logo" affordance when none is on file', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchBusinessProfile(),
+    ).thenAnswer((_) async => _profile);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -85,89 +103,128 @@ void main() {
     expect(find.text('Tap to add a logo'), findsOneWidget);
   });
 
-  testWidgets('shows "Logo on file" instead of a fabricated image when a logo path exists', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenAnswer(
-      (_) async => const BusinessProfile(
-        id: '1',
-        businessName: 'Somali Builders',
-        logoPath: 'branding/1/logo.png',
-        address: null,
-        contactEmail: null,
-        contactPhone: null,
-      ),
-    );
+  testWidgets(
+    'shows "Logo on file" instead of a fabricated image when a logo path exists',
+    (tester) async {
+      when(() => mockRepository.fetchBusinessProfile()).thenAnswer(
+        (_) async => const BusinessProfile(
+          id: '1',
+          businessName: 'Somali Builders',
+          logoPath: 'branding/1/logo.png',
+          address: null,
+          contactEmail: null,
+          contactPhone: null,
+        ),
+      );
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Logo on file — tap to replace'), findsOneWidget);
-  });
+      expect(find.text('Logo on file — tap to replace'), findsOneWidget);
+    },
+  );
 
-  testWidgets('shows a validation error instead of saving an empty company name', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenAnswer((_) async => _profile);
+  testWidgets(
+    'shows a validation error instead of saving an empty company name',
+    (tester) async {
+      when(
+        () => mockRepository.fetchBusinessProfile(),
+      ).thenAnswer((_) async => _profile);
 
-    await _pumpScreen(tester, repository: mockRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Company Name'), '');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
-    await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Company Name'),
+        '',
+      );
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Company name is required'), findsOneWidget);
-    verifyNever(() => mockRepository.updateBusinessProfile(
+      expect(find.text('Company name is required'), findsOneWidget);
+      verifyNever(
+        () => mockRepository.updateBusinessProfile(
           businessName: any(named: 'businessName'),
           address: any(named: 'address'),
           contactEmail: any(named: 'contactEmail'),
           contactPhone: any(named: 'contactPhone'),
-        ));
-  });
+        ),
+      );
+    },
+  );
 
-  testWidgets('shows a validation error instead of saving an invalid email', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenAnswer((_) async => _profile);
+  testWidgets('shows a validation error instead of saving an invalid email', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchBusinessProfile(),
+    ).thenAnswer((_) async => _profile);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Contact Email'), 'not-an-email');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Contact Email'),
+      'not-an-email',
+    );
     await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
     await tester.pumpAndSettle();
 
     expect(find.text('Enter a valid email address'), findsOneWidget);
   });
 
-  testWidgets('saves the entered fields and shows a success message', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenAnswer((_) async => _profile);
-    when(() => mockRepository.updateBusinessProfile(
-          businessName: 'Somali Builders Ltd',
-          address: '123 Main St',
-          contactEmail: 'owner@example.com',
-          contactPhone: '+252612345678',
-        )).thenAnswer((_) async => _profile);
+  testWidgets('saves the entered fields and shows a success message', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchBusinessProfile(),
+    ).thenAnswer((_) async => _profile);
+    when(
+      () => mockRepository.updateBusinessProfile(
+        businessName: 'Somali Builders Ltd',
+        address: '123 Main St',
+        contactEmail: 'owner@example.com',
+        contactPhone: '+252612345678',
+      ),
+    ).thenAnswer((_) async => _profile);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Company Name'), 'Somali Builders Ltd');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Company Name'),
+      'Somali Builders Ltd',
+    );
     await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
     await tester.pumpAndSettle();
 
     expect(find.text('Business Profile updated successfully'), findsOneWidget);
-    verify(() => mockRepository.updateBusinessProfile(
-          businessName: 'Somali Builders Ltd',
-          address: '123 Main St',
-          contactEmail: 'owner@example.com',
-          contactPhone: '+252612345678',
-        )).called(1);
+    verify(
+      () => mockRepository.updateBusinessProfile(
+        businessName: 'Somali Builders Ltd',
+        address: '123 Main St',
+        contactEmail: 'owner@example.com',
+        contactPhone: '+252612345678',
+      ),
+    ).called(1);
   });
 
-  testWidgets('shows the real server error message when saving fails', (tester) async {
-    when(() => mockRepository.fetchBusinessProfile()).thenAnswer((_) async => _profile);
-    when(() => mockRepository.updateBusinessProfile(
-          businessName: any(named: 'businessName'),
-          address: any(named: 'address'),
-          contactEmail: any(named: 'contactEmail'),
-          contactPhone: any(named: 'contactPhone'),
-        )).thenThrow(const ApiException(message: 'Something went wrong. Please try again.'));
+  testWidgets('shows the real server error message when saving fails', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchBusinessProfile(),
+    ).thenAnswer((_) async => _profile);
+    when(
+      () => mockRepository.updateBusinessProfile(
+        businessName: any(named: 'businessName'),
+        address: any(named: 'address'),
+        contactEmail: any(named: 'contactEmail'),
+        contactPhone: any(named: 'contactPhone'),
+      ),
+    ).thenThrow(
+      const ApiException(message: 'Something went wrong. Please try again.'),
+    );
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -175,7 +232,10 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Save Changes'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
+    expect(
+      find.text('Something went wrong. Please try again.'),
+      findsOneWidget,
+    );
     expect(find.text('Business Profile updated successfully'), findsNothing);
   });
 }

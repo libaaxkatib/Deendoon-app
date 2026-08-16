@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../core/widgets/unavailable_section.dart';
@@ -19,7 +20,10 @@ import '../providers/reference_data_providers.dart';
 /// Returns the created Request on success (so the caller can navigate to
 /// its detail screen), or `null` if the sheet was dismissed without
 /// submitting.
-Future<ProfessionalCollectionRequest?> showSubmitProfessionalCollectionSheet(BuildContext context, String caseId) {
+Future<ProfessionalCollectionRequest?> showSubmitProfessionalCollectionSheet(
+  BuildContext context,
+  String caseId,
+) {
   return showModalBottomSheet<ProfessionalCollectionRequest>(
     context: context,
     isScrollControlled: true,
@@ -33,10 +37,12 @@ class _SubmitProfessionalCollectionSheet extends ConsumerStatefulWidget {
   const _SubmitProfessionalCollectionSheet({required this.caseId});
 
   @override
-  ConsumerState<_SubmitProfessionalCollectionSheet> createState() => _SubmitProfessionalCollectionSheetState();
+  ConsumerState<_SubmitProfessionalCollectionSheet> createState() =>
+      _SubmitProfessionalCollectionSheetState();
 }
 
-class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfessionalCollectionSheet> {
+class _SubmitProfessionalCollectionSheetState
+    extends ConsumerState<_SubmitProfessionalCollectionSheet> {
   final Set<String> _selectedReasons = {};
   final Set<String> _selectedServices = {};
   final _notesController = TextEditingController();
@@ -53,15 +59,24 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
   Future<void> _submit() async {
     final l10n = AppLocalizations.of(context);
     if (_selectedReasons.isEmpty) {
-      setState(() => _error = l10n.professionalCollectionSubmitReasonsRequiredValidator);
+      setState(
+        () =>
+            _error = l10n.professionalCollectionSubmitReasonsRequiredValidator,
+      );
       return;
     }
     if (_selectedServices.isEmpty) {
-      setState(() => _error = l10n.professionalCollectionSubmitServicesRequiredValidator);
+      setState(
+        () =>
+            _error = l10n.professionalCollectionSubmitServicesRequiredValidator,
+      );
       return;
     }
     if (!_declarationAccepted) {
-      setState(() => _error = l10n.professionalCollectionSubmitDeclarationRequiredValidator);
+      setState(
+        () => _error =
+            l10n.professionalCollectionSubmitDeclarationRequiredValidator,
+      );
       return;
     }
 
@@ -71,11 +86,15 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
     });
 
     try {
-      final request = await ref.read(professionalCollectionActionsProvider).submit(
+      final request = await ref
+          .read(professionalCollectionActionsProvider)
+          .submit(
             caseId: widget.caseId,
             reasons: _selectedReasons.toList(),
             services: _selectedServices.toList(),
-            notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+            notes: _notesController.text.trim().isEmpty
+                ? null
+                : _notesController.text.trim(),
             declarationAccepted: _declarationAccepted,
           );
       if (mounted) Navigator.of(context).pop(request);
@@ -105,7 +124,8 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
             onRetry: () => ref.invalidate(referenceDataProvider(category)),
           ),
           data: (items) {
-            final active = items.where((i) => i.isActive).toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+            final active = items.where((i) => i.isActive).toList()
+              ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
             if (active.isEmpty) {
               return UnavailableSection(reason: emptyReason);
             }
@@ -135,65 +155,76 @@ class _SubmitProfessionalCollectionSheetState extends ConsumerState<_SubmitProfe
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(l10n.professionalCollectionSubmitSheetTitle, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
+    return BottomSheetContent(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.professionalCollectionSubmitSheetTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.professionalCollectionSubmitSheetDescription,
+            style: AppTypography.caption,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.professionalCollectionReasonForTransferHeading,
+            style: AppTypography.heading,
+          ),
+          const SizedBox(height: 8),
+          _multiSelect(
+            category: ReferenceDataCategory.transferReason,
+            selected: _selectedReasons,
+            emptyReason: l10n.professionalCollectionNoActiveReasonsConfigured,
+            errorMessage: l10n.professionalCollectionReasonsLoadError,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.professionalCollectionRequestedServicesHeading,
+            style: AppTypography.heading,
+          ),
+          const SizedBox(height: 8),
+          _multiSelect(
+            category: ReferenceDataCategory.requestedService,
+            selected: _selectedServices,
+            emptyReason: l10n.professionalCollectionNoActiveServicesConfigured,
+            errorMessage: l10n.professionalCollectionServicesLoadError,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _notesController,
+            decoration: InputDecoration(
+              labelText: l10n.recordPaymentNotesLabel,
+            ),
+            maxLength: 2000,
+            maxLines: 3,
+            minLines: 2,
+          ),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            title: Text(l10n.professionalCollectionDeclarationConfirmLabel),
+            value: _declarationAccepted,
+            onChanged: (checked) =>
+                setState(() => _declarationAccepted = checked ?? false),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
             Text(
-              l10n.professionalCollectionSubmitSheetDescription,
-              style: AppTypography.caption,
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            const SizedBox(height: 16),
-            Text(l10n.professionalCollectionReasonForTransferHeading, style: AppTypography.heading),
-            const SizedBox(height: 8),
-            _multiSelect(
-              category: ReferenceDataCategory.transferReason,
-              selected: _selectedReasons,
-              emptyReason: l10n.professionalCollectionNoActiveReasonsConfigured,
-              errorMessage: l10n.professionalCollectionReasonsLoadError,
-            ),
-            const SizedBox(height: 16),
-            Text(l10n.professionalCollectionRequestedServicesHeading, style: AppTypography.heading),
-            const SizedBox(height: 8),
-            _multiSelect(
-              category: ReferenceDataCategory.requestedService,
-              selected: _selectedServices,
-              emptyReason: l10n.professionalCollectionNoActiveServicesConfigured,
-              errorMessage: l10n.professionalCollectionServicesLoadError,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _notesController,
-              decoration: InputDecoration(labelText: l10n.recordPaymentNotesLabel),
-              maxLength: 2000,
-              maxLines: 3,
-              minLines: 2,
-            ),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: Text(l10n.professionalCollectionDeclarationConfirmLabel),
-              value: _declarationAccepted,
-              onChanged: (checked) => setState(() => _declarationAccepted = checked ?? false),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ],
-            const SizedBox(height: 12),
-            PrimaryButton(label: l10n.professionalCollectionSubmitButton, isLoading: _isLoading, onPressed: _submit),
           ],
-        ),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            label: l10n.professionalCollectionSubmitButton,
+            isLoading: _isLoading,
+            onPressed: _submit,
+          ),
+        ],
       ),
     );
   }

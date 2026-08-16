@@ -32,19 +32,25 @@ class ProfessionalCollectionTimelineEvent {
     required this.updatedAt,
   });
 
-  factory ProfessionalCollectionTimelineEvent.fromJson(Map<String, dynamic> json) =>
-      ProfessionalCollectionTimelineEvent(
-        id: json['id'].toString(),
-        professionalCollectionRequestId: json['professional_collection_request_id'].toString(),
-        eventType: json['event_type'] as String,
-        officerUserId: json['officer_user_id']?.toString(),
-        occurredAt: json['occurred_at'] as String,
-        notes: json['notes'] as String?,
-        outcome: json['outcome'] as String?,
-        attachments: (json['attachments'] as List<dynamic>? ?? [])
-            .map((e) => ProfessionalCollectionAttachment.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        createdAt: json['created_at'] as String,
-        updatedAt: json['updated_at'] as String,
-      );
+  factory ProfessionalCollectionTimelineEvent.fromJson(
+    Map<String, dynamic> json,
+  ) => ProfessionalCollectionTimelineEvent(
+    id: json['id'].toString(),
+    professionalCollectionRequestId: json['professional_collection_request_id']
+        .toString(),
+    eventType: json['event_type'] as String,
+    officerUserId: json['officer_user_id']?.toString(),
+    occurredAt: json['occurred_at'] as String,
+    notes: json['notes'] as String?,
+    outcome: json['outcome'] as String?,
+    attachments: (json['attachments'] as List<dynamic>? ?? [])
+        .map(
+          (e) => ProfessionalCollectionAttachment.fromJson(
+            e as Map<String, dynamic>,
+          ),
+        )
+        .toList(),
+    createdAt: json['created_at'] as String,
+    updatedAt: json['updated_at'] as String,
+  );
 }

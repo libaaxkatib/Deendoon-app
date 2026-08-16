@@ -12,7 +12,9 @@ String _isoDate(DateTime date) => date.toIso8601String().split('T').first;
 /// requested or displayed — the backend does not provide one.
 final collectionAnalyticsProvider = FutureProvider<CollectionAnalytics>((ref) {
   final range = ref.watch(overviewDateRangeProvider);
-  return ref.read(analyticsRepositoryProvider).fetchCollectionAnalytics(
+  return ref
+      .read(analyticsRepositoryProvider)
+      .fetchCollectionAnalytics(
         dateFrom: _isoDate(range.start),
         dateTo: _isoDate(range.end),
       );

@@ -42,19 +42,27 @@ class StorageAddon {
   });
 
   factory StorageAddon.fromJson(Map<String, dynamic> json) => StorageAddon(
-        id: json['id'].toString(),
-        tenantId: json['tenant_id'].toString(),
-        tenantName: json['tenant_name'] as String?,
-        storagePackage: json['storage_package'] as String,
-        storageSize: json['storage_size'] as int,
-        monthlyPrice: json['monthly_price'] as String,
-        paymentReference: json['payment_reference'] as String,
-        status: json['status'] as String,
-        startedAt: json['started_at'] == null ? null : DateTime.parse(json['started_at'] as String),
-        expiresAt: json['expires_at'] == null ? null : DateTime.parse(json['expires_at'] as String),
-        approvedBy: json['approved_by']?.toString(),
-        approvedAt: json['approved_at'] == null ? null : DateTime.parse(json['approved_at'] as String),
-        rejectionReason: json['rejection_reason'] as String?,
-        rejectionReasons: (json['rejection_reasons'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
-      );
+    id: json['id'].toString(),
+    tenantId: json['tenant_id'].toString(),
+    tenantName: json['tenant_name'] as String?,
+    storagePackage: json['storage_package'] as String,
+    storageSize: json['storage_size'] as int,
+    monthlyPrice: json['monthly_price'] as String,
+    paymentReference: json['payment_reference'] as String,
+    status: json['status'] as String,
+    startedAt: json['started_at'] == null
+        ? null
+        : DateTime.parse(json['started_at'] as String),
+    expiresAt: json['expires_at'] == null
+        ? null
+        : DateTime.parse(json['expires_at'] as String),
+    approvedBy: json['approved_by']?.toString(),
+    approvedAt: json['approved_at'] == null
+        ? null
+        : DateTime.parse(json['approved_at'] as String),
+    rejectionReason: json['rejection_reason'] as String?,
+    rejectionReasons: (json['rejection_reasons'] as List<dynamic>?)
+        ?.map((e) => e.toString())
+        .toList(),
+  );
 }

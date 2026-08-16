@@ -69,6 +69,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoon => 'Coming soon';
 
   @override
+  String get biometricLockTitle => 'Unlock Deendoon';
+
+  @override
+  String get biometricLockPromptReason => 'Authenticate to access your account';
+
+  @override
+  String get biometricLockFailedMessage =>
+      'Authentication failed. Try again or use your password.';
+
+  @override
+  String get usePasswordInstead => 'Use Password Instead';
+
+  @override
+  String get biometricEnableFailedMessage =>
+      'Could not verify your biometrics. Please try again.';
+
+  @override
   String get defaultCreditLimit => 'Default Credit Limit';
 
   @override
@@ -104,6 +121,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retry => 'Retry';
+
+  @override
+  String get paginationLoadMoreError => 'Couldn\'t load more. Tap to retry.';
 
   @override
   String get fieldRequired => 'This field is required';
@@ -219,6 +239,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusExpired => 'Expired';
 
   @override
+  String get statusResolved => 'Resolved';
+
+  @override
   String get themeSwitchToLight => 'Switch to light mode';
 
   @override
@@ -267,6 +290,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authPasswordsMismatch => 'Passwords do not match';
+
+  @override
+  String get passwordFieldShowTooltip => 'Show password';
+
+  @override
+  String get passwordFieldHideTooltip => 'Hide password';
 
   @override
   String get loginAppName => 'Deendoon';
@@ -587,6 +616,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get professionalCollectionUploadUnavailableMessage =>
       'Uploading is not available at this stage of the Request.';
+
+  @override
+  String get attachmentDeleteTitle => 'Delete Attachment';
+
+  @override
+  String get attachmentDeleteDialogContent =>
+      'This attachment will be permanently deleted. This cannot be undone.';
+
+  @override
+  String get attachmentDeleteConfirmButton => 'Delete';
+
+  @override
+  String get attachmentDeletedSuccessfully => 'Attachment deleted successfully';
 
   @override
   String get professionalCollectionMessagesTitle => 'Messages';
@@ -995,6 +1037,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debtListEmptyFilteredState => 'No debts with this status';
 
   @override
+  String get debtListShowArchivedFilter => 'Show Archived';
+
+  @override
+  String get debtRestoredSuccessfully => 'Debt restored successfully';
+
+  @override
+  String get debtCardRestoreButton => 'Restore';
+
+  @override
+  String get debtCardArchivedBadge => 'Archived';
+
+  @override
   String get addEditDebtAddTitle => 'Add Debt';
 
   @override
@@ -1005,6 +1059,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get debtDetailLoadError => 'Could not load this debt.';
+
+  @override
+  String get debtArchiveTitle => 'Archive Debt';
+
+  @override
+  String get debtArchiveDialogContent =>
+      'This debt will no longer appear in the default list. This can be undone later.';
+
+  @override
+  String get debtArchiveConfirmButton => 'Archive';
+
+  @override
+  String get debtArchivedSuccessfully => 'Debt archived successfully';
 
   @override
   String debtDetailGenerateSuccessMessage(String label) {
@@ -1686,6 +1753,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationTypeStorageAddonUpdate => 'Storage Add-on Update';
 
   @override
+  String get notificationTypeSupportTicketCreated => 'Support Ticket Created';
+
+  @override
+  String get notificationTypeSupportTicketReplied => 'Support Ticket Reply';
+
+  @override
+  String get notificationTypeSupportTicketStatusChanged =>
+      'Support Ticket Status Update';
+
+  @override
+  String get notificationTypeSupportTicketClosed => 'Support Ticket Closed';
+
+  @override
+  String get notificationTypeSupportTicketReopened => 'Support Ticket Reopened';
+
+  @override
+  String get notificationTypeAdminAnnouncement => 'Announcement';
+
+  @override
+  String get notificationDeleteAction => 'Delete';
+
+  @override
   String get globalSearchTitle => 'Global Search';
 
   @override
@@ -2342,6 +2431,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountLogout => 'Logout';
 
   @override
+  String get accountCloseAccount => 'Close Account';
+
+  @override
+  String get closeAccountTitle => 'Close Account';
+
+  @override
+  String get closeAccountWarningHeading =>
+      'What happens when you close your account';
+
+  @override
+  String get closeAccountWarningBody =>
+      'Your account will be archived and your business will be suspended immediately. You will be signed out and will no longer be able to log in. Your customers, debts, payments, documents, and history are kept — nothing is deleted. To reopen your account, contact Deendoon Support.';
+
+  @override
+  String get closeAccountPasswordLabel => 'Enter your password to confirm';
+
+  @override
+  String get closeAccountPasswordRequired => 'Password is required';
+
+  @override
+  String get closeAccountButton => 'Close My Account';
+
+  @override
+  String get closeAccountConfirmDialogTitle => 'Close your account?';
+
+  @override
+  String get closeAccountConfirmDialogContent =>
+      'This will immediately sign you out and block access to your business. This cannot be undone by you — only Deendoon Support can reopen it.';
+
+  @override
+  String get closeAccountConfirmButton => 'Yes, Close Account';
+
+  @override
   String get profileTitle => 'Profile';
 
   @override
@@ -2604,4 +2726,149 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bulkImportUnsupportedFileTypeError =>
       'Unsupported file type. Only .xlsx and .xls files are supported.';
+
+  @override
+  String get supportTicketListTitle => 'My Tickets';
+
+  @override
+  String get supportTicketListLoadError => 'Could not load your tickets.';
+
+  @override
+  String get supportTicketListEmptyState => 'No tickets yet.';
+
+  @override
+  String get supportTicketListEmptyFilteredState =>
+      'No tickets match this status.';
+
+  @override
+  String get supportTicketCreateTitle => 'Create Ticket';
+
+  @override
+  String get supportTicketCreateValidationError =>
+      'Please fill in the subject and description.';
+
+  @override
+  String get supportTicketSubjectLabel => 'Subject';
+
+  @override
+  String get supportTicketSubjectHint => 'Briefly describe the issue';
+
+  @override
+  String get supportTicketDescriptionLabel => 'Description';
+
+  @override
+  String get supportTicketDescriptionHint => 'Give as much detail as you can';
+
+  @override
+  String get supportTicketPriorityLabel => 'Priority';
+
+  @override
+  String get supportTicketCategoryLabel => 'Category';
+
+  @override
+  String get supportTicketSubmitButton => 'Submit Ticket';
+
+  @override
+  String get supportTicketDetailTitle => 'Ticket';
+
+  @override
+  String get supportTicketDetailLoadError => 'Could not load this ticket.';
+
+  @override
+  String get supportTicketClosedNotice =>
+      'This ticket is closed — new replies are not accepted.';
+
+  @override
+  String supportTicketClosedAtLabel(String date) {
+    return 'Closed on $date';
+  }
+
+  @override
+  String supportTicketReopenedAtLabel(String date) {
+    return 'Reopened on $date';
+  }
+
+  @override
+  String get supportTicketAttachmentsTitle => 'Attachments';
+
+  @override
+  String get supportTicketAttachmentsLoadError => 'Could not load attachments.';
+
+  @override
+  String get supportTicketNoAttachments => 'No attachments uploaded.';
+
+  @override
+  String get supportTicketUploadButton => 'Attach File';
+
+  @override
+  String get supportTicketConversationTitle => 'Conversation';
+
+  @override
+  String get supportTicketConversationLoadError =>
+      'Could not load the conversation.';
+
+  @override
+  String get supportTicketNoRepliesYet => 'No replies yet.';
+
+  @override
+  String get supportTicketReplyHint => 'Type a reply';
+
+  @override
+  String get supportTicketMessageSenderYou => 'You';
+
+  @override
+  String get supportTicketMessageSenderDeendoon => 'Deendoon Support';
+
+  @override
+  String get supportTicketPriorityLow => 'Low';
+
+  @override
+  String get supportTicketPriorityMedium => 'Medium';
+
+  @override
+  String get supportTicketPriorityHigh => 'High';
+
+  @override
+  String get supportTicketPriorityUrgent => 'Urgent';
+
+  @override
+  String get supportTicketCategoryTechnicalIssue => 'Technical Issue';
+
+  @override
+  String get supportTicketCategoryPaymentBilling => 'Payment / Billing';
+
+  @override
+  String get supportTicketCategoryAccount => 'Account';
+
+  @override
+  String get supportTicketCategorySubscription => 'Subscription';
+
+  @override
+  String get supportTicketCategoryDebtRecovery => 'Debt & Recovery';
+
+  @override
+  String get supportTicketCategoryProfessionalCollection =>
+      'Professional Collection';
+
+  @override
+  String get supportTicketCategoryFeatureRequest => 'Feature Request';
+
+  @override
+  String get supportTicketCategoryOther => 'Other';
+
+  @override
+  String get supportTicketContactCardTitle => 'Contact Deendoon Support';
+
+  @override
+  String get supportTicketContactPhoneButton => 'Phone';
+
+  @override
+  String get supportTicketContactWhatsAppButton => 'WhatsApp';
+
+  @override
+  String get supportTicketContactEmailButton => 'Email';
+
+  @override
+  String get supportTicketContactLaunchError =>
+      'Could not open that. Please try again.';
 }

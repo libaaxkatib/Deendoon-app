@@ -9,11 +9,11 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/customer_detail_providers.dart';
 
 Map<String, String> _documentTypeLabels(AppLocalizations l10n) => {
-      'receipt': l10n.documentTypeReceipt,
-      'demand_letter': l10n.documentTypeDemandLetter,
-      'statement': l10n.documentTypeStatement,
-      'invoice': l10n.documentTypeInvoice,
-    };
+  'receipt': l10n.documentTypeReceipt,
+  'demand_letter': l10n.documentTypeDemandLetter,
+  'statement': l10n.documentTypeStatement,
+  'invoice': l10n.documentTypeInvoice,
+};
 
 /// Customer Detail's "Documents" destination — `GET /customers/{id}/documents`
 /// (`DocumentController::forCustomer`), combining Receipts, Demand Letters,
@@ -44,12 +44,18 @@ class CustomerDocumentsScreen extends ConsumerWidget {
           error: (error, _) => Center(
             child: RetrySection(
               message: l10n.customerDocumentsLoadError,
-              onRetry: () => ref.invalidate(customerDocumentsProvider(customerId)),
+              onRetry: () =>
+                  ref.invalidate(customerDocumentsProvider(customerId)),
             ),
           ),
           data: (documents) {
             if (documents.isEmpty) {
-              return Center(child: Text(l10n.customerDocumentsEmptyState, style: AppTypography.body));
+              return Center(
+                child: Text(
+                  l10n.customerDocumentsEmptyState,
+                  style: AppTypography.body,
+                ),
+              );
             }
 
             return ListView.separated(
@@ -66,10 +72,14 @@ class CustomerDocumentsScreen extends ConsumerWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(document.referenceNumber, style: AppTypography.body),
+                          Text(
+                            document.referenceNumber,
+                            style: AppTypography.body,
+                          ),
                           const SizedBox(height: 2),
                           Text(
-                            documentTypeLabels[document.documentType] ?? document.documentType,
+                            documentTypeLabels[document.documentType] ??
+                                document.documentType,
                             style: AppTypography.caption,
                           ),
                         ],

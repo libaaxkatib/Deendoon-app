@@ -39,19 +39,31 @@ class SubscriptionChangeRequest {
     required this.rejectionReasons,
   });
 
-  factory SubscriptionChangeRequest.fromJson(Map<String, dynamic> json) => SubscriptionChangeRequest(
+  factory SubscriptionChangeRequest.fromJson(Map<String, dynamic> json) =>
+      SubscriptionChangeRequest(
         id: json['id'].toString(),
         tenantId: json['tenant_id'].toString(),
         tenantName: json['tenant_name'] as String?,
-        requestedPlan:
-            json['requested_plan'] == null ? null : SubscriptionPlan.fromJson(json['requested_plan'] as Map<String, dynamic>),
-        currentPlan: json['current_plan'] == null ? null : SubscriptionPlan.fromJson(json['current_plan'] as Map<String, dynamic>),
+        requestedPlan: json['requested_plan'] == null
+            ? null
+            : SubscriptionPlan.fromJson(
+                json['requested_plan'] as Map<String, dynamic>,
+              ),
+        currentPlan: json['current_plan'] == null
+            ? null
+            : SubscriptionPlan.fromJson(
+                json['current_plan'] as Map<String, dynamic>,
+              ),
         paymentReference: json['payment_reference'] as String,
         status: json['status'] as String,
         requestedAt: DateTime.parse(json['requested_at'] as String),
         reviewedBy: json['reviewed_by']?.toString(),
-        reviewedAt: json['reviewed_at'] == null ? null : DateTime.parse(json['reviewed_at'] as String),
+        reviewedAt: json['reviewed_at'] == null
+            ? null
+            : DateTime.parse(json['reviewed_at'] as String),
         rejectionReason: json['rejection_reason'] as String?,
-        rejectionReasons: (json['rejection_reasons'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+        rejectionReasons: (json['rejection_reasons'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList(),
       );
 }

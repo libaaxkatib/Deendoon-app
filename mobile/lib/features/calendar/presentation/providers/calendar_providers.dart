@@ -16,7 +16,9 @@ final visibleMonthProvider = StateProvider<DateTime>((ref) {
 });
 
 /// The selected day in the grid — defaults to today.
-final selectedDateProvider = StateProvider<DateTime>((ref) => _startOfDay(DateTime.now()));
+final selectedDateProvider = StateProvider<DateTime>(
+  (ref) => _startOfDay(DateTime.now()),
+);
 
 /// Fetches `GET /calendar` for the visible month's real date range
 /// (first day through last day) — re-fetches automatically whenever
@@ -27,5 +29,7 @@ final calendarMonthProvider = FutureProvider<CalendarData>((ref) {
   final month = ref.watch(visibleMonthProvider);
   final from = DateTime(month.year, month.month, 1);
   final to = DateTime(month.year, month.month + 1, 0);
-  return ref.watch(calendarRepositoryProvider).fetchEntries(from: _isoDate(from), to: _isoDate(to));
+  return ref
+      .watch(calendarRepositoryProvider)
+      .fetchEntries(from: _isoDate(from), to: _isoDate(to));
 });

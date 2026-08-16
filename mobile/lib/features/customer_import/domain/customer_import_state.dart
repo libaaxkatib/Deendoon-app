@@ -18,7 +18,11 @@ class ImportFileSelected extends CustomerImportState {
   final String fileName;
   final int fileSize;
 
-  const ImportFileSelected({required this.filePath, required this.fileName, required this.fileSize});
+  const ImportFileSelected({
+    required this.filePath,
+    required this.fileName,
+    required this.fileSize,
+  });
 }
 
 class ImportRunning extends CustomerImportState {

@@ -360,6 +360,88 @@ void main() {
     expect(find.text('Edit Debt Screen'), findsOneWidget);
   });
 
+  testWidgets(
+    'Archive asks for confirmation, calls the real endpoint, and pops back to the Debt List',
+    (tester) async {
+      when(() => mockDebtRepository.archiveDebt('1')).thenAnswer((_) async {});
+
+      tester.view.physicalSize = const Size(400, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const Scaffold(body: Text('Debt List Screen')),
+          ),
+          GoRoute(
+            path: '/detail',
+            builder: (_, _) => const DebtDetailScreen(debtId: '1'),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            debtRepositoryProvider.overrideWithValue(mockDebtRepository),
+            customerRepositoryProvider.overrideWithValue(
+              mockCustomerRepository,
+            ),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      router.push('/detail');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Archive Debt'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This debt will no longer appear in the default list. This can be undone later.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.widgetWithText(TextButton, 'Archive'));
+      await tester.pumpAndSettle();
+
+      verify(() => mockDebtRepository.archiveDebt('1')).called(1);
+      expect(find.text('Debt List Screen'), findsOneWidget);
+      expect(find.text('Debt archived successfully'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Archive does nothing when the confirmation dialog is cancelled',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        debtRepository: mockDebtRepository,
+        customerRepository: mockCustomerRepository,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Archive Debt'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => mockDebtRepository.archiveDebt(any()));
+      expect(find.byType(DebtDetailScreen), findsOneWidget);
+    },
+  );
+
   testWidgets('Attachments opens the debt-scoped Attachments screen', (
     tester,
   ) async {

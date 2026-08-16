@@ -20,7 +20,8 @@ class _MockCustomerRepository extends Mock implements CustomerRepository {}
 
 class _MockDebtRepository extends Mock implements DebtRepository {}
 
-class _MockCollectionCaseRepository extends Mock implements CollectionCaseRepository {}
+class _MockCollectionCaseRepository extends Mock
+    implements CollectionCaseRepository {}
 
 const _followUpReminder = Reminder(
   id: '1',
@@ -133,11 +134,28 @@ Future<void> _pumpScreen(
   final router = GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const Scaffold(body: Text('Reminder List Screen'))),
-      GoRoute(path: '/reminders/1', builder: (_, _) => const ReminderDetailScreen(reminderId: '1')),
-      GoRoute(path: '/reminders/1/edit', builder: (_, _) => const Scaffold(body: Text('Edit Screen'))),
-      GoRoute(path: '/reminders/1/send', builder: (_, state) => Scaffold(body: Text('Send Screen ${state.uri.queryParameters['channel']}'))),
-      GoRoute(path: '/cases/:id', builder: (_, _) => const Scaffold(body: Text('Case Screen'))),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const Scaffold(body: Text('Reminder List Screen')),
+      ),
+      GoRoute(
+        path: '/reminders/1',
+        builder: (_, _) => const ReminderDetailScreen(reminderId: '1'),
+      ),
+      GoRoute(
+        path: '/reminders/1/edit',
+        builder: (_, _) => const Scaffold(body: Text('Edit Screen')),
+      ),
+      GoRoute(
+        path: '/reminders/1/send',
+        builder: (_, state) => Scaffold(
+          body: Text('Send Screen ${state.uri.queryParameters['channel']}'),
+        ),
+      ),
+      GoRoute(
+        path: '/cases/:id',
+        builder: (_, _) => const Scaffold(body: Text('Case Screen')),
+      ),
     ],
   );
 
@@ -147,7 +165,9 @@ Future<void> _pumpScreen(
         reminderRepositoryProvider.overrideWithValue(reminderRepository),
         customerRepositoryProvider.overrideWithValue(customerRepository),
         debtRepositoryProvider.overrideWithValue(_MockDebtRepository()),
-        collectionCaseRepositoryProvider.overrideWithValue(_MockCollectionCaseRepository()),
+        collectionCaseRepositoryProvider.overrideWithValue(
+          _MockCollectionCaseRepository(),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -175,71 +195,116 @@ void main() {
   setUp(() {
     mockReminderRepository = _MockReminderRepository();
     mockCustomerRepository = _MockCustomerRepository();
-    when(() => mockCustomerRepository.fetchCustomer('01CUST')).thenAnswer((_) async => _customer);
+    when(
+      () => mockCustomerRepository.fetchCustomer('01CUST'),
+    ).thenAnswer((_) async => _customer);
   });
 
   group('Follow-up reminders (every type except client_visit)', () {
-    testWidgets('shows Call/WhatsApp/SMS instead of Send Reminder, plus Mark as Completed and Reschedule', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _followUpReminder);
+    testWidgets(
+      'shows Call/WhatsApp/SMS instead of Send Reminder, plus Mark as Completed and Reschedule',
+      (tester) async {
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => _followUpReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Somali Builders'), findsOneWidget);
-      // Reminder Module Final Polish: Amount Due renders with a thousand
-      // separator via formatFriendlyAmount(), not the raw backend string.
-      expect(find.text('4,967.40'), findsOneWidget);
-      expect(find.text('Call before visiting'), findsOneWidget);
-      expect(find.text('Call'), findsOneWidget);
-      expect(find.text('WhatsApp'), findsOneWidget);
-      expect(find.text('SMS'), findsOneWidget);
-      expect(find.text('Send Reminder'), findsNothing);
-      expect(find.text('Mark as Completed'), findsOneWidget);
-      expect(find.text('Reschedule'), findsOneWidget);
-      expect(find.text('View Case'), findsOneWidget);
-      // Client Visit-only actions must never show for a Follow-up reminder.
-      expect(find.text('Navigate'), findsNothing);
-      expect(find.text('Check In'), findsNothing);
-      expect(find.text('Log Visit Outcome'), findsNothing);
-    });
+        expect(find.text('Somali Builders'), findsOneWidget);
+        // Reminder Module Final Polish: Amount Due renders with a thousand
+        // separator via formatFriendlyAmount(), not the raw backend string.
+        expect(find.text('4,967.40'), findsOneWidget);
+        expect(find.text('Call before visiting'), findsOneWidget);
+        expect(find.text('Call'), findsOneWidget);
+        expect(find.text('WhatsApp'), findsOneWidget);
+        expect(find.text('SMS'), findsOneWidget);
+        expect(find.text('Send Reminder'), findsNothing);
+        expect(find.text('Mark as Completed'), findsOneWidget);
+        expect(find.text('Reschedule'), findsOneWidget);
+        expect(find.text('View Case'), findsOneWidget);
+        // Client Visit-only actions must never show for a Follow-up reminder.
+        expect(find.text('Navigate'), findsNothing);
+        expect(find.text('Check In'), findsNothing);
+        expect(find.text('Log Visit Outcome'), findsNothing);
+      },
+    );
 
-    testWidgets('tapping WhatsApp navigates to the send screen preselecting the whatsapp channel', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _followUpReminder);
+    testWidgets(
+      'tapping WhatsApp navigates to the send screen preselecting the whatsapp channel',
+      (tester) async {
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => _followUpReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('WhatsApp'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('WhatsApp'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Send Screen whatsapp'), findsOneWidget);
-    });
+        expect(find.text('Send Screen whatsapp'), findsOneWidget);
+      },
+    );
 
-    testWidgets('tapping SMS navigates to the send screen preselecting the sms channel', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _followUpReminder);
+    testWidgets(
+      'tapping SMS navigates to the send screen preselecting the sms channel',
+      (tester) async {
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => _followUpReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('SMS'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('SMS'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Send Screen sms'), findsOneWidget);
-    });
+        expect(find.text('Send Screen sms'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Mark as Completed is disabled once the reminder is already completed', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _completedFollowUpReminder);
+    testWidgets(
+      'Mark as Completed is disabled once the reminder is already completed',
+      (tester) async {
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => _completedFollowUpReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      final button = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Mark as Completed'));
-      expect(button.onPressed, isNull);
-    });
+        final button = tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, 'Mark as Completed'),
+        );
+        expect(button.onPressed, isNull);
+      },
+    );
 
-    testWidgets('Snooze 1 Hour persists via the real update endpoint sending only due_date', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _followUpReminder);
-      when(() => mockReminderRepository.updateReminder(
+    testWidgets(
+      'Snooze 1 Hour persists via the real update endpoint sending only due_date',
+      (tester) async {
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => _followUpReminder);
+        when(
+          () => mockReminderRepository.updateReminder(
             id: '1',
             dueDate: any(named: 'dueDate'),
             amountDue: any(named: 'amountDue'),
@@ -247,19 +312,25 @@ void main() {
             customFireAt: any(named: 'customFireAt'),
             deliveryMethods: any(named: 'deliveryMethods'),
             notes: any(named: 'notes'),
-          )).thenAnswer((_) async => _followUpReminder);
+          ),
+        ).thenAnswer((_) async => _followUpReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Snooze'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Snooze'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('1 Hour'), findsOneWidget);
-      await tester.tap(find.text('1 Hour'));
-      await tester.pumpAndSettle();
+        expect(find.text('1 Hour'), findsOneWidget);
+        await tester.tap(find.text('1 Hour'));
+        await tester.pumpAndSettle();
 
-      verify(() => mockReminderRepository.updateReminder(
+        verify(
+          () => mockReminderRepository.updateReminder(
             id: '1',
             dueDate: any(named: 'dueDate'),
             amountDue: null,
@@ -267,65 +338,104 @@ void main() {
             customFireAt: null,
             deliveryMethods: null,
             notes: null,
-          )).called(1);
-    });
+          ),
+        ).called(1);
+      },
+    );
 
-    testWidgets('Snooze is disabled once the reminder is already completed', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _completedFollowUpReminder);
+    testWidgets('Snooze is disabled once the reminder is already completed', (
+      tester,
+    ) async {
+      when(
+        () => mockReminderRepository.fetchReminder('1'),
+      ).thenAnswer((_) async => _completedFollowUpReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
+      await _pumpScreen(
+        tester,
+        reminderRepository: mockReminderRepository,
+        customerRepository: mockCustomerRepository,
+      );
       await tester.pumpAndSettle();
 
-      final button = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Snooze'));
+      final button = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Snooze'),
+      );
       expect(button.onPressed, isNull);
     });
   });
 
   group('Client Visit reminders', () {
-    testWidgets('shows Navigate/Check In/Log Visit Outcome/Mark as Completed, never Call/WhatsApp/SMS', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _clientVisitReminder);
+    testWidgets(
+      'shows Navigate/Check In/Log Visit Outcome/Mark as Completed, never Call/WhatsApp/SMS',
+      (tester) async {
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => _clientVisitReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Navigate'), findsOneWidget);
-      expect(find.text('Check In'), findsOneWidget);
-      expect(find.text('Log Visit Outcome'), findsOneWidget);
-      expect(find.text('Snooze'), findsOneWidget);
-      expect(find.text('Mark as Completed'), findsOneWidget);
-      expect(find.text('Call'), findsNothing);
-      expect(find.text('WhatsApp'), findsNothing);
-      expect(find.text('SMS'), findsNothing);
-      expect(find.text('Send Reminder'), findsNothing);
-      // Reschedule is a Follow-up-only shortcut per the approved workflow —
-      // Client Visit still has the Edit icon in the AppBar for the same
-      // underlying action.
-      expect(find.text('Reschedule'), findsNothing);
-    });
+        expect(find.text('Navigate'), findsOneWidget);
+        expect(find.text('Check In'), findsOneWidget);
+        expect(find.text('Log Visit Outcome'), findsOneWidget);
+        expect(find.text('Snooze'), findsOneWidget);
+        expect(find.text('Mark as Completed'), findsOneWidget);
+        expect(find.text('Call'), findsNothing);
+        expect(find.text('WhatsApp'), findsNothing);
+        expect(find.text('SMS'), findsNothing);
+        expect(find.text('Send Reminder'), findsNothing);
+        // Reschedule is a Follow-up-only shortcut per the approved workflow —
+        // Client Visit still has the Edit icon in the AppBar for the same
+        // underlying action.
+        expect(find.text('Reschedule'), findsNothing);
+      },
+    );
 
-    testWidgets('Check In persists via the real check-in endpoint and the button becomes disabled Checked In', (tester) async {
-      var current = _clientVisitReminder;
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => current);
-      when(() => mockReminderRepository.checkInReminder('1')).thenAnswer((_) async {
-        current = _checkedInClientVisitReminder;
-        return current;
-      });
+    testWidgets(
+      'Check In persists via the real check-in endpoint and the button becomes disabled Checked In',
+      (tester) async {
+        var current = _clientVisitReminder;
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => current);
+        when(() => mockReminderRepository.checkInReminder('1')).thenAnswer((
+          _,
+        ) async {
+          current = _checkedInClientVisitReminder;
+          return current;
+        });
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Check In'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Check In'));
+        await tester.pumpAndSettle();
 
-      verify(() => mockReminderRepository.checkInReminder('1')).called(1);
-      expect(find.text('Checked In'), findsOneWidget);
-      final button = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Checked In'));
-      expect(button.onPressed, isNull);
-    });
+        verify(() => mockReminderRepository.checkInReminder('1')).called(1);
+        expect(find.text('Checked In'), findsOneWidget);
+        final button = tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, 'Checked In'),
+        );
+        expect(button.onPressed, isNull);
+      },
+    );
 
-    testWidgets('Log Visit Outcome pre-fills existing notes and Save persists via the real notes update endpoint', (tester) async {
-      when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _clientVisitReminder);
-      when(() => mockReminderRepository.updateReminder(
+    testWidgets(
+      'Log Visit Outcome pre-fills existing notes and Save persists via the real notes update endpoint',
+      (tester) async {
+        when(
+          () => mockReminderRepository.fetchReminder('1'),
+        ).thenAnswer((_) async => _clientVisitReminder);
+        when(
+          () => mockReminderRepository.updateReminder(
             id: '1',
             dueDate: any(named: 'dueDate'),
             amountDue: any(named: 'amountDue'),
@@ -333,22 +443,28 @@ void main() {
             customFireAt: any(named: 'customFireAt'),
             deliveryMethods: any(named: 'deliveryMethods'),
             notes: 'Customer was not home',
-          )).thenAnswer((_) async => _clientVisitReminder);
+          ),
+        ).thenAnswer((_) async => _clientVisitReminder);
 
-      await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          reminderRepository: mockReminderRepository,
+          customerRepository: mockCustomerRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Log Visit Outcome'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Log Visit Outcome'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('What happened during this visit?'), findsOneWidget);
+        expect(find.text('What happened during this visit?'), findsOneWidget);
 
-      await tester.enterText(find.byType(TextField), 'Customer was not home');
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
-      await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField), 'Customer was not home');
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Visit outcome saved.'), findsOneWidget);
-      verify(() => mockReminderRepository.updateReminder(
+        expect(find.text('Visit outcome saved.'), findsOneWidget);
+        verify(
+          () => mockReminderRepository.updateReminder(
             id: '1',
             dueDate: any(named: 'dueDate'),
             amountDue: any(named: 'amountDue'),
@@ -356,25 +472,45 @@ void main() {
             customFireAt: any(named: 'customFireAt'),
             deliveryMethods: any(named: 'deliveryMethods'),
             notes: 'Customer was not home',
-          )).called(1);
-    });
+          ),
+        ).called(1);
+      },
+    );
   });
 
-  testWidgets('shows a retry affordance when the reminder fails to load', (tester) async {
-    when(() => mockReminderRepository.fetchReminder('1')).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the reminder fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockReminderRepository.fetchReminder('1'),
+    ).thenThrow(Exception('network down'));
 
-    await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
+    await _pumpScreen(
+      tester,
+      reminderRepository: mockReminderRepository,
+      customerRepository: mockCustomerRepository,
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Could not load this reminder.'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('confirming delete calls the real endpoint and navigates back', (tester) async {
-    when(() => mockReminderRepository.fetchReminder('1')).thenAnswer((_) async => _followUpReminder);
-    when(() => mockReminderRepository.deleteReminder('1')).thenAnswer((_) async {});
+  testWidgets('confirming delete calls the real endpoint and navigates back', (
+    tester,
+  ) async {
+    when(
+      () => mockReminderRepository.fetchReminder('1'),
+    ).thenAnswer((_) async => _followUpReminder);
+    when(
+      () => mockReminderRepository.deleteReminder('1'),
+    ).thenAnswer((_) async {});
 
-    await _pumpScreen(tester, reminderRepository: mockReminderRepository, customerRepository: mockCustomerRepository);
+    await _pumpScreen(
+      tester,
+      reminderRepository: mockReminderRepository,
+      customerRepository: mockCustomerRepository,
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.delete_outline));

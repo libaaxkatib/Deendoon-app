@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../customers/presentation/providers/customer_detail_providers.dart';
+import '../providers/debt_actions.dart';
 import '../providers/debt_list_provider.dart';
 import '../widgets/debt_card.dart';
 
@@ -27,7 +29,11 @@ class DebtListScreen extends ConsumerStatefulWidget {
   /// that needs to pick one of a customer's debts, e.g. Record Payment.
   final bool selectionMode;
 
-  const DebtListScreen({super.key, required this.customerId, this.selectionMode = false});
+  const DebtListScreen({
+    super.key,
+    required this.customerId,
+    this.selectionMode = false,
+  });
 
   @override
   ConsumerState<DebtListScreen> createState() => _DebtListScreenState();
@@ -36,7 +42,13 @@ class DebtListScreen extends ConsumerStatefulWidget {
 class _DebtListScreenState extends ConsumerState<DebtListScreen> {
   final _scrollController = ScrollController();
 
-  static const _statusFilterKeys = <String?>[null, 'overdue', 'pending', 'partial_paid', 'paid'];
+  static const _statusFilterKeys = <String?>[
+    null,
+    'overdue',
+    'pending',
+    'partial_paid',
+    'paid',
+  ];
 
   @override
   void initState() {
@@ -52,8 +64,24 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(debtListProvider(widget.customerId).notifier).loadMore();
+    }
+  }
+
+  Future<void> _restore(String debtId) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(debtActionsProvider)
+          .restore(debtId: debtId, customerId: widget.customerId);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.debtRestoredSuccessfully)),
+      );
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -73,12 +101,17 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.selectionMode ? l10n.debtListSelectTitle : (customerAsync.valueOrNull?.name ?? l10n.debtListTitle)),
+        title: Text(
+          widget.selectionMode
+              ? l10n.debtListSelectTitle
+              : (customerAsync.valueOrNull?.name ?? l10n.debtListTitle),
+        ),
       ),
       floatingActionButton: widget.selectionMode
           ? null
           : FloatingActionButton(
-              onPressed: () => context.push('/customers/${widget.customerId}/debts/new'),
+              onPressed: () =>
+                  context.push('/customers/${widget.customerId}/debts/new'),
               tooltip: l10n.addEditDebtAddTitle,
               child: const Icon(Icons.add),
             ),
@@ -96,11 +129,24 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
                     _StatusFilterChip(
                       label: statusFilterLabels[key]!,
                       selected: debtsAsync.valueOrNull?.status == key,
-                      onTap: () => ref.read(debtListProvider(widget.customerId).notifier).filterByStatus(key),
+                      onTap: () => ref
+                          .read(debtListProvider(widget.customerId).notifier)
+                          .filterByStatus(key),
                     ),
                     const SizedBox(width: 8),
                   ],
                 ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilterChip(
+                label: Text(l10n.debtListShowArchivedFilter),
+                selected: debtsAsync.valueOrNull?.includeArchived ?? false,
+                onSelected: (_) => ref
+                    .read(debtListProvider(widget.customerId).notifier)
+                    .toggleIncludeArchived(),
               ),
             ),
             const SizedBox(height: 16),
@@ -110,15 +156,20 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
                 error: (error, _) => Center(
                   child: RetrySection(
                     message: l10n.debtListLoadError,
-                    onRetry: () => ref.invalidate(debtListProvider(widget.customerId)),
+                    onRetry: () =>
+                        ref.invalidate(debtListProvider(widget.customerId)),
                   ),
                 ),
                 data: (state) {
                   if (state.debts.isEmpty) {
                     return Center(
                       child: Text(
-                        state.status == null ? l10n.debtListEmptyState : l10n.debtListEmptyFilteredState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        state.status == null
+                            ? l10n.debtListEmptyState
+                            : l10n.debtListEmptyFilteredState,
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
@@ -126,16 +177,31 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
                   final riskLevel = customerAsync.valueOrNull?.riskLevel;
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(debtListProvider(widget.customerId).notifier).refresh(),
+                    onRefresh: () => ref
+                        .read(debtListProvider(widget.customerId).notifier)
+                        .refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
                       itemCount: state.debts.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.debts.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(
+                                            debtListProvider(
+                                              widget.customerId,
+                                            ).notifier,
+                                          )
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final debt = state.debts[index];
@@ -145,6 +211,9 @@ class _DebtListScreenState extends ConsumerState<DebtListScreen> {
                           onTap: widget.selectionMode
                               ? () => context.pop(debt)
                               : () => context.push('/debts/${debt.id}'),
+                          onRestore: (!widget.selectionMode && debt.isArchived)
+                              ? () => _restore(debt.id)
+                              : null,
                         );
                       },
                     ),
@@ -164,7 +233,11 @@ class _StatusFilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _StatusFilterChip({required this.label, required this.selected, required this.onTap});
+  const _StatusFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +246,9 @@ class _StatusFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

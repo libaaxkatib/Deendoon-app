@@ -129,5 +129,6 @@ class DeendoonColors extends ThemeExtension<DeendoonColors> {
 /// `buildAppLightTheme()`. The real app always registers one of the two,
 /// so this fallback only matters for test harnesses, not production.
 extension DeendoonColorsX on BuildContext {
-  DeendoonColors get colors => Theme.of(this).extension<DeendoonColors>() ?? DeendoonColors.dark;
+  DeendoonColors get colors =>
+      Theme.of(this).extension<DeendoonColors>() ?? DeendoonColors.dark;
 }

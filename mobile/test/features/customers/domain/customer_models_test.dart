@@ -50,23 +50,26 @@ void main() {
       expect(customer.creditScoreBand, isNull);
     });
 
-    test('parses is_read_only: true (FR-083, over the plan\'s effective customer limit)', () {
-      final customer = Customer.fromJson({
-        'id': '01ABC',
-        'name': 'Somali Builders',
-        'phone': '+252612345678',
-        'customer_status': 'good_standing',
-        'credit_limit': '5000.00',
-        'outstanding_balance': '800.00',
-        'remaining_credit': '4200.00',
-        'risk_level': 'low',
-        'credit_score': 720,
-        'credit_score_band': 'good',
-        'is_read_only': true,
-      });
+    test(
+      'parses is_read_only: true (FR-083, over the plan\'s effective customer limit)',
+      () {
+        final customer = Customer.fromJson({
+          'id': '01ABC',
+          'name': 'Somali Builders',
+          'phone': '+252612345678',
+          'customer_status': 'good_standing',
+          'credit_limit': '5000.00',
+          'outstanding_balance': '800.00',
+          'remaining_credit': '4200.00',
+          'risk_level': 'low',
+          'credit_score': 720,
+          'credit_score_band': 'good',
+          'is_read_only': true,
+        });
 
-      expect(customer.isReadOnly, isTrue);
-    });
+        expect(customer.isReadOnly, isTrue);
+      },
+    );
 
     test('defaults isReadOnly to false when the field is absent', () {
       final customer = Customer.fromJson({
@@ -103,7 +106,12 @@ void main() {
             'credit_score_band': null,
           },
         ],
-        'pagination': {'current_page': 1, 'per_page': 20, 'total': 45, 'last_page': 3},
+        'pagination': {
+          'current_page': 1,
+          'per_page': 20,
+          'total': 45,
+          'last_page': 3,
+        },
       });
 
       expect(page.customers, hasLength(1));
@@ -133,19 +141,22 @@ void main() {
       expect(payment.paymentMethod, 'cash');
     });
 
-    test('parses a null payment_method without throwing (it is genuinely optional)', () {
-      final payment = Payment.fromJson({
-        'id': '01PAY',
-        'debt_id': '01DEBT',
-        'amount': '250.00',
-        'payment_date': '2026-07-20',
-        'payment_method': null,
-        'reference_notes': null,
-        'recorded_by_user_id': 1,
-        'created_at': '2026-07-20T10:00:00.000000Z',
-      });
+    test(
+      'parses a null payment_method without throwing (it is genuinely optional)',
+      () {
+        final payment = Payment.fromJson({
+          'id': '01PAY',
+          'debt_id': '01DEBT',
+          'amount': '250.00',
+          'payment_date': '2026-07-20',
+          'payment_method': null,
+          'reference_notes': null,
+          'recorded_by_user_id': 1,
+          'created_at': '2026-07-20T10:00:00.000000Z',
+        });
 
-      expect(payment.paymentMethod, isNull);
-    });
+        expect(payment.paymentMethod, isNull);
+      },
+    );
   });
 }

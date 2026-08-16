@@ -36,5 +36,11 @@ class Authenticated extends AuthState {
 class AuthError extends AuthState {
   final String message;
 
-  const AuthError(this.message);
+  /// Raw per-field backend validation messages (Laravel's `errors` map),
+  /// carried alongside the combined [message] so Login/Register can map
+  /// them onto individual fields (Mobile Fix #10) while every other
+  /// consumer of this state keeps using [message] unchanged.
+  final Map<String, dynamic>? fieldErrors;
+
+  const AuthError(this.message, {this.fieldErrors});
 }

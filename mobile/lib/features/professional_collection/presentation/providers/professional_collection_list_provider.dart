@@ -13,6 +13,7 @@ class ProfessionalCollectionListState {
   final int total;
   final String? status;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const ProfessionalCollectionListState({
     required this.requests,
@@ -21,6 +22,7 @@ class ProfessionalCollectionListState {
     required this.total,
     required this.status,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -32,6 +34,7 @@ class ProfessionalCollectionListState {
     int? total,
     String? status,
     bool? isLoadingMore,
+    bool? loadMoreError,
     bool clearStatus = false,
   }) {
     return ProfessionalCollectionListState(
@@ -41,20 +44,25 @@ class ProfessionalCollectionListState {
       total: total ?? this.total,
       status: clearStatus ? null : (status ?? this.status),
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final professionalCollectionListProvider =
-    AsyncNotifierProvider<ProfessionalCollectionListNotifier, ProfessionalCollectionListState>(
-  ProfessionalCollectionListNotifier.new,
-);
+    AsyncNotifierProvider<
+      ProfessionalCollectionListNotifier,
+      ProfessionalCollectionListState
+    >(ProfessionalCollectionListNotifier.new);
 
-class ProfessionalCollectionListNotifier extends AsyncNotifier<ProfessionalCollectionListState> {
+class ProfessionalCollectionListNotifier
+    extends AsyncNotifier<ProfessionalCollectionListState> {
   @override
-  Future<ProfessionalCollectionListState> build() => _fetchFirstPage(status: null);
+  Future<ProfessionalCollectionListState> build() =>
+      _fetchFirstPage(status: null);
 
-  ProfessionalCollectionRepository get _repository => ref.read(professionalCollectionRepositoryProvider);
+  ProfessionalCollectionRepository get _repository =>
+      ref.read(professionalCollectionRepositoryProvider);
 
   /// `status` is one of the real 8 status values or null for all — always
   /// a real API call, never a client-side filter.
@@ -72,22 +80,34 @@ class ProfessionalCollectionListNotifier extends AsyncNotifier<ProfessionalColle
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
-      final next = await _repository.fetchRequests(page: current.currentPage + 1, status: current.status);
-      state = AsyncData(current.copyWith(
-        requests: [...current.requests, ...next.requests],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      final next = await _repository.fetchRequests(
+        page: current.currentPage + 1,
+        status: current.status,
+      );
+      state = AsyncData(
+        current.copyWith(
+          requests: [...current.requests, ...next.requests],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
-  Future<ProfessionalCollectionListState> _fetchFirstPage({required String? status}) async {
+  Future<ProfessionalCollectionListState> _fetchFirstPage({
+    required String? status,
+  }) async {
     final page = await _repository.fetchRequests(page: 1, status: status);
     return ProfessionalCollectionListState(
       requests: page.requests,

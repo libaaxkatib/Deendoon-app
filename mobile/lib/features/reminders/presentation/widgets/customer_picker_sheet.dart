@@ -26,7 +26,8 @@ class _CustomerPickerSheet extends ConsumerStatefulWidget {
   const _CustomerPickerSheet();
 
   @override
-  ConsumerState<_CustomerPickerSheet> createState() => _CustomerPickerSheetState();
+  ConsumerState<_CustomerPickerSheet> createState() =>
+      _CustomerPickerSheetState();
 }
 
 class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
@@ -51,7 +52,9 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
   Future<void> _search(String query) async {
     setState(() => _loading = true);
     try {
-      final page = await ref.read(customerRepositoryProvider).fetchCustomers(page: 1, search: query);
+      final page = await ref
+          .read(customerRepositoryProvider)
+          .fetchCustomers(page: 1, search: query);
       if (mounted) setState(() => _results = page.customers);
     } catch (_) {
       if (mounted) setState(() => _results = []);
@@ -62,7 +65,10 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
 
   void _onChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () => _search(value.trim()));
+    _debounce = Timer(
+      const Duration(milliseconds: 400),
+      () => _search(value.trim()),
+    );
   }
 
   @override
@@ -78,28 +84,42 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.customerListSelectTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.customerListSelectTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _controller,
               onChanged: _onChanged,
-              decoration: InputDecoration(hintText: l10n.customerSearchHint, prefixIcon: const Icon(Icons.search)),
+              decoration: InputDecoration(
+                hintText: l10n.customerSearchHint,
+                prefixIcon: const Icon(Icons.search),
+              ),
             ),
             const SizedBox(height: 12),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : (_results?.isEmpty ?? true)
-                      ? Center(child: Text(l10n.customerPickerSheetEmptyState, style: AppTypography.body))
-                      : ListView.separated(
-                          controller: scrollController,
-                          itemCount: _results!.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final customer = _results![index];
-                            return CustomerCard(customer: customer, onTap: () => Navigator.of(context).pop(customer));
-                          },
-                        ),
+                  ? Center(
+                      child: Text(
+                        l10n.customerPickerSheetEmptyState,
+                        style: AppTypography.body,
+                      ),
+                    )
+                  : ListView.separated(
+                      controller: scrollController,
+                      itemCount: _results!.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final customer = _results![index];
+                        return CustomerCard(
+                          customer: customer,
+                          onTap: () => Navigator.of(context).pop(customer),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

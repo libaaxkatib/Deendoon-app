@@ -49,8 +49,21 @@ void main() {
   });
 
   test('build() fetches page 1 with an empty search term', () async {
-    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 2, total: 30));
+    when(
+      () => mockRepository.fetchCustomers(
+        page: 1,
+        search: '',
+        status: null,
+        riskLevel: null,
+      ),
+    ).thenAnswer(
+      (_) async => const CustomerPage(
+        customers: [_pageOneCustomer],
+        currentPage: 1,
+        lastPage: 2,
+        total: 30,
+      ),
+    );
 
     final state = await container.read(customerListProvider.future);
 
@@ -58,83 +71,333 @@ void main() {
     expect(state.hasMore, isTrue);
   });
 
-  test('search() resets to page 1 under the new term via a real API call', () async {
-    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 1, total: 1));
-    await container.read(customerListProvider.future);
+  test(
+    'search() resets to page 1 under the new term via a real API call',
+    () async {
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(customerListProvider.future);
 
-    when(() => mockRepository.fetchCustomers(page: 1, search: 'hargeisa', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageTwoCustomer], currentPage: 1, lastPage: 1, total: 1));
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: 'hargeisa',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageTwoCustomer],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await container.read(customerListProvider.notifier).search('hargeisa');
+      await container.read(customerListProvider.notifier).search('hargeisa');
 
-    final state = container.read(customerListProvider).value!;
-    expect(state.customers, [_pageTwoCustomer]);
-    expect(state.search, 'hargeisa');
-    verify(() => mockRepository.fetchCustomers(page: 1, search: 'hargeisa', status: null, riskLevel: null)).called(1);
-  });
+      final state = container.read(customerListProvider).value!;
+      expect(state.customers, [_pageTwoCustomer]);
+      expect(state.search, 'hargeisa');
+      verify(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: 'hargeisa',
+          status: null,
+          riskLevel: null,
+        ),
+      ).called(1);
+    },
+  );
 
-  test('loadMore() appends the next page and stops once lastPage is reached', () async {
-    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 2, total: 2));
-    await container.read(customerListProvider.future);
+  test(
+    'loadMore() appends the next page and stops once lastPage is reached',
+    () async {
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(customerListProvider.future);
 
-    when(() => mockRepository.fetchCustomers(page: 2, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageTwoCustomer], currentPage: 2, lastPage: 2, total: 2));
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 2,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageTwoCustomer],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
 
-    await container.read(customerListProvider.notifier).loadMore();
+      await container.read(customerListProvider.notifier).loadMore();
 
-    final state = container.read(customerListProvider).value!;
-    expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
-    expect(state.hasMore, isFalse);
+      final state = container.read(customerListProvider).value!;
+      expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
+      expect(state.hasMore, isFalse);
 
-    // Calling loadMore() again must not fire a duplicate request — there is
-    // no further page.
-    await container.read(customerListProvider.notifier).loadMore();
-    verifyNever(() => mockRepository.fetchCustomers(page: 3, search: any(named: 'search'), status: any(named: 'status'), riskLevel: any(named: 'riskLevel')));
-  });
+      // Calling loadMore() again must not fire a duplicate request — there is
+      // no further page.
+      await container.read(customerListProvider.notifier).loadMore();
+      verifyNever(
+        () => mockRepository.fetchCustomers(
+          page: 3,
+          search: any(named: 'search'),
+          status: any(named: 'status'),
+          riskLevel: any(named: 'riskLevel'),
+        ),
+      );
+    },
+  );
 
-  test('refresh() re-fetches page 1 preserving the current search term', () async {
-    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 1, total: 1));
-    await container.read(customerListProvider.future);
+  test(
+    'loadMore() sets loadMoreError and preserves existing state when the request fails',
+    () async {
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(customerListProvider.future);
 
-    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer, _pageTwoCustomer], currentPage: 1, lastPage: 1, total: 2));
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 2,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenThrow(Exception('network error'));
 
-    await container.read(customerListProvider.notifier).refresh();
+      await container.read(customerListProvider.notifier).loadMore();
 
-    final state = container.read(customerListProvider).value!;
-    expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
-  });
+      final state = container.read(customerListProvider).value!;
+      expect(state.loadMoreError, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.customers, [_pageOneCustomer]);
+      expect(state.currentPage, 1);
+      expect(state.lastPage, 2);
+      expect(state.hasMore, isTrue);
+    },
+  );
 
-  test('toggleIncludeArchived() re-fetches page 1 with a real includeArchived query param', () async {
-    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 1, total: 1));
-    await container.read(customerListProvider.future);
+  test(
+    'loadMore() retried after a failure clears loadMoreError, re-requests the same page, and appends on success',
+    () async {
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(customerListProvider.future);
 
-    when(() => mockRepository.fetchCustomers(
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 2,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenThrow(Exception('network error'));
+      await container.read(customerListProvider.notifier).loadMore();
+      expect(container.read(customerListProvider).value!.loadMoreError, isTrue);
+
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 2,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageTwoCustomer],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      await container.read(customerListProvider.notifier).loadMore();
+
+      final state = container.read(customerListProvider).value!;
+      expect(state.loadMoreError, isFalse);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
+      expect(state.hasMore, isFalse);
+      verify(
+        () => mockRepository.fetchCustomers(
+          page: 2,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).called(2);
+    },
+  );
+
+  test(
+    'refresh() re-fetches page 1 preserving the current search term',
+    () async {
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(customerListProvider.future);
+
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer, _pageTwoCustomer],
+          currentPage: 1,
+          lastPage: 1,
+          total: 2,
+        ),
+      );
+
+      await container.read(customerListProvider.notifier).refresh();
+
+      final state = container.read(customerListProvider).value!;
+      expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
+    },
+  );
+
+  test(
+    'toggleIncludeArchived() re-fetches page 1 with a real includeArchived query param',
+    () async {
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(customerListProvider.future);
+
+      when(
+        () => mockRepository.fetchCustomers(
           page: 1,
           search: '',
           status: null,
           riskLevel: null,
           includeArchived: true,
-        )).thenAnswer(
-      (_) async => const CustomerPage(customers: [_pageOneCustomer, _pageTwoCustomer], currentPage: 1, lastPage: 1, total: 2),
-    );
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer, _pageTwoCustomer],
+          currentPage: 1,
+          lastPage: 1,
+          total: 2,
+        ),
+      );
 
-    await container.read(customerListProvider.notifier).toggleIncludeArchived();
+      await container
+          .read(customerListProvider.notifier)
+          .toggleIncludeArchived();
 
-    final state = container.read(customerListProvider).value!;
-    expect(state.includeArchived, isTrue);
-    expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
+      final state = container.read(customerListProvider).value!;
+      expect(state.includeArchived, isTrue);
+      expect(state.customers, [_pageOneCustomer, _pageTwoCustomer]);
 
-    // Toggling again goes back to the default (excluded) filter.
-    when(() => mockRepository.fetchCustomers(page: 1, search: '', status: null, riskLevel: null))
-        .thenAnswer((_) async => const CustomerPage(customers: [_pageOneCustomer], currentPage: 1, lastPage: 1, total: 1));
+      // Toggling again goes back to the default (excluded) filter.
+      when(
+        () => mockRepository.fetchCustomers(
+          page: 1,
+          search: '',
+          status: null,
+          riskLevel: null,
+        ),
+      ).thenAnswer(
+        (_) async => const CustomerPage(
+          customers: [_pageOneCustomer],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    await container.read(customerListProvider.notifier).toggleIncludeArchived();
+      await container
+          .read(customerListProvider.notifier)
+          .toggleIncludeArchived();
 
-    expect(container.read(customerListProvider).value!.includeArchived, isFalse);
-  });
+      expect(
+        container.read(customerListProvider).value!.includeArchived,
+        isFalse,
+      );
+    },
+  );
 }

@@ -11,7 +11,10 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockAuthApi extends Mock implements AuthApi {}
 
-Future<void> _pumpLoginScreen(WidgetTester tester, {required AuthApi authApi}) async {
+Future<void> _pumpLoginScreen(
+  WidgetTester tester, {
+  required AuthApi authApi,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [authApiProvider.overrideWithValue(authApi)],
@@ -39,7 +42,9 @@ void main() {
     mockApi = _MockAuthApi();
   });
 
-  testWidgets('renders email and password fields with a submit button', (tester) async {
+  testWidgets('renders email and password fields with a submit button', (
+    tester,
+  ) async {
     await _pumpLoginScreen(tester, authApi: mockApi);
 
     expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
@@ -58,14 +63,21 @@ void main() {
     verifyNever(() => mockApi.login(any(), any()));
   });
 
-  testWidgets('surfaces the API error message on invalid credentials', (tester) async {
+  testWidgets('surfaces the API error message on invalid credentials', (
+    tester,
+  ) async {
     when(() => mockApi.login('test@example.com', 'wrong')).thenThrow(
       DioException(
         requestOptions: RequestOptions(path: '/login'),
         response: Response(
           requestOptions: RequestOptions(path: '/login'),
           statusCode: 401,
-          data: {'success': false, 'message': 'Invalid credentials', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'Invalid credentials',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -73,11 +85,182 @@ void main() {
 
     await _pumpLoginScreen(tester, authApi: mockApi);
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'test@example.com');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Password'), 'wrong');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Email'),
+      'test@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Password'),
+      'wrong',
+    );
     await tester.tap(find.text('Log In'));
     await tester.pumpAndSettle();
 
     expect(find.text('Invalid credentials'), findsOneWidget);
   });
+
+  testWidgets(
+    'the password field is obscured by default and reveals via the eye icon',
+    (tester) async {
+      await _pumpLoginScreen(tester, authApi: mockApi);
+
+      final passwordField = find.descendant(
+        of: find.widgetWithText(TextFormField, 'Password'),
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(passwordField).obscureText, isTrue);
+
+      await tester.tap(find.byIcon(Icons.visibility_outlined));
+      await tester.pump();
+
+      expect(tester.widget<TextField>(passwordField).obscureText, isFalse);
+    },
+  );
+
+  testWidgets(
+    'surfaces a field-specific 422 validation error inline on the Email field, not as a combined message',
+    (tester) async {
+      when(() => mockApi.login('taken@example.com', 'ValidPass123!')).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/login'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/login'),
+            statusCode: 422,
+            data: {
+              'success': false,
+              'message': 'The given data was invalid.',
+              'data': null,
+              'errors': {
+                'email': ['The selected email is invalid.'],
+              },
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      await _pumpLoginScreen(tester, authApi: mockApi);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'taken@example.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Password'),
+        'ValidPass123!',
+      );
+      await tester.tap(find.text('Log In'));
+      await tester.pumpAndSettle();
+
+      // Shown exactly once — on the field, not duplicated as a combined
+      // message below the form (Mobile Fix #10, Decision 2).
+      expect(find.text('The selected email is invalid.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'shows distinct inline errors when the backend returns multiple simultaneous field errors',
+    (tester) async {
+      when(() => mockApi.login('bad@example.com', 'short')).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/login'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/login'),
+            statusCode: 422,
+            data: {
+              'success': false,
+              'message': 'The given data was invalid.',
+              'data': null,
+              'errors': {
+                'email': ['The selected email is invalid.'],
+                'password': ['The password field is required.'],
+              },
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      await _pumpLoginScreen(tester, authApi: mockApi);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'bad@example.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Password'),
+        'short',
+      );
+      await tester.tap(find.text('Log In'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('The selected email is invalid.'), findsOneWidget);
+      expect(find.text('The password field is required.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a stale field error is cleared before resubmitting, so a fixed value is not blocked from a fresh attempt',
+    (tester) async {
+      when(() => mockApi.login('taken@example.com', 'ValidPass123!')).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/login'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/login'),
+            statusCode: 422,
+            data: {
+              'success': false,
+              'message': 'The given data was invalid.',
+              'data': null,
+              'errors': {
+                'email': ['The selected email is invalid.'],
+              },
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+      when(() => mockApi.login('fixed@example.com', 'ValidPass123!')).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/login'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/login'),
+            statusCode: 401,
+            data: {
+              'success': false,
+              'message': 'Invalid credentials',
+              'data': null,
+              'errors': null,
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+
+      await _pumpLoginScreen(tester, authApi: mockApi);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'taken@example.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Password'),
+        'ValidPass123!',
+      );
+      await tester.tap(find.text('Log In'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('The selected email is invalid.'), findsOneWidget);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'fixed@example.com',
+      );
+      await tester.tap(find.text('Log In'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('The selected email is invalid.'), findsNothing);
+      expect(find.text('Invalid credentials'), findsOneWidget);
+      verify(
+        () => mockApi.login('fixed@example.com', 'ValidPass123!'),
+      ).called(1);
+    },
+  );
 }

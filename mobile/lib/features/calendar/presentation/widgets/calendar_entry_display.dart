@@ -19,13 +19,16 @@ Map<String, String> _followUpLabels(AppLocalizations l10n) => {
 /// One icon/color per real `CalendarEntry.type` aggregation bucket
 /// (`due_date`, `promise_to_pay`, `follow_up`, `reminder`) — distinct from
 /// `ReminderTypeIcon`, which is keyed by a `Reminder`'s own `type` field.
-(IconData, Color) calendarEntryIconAndColor(BuildContext context, String type) => switch (type) {
-      'due_date' => (Icons.event_outlined, AppColors.danger),
-      'promise_to_pay' => (Icons.handshake_outlined, AppColors.primary),
-      'follow_up' => (Icons.call_outlined, AppColors.warning),
-      'reminder' => (Icons.notifications_outlined, AppColors.info),
-      _ => (Icons.circle_outlined, context.colors.textSecondary),
-    };
+(IconData, Color) calendarEntryIconAndColor(
+  BuildContext context,
+  String type,
+) => switch (type) {
+  'due_date' => (Icons.event_outlined, AppColors.danger),
+  'promise_to_pay' => (Icons.handshake_outlined, AppColors.primary),
+  'follow_up' => (Icons.call_outlined, AppColors.warning),
+  'reminder' => (Icons.notifications_outlined, AppColors.info),
+  _ => (Icons.circle_outlined, context.colors.textSecondary),
+};
 
 /// A short, honest title for the agenda row. Never invents a customer or
 /// debt name the backend didn't provide — `due_date` falls back to the
@@ -35,11 +38,15 @@ String calendarEntryTitle(BuildContext context, CalendarEntry entry) {
   final l10n = AppLocalizations.of(context);
   switch (entry.type) {
     case 'due_date':
-      return entry.label == null ? l10n.calendarEntryTitleDebtDue : l10n.calendarEntryTitleDue(entry.label!);
+      return entry.label == null
+          ? l10n.calendarEntryTitleDebtDue
+          : l10n.calendarEntryTitleDue(entry.label!);
     case 'promise_to_pay':
       return l10n.promiseToPayTitle;
     case 'follow_up':
-      return _followUpLabels(l10n)[entry.label] ?? entry.label ?? l10n.calendarEntryTitleFollowUpFallback;
+      return _followUpLabels(l10n)[entry.label] ??
+          entry.label ??
+          l10n.calendarEntryTitleFollowUpFallback;
     case 'reminder':
       return entry.label ?? l10n.calendarEntryTitleReminderFallback;
     default:

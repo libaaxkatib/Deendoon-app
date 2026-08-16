@@ -19,7 +19,8 @@ class CaseHistoryEntry {
     required this.occurredAt,
   });
 
-  factory CaseHistoryEntry.fromJson(Map<String, dynamic> json) => CaseHistoryEntry(
+  factory CaseHistoryEntry.fromJson(Map<String, dynamic> json) =>
+      CaseHistoryEntry(
         source: json['source'] as String,
         action: json['action'] as String,
         details: json['details'] as String?,
@@ -38,7 +39,9 @@ class CaseHistory {
     final items = json['history'] as List<dynamic>;
     return CaseHistory(
       collectionCaseId: json['collection_case_id'].toString(),
-      entries: items.map((e) => CaseHistoryEntry.fromJson(e as Map<String, dynamic>)).toList(),
+      entries: items
+          .map((e) => CaseHistoryEntry.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

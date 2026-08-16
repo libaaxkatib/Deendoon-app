@@ -34,7 +34,10 @@ class SearchResults {
   });
 
   factory SearchResults.fromJson(Map<String, dynamic> json) {
-    List<T>? parseList<T>(String key, T Function(Map<String, dynamic>) fromJson) {
+    List<T>? parseList<T>(
+      String key,
+      T Function(Map<String, dynamic>) fromJson,
+    ) {
       final value = json[key];
       if (value is! List) return null;
       return value.map((e) => fromJson(e as Map<String, dynamic>)).toList();
@@ -55,10 +58,10 @@ class SearchResults {
   /// "Documents" category, matching how the Documents module already
   /// presents receipts/demand letters/statements together.
   List<DocumentSummary> get documents => [
-        ...?receipts,
-        ...?demandLetters,
-        ...?statements,
-      ];
+    ...?receipts,
+    ...?demandLetters,
+    ...?statements,
+  ];
 
   int get totalCount =>
       (customers?.length ?? 0) +

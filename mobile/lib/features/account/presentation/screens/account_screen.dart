@@ -59,7 +59,9 @@ class AccountScreen extends ConsumerWidget {
                       const SizedBox(height: 3),
                       Text(
                         email.isEmpty ? '—' : email,
-                        style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                        style: AppTypography.caption.copyWith(
+                          color: context.colors.textSecondary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -67,7 +69,11 @@ class AccountScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Icon(Icons.chevron_right, size: 22, color: context.colors.textSecondary),
+                Icon(
+                  Icons.chevron_right,
+                  size: 22,
+                  color: context.colors.textSecondary,
+                ),
               ],
             ),
           ),
@@ -129,7 +135,37 @@ class AccountScreen extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Text(
                   l10n.accountLogout,
-                  style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700, fontSize: 15),
+                  style: const TextStyle(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          AppCard(
+            onTap: () => context.push('/account/close-account'),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            splashColor: AppColors.danger.withValues(alpha: 0.12),
+            highlightColor: AppColors.danger.withValues(alpha: 0.06),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.person_remove_outlined,
+                  color: AppColors.danger,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  l10n.accountCloseAccount,
+                  style: const TextStyle(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
               ],
             ),
@@ -161,7 +197,11 @@ class _MenuGroup extends StatelessWidget {
           for (final tile in children) ...[
             tile,
             if (!tile.isLast)
-              Divider(height: 1, indent: 56, color: context.colors.textSecondary.withValues(alpha: 0.12)),
+              Divider(
+                height: 1,
+                indent: 56,
+                color: context.colors.textSecondary.withValues(alpha: 0.12),
+              ),
           ],
         ],
       ),
@@ -175,7 +215,12 @@ class _AccountMenuTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool isLast;
 
-  const _AccountMenuTile({required this.icon, required this.label, required this.onTap, this.isLast = false});
+  const _AccountMenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isLast = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -187,8 +232,19 @@ class _AccountMenuTile extends StatelessWidget {
           children: [
             Icon(icon, color: context.colors.textPrimary, size: 21),
             const SizedBox(width: 16),
-            Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
-            Icon(Icons.chevron_right, size: 20, color: context.colors.textSecondary),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.body.copyWith(
+                  color: context.colors.textPrimary,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: context.colors.textSecondary,
+            ),
           ],
         ),
       ),

@@ -63,8 +63,14 @@ void main() {
   });
 
   test('build() fetches page 1 with no tab filter', () async {
-    when(() => mockRepository.fetchReminders(page: 1, tab: null))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 2, total: 30));
+    when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+      (_) async => const ReminderPage(
+        reminders: [_reminderOne],
+        currentPage: 1,
+        lastPage: 2,
+        total: 30,
+      ),
+    );
 
     final state = await container.read(reminderListProvider.future);
 
@@ -73,12 +79,24 @@ void main() {
   });
 
   test('filterByTab() re-fetches page 1 under the real tab value', () async {
-    when(() => mockRepository.fetchReminders(page: 1, tab: null))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+      (_) async => const ReminderPage(
+        reminders: [_reminderOne],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
     await container.read(reminderListProvider.future);
 
-    when(() => mockRepository.fetchReminders(page: 1, tab: 'today'))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderTwo], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchReminders(page: 1, tab: 'today')).thenAnswer(
+      (_) async => const ReminderPage(
+        reminders: [_reminderTwo],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await container.read(reminderListProvider.notifier).filterByTab('today');
 
@@ -87,33 +105,68 @@ void main() {
     expect(state.tab, 'today');
   });
 
-  test('filterByType() re-fetches under tab=null and records the type client-side', () async {
-    when(() => mockRepository.fetchReminders(page: 1, tab: null))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 1, total: 1));
-    await container.read(reminderListProvider.future);
+  test(
+    'filterByType() re-fetches under tab=null and records the type client-side',
+    () async {
+      when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderOne],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(reminderListProvider.future);
 
-    when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
-      (_) async => const ReminderPage(reminders: [_reminderOne, _reminderTwo], currentPage: 1, lastPage: 1, total: 2),
-    );
+      when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderOne, _reminderTwo],
+          currentPage: 1,
+          lastPage: 1,
+          total: 2,
+        ),
+      );
 
-    await container.read(reminderListProvider.notifier).filterByType('client_visit');
+      await container
+          .read(reminderListProvider.notifier)
+          .filterByType('client_visit');
 
-    final state = container.read(reminderListProvider).value!;
-    expect(state.tab, isNull);
-    expect(state.typeFilter, 'client_visit');
-    expect(state.reminders, [_reminderOne, _reminderTwo]);
-    verify(() => mockRepository.fetchReminders(page: 1, tab: null)).called(2);
-  });
+      final state = container.read(reminderListProvider).value!;
+      expect(state.tab, isNull);
+      expect(state.typeFilter, 'client_visit');
+      expect(state.reminders, [_reminderOne, _reminderTwo]);
+      verify(() => mockRepository.fetchReminders(page: 1, tab: null)).called(2);
+    },
+  );
 
   test('filterByTab() clears any active typeFilter', () async {
-    when(() => mockRepository.fetchReminders(page: 1, tab: null))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 1, total: 1));
+    when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+      (_) async => const ReminderPage(
+        reminders: [_reminderOne],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
     await container.read(reminderListProvider.future);
-    await container.read(reminderListProvider.notifier).filterByType('payment_due');
-    expect(container.read(reminderListProvider).value!.typeFilter, 'payment_due');
+    await container
+        .read(reminderListProvider.notifier)
+        .filterByType('payment_due');
+    expect(
+      container.read(reminderListProvider).value!.typeFilter,
+      'payment_due',
+    );
 
-    when(() => mockRepository.fetchReminders(page: 1, tab: 'overdue'))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderTwo], currentPage: 1, lastPage: 1, total: 1));
+    when(
+      () => mockRepository.fetchReminders(page: 1, tab: 'overdue'),
+    ).thenAnswer(
+      (_) async => const ReminderPage(
+        reminders: [_reminderTwo],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await container.read(reminderListProvider.notifier).filterByTab('overdue');
 
@@ -122,56 +175,151 @@ void main() {
     expect(state.typeFilter, isNull);
   });
 
-  test('loadMore() appends the next page and stops once lastPage is reached', () async {
-    when(() => mockRepository.fetchReminders(page: 1, tab: null))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 2, total: 2));
-    await container.read(reminderListProvider.future);
+  test(
+    'loadMore() appends the next page and stops once lastPage is reached',
+    () async {
+      when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(reminderListProvider.future);
 
-    when(() => mockRepository.fetchReminders(page: 2, tab: null))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderTwo], currentPage: 2, lastPage: 2, total: 2));
+      when(() => mockRepository.fetchReminders(page: 2, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
 
-    await container.read(reminderListProvider.notifier).loadMore();
+      await container.read(reminderListProvider.notifier).loadMore();
 
-    final state = container.read(reminderListProvider).value!;
-    expect(state.reminders, [_reminderOne, _reminderTwo]);
-    expect(state.hasMore, isFalse);
-  });
+      final state = container.read(reminderListProvider).value!;
+      expect(state.reminders, [_reminderOne, _reminderTwo]);
+      expect(state.hasMore, isFalse);
+    },
+  );
 
-  test('replaceReminder() swaps in the updated reminder without refetching', () async {
-    when(() => mockRepository.fetchReminders(page: 1, tab: null))
-        .thenAnswer((_) async => const ReminderPage(reminders: [_reminderOne], currentPage: 1, lastPage: 1, total: 1));
-    await container.read(reminderListProvider.future);
+  test(
+    'loadMore() sets loadMoreError and preserves existing state when the request fails',
+    () async {
+      when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(reminderListProvider.future);
 
-    const completed = Reminder(
-      id: '1',
-      type: 'payment_due',
-      title: 'Payment Due',
-      relatedEntityType: 'debt',
-      relatedEntityId: '01DEBT',
-      relatedCaseId: null,
-      dueDate: '2026-08-01T10:00:00.000000Z',
-      amountDue: '250.00',
-      timingRule: 'one_day_before',
-      customFireAt: null,
-      deliveryMethods: ['in_app'],
-      notes: null,
-      status: 'completed',
-      createdByUserId: '01USER',
-      createdAt: '2026-07-25T09:00:00.000000Z',
-      updatedAt: '2026-07-25T09:00:00.000000Z',
-      completedAt: '2026-07-28T10:00:00.000000Z',
-      checkedInAt: null,
-    );
+      when(
+        () => mockRepository.fetchReminders(page: 2, tab: null),
+      ).thenThrow(Exception('network error'));
 
-    container.read(reminderListProvider.notifier).replaceReminder(completed);
+      await container.read(reminderListProvider.notifier).loadMore();
 
-    final state = container.read(reminderListProvider).value!;
-    expect(state.reminders.single.status, 'completed');
-  });
+      final state = container.read(reminderListProvider).value!;
+      expect(state.loadMoreError, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.reminders, [_reminderOne]);
+      expect(state.currentPage, 1);
+      expect(state.hasMore, isTrue);
+    },
+  );
+
+  test(
+    'loadMore() retried after a failure clears loadMoreError, re-requests the same page, and appends on success',
+    () async {
+      when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderOne],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      await container.read(reminderListProvider.future);
+
+      when(
+        () => mockRepository.fetchReminders(page: 2, tab: null),
+      ).thenThrow(Exception('network error'));
+      await container.read(reminderListProvider.notifier).loadMore();
+      expect(container.read(reminderListProvider).value!.loadMoreError, isTrue);
+
+      when(() => mockRepository.fetchReminders(page: 2, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderTwo],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      await container.read(reminderListProvider.notifier).loadMore();
+
+      final state = container.read(reminderListProvider).value!;
+      expect(state.loadMoreError, isFalse);
+      expect(state.reminders, [_reminderOne, _reminderTwo]);
+      expect(state.hasMore, isFalse);
+      verify(() => mockRepository.fetchReminders(page: 2, tab: null)).called(2);
+    },
+  );
+
+  test(
+    'replaceReminder() swaps in the updated reminder without refetching',
+    () async {
+      when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
+        (_) async => const ReminderPage(
+          reminders: [_reminderOne],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
+      await container.read(reminderListProvider.future);
+
+      const completed = Reminder(
+        id: '1',
+        type: 'payment_due',
+        title: 'Payment Due',
+        relatedEntityType: 'debt',
+        relatedEntityId: '01DEBT',
+        relatedCaseId: null,
+        dueDate: '2026-08-01T10:00:00.000000Z',
+        amountDue: '250.00',
+        timingRule: 'one_day_before',
+        customFireAt: null,
+        deliveryMethods: ['in_app'],
+        notes: null,
+        status: 'completed',
+        createdByUserId: '01USER',
+        createdAt: '2026-07-25T09:00:00.000000Z',
+        updatedAt: '2026-07-25T09:00:00.000000Z',
+        completedAt: '2026-07-28T10:00:00.000000Z',
+        checkedInAt: null,
+      );
+
+      container.read(reminderListProvider.notifier).replaceReminder(completed);
+
+      final state = container.read(reminderListProvider).value!;
+      expect(state.reminders.single.status, 'completed');
+    },
+  );
 
   test('removeReminder() drops the reminder and decrements total', () async {
     when(() => mockRepository.fetchReminders(page: 1, tab: null)).thenAnswer(
-      (_) async => const ReminderPage(reminders: [_reminderOne, _reminderTwo], currentPage: 1, lastPage: 1, total: 2),
+      (_) async => const ReminderPage(
+        reminders: [_reminderOne, _reminderTwo],
+        currentPage: 1,
+        lastPage: 1,
+        total: 2,
+      ),
     );
     await container.read(reminderListProvider.future);
 

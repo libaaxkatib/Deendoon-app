@@ -91,7 +91,10 @@ class _QuickActionTile extends StatelessWidget {
           ? BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(AppCard.radius),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.5),
+                width: 1.5,
+              ),
             )
           : null,
       child: AppCard(
@@ -115,7 +118,10 @@ class _QuickActionTile extends StatelessWidget {
             const SizedBox(height: 5),
             Text(
               label,
-              style: AppTypography.caption.copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+              style: AppTypography.caption.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

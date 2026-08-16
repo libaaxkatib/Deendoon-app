@@ -14,7 +14,8 @@ class CreditLimitWarning {
     required this.projectedOutstanding,
   });
 
-  factory CreditLimitWarning.fromJson(Map<String, dynamic> json) => CreditLimitWarning(
+  factory CreditLimitWarning.fromJson(Map<String, dynamic> json) =>
+      CreditLimitWarning(
         type: json['type'] as String,
         message: json['message'] as String,
         creditLimit: json['credit_limit'] as String,

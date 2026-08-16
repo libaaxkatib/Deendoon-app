@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/customer_actions.dart';
@@ -11,7 +12,8 @@ import '../providers/customer_actions.dart';
 /// set (not a free-text field) — same modal-bottom-sheet pattern as
 /// `credit_limit_sheet.dart`, a `RadioListTile` group instead of a text
 /// field since the value set is fixed and small.
-Map<String, String> customerStatusOptions(AppLocalizations l10n) => <String, String>{
+Map<String, String> customerStatusOptions(AppLocalizations l10n) =>
+    <String, String>{
       'active': l10n.statusActive,
       'good_standing': l10n.statusGoodStanding,
       'late_payer': l10n.statusLatePayer,
@@ -21,11 +23,18 @@ Map<String, String> customerStatusOptions(AppLocalizations l10n) => <String, Str
       'blocked': l10n.statusBlocked,
     };
 
-Future<void> showCustomerStatusSheet(BuildContext context, String customerId, String currentStatus) {
+Future<void> showCustomerStatusSheet(
+  BuildContext context,
+  String customerId,
+  String currentStatus,
+) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _CustomerStatusSheet(customerId: customerId, currentStatus: currentStatus),
+    builder: (_) => _CustomerStatusSheet(
+      customerId: customerId,
+      currentStatus: currentStatus,
+    ),
   );
 }
 
@@ -33,10 +42,14 @@ class _CustomerStatusSheet extends ConsumerStatefulWidget {
   final String customerId;
   final String currentStatus;
 
-  const _CustomerStatusSheet({required this.customerId, required this.currentStatus});
+  const _CustomerStatusSheet({
+    required this.customerId,
+    required this.currentStatus,
+  });
 
   @override
-  ConsumerState<_CustomerStatusSheet> createState() => _CustomerStatusSheetState();
+  ConsumerState<_CustomerStatusSheet> createState() =>
+      _CustomerStatusSheetState();
 }
 
 class _CustomerStatusSheetState extends ConsumerState<_CustomerStatusSheet> {
@@ -51,7 +64,9 @@ class _CustomerStatusSheetState extends ConsumerState<_CustomerStatusSheet> {
     });
 
     try {
-      await ref.read(customerActionsProvider).updateStatus(id: widget.customerId, customerStatus: _selected);
+      await ref
+          .read(customerActionsProvider)
+          .updateStatus(id: widget.customerId, customerStatus: _selected);
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -63,18 +78,15 @@ class _CustomerStatusSheetState extends ConsumerState<_CustomerStatusSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.customerStatusSheetTitle, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            l10n.customerStatusSheetTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           RadioGroup<String>(
             groupValue: _selected,
@@ -92,10 +104,17 @@ class _CustomerStatusSheetState extends ConsumerState<_CustomerStatusSheet> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
           const SizedBox(height: 12),
-          PrimaryButton(label: l10n.commonSave, isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(
+            label: l10n.commonSave,
+            isLoading: _isLoading,
+            onPressed: _submit,
+          ),
         ],
       ),
     );

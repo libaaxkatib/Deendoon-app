@@ -11,22 +11,34 @@ import '../../domain/request_message.dart';
 /// per-component loading/error isolation pattern used across the app: a
 /// failure fetching messages doesn't blank out an already-loaded request
 /// summary, and vice versa.
-final professionalCollectionDetailProvider = FutureProvider.family<ProfessionalCollectionRequest, String>(
-  (ref, id) => ref.watch(professionalCollectionRepositoryProvider).fetchRequest(id),
-);
+final professionalCollectionDetailProvider =
+    FutureProvider.family<ProfessionalCollectionRequest, String>(
+      (ref, id) =>
+          ref.watch(professionalCollectionRepositoryProvider).fetchRequest(id),
+    );
 
-final professionalCollectionMessagesProvider = FutureProvider.family<List<RequestMessage>, String>(
-  (ref, id) => ref.watch(professionalCollectionRepositoryProvider).fetchMessages(id),
-);
+final professionalCollectionMessagesProvider =
+    FutureProvider.family<List<RequestMessage>, String>(
+      (ref, id) =>
+          ref.watch(professionalCollectionRepositoryProvider).fetchMessages(id),
+    );
 
-final professionalCollectionDocumentsProvider = FutureProvider.family<List<DocumentSummary>, String>(
-  (ref, id) => ref.watch(professionalCollectionRepositoryProvider).fetchDocuments(id),
-);
+final professionalCollectionDocumentsProvider =
+    FutureProvider.family<List<DocumentSummary>, String>(
+      (ref, id) => ref
+          .watch(professionalCollectionRepositoryProvider)
+          .fetchDocuments(id),
+    );
 
-final professionalCollectionAttachmentsProvider = FutureProvider.family<List<ProfessionalCollectionAttachment>, String>(
-  (ref, id) => ref.watch(professionalCollectionRepositoryProvider).fetchAttachments(id),
-);
+final professionalCollectionAttachmentsProvider =
+    FutureProvider.family<List<ProfessionalCollectionAttachment>, String>(
+      (ref, id) => ref
+          .watch(professionalCollectionRepositoryProvider)
+          .fetchAttachments(id),
+    );
 
-final professionalCollectionTimelineProvider = FutureProvider.family<List<ProfessionalCollectionTimelineEvent>, String>(
-  (ref, id) => ref.watch(professionalCollectionRepositoryProvider).fetchTimeline(id),
-);
+final professionalCollectionTimelineProvider =
+    FutureProvider.family<List<ProfessionalCollectionTimelineEvent>, String>(
+      (ref, id) =>
+          ref.watch(professionalCollectionRepositoryProvider).fetchTimeline(id),
+    );

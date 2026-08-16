@@ -53,7 +53,11 @@ const _aging = AgingAnalysis(
   total: 2,
 );
 
-Future<void> _pumpScreen(WidgetTester tester, {required _MockAnalyticsRepository repository, required String bucket}) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required _MockAnalyticsRepository repository,
+  required String bucket,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -84,34 +88,48 @@ void main() {
 
   setUp(() {
     mockRepository = _MockAnalyticsRepository();
-    when(() => mockRepository.fetchAgingAnalysis()).thenAnswer((_) async => _aging);
+    when(
+      () => mockRepository.fetchAgingAnalysis(),
+    ).thenAnswer((_) async => _aging);
   });
 
-  testWidgets('shows only the debts matching the tapped bucket, filtered client-side', (tester) async {
-    await _pumpScreen(tester, repository: mockRepository, bucket: '1_30');
-    await tester.pumpAndSettle();
+  testWidgets(
+    'shows only the debts matching the tapped bucket, filtered client-side',
+    (tester) async {
+      await _pumpScreen(tester, repository: mockRepository, bucket: '1_30');
+      await tester.pumpAndSettle();
 
-    expect(find.text('DBT-000002'), findsOneWidget);
-    expect(find.text('DBT-000001'), findsNothing);
-  });
+      expect(find.text('DBT-000002'), findsOneWidget);
+      expect(find.text('DBT-000001'), findsNothing);
+    },
+  );
 
-  testWidgets('issues exactly one request regardless of which bucket is opened', (tester) async {
-    await _pumpScreen(tester, repository: mockRepository, bucket: 'current');
-    await tester.pumpAndSettle();
+  testWidgets(
+    'issues exactly one request regardless of which bucket is opened',
+    (tester) async {
+      await _pumpScreen(tester, repository: mockRepository, bucket: 'current');
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchAgingAnalysis()).called(1);
-  });
+      verify(() => mockRepository.fetchAgingAnalysis()).called(1);
+    },
+  );
 
-  testWidgets('shows the explicit empty state for a bucket with no debts', (tester) async {
+  testWidgets('shows the explicit empty state for a bucket with no debts', (
+    tester,
+  ) async {
     await _pumpScreen(tester, repository: mockRepository, bucket: '31_60');
     await tester.pumpAndSettle();
 
     expect(find.text('No debts in this bucket'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when aging analysis fails to load', (tester) async {
+  testWidgets('shows a retry affordance when aging analysis fails to load', (
+    tester,
+  ) async {
     final failingRepository = _MockAnalyticsRepository();
-    when(() => failingRepository.fetchAgingAnalysis()).thenThrow(Exception('network down'));
+    when(
+      () => failingRepository.fetchAgingAnalysis(),
+    ).thenThrow(Exception('network down'));
 
     await _pumpScreen(tester, repository: failingRepository, bucket: 'current');
     await tester.pumpAndSettle();

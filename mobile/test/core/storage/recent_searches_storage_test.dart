@@ -7,10 +7,13 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('readAll returns an empty list when nothing has been searched yet', () async {
-    final result = await const RecentSearchesStorage().readAll();
-    expect(result, isEmpty);
-  });
+  test(
+    'readAll returns an empty list when nothing has been searched yet',
+    () async {
+      final result = await const RecentSearchesStorage().readAll();
+      expect(result, isEmpty);
+    },
+  );
 
   test('add puts the newest query first', () async {
     const storage = RecentSearchesStorage();
@@ -20,14 +23,17 @@ void main() {
     expect(result, ['hassan', 'asad']);
   });
 
-  test('add deduplicates case-insensitively and moves the repeat to the front', () async {
-    const storage = RecentSearchesStorage();
-    await storage.add('asad');
-    await storage.add('hassan');
-    final result = await storage.add('ASAD');
+  test(
+    'add deduplicates case-insensitively and moves the repeat to the front',
+    () async {
+      const storage = RecentSearchesStorage();
+      await storage.add('asad');
+      await storage.add('hassan');
+      final result = await storage.add('ASAD');
 
-    expect(result, ['ASAD', 'hassan']);
-  });
+      expect(result, ['ASAD', 'hassan']);
+    },
+  );
 
   test('add caps the list at 10 entries', () async {
     const storage = RecentSearchesStorage();

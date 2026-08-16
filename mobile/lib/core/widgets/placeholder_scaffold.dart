@@ -20,7 +20,9 @@ class PlaceholderScaffold extends StatelessWidget {
       body: Center(
         child: Text(
           l10n.comingSoonMessage(title),
-          style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+          style: AppTypography.subheading.copyWith(
+            color: context.colors.textPrimary,
+          ),
         ),
       ),
     );

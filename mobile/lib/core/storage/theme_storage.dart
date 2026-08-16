@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final themeStorageProvider = Provider<ThemeStorage>((ref) => const ThemeStorage());
+final themeStorageProvider = Provider<ThemeStorage>(
+  (ref) => const ThemeStorage(),
+);
 
 /// Persists the user's chosen Appearance (Light/Dark/System Default)
 /// across restarts — a device-local UI preference, not a backend/tenant

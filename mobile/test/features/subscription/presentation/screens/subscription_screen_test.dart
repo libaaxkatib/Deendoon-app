@@ -10,11 +10,13 @@ import 'package:mobile/features/subscription/domain/subscription.dart';
 import 'package:mobile/features/subscription/domain/subscription_change_request.dart';
 import 'package:mobile/features/subscription/domain/subscription_change_request_page.dart';
 import 'package:mobile/features/subscription/domain/subscription_plan.dart';
+import 'package:mobile/features/subscription/presentation/providers/subscription_change_request_list_provider.dart';
 import 'package:mobile/features/subscription/presentation/screens/subscription_screen.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockSubscriptionRepository extends Mock implements SubscriptionRepository {}
+class _MockSubscriptionRepository extends Mock
+    implements SubscriptionRepository {}
 
 const _freePlan = SubscriptionPlan(
   id: 'plan-free',
@@ -135,12 +137,16 @@ Future<void> _pumpScreen(
   addTearDown(tester.view.resetDevicePixelRatio);
 
   if (subscription != null) {
-    when(() => repository.fetchSubscription()).thenAnswer((_) async => subscription);
+    when(
+      () => repository.fetchSubscription(),
+    ).thenAnswer((_) async => subscription);
   }
   if (plans != null) {
     when(() => repository.fetchPlans()).thenAnswer((_) async => plans);
   }
-  when(() => repository.fetchChangeRequests(page: any(named: 'page'))).thenAnswer(
+  when(
+    () => repository.fetchChangeRequests(page: any(named: 'page')),
+  ).thenAnswer(
     (_) async => SubscriptionChangeRequestPage(
       changeRequests: changeRequests,
       currentPage: 1,
@@ -186,9 +192,15 @@ void main() {
     mockRepository = _MockSubscriptionRepository();
   });
 
-  testWidgets('shows a retry affordance when the subscription fails to load', (tester) async {
-    when(() => mockRepository.fetchSubscription()).thenThrow(Exception('network down'));
-    when(() => mockRepository.fetchPlans()).thenAnswer((_) async => [_freePlan, _smallBusinessPlan]);
+  testWidgets('shows a retry affordance when the subscription fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchSubscription(),
+    ).thenThrow(Exception('network down'));
+    when(
+      () => mockRepository.fetchPlans(),
+    ).thenAnswer((_) async => [_freePlan, _smallBusinessPlan]);
 
     await _pumpScreen(tester, repository: mockRepository);
     await tester.pumpAndSettle();
@@ -211,37 +223,45 @@ void main() {
     expect(find.text('Normal'), findsOneWidget);
   });
 
-  testWidgets('does not show the read-only banner when the tenant is not read-only', (tester) async {
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'does not show the read-only banner when the tenant is not read-only',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Customer Limit Reached'), findsNothing);
-  });
+      expect(find.text('Customer Limit Reached'), findsNothing);
+    },
+  );
 
-  testWidgets('shows the read-only explanation and Upgrade Plan CTA when readOnly is true', (tester) async {
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _readOnlySubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'shows the read-only explanation and Upgrade Plan CTA when readOnly is true',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _readOnlySubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Customer Limit Reached'), findsOneWidget);
-    expect(find.text('Upgrade Plan'), findsOneWidget);
-    expect(find.text('Read-only'), findsOneWidget);
+      expect(find.text('Customer Limit Reached'), findsOneWidget);
+      expect(find.text('Upgrade Plan'), findsOneWidget);
+      expect(find.text('Read-only'), findsOneWidget);
 
-    await tester.tap(find.text('Upgrade Plan'));
-    await tester.pumpAndSettle();
-    expect(find.byType(SubscriptionScreen), findsOneWidget);
-  });
+      await tester.tap(find.text('Upgrade Plan'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SubscriptionScreen), findsOneWidget);
+    },
+  );
 
-  testWidgets('renders the real plan catalog and tags the current plan', (tester) async {
+  testWidgets('renders the real plan catalog and tags the current plan', (
+    tester,
+  ) async {
     await _pumpScreen(
       tester,
       repository: mockRepository,
@@ -254,22 +274,28 @@ void main() {
     expect(find.text('Current Plan'), findsOneWidget);
   });
 
-  testWidgets('selecting another active plan reveals the Request Plan Change button', (tester) async {
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'selecting another active plan reveals the Request Plan Change button',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Request Plan Change to Small Business'), findsNothing);
+      expect(find.text('Request Plan Change to Small Business'), findsNothing);
 
-    await tester.tap(find.text('Small Business'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Small Business'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Request Plan Change to Small Business'), findsOneWidget);
-  });
+      expect(
+        find.text('Request Plan Change to Small Business'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('the current plan card is not selectable', (tester) async {
     await _pumpScreen(
@@ -289,233 +315,410 @@ void main() {
     expect(find.text('Request Plan Change to Free'), findsNothing);
   });
 
-  testWidgets('a valid submission calls requestUpgrade with the exact payload and shows Pending feedback', (tester) async {
-    when(() => mockRepository.requestUpgrade(
+  testWidgets(
+    'a valid submission calls requestUpgrade with the exact payload and shows Pending feedback',
+    (tester) async {
+      when(
+        () => mockRepository.requestUpgrade(
           requestedPlanId: 'plan-small',
           paymentReference: 'PAY-REF-001',
-        )).thenAnswer((_) async => _pendingChangeRequest);
+        ),
+      ).thenAnswer((_) async => _pendingChangeRequest);
 
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    await _openRequestSheet(tester, 'Small Business');
-    expect(find.text('Request Plan Change'), findsOneWidget);
+      await _openRequestSheet(tester, 'Small Business');
+      expect(find.text('Request Plan Change'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
-    await tester.tap(find.text('Submit Request'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
+      await tester.tap(find.text('Submit Request'));
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.requestUpgrade(requestedPlanId: 'plan-small', paymentReference: 'PAY-REF-001'))
-        .called(1);
-    expect(find.text('Plan change request to Small Business submitted — status: Pending.'), findsOneWidget);
-    // Never claims activation — the word "active"/"activated" is never shown for the request itself.
-    expect(find.textContaining('now active'), findsNothing);
-  });
+      verify(
+        () => mockRepository.requestUpgrade(
+          requestedPlanId: 'plan-small',
+          paymentReference: 'PAY-REF-001',
+        ),
+      ).called(1);
+      expect(
+        find.text(
+          'Plan change request to Small Business submitted — status: Pending.',
+        ),
+        findsOneWidget,
+      );
+      // Never claims activation — the word "active"/"activated" is never shown for the request itself.
+      expect(find.textContaining('now active'), findsNothing);
+    },
+  );
 
-  testWidgets('leaving payment reference empty shows a client-side validation error and never calls the repository',
-      (tester) async {
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'leaving payment reference empty shows a client-side validation error and never calls the repository',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    await _openRequestSheet(tester, 'Small Business');
-    await tester.tap(find.text('Submit Request'));
-    await tester.pumpAndSettle();
+      await _openRequestSheet(tester, 'Small Business');
+      await tester.tap(find.text('Submit Request'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Payment reference is required'), findsOneWidget);
-    verifyNever(() => mockRepository.requestUpgrade(
+      expect(find.text('Payment reference is required'), findsOneWidget);
+      verifyNever(
+        () => mockRepository.requestUpgrade(
           requestedPlanId: any(named: 'requestedPlanId'),
           paymentReference: any(named: 'paymentReference'),
-        ));
-  });
+        ),
+      );
+    },
+  );
 
-  testWidgets('409 conflict from a pending request already existing shows the exact backend message', (tester) async {
-    when(() => mockRepository.requestUpgrade(
+  testWidgets(
+    '409 conflict from a pending request already existing shows the exact backend message',
+    (tester) async {
+      when(
+        () => mockRepository.requestUpgrade(
           requestedPlanId: any(named: 'requestedPlanId'),
           paymentReference: any(named: 'paymentReference'),
-        )).thenThrow(const ApiException(
-      message: 'A pending Subscription Change Request already exists for this tenant.',
-      statusCode: 409,
-    ));
+        ),
+      ).thenThrow(
+        const ApiException(
+          message:
+              'A pending Subscription Change Request already exists for this tenant.',
+          statusCode: 409,
+        ),
+      );
 
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    await _openRequestSheet(tester, 'Small Business');
-    await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
-    await tester.tap(find.text('Submit Request'));
-    await tester.pumpAndSettle();
+      await _openRequestSheet(tester, 'Small Business');
+      await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
+      await tester.tap(find.text('Submit Request'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('A pending Subscription Change Request already exists for this tenant.'), findsOneWidget);
-    // The sheet stays open on failure, not silently dismissed.
-    expect(find.text('Submit Request'), findsOneWidget);
-  });
+      expect(
+        find.text(
+          'A pending Subscription Change Request already exists for this tenant.',
+        ),
+        findsOneWidget,
+      );
+      // The sheet stays open on failure, not silently dismissed.
+      expect(find.text('Submit Request'), findsOneWidget);
+    },
+  );
 
-  testWidgets('422 validation failure from the backend shows the exact backend message', (tester) async {
-    when(() => mockRepository.requestUpgrade(
+  testWidgets(
+    '422 validation failure from the backend shows the exact backend message',
+    (tester) async {
+      when(
+        () => mockRepository.requestUpgrade(
           requestedPlanId: any(named: 'requestedPlanId'),
           paymentReference: any(named: 'paymentReference'),
-        )).thenThrow(const ApiException(
-      message: 'The given data was invalid.',
-      statusCode: 422,
-      fieldErrors: {
-        'payment_reference': ['The payment reference field must not be greater than 100 characters.'],
-      },
-    ));
+        ),
+      ).thenThrow(
+        const ApiException(
+          message: 'The given data was invalid.',
+          statusCode: 422,
+          fieldErrors: {
+            'payment_reference': [
+              'The payment reference field must not be greater than 100 characters.',
+            ],
+          },
+        ),
+      );
 
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    await _openRequestSheet(tester, 'Small Business');
-    await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
-    await tester.tap(find.text('Submit Request'));
-    await tester.pumpAndSettle();
+      await _openRequestSheet(tester, 'Small Business');
+      await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
+      await tester.tap(find.text('Submit Request'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('The given data was invalid.'), findsOneWidget);
-  });
+      expect(find.text('The given data was invalid.'), findsOneWidget);
+    },
+  );
 
-  testWidgets('a pending request is shown clearly in history with a Cancel action', (tester) async {
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-      changeRequests: [_pendingChangeRequest],
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'a pending request is shown clearly in history with a Cancel action',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+        changeRequests: [_pendingChangeRequest],
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Pending'), findsOneWidget);
-    expect(find.text('PAY-REF-001'), findsOneWidget);
-    expect(find.text('Cancel Request'), findsOneWidget);
-  });
+      expect(find.text('Pending'), findsOneWidget);
+      expect(find.text('PAY-REF-001'), findsOneWidget);
+      expect(find.text('Cancel Request'), findsOneWidget);
+    },
+  );
 
-  testWidgets('cancelling a pending request calls the real endpoint and confirms it', (tester) async {
-    when(() => mockRepository.cancelChangeRequest('req-1')).thenAnswer((_) async => _cancelledChangeRequest);
+  testWidgets(
+    'cancelling a pending request calls the real endpoint and confirms it',
+    (tester) async {
+      when(
+        () => mockRepository.cancelChangeRequest('req-1'),
+      ).thenAnswer((_) async => _cancelledChangeRequest);
 
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-      changeRequests: [_pendingChangeRequest],
-    );
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+        changeRequests: [_pendingChangeRequest],
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Cancel Request'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel Request'));
+      await tester.pumpAndSettle();
 
-    verify(() => mockRepository.cancelChangeRequest('req-1')).called(1);
-    expect(find.text('Subscription Change Request cancelled.'), findsOneWidget);
-  });
+      verify(() => mockRepository.cancelChangeRequest('req-1')).called(1);
+      expect(
+        find.text('Subscription Change Request cancelled.'),
+        findsOneWidget,
+      );
+    },
+  );
 
-  testWidgets('a cancelled request shows the Cancelled status with no Cancel action, and a new request can still be made',
-      (tester) async {
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _activeSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-      changeRequests: [_cancelledChangeRequest],
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'a cancelled request shows the Cancelled status with no Cancel action, and a new request can still be made',
+    (tester) async {
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _activeSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+        changeRequests: [_cancelledChangeRequest],
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Cancelled'), findsOneWidget);
-    expect(find.text('Cancel Request'), findsNothing);
+      expect(find.text('Cancelled'), findsOneWidget);
+      expect(find.text('Cancel Request'), findsNothing);
 
-    // Nothing about the cancelled history entry blocks starting a new
-    // request. "Small Business" now appears twice (the Available Plans
-    // card and the history card's requested-plan name) — `.first` targets
-    // the plan card, which precedes history in the ListView.
-    await tester.tap(find.text('Small Business').first);
-    await tester.pumpAndSettle();
-    expect(find.text('Request Plan Change to Small Business'), findsOneWidget);
-  });
+      // Nothing about the cancelled history entry blocks starting a new
+      // request. "Small Business" now appears twice (the Available Plans
+      // card and the history card's requested-plan name) — `.first` targets
+      // the plan card, which precedes history in the ListView.
+      await tester.tap(find.text('Small Business').first);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Request Plan Change to Small Business'),
+        findsOneWidget,
+      );
+    },
+  );
 
-  testWidgets('selecting a cheaper plan (downgrade) works through the exact same flow as an upgrade', (tester) async {
-    when(() => mockRepository.requestUpgrade(
+  testWidgets(
+    'selecting a cheaper plan (downgrade) works through the exact same flow as an upgrade',
+    (tester) async {
+      when(
+        () => mockRepository.requestUpgrade(
           requestedPlanId: 'plan-free',
           paymentReference: 'PAY-REF-002',
-        )).thenAnswer((_) async => _pendingChangeRequest);
-
-    await _pumpScreen(
-      tester,
-      repository: mockRepository,
-      subscription: _smallBusinessSubscription,
-      plans: [_freePlan, _smallBusinessPlan],
-    );
-    await tester.pumpAndSettle();
-
-    await _openRequestSheet(tester, 'Free');
-    await tester.enterText(find.byType(TextFormField), 'PAY-REF-002');
-    await tester.tap(find.text('Submit Request'));
-    await tester.pumpAndSettle();
-
-    verify(() => mockRepository.requestUpgrade(requestedPlanId: 'plan-free', paymentReference: 'PAY-REF-002'))
-        .called(1);
-  });
-
-  testWidgets('Manage Storage navigates to the real Storage screen (Account → Subscription → Storage)', (tester) async {
-    when(() => mockRepository.fetchSubscription()).thenAnswer((_) async => _activeSubscription);
-    when(() => mockRepository.fetchPlans()).thenAnswer((_) async => [_freePlan, _smallBusinessPlan]);
-    when(() => mockRepository.fetchChangeRequests(page: any(named: 'page'))).thenAnswer(
-      (_) async => const SubscriptionChangeRequestPage(changeRequests: [], currentPage: 1, lastPage: 1, total: 0),
-    );
-
-    tester.view.physicalSize = const Size(400, 2800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final router = GoRouter(
-      initialLocation: '/account/subscription',
-      routes: [
-        GoRoute(path: '/account/subscription', builder: (_, _) => const SubscriptionScreen()),
-        GoRoute(path: '/account/storage', builder: (_, _) => const Scaffold(body: Text('Storage Screen'))),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [subscriptionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp.router(
-          routerConfig: router,
-          locale: const Locale('en'),
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            SomaliMaterialLocalizationsDelegate(),
-            SomaliCupertinoLocalizationsDelegate(),
-          ],
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      ).thenAnswer((_) async => _pendingChangeRequest);
 
-    await tester.tap(find.text('Manage Storage'));
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        repository: mockRepository,
+        subscription: _smallBusinessSubscription,
+        plans: [_freePlan, _smallBusinessPlan],
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Storage Screen'), findsOneWidget);
-  });
+      await _openRequestSheet(tester, 'Free');
+      await tester.enterText(find.byType(TextFormField), 'PAY-REF-002');
+      await tester.tap(find.text('Submit Request'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => mockRepository.requestUpgrade(
+          requestedPlanId: 'plan-free',
+          paymentReference: 'PAY-REF-002',
+        ),
+      ).called(1);
+    },
+  );
+
+  testWidgets(
+    'Mobile Fix #12: a failed load-more shows the error but keeps the Load More button available; retries never duplicate the request',
+    (tester) async {
+      when(
+        () => mockRepository.fetchSubscription(),
+      ).thenAnswer((_) async => _activeSubscription);
+      when(
+        () => mockRepository.fetchPlans(),
+      ).thenAnswer((_) async => [_freePlan, _smallBusinessPlan]);
+      when(() => mockRepository.fetchChangeRequests(page: 1)).thenAnswer(
+        (_) async => SubscriptionChangeRequestPage(
+          changeRequests: [_pendingChangeRequest],
+          currentPage: 1,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+      when(
+        () => mockRepository.fetchChangeRequests(page: 2),
+      ).thenThrow(Exception('network error'));
+
+      final container = ProviderContainer(
+        overrides: [
+          subscriptionRepositoryProvider.overrideWithValue(mockRepository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      tester.view.physicalSize = const Size(400, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              SomaliMaterialLocalizationsDelegate(),
+              SomaliCupertinoLocalizationsDelegate(),
+            ],
+            home: const SubscriptionScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Simulates the scroll/button-triggered loadMore() directly.
+      await container
+          .read(subscriptionChangeRequestListProvider.notifier)
+          .loadMore();
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't load more. Tap to retry."), findsOneWidget);
+      final loadMoreButton = find.widgetWithText(OutlinedButton, 'Load More');
+      expect(loadMoreButton, findsOneWidget);
+
+      when(() => mockRepository.fetchChangeRequests(page: 2)).thenAnswer(
+        (_) async => SubscriptionChangeRequestPage(
+          changeRequests: [_cancelledChangeRequest],
+          currentPage: 2,
+          lastPage: 2,
+          total: 2,
+        ),
+      );
+
+      // Two near-simultaneous retry attempts (e.g. a rapid double-tap) must
+      // still only fire one network call — the provider's own isLoadingMore
+      // guard (unchanged by Fix #12) is what prevents the duplicate. Total
+      // calls to page 2 across this test end at 2: the one failure above,
+      // plus exactly one success here (not two, if the guard holds).
+      final notifier = container.read(
+        subscriptionChangeRequestListProvider.notifier,
+      );
+      final first = notifier.loadMore();
+      final second = notifier.loadMore();
+      await Future.wait([first, second]);
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't load more. Tap to retry."), findsNothing);
+      verify(() => mockRepository.fetchChangeRequests(page: 2)).called(2);
+    },
+  );
+
+  testWidgets(
+    'Manage Storage navigates to the real Storage screen (Account → Subscription → Storage)',
+    (tester) async {
+      when(
+        () => mockRepository.fetchSubscription(),
+      ).thenAnswer((_) async => _activeSubscription);
+      when(
+        () => mockRepository.fetchPlans(),
+      ).thenAnswer((_) async => [_freePlan, _smallBusinessPlan]);
+      when(
+        () => mockRepository.fetchChangeRequests(page: any(named: 'page')),
+      ).thenAnswer(
+        (_) async => const SubscriptionChangeRequestPage(
+          changeRequests: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        ),
+      );
+
+      tester.view.physicalSize = const Size(400, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final router = GoRouter(
+        initialLocation: '/account/subscription',
+        routes: [
+          GoRoute(
+            path: '/account/subscription',
+            builder: (_, _) => const SubscriptionScreen(),
+          ),
+          GoRoute(
+            path: '/account/storage',
+            builder: (_, _) => const Scaffold(body: Text('Storage Screen')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            subscriptionRepositoryProvider.overrideWithValue(mockRepository),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              SomaliMaterialLocalizationsDelegate(),
+              SomaliCupertinoLocalizationsDelegate(),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Manage Storage'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Storage Screen'), findsOneWidget);
+    },
+  );
 }

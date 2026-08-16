@@ -55,7 +55,11 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
   StorageAddon? _pendingAddon;
 
   void _onPackageSelected(String storagePackage) {
-    setState(() => _selectedPackage = _selectedPackage == storagePackage ? null : storagePackage);
+    setState(
+      () => _selectedPackage = _selectedPackage == storagePackage
+          ? null
+          : storagePackage,
+    );
   }
 
   /// Opens the real request sheet. On genuine success (the sheet only pops
@@ -69,7 +73,11 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
     final label = _packageLabel(storagePackage);
-    final addon = await showRequestStorageAddonSheet(context, storagePackage, label);
+    final addon = await showRequestStorageAddonSheet(
+      context,
+      storagePackage,
+      label,
+    );
     if (addon == null || !mounted) return;
 
     setState(() {
@@ -90,7 +98,9 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
     try {
       await ref.read(subscriptionActionsProvider).cancelStorageAddon(addon.id);
       if (mounted) setState(() => _pendingAddon = null);
-      messenger.showSnackBar(SnackBar(content: Text(l10n.storageAddonRequestCancelledMessage)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.storageAddonRequestCancelledMessage)),
+      );
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -109,7 +119,9 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
   void _reconcilePendingAddon(AsyncValue<SubscriptionStorage> storageAsync) {
     final addon = _pendingAddon;
     if (addon == null) return;
-    final activeIds = storageAsync.valueOrNull?.purchasedAddons.map((a) => a.id).toSet();
+    final activeIds = storageAsync.valueOrNull?.purchasedAddons
+        .map((a) => a.id)
+        .toSet();
     if (activeIds != null && activeIds.contains(addon.id)) {
       setState(() => _pendingAddon = null);
     }
@@ -118,7 +130,10 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    ref.listen(subscriptionStorageProvider, (previous, next) => _reconcilePendingAddon(next));
+    ref.listen(
+      subscriptionStorageProvider,
+      (previous, next) => _reconcilePendingAddon(next),
+    );
     final storageAsync = ref.watch(subscriptionStorageProvider);
 
     return Scaffold(
@@ -150,17 +165,27 @@ class _StorageScreenState extends ConsumerState<StorageScreen> {
               _ActiveAddonsSection(addons: storage.purchasedAddons),
               if (_pendingAddon != null) ...[
                 const SizedBox(height: 16),
-                _PendingAddonCard(addon: _pendingAddon!, onCancel: _onCancelPendingAddon),
+                _PendingAddonCard(
+                  addon: _pendingAddon!,
+                  onCancel: _onCancelPendingAddon,
+                ),
               ],
               const SizedBox(height: 24),
               SectionHeader(title: l10n.storageAvailablePackagesHeading),
               const SizedBox(height: 8),
-              _AvailablePackagesSection(selectedPackage: _selectedPackage, onSelect: _onPackageSelected),
+              _AvailablePackagesSection(
+                selectedPackage: _selectedPackage,
+                onSelect: _onPackageSelected,
+              ),
               if (_selectedPackage != null) ...[
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _onRequestAddon(_selectedPackage!),
-                  child: Text(l10n.storageRequestAddonButton(_packageLabel(_selectedPackage!))),
+                  child: Text(
+                    l10n.storageRequestAddonButton(
+                      _packageLabel(_selectedPackage!),
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -184,7 +209,9 @@ class _StorageOverviewCard extends ConsumerWidget {
     final String baseStorageText;
     if (subscriptionAsync.hasValue) {
       final baseLimit = subscriptionAsync.value!.plan?.storageLimit;
-      baseStorageText = baseLimit == null ? l10n.subscriptionUnlimitedLabel : '$baseLimit GB';
+      baseStorageText = baseLimit == null
+          ? l10n.subscriptionUnlimitedLabel
+          : '$baseLimit GB';
     } else if (subscriptionAsync.isLoading) {
       baseStorageText = '…';
     } else {
@@ -195,15 +222,28 @@ class _StorageOverviewCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.storageOverviewHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+          Text(
+            l10n.storageOverviewHeading,
+            style: AppTypography.subheading.copyWith(
+              color: context.colors.textPrimary,
+            ),
+          ),
           Divider(height: 32, color: context.colors.background),
-          _InfoRow(label: l10n.storageUsedLabel, value: _formatFileSize(storage.storageUsageBytes)),
+          _InfoRow(
+            label: l10n.storageUsedLabel,
+            value: _formatFileSize(storage.storageUsageBytes),
+          ),
           const SizedBox(height: 12),
-          _InfoRow(label: l10n.storageBaseAllowanceLabel, value: baseStorageText),
+          _InfoRow(
+            label: l10n.storageBaseAllowanceLabel,
+            value: baseStorageText,
+          ),
           const SizedBox(height: 12),
           _InfoRow(
             label: l10n.storageEffectiveAllowanceLabel,
-            value: storage.storageLimitGb == null ? l10n.subscriptionUnlimitedLabel : '${storage.storageLimitGb} GB',
+            value: storage.storageLimitGb == null
+                ? l10n.subscriptionUnlimitedLabel
+                : '${storage.storageLimitGb} GB',
           ),
           const SizedBox(height: 12),
           _InfoRow(
@@ -229,7 +269,10 @@ class _ActiveAddonsSection extends StatelessWidget {
     if (addons.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(l10n.storageNoActiveAddonsMessage, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+        child: Text(
+          l10n.storageNoActiveAddonsMessage,
+          style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+        ),
       );
     }
     return Column(
@@ -260,22 +303,36 @@ class _AddonCard extends StatelessWidget {
             children: [
               Text(
                 _packageLabel(addon.storagePackage),
-                style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                style: AppTypography.subheading.copyWith(
+                  color: context.colors.textPrimary,
+                ),
               ),
               StatusBadge(status: addon.status),
             ],
           ),
           Divider(height: 24, color: context.colors.background),
-          _InfoRow(label: l10n.storageSizeLabel, value: '${addon.storageSize} GB'),
+          _InfoRow(
+            label: l10n.storageSizeLabel,
+            value: '${addon.storageSize} GB',
+          ),
           const SizedBox(height: 8),
-          _InfoRow(label: l10n.subscriptionMonthlyPriceLabel, value: addon.monthlyPrice),
+          _InfoRow(
+            label: l10n.subscriptionMonthlyPriceLabel,
+            value: addon.monthlyPrice,
+          ),
           if (addon.startedAt != null) ...[
             const SizedBox(height: 8),
-            _InfoRow(label: l10n.storageStartedOnLabel, value: _formatDate(addon.startedAt)),
+            _InfoRow(
+              label: l10n.storageStartedOnLabel,
+              value: _formatDate(addon.startedAt),
+            ),
           ],
           if (addon.expiresAt != null) ...[
             const SizedBox(height: 8),
-            _InfoRow(label: l10n.storageExpiresOnLabel, value: _formatDate(addon.expiresAt)),
+            _InfoRow(
+              label: l10n.storageExpiresOnLabel,
+              value: _formatDate(addon.expiresAt),
+            ),
           ],
         ],
       ),
@@ -304,8 +361,12 @@ class _PendingAddonCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  l10n.storageAddonTitleLabel(_packageLabel(addon.storagePackage)),
-                  style: AppTypography.subheading.copyWith(color: context.colors.textPrimary),
+                  l10n.storageAddonTitleLabel(
+                    _packageLabel(addon.storagePackage),
+                  ),
+                  style: AppTypography.subheading.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -315,11 +376,20 @@ class _PendingAddonCard extends StatelessWidget {
             ],
           ),
           Divider(height: 24, color: context.colors.background),
-          _InfoRow(label: l10n.subscriptionMonthlyPriceLabel, value: addon.monthlyPrice),
+          _InfoRow(
+            label: l10n.subscriptionMonthlyPriceLabel,
+            value: addon.monthlyPrice,
+          ),
           const SizedBox(height: 8),
-          _InfoRow(label: l10n.subscriptionPaymentReferenceLabel, value: addon.paymentReference),
+          _InfoRow(
+            label: l10n.subscriptionPaymentReferenceLabel,
+            value: addon.paymentReference,
+          ),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: onCancel, child: Text(l10n.subscriptionCancelRequestButton)),
+          OutlinedButton(
+            onPressed: onCancel,
+            child: Text(l10n.subscriptionCancelRequestButton),
+          ),
         ],
       ),
     );
@@ -330,7 +400,10 @@ class _AvailablePackagesSection extends StatelessWidget {
   final String? selectedPackage;
   final ValueChanged<String> onSelect;
 
-  const _AvailablePackagesSection({required this.selectedPackage, required this.onSelect});
+  const _AvailablePackagesSection({
+    required this.selectedPackage,
+    required this.onSelect,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -344,7 +417,11 @@ class _AvailablePackagesSection extends StatelessWidget {
             selected: selectedPackage == storagePackage,
             onSelected: (_) => onSelect(storagePackage),
             selectedColor: AppColors.primary.withValues(alpha: 0.2),
-            labelStyle: TextStyle(color: selectedPackage == storagePackage ? AppColors.primary : context.colors.textSecondary),
+            labelStyle: TextStyle(
+              color: selectedPackage == storagePackage
+                  ? AppColors.primary
+                  : context.colors.textSecondary,
+            ),
             backgroundColor: context.colors.surface,
             side: BorderSide.none,
           ),
@@ -364,7 +441,12 @@ class _InfoRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
+        ),
         Expanded(
           child: Text(
             value,
@@ -379,7 +461,8 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime? date) => date == null ? '—' : date.toIso8601String().split('T').first;
+String _formatDate(DateTime? date) =>
+    date == null ? '—' : date.toIso8601String().split('T').first;
 
 /// Same rounding/unit convention as `formatFileSize`
 /// (`documents/presentation/widgets/document_type_icon.dart`) — duplicated
@@ -388,6 +471,7 @@ String _formatDate(DateTime? date) => date == null ? '—' : date.toIso8601Strin
 String _formatFileSize(int bytes) {
   if (bytes < 1024) return '$bytes B';
   if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-  if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  if (bytes < 1024 * 1024 * 1024)
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
 }

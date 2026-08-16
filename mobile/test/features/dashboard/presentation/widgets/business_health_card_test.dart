@@ -31,7 +31,9 @@ void main() {
   Future<void> pumpCard(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [dashboardRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          dashboardRepositoryProvider.overrideWithValue(mockRepository),
+        ],
         child: const MaterialApp(
           locale: Locale('en'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -42,9 +44,14 @@ void main() {
     );
   }
 
-  testWidgets('shows a loading placeholder before data arrives', (tester) async {
+  testWidgets('shows a loading placeholder before data arrives', (
+    tester,
+  ) async {
     when(() => mockRepository.fetchBusinessHealth()).thenAnswer(
-      (_) => Future.delayed(const Duration(seconds: 1), () => const BusinessHealth(status: 'healthy', score: 90)),
+      (_) => Future.delayed(
+        const Duration(seconds: 1),
+        () => const BusinessHealth(status: 'healthy', score: 90),
+      ),
     );
 
     await pumpCard(tester);
@@ -56,7 +63,9 @@ void main() {
   });
 
   testWidgets('shows a retry affordance when the fetch fails', (tester) async {
-    when(() => mockRepository.fetchBusinessHealth()).thenThrow(Exception('network down'));
+    when(
+      () => mockRepository.fetchBusinessHealth(),
+    ).thenThrow(Exception('network down'));
 
     await pumpCard(tester);
     await tester.pumpAndSettle();
@@ -64,8 +73,9 @@ void main() {
     expect(find.text('Could not load Business Health.'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
 
-    when(() => mockRepository.fetchBusinessHealth())
-        .thenAnswer((_) async => const BusinessHealth(status: 'healthy', score: 90));
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer(
+      (_) async => const BusinessHealth(status: 'healthy', score: 90),
+    );
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
 
@@ -73,8 +83,9 @@ void main() {
   });
 
   testWidgets('renders the healthy status with its score', (tester) async {
-    when(() => mockRepository.fetchBusinessHealth())
-        .thenAnswer((_) async => const BusinessHealth(status: 'healthy', score: 90));
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer(
+      (_) async => const BusinessHealth(status: 'healthy', score: 90),
+    );
 
     await pumpCard(tester);
     await tester.pumpAndSettle();
@@ -84,9 +95,12 @@ void main() {
     expect(find.text('90%'), findsOneWidget);
   });
 
-  testWidgets('renders the needs_attention status with its score', (tester) async {
-    when(() => mockRepository.fetchBusinessHealth())
-        .thenAnswer((_) async => const BusinessHealth(status: 'needs_attention', score: 60));
+  testWidgets('renders the needs_attention status with its score', (
+    tester,
+  ) async {
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer(
+      (_) async => const BusinessHealth(status: 'needs_attention', score: 60),
+    );
 
     await pumpCard(tester);
     await tester.pumpAndSettle();
@@ -97,8 +111,9 @@ void main() {
   });
 
   testWidgets('renders the at_risk status with its score', (tester) async {
-    when(() => mockRepository.fetchBusinessHealth())
-        .thenAnswer((_) async => const BusinessHealth(status: 'at_risk', score: 25));
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer(
+      (_) async => const BusinessHealth(status: 'at_risk', score: 25),
+    );
 
     await pumpCard(tester);
     await tester.pumpAndSettle();
@@ -108,33 +123,47 @@ void main() {
     expect(find.text('25%'), findsOneWidget);
   });
 
-  testWidgets('renders the neutral_baseline status with a dash instead of a fabricated score', (tester) async {
-    when(() => mockRepository.fetchBusinessHealth())
-        .thenAnswer((_) async => const BusinessHealth(status: 'neutral_baseline', score: null));
+  testWidgets(
+    'renders the neutral_baseline status with a dash instead of a fabricated score',
+    (tester) async {
+      when(() => mockRepository.fetchBusinessHealth()).thenAnswer(
+        (_) async =>
+            const BusinessHealth(status: 'neutral_baseline', score: null),
+      );
 
-    await pumpCard(tester);
-    await tester.pumpAndSettle();
+      await pumpCard(tester);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Neutral Baseline'), findsOneWidget);
-    expect(find.text('Not enough data yet.'), findsOneWidget);
-    expect(find.text('—'), findsOneWidget);
-  });
+      expect(find.text('Neutral Baseline'), findsOneWidget);
+      expect(find.text('Not enough data yet.'), findsOneWidget);
+      expect(find.text('—'), findsOneWidget);
+    },
+  );
 
   testWidgets('tapping the card navigates to Analytics', (tester) async {
-    when(() => mockRepository.fetchBusinessHealth())
-        .thenAnswer((_) async => const BusinessHealth(status: 'healthy', score: 90));
+    when(() => mockRepository.fetchBusinessHealth()).thenAnswer(
+      (_) async => const BusinessHealth(status: 'healthy', score: 90),
+    );
 
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const Scaffold(body: BusinessHealthCard())),
-        GoRoute(path: '/analytics', builder: (_, _) => const Scaffold(body: Text('Analytics Screen'))),
+        GoRoute(
+          path: '/',
+          builder: (_, _) => const Scaffold(body: BusinessHealthCard()),
+        ),
+        GoRoute(
+          path: '/analytics',
+          builder: (_, _) => const Scaffold(body: Text('Analytics Screen')),
+        ),
       ],
     );
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [dashboardRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          dashboardRepositoryProvider.overrideWithValue(mockRepository),
+        ],
         child: MaterialApp.router(
           routerConfig: router,
           locale: const Locale('en'),

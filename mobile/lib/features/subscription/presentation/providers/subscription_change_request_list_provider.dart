@@ -15,6 +15,7 @@ class SubscriptionChangeRequestListState {
   final int lastPage;
   final int total;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const SubscriptionChangeRequestListState({
     required this.changeRequests,
@@ -22,6 +23,7 @@ class SubscriptionChangeRequestListState {
     required this.lastPage,
     required this.total,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -32,6 +34,7 @@ class SubscriptionChangeRequestListState {
     int? lastPage,
     int? total,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return SubscriptionChangeRequestListState(
       changeRequests: changeRequests ?? this.changeRequests,
@@ -39,20 +42,24 @@ class SubscriptionChangeRequestListState {
       lastPage: lastPage ?? this.lastPage,
       total: total ?? this.total,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final subscriptionChangeRequestListProvider =
-    AsyncNotifierProvider<SubscriptionChangeRequestListNotifier, SubscriptionChangeRequestListState>(
-  SubscriptionChangeRequestListNotifier.new,
-);
+    AsyncNotifierProvider<
+      SubscriptionChangeRequestListNotifier,
+      SubscriptionChangeRequestListState
+    >(SubscriptionChangeRequestListNotifier.new);
 
-class SubscriptionChangeRequestListNotifier extends AsyncNotifier<SubscriptionChangeRequestListState> {
+class SubscriptionChangeRequestListNotifier
+    extends AsyncNotifier<SubscriptionChangeRequestListState> {
   @override
   Future<SubscriptionChangeRequestListState> build() => _fetchFirstPage();
 
-  SubscriptionRepository get _repository => ref.read(subscriptionRepositoryProvider);
+  SubscriptionRepository get _repository =>
+      ref.read(subscriptionRepositoryProvider);
 
   Future<void> refresh() async {
     state = await AsyncValue.guard(_fetchFirstPage);
@@ -62,18 +69,27 @@ class SubscriptionChangeRequestListNotifier extends AsyncNotifier<SubscriptionCh
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
-      final next = await _repository.fetchChangeRequests(page: current.currentPage + 1);
-      state = AsyncData(current.copyWith(
-        changeRequests: [...current.changeRequests, ...next.changeRequests],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      final next = await _repository.fetchChangeRequests(
+        page: current.currentPage + 1,
+      );
+      state = AsyncData(
+        current.copyWith(
+          changeRequests: [...current.changeRequests, ...next.changeRequests],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 

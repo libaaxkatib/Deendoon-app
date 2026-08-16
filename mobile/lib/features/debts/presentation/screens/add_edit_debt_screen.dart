@@ -48,7 +48,12 @@ class AddEditDebtScreen extends ConsumerStatefulWidget {
   /// Actual creation is deferred to the wizard's Review step.
   final bool deferSubmit;
 
-  const AddEditDebtScreen({super.key, this.customerId, this.debtId, this.deferSubmit = false});
+  const AddEditDebtScreen({
+    super.key,
+    this.customerId,
+    this.debtId,
+    this.deferSubmit = false,
+  });
 
   @override
   ConsumerState<AddEditDebtScreen> createState() => _AddEditDebtScreenState();
@@ -96,7 +101,9 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
   String _dateOnly(DateTime dt) =>
       '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
-  Future<void> _pickInvoice(Future<PickedAttachmentFile?> Function() pick) async {
+  Future<void> _pickInvoice(
+    Future<PickedAttachmentFile?> Function() pick,
+  ) async {
     final file = await pick();
     if (file == null || !mounted) return;
     setState(() => _invoiceFile = file);
@@ -112,7 +119,9 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
     if (file == null) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(attachmentRepositoryProvider).uploadAttachment(
+      await ref
+          .read(attachmentRepositoryProvider)
+          .uploadAttachment(
             entityPathPrefix: 'debts/$debtId',
             filePath: file.path,
             fileName: file.name,
@@ -121,7 +130,13 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).addEditDebtInvoiceUploadFailedMessage(e.message))),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                context,
+              ).addEditDebtInvoiceUploadFailedMessage(e.message),
+            ),
+          ),
         );
       }
     }
@@ -135,7 +150,10 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
         title: Text(l10n.addEditDebtCreditLimitExceededTitle),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.commonOk)),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.commonOk),
+          ),
         ],
       ),
     );
@@ -144,19 +162,25 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
   Future<void> _save() async {
     if (_formKey.currentState?.validate() != true) return;
     if (_dueDate == null) {
-      setState(() => _error = AppLocalizations.of(context).addEditDebtDueDateRequiredError);
+      setState(
+        () => _error = AppLocalizations.of(
+          context,
+        ).addEditDebtDueDateRequiredError,
+      );
       return;
     }
 
     final notes = _notesController.text.trim();
 
     if (widget.deferSubmit) {
-      GoRouter.of(context).pop(DebtDraft(
-        amount: _amountController.text.trim(),
-        dueDate: _dateOnly(_dueDate!),
-        notes: notes.isEmpty ? null : notes,
-        invoiceFile: _invoiceFile,
-      ));
+      GoRouter.of(context).pop(
+        DebtDraft(
+          amount: _amountController.text.trim(),
+          dueDate: _dateOnly(_dueDate!),
+          notes: notes.isEmpty ? null : notes,
+          invoiceFile: _invoiceFile,
+        ),
+      );
       return;
     }
 
@@ -168,7 +192,9 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
     final router = GoRouter.of(context);
     try {
       if (_isEdit) {
-        await ref.read(debtActionsProvider).update(
+        await ref
+            .read(debtActionsProvider)
+            .update(
               debtId: widget.debtId!,
               dueDate: _dateOnly(_dueDate!),
               notes: notes.isEmpty ? null : notes,
@@ -178,7 +204,9 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
         setState(() => _isSaving = false);
         router.pop();
       } else {
-        final result = await ref.read(debtActionsProvider).create(
+        final result = await ref
+            .read(debtActionsProvider)
+            .create(
               customerId: widget.customerId!,
               amount: _amountController.text.trim(),
               dueDate: _dateOnly(_dueDate!),
@@ -214,7 +242,9 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
         ),
         error: (error, _) => Scaffold(
           appBar: AppBar(title: Text(l10n.addEditDebtEditTitle)),
-          body: Center(child: Text(l10n.debtDetailLoadError, style: AppTypography.body)),
+          body: Center(
+            child: Text(l10n.debtDetailLoadError, style: AppTypography.body),
+          ),
         ),
         data: (debt) {
           _prefillFromExisting(debt);
@@ -227,101 +257,140 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
 
   Widget _buildForm(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final title = _isEdit ? l10n.addEditDebtEditTitle : (widget.deferSubmit ? l10n.debtDetailTitle : l10n.addEditDebtAddTitle);
+    final title = _isEdit
+        ? l10n.addEditDebtEditTitle
+        : (widget.deferSubmit
+              ? l10n.debtDetailTitle
+              : l10n.addEditDebtAddTitle);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (_isEdit) ...[
-              Text(l10n.addEditDebtAmountLabel, style: AppTypography.caption),
-              const SizedBox(height: 4),
-              Text(_amountController.text, style: AppTypography.body),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (_isEdit) ...[
+                Text(l10n.addEditDebtAmountLabel, style: AppTypography.caption),
+                const SizedBox(height: 4),
+                Text(_amountController.text, style: AppTypography.body),
+                const SizedBox(height: 20),
+              ] else
+                TextFormField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.addEditDebtAmountLabel,
+                    hintText: l10n.creditLimitHint,
+                  ),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) {
+                      return l10n.addEditDebtAmountRequiredValidator;
+                    }
+                    final parsed = double.tryParse(trimmed);
+                    if (parsed == null || parsed <= 0) {
+                      return l10n.addEditDebtAmountInvalidValidator;
+                    }
+                    return null;
+                  },
+                ),
               const SizedBox(height: 20),
-            ] else
-              TextFormField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: l10n.addEditDebtAmountLabel, hintText: l10n.creditLimitHint),
-                validator: (value) {
-                  final trimmed = value?.trim() ?? '';
-                  if (trimmed.isEmpty) {
-                    return l10n.addEditDebtAmountRequiredValidator;
-                  }
-                  final parsed = double.tryParse(trimmed);
-                  if (parsed == null || parsed <= 0) {
-                    return l10n.addEditDebtAmountInvalidValidator;
-                  }
-                  return null;
-                },
+              Text(
+                l10n.addEditDebtDueDateHeading,
+                style: AppTypography.heading,
               ),
-            const SizedBox(height: 20),
-            Text(l10n.addEditDebtDueDateHeading, style: AppTypography.heading),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: _pickDueDate,
-              child: Text(_dueDate == null ? l10n.addEditDebtSelectDueDateButton : _dateOnly(_dueDate!)),
-            ),
-            const SizedBox(height: 20),
-            Text(l10n.addEditDebtInvoiceHeading, style: AppTypography.heading),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickInvoice(ref.read(attachmentCameraProvider)),
-                    icon: const Icon(Icons.document_scanner_outlined, size: 18),
-                    label: Text(l10n.debtScanInvoiceButton),
-                  ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _pickDueDate,
+                child: Text(
+                  _dueDate == null
+                      ? l10n.addEditDebtSelectDueDateButton
+                      : _dateOnly(_dueDate!),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pickInvoice(ref.read(attachmentFilePickerProvider)),
-                    icon: const Icon(Icons.upload_file_outlined, size: 18),
-                    label: Text(l10n.debtUploadInvoiceButton),
-                  ),
-                ),
-              ],
-            ),
-            if (_invoiceFile != null) ...[
-              const SizedBox(height: 8),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                l10n.addEditDebtInvoiceHeading,
+                style: AppTypography.heading,
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.attach_file, size: 16),
-                  const SizedBox(width: 6),
                   Expanded(
-                    child: Text(_invoiceFile!.name, style: AppTypography.caption, overflow: TextOverflow.ellipsis),
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          _pickInvoice(ref.read(attachmentCameraProvider)),
+                      icon: const Icon(
+                        Icons.document_scanner_outlined,
+                        size: 18,
+                      ),
+                      label: Text(l10n.debtScanInvoiceButton),
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 16),
-                    tooltip: l10n.addEditDebtRemoveInvoiceTooltip,
-                    onPressed: () => setState(() => _invoiceFile = null),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          _pickInvoice(ref.read(attachmentFilePickerProvider)),
+                      icon: const Icon(Icons.upload_file_outlined, size: 18),
+                      label: Text(l10n.debtUploadInvoiceButton),
+                    ),
                   ),
                 ],
               ),
+              if (_invoiceFile != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.attach_file, size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _invoiceFile!.name,
+                        style: AppTypography.caption,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      tooltip: l10n.addEditDebtRemoveInvoiceTooltip,
+                      onPressed: () => setState(() => _invoiceFile = null),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 20),
+              Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: l10n.addEditDebtNotesHint,
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              const SizedBox(height: 20),
+              PrimaryButton(
+                label: _isEdit
+                    ? l10n.saveChanges
+                    : (widget.deferSubmit
+                          ? l10n.addEditCustomerContinueButton
+                          : l10n.addEditDebtAddTitle),
+                isLoading: _isSaving,
+                onPressed: _save,
+              ),
             ],
-            const SizedBox(height: 20),
-            Text(l10n.addEditDebtNotesHeading, style: AppTypography.heading),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _notesController,
-              maxLines: 3,
-              decoration: InputDecoration(hintText: l10n.addEditDebtNotesHint),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ],
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: _isEdit ? l10n.saveChanges : (widget.deferSubmit ? l10n.addEditCustomerContinueButton : l10n.addEditDebtAddTitle),
-              isLoading: _isSaving,
-              onPressed: _save,
-            ),
-          ],
+          ),
         ),
       ),
     );

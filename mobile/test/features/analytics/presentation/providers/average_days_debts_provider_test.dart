@@ -27,21 +27,42 @@ void main() {
 
   setUp(() {
     mockRepository = _MockAnalyticsRepository();
-    container = ProviderContainer(overrides: [analyticsRepositoryProvider.overrideWithValue(mockRepository)]);
+    container = ProviderContainer(
+      overrides: [
+        analyticsRepositoryProvider.overrideWithValue(mockRepository),
+      ],
+    );
     addTearDown(container.dispose);
   });
 
-  test('fetches debts paid in the given range via the real paidDateFrom/paidDateTo filter', () async {
-    final range = DateTimeRange(start: DateTime(2026, 1, 1), end: DateTime(2026, 1, 31));
-    when(() => mockRepository.fetchReportDebts(
+  test(
+    'fetches debts paid in the given range via the real paidDateFrom/paidDateTo filter',
+    () async {
+      final range = DateTimeRange(
+        start: DateTime(2026, 1, 1),
+        end: DateTime(2026, 1, 31),
+      );
+      when(
+        () => mockRepository.fetchReportDebts(
           page: 1,
           paidDateFrom: '2026-01-01',
           paidDateTo: '2026-01-31',
           perPage: 100,
-        )).thenAnswer((_) async => const DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1));
+        ),
+      ).thenAnswer(
+        (_) async => const DebtPage(
+          debts: [_debt],
+          currentPage: 1,
+          lastPage: 1,
+          total: 1,
+        ),
+      );
 
-    final result = await container.read(averageDaysDebtsProvider(range).future);
+      final result = await container.read(
+        averageDaysDebtsProvider(range).future,
+      );
 
-    expect(result, [_debt]);
-  });
+      expect(result, [_debt]);
+    },
+  );
 }

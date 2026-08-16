@@ -27,7 +27,8 @@ class SubscriptionPlan {
     required this.features,
   });
 
-  factory SubscriptionPlan.fromJson(Map<String, dynamic> json) => SubscriptionPlan(
+  factory SubscriptionPlan.fromJson(Map<String, dynamic> json) =>
+      SubscriptionPlan(
         id: json['id'].toString(),
         name: json['name'] as String,
         monthlyPrice: json['monthly_price'] as String,
@@ -35,6 +36,8 @@ class SubscriptionPlan {
         storageLimit: json['storage_limit'] as int?,
         analyticsEnabled: json['analytics_enabled'] as bool,
         trialEligible: json['trial_eligible'] as bool,
-        features: (json['features'] as List<dynamic>).map((e) => e.toString()).toList(),
+        features: (json['features'] as List<dynamic>)
+            .map((e) => e.toString())
+            .toList(),
       );
 }

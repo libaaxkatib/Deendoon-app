@@ -45,7 +45,10 @@ class DebtDocumentsSection extends ConsumerWidget {
         if (documents.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(l10n.customerDocumentsEmptyState, style: AppTypography.body),
+            child: Text(
+              l10n.customerDocumentsEmptyState,
+              style: AppTypography.body,
+            ),
           );
         }
 
@@ -60,10 +63,14 @@ class DebtDocumentsSection extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(document.referenceNumber, style: AppTypography.body),
+                        Text(
+                          document.referenceNumber,
+                          style: AppTypography.body,
+                        ),
                         const SizedBox(height: 2),
                         Text(
-                          documentTypeLabels[document.documentType] ?? document.documentType,
+                          documentTypeLabels[document.documentType] ??
+                              document.documentType,
                           style: AppTypography.caption,
                         ),
                       ],

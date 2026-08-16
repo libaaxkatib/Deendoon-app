@@ -50,64 +50,137 @@ void main() {
     repository = AnalyticsRepository(mockApi);
   });
 
-  test('fetchCollectionAnalytics passes the date range through and returns the result', () async {
-    const analytics = CollectionAnalytics(collectionRate: 40.0, totalCollected: '400.00', averageDays: 10.0);
-    when(() => mockApi.collectionAnalytics(dateFrom: '2026-07-01', dateTo: '2026-07-28'))
-        .thenAnswer((_) async => analytics);
+  test(
+    'fetchCollectionAnalytics passes the date range through and returns the result',
+    () async {
+      const analytics = CollectionAnalytics(
+        collectionRate: 40.0,
+        totalCollected: '400.00',
+        averageDays: 10.0,
+      );
+      when(
+        () => mockApi.collectionAnalytics(
+          dateFrom: '2026-07-01',
+          dateTo: '2026-07-28',
+        ),
+      ).thenAnswer((_) async => analytics);
 
-    final result = await repository.fetchCollectionAnalytics(dateFrom: '2026-07-01', dateTo: '2026-07-28');
+      final result = await repository.fetchCollectionAnalytics(
+        dateFrom: '2026-07-01',
+        dateTo: '2026-07-28',
+      );
 
-    expect(result, analytics);
-  });
+      expect(result, analytics);
+    },
+  );
 
   test('fetchCollectionAnalytics throws ApiException on failure', () async {
-    when(() => mockApi.collectionAnalytics(dateFrom: any(named: 'dateFrom'), dateTo: any(named: 'dateTo'))).thenThrow(
+    when(
+      () => mockApi.collectionAnalytics(
+        dateFrom: any(named: 'dateFrom'),
+        dateTo: any(named: 'dateTo'),
+      ),
+    ).thenThrow(
       DioException(
         requestOptions: RequestOptions(path: '/reports/collection-analytics'),
         response: Response(
           requestOptions: RequestOptions(path: '/reports/collection-analytics'),
           statusCode: 403,
-          data: {'success': false, 'message': 'This action is unauthorized.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'This action is unauthorized.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
     );
 
     expect(
-      () => repository.fetchCollectionAnalytics(dateFrom: '2026-07-01', dateTo: '2026-07-28'),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+      () => repository.fetchCollectionAnalytics(
+        dateFrom: '2026-07-01',
+        dateTo: '2026-07-28',
+      ),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403),
+      ),
     );
   });
 
   test('fetchAgingAnalysis delegates to the api', () async {
-    const aging = AgingAnalysis(buckets: {}, debts: [], currentPage: 1, lastPage: 1, total: 0);
+    const aging = AgingAnalysis(
+      buckets: {},
+      debts: [],
+      currentPage: 1,
+      lastPage: 1,
+      total: 0,
+    );
     when(() => mockApi.agingAnalysis()).thenAnswer((_) async => aging);
 
     expect(await repository.fetchAgingAnalysis(), aging);
   });
 
-  test('fetchReportCustomers passes filters through and returns the page', () async {
-    const page = CustomerPage(customers: [_customer], currentPage: 1, lastPage: 1, total: 1);
-    when(() => mockApi.reportCustomers(page: 1, customerStatus: null, riskLevel: 'high')).thenAnswer((_) async => page);
+  test(
+    'fetchReportCustomers passes filters through and returns the page',
+    () async {
+      const page = CustomerPage(
+        customers: [_customer],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      );
+      when(
+        () => mockApi.reportCustomers(
+          page: 1,
+          customerStatus: null,
+          riskLevel: 'high',
+        ),
+      ).thenAnswer((_) async => page);
 
-    final result = await repository.fetchReportCustomers(page: 1, riskLevel: 'high');
+      final result = await repository.fetchReportCustomers(
+        page: 1,
+        riskLevel: 'high',
+      );
 
-    expect(result.customers, [_customer]);
-  });
+      expect(result.customers, [_customer]);
+    },
+  );
 
   test('fetchReportPayments delegates to the api', () async {
-    const payment = Payment(id: '1', debtId: '1', amount: '100.00', paymentDate: '2026-07-28', paymentMethod: null);
-    const page = PaymentPage(payments: [payment], currentPage: 1, lastPage: 1, total: 1);
-    when(() => mockApi.reportPayments(page: 1, dateFrom: null, dateTo: null)).thenAnswer((_) async => page);
+    const payment = Payment(
+      id: '1',
+      debtId: '1',
+      amount: '100.00',
+      paymentDate: '2026-07-28',
+      paymentMethod: null,
+    );
+    const page = PaymentPage(
+      payments: [payment],
+      currentPage: 1,
+      lastPage: 1,
+      total: 1,
+    );
+    when(
+      () => mockApi.reportPayments(page: 1, dateFrom: null, dateTo: null),
+    ).thenAnswer((_) async => page);
 
     final result = await repository.fetchReportPayments(page: 1);
 
     expect(result.payments, [payment]);
   });
 
-  test('fetchReportDebts passes dateFrom/dateTo/perPage through (Collection Rate detail, Item 9)', () async {
-    const page = DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1);
-    when(() => mockApi.reportDebts(
+  test(
+    'fetchReportDebts passes dateFrom/dateTo/perPage through (Collection Rate detail, Item 9)',
+    () async {
+      const page = DebtPage(
+        debts: [_debt],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      );
+      when(
+        () => mockApi.reportDebts(
           page: 1,
           status: null,
           dateFrom: '2026-01-01',
@@ -115,16 +188,31 @@ void main() {
           paidDateFrom: null,
           paidDateTo: null,
           perPage: 100,
-        )).thenAnswer((_) async => page);
+        ),
+      ).thenAnswer((_) async => page);
 
-    final result = await repository.fetchReportDebts(page: 1, dateFrom: '2026-01-01', dateTo: '2026-01-31', perPage: 100);
+      final result = await repository.fetchReportDebts(
+        page: 1,
+        dateFrom: '2026-01-01',
+        dateTo: '2026-01-31',
+        perPage: 100,
+      );
 
-    expect(result.debts, [_debt]);
-  });
+      expect(result.debts, [_debt]);
+    },
+  );
 
-  test('fetchReportDebts passes paidDateFrom/paidDateTo through (Average Days detail, Item 10)', () async {
-    const page = DebtPage(debts: [_debt], currentPage: 1, lastPage: 1, total: 1);
-    when(() => mockApi.reportDebts(
+  test(
+    'fetchReportDebts passes paidDateFrom/paidDateTo through (Average Days detail, Item 10)',
+    () async {
+      const page = DebtPage(
+        debts: [_debt],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      );
+      when(
+        () => mockApi.reportDebts(
           page: 1,
           status: null,
           dateFrom: null,
@@ -132,18 +220,29 @@ void main() {
           paidDateFrom: '2026-01-01',
           paidDateTo: '2026-01-31',
           perPage: 100,
-        )).thenAnswer((_) async => page);
+        ),
+      ).thenAnswer((_) async => page);
 
-    final result =
-        await repository.fetchReportDebts(page: 1, paidDateFrom: '2026-01-01', paidDateTo: '2026-01-31', perPage: 100);
+      final result = await repository.fetchReportDebts(
+        page: 1,
+        paidDateFrom: '2026-01-01',
+        paidDateTo: '2026-01-31',
+        perPage: 100,
+      );
 
-    expect(result.debts, [_debt]);
-  });
+      expect(result.debts, [_debt]);
+    },
+  );
 
   test('exportReport delegates to the api and returns raw bytes', () async {
-    when(() => mockApi.export(reportType: 'customers', format: 'csv', filters: {})).thenAnswer((_) async => [1, 2, 3]);
+    when(
+      () => mockApi.export(reportType: 'customers', format: 'csv', filters: {}),
+    ).thenAnswer((_) async => [1, 2, 3]);
 
-    final result = await repository.exportReport(reportType: 'customers', format: 'csv');
+    final result = await repository.exportReport(
+      reportType: 'customers',
+      format: 'csv',
+    );
 
     expect(result, [1, 2, 3]);
   });

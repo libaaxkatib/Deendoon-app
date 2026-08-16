@@ -26,7 +26,8 @@ const _localizationsDelegates = [
 
 class _MockDashboardRepository extends Mock implements DashboardRepository {}
 
-class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
+class _MockProfessionalCollectionRepository extends Mock
+    implements ProfessionalCollectionRepository {}
 
 const _emptyPcrSummary = ProfessionalCollectionSummary(
   countsByStatus: {
@@ -57,7 +58,12 @@ const _kpis = DashboardKpis(
   activeCollectionCases: 3,
 );
 
-const _overview = TodaysOverview(totalDueToday: 9, paymentsDue: 5, clientVisits: 6, followUpCalls: 7);
+const _overview = TodaysOverview(
+  totalDueToday: 9,
+  paymentsDue: 5,
+  clientVisits: 6,
+  followUpCalls: 7,
+);
 
 final _recentCase = RecentCase(
   id: '01ABC',
@@ -85,7 +91,9 @@ Future<void> _pumpScreen(
     ProviderScope(
       overrides: [
         dashboardRepositoryProvider.overrideWithValue(mockRepository),
-        professionalCollectionRepositoryProvider.overrideWithValue(mockPcrRepository),
+        professionalCollectionRepositoryProvider.overrideWithValue(
+          mockPcrRepository,
+        ),
       ],
       child: MaterialApp(
         locale: locale,
@@ -104,12 +112,24 @@ void main() {
   setUp(() {
     mockRepository = _MockDashboardRepository();
     mockPcrRepository = _MockProfessionalCollectionRepository();
-    when(() => mockRepository.fetchBusinessHealth()).thenAnswer((_) async => _health);
-    when(() => mockPcrRepository.fetchSummary()).thenAnswer((_) async => _emptyPcrSummary);
+    when(
+      () => mockRepository.fetchBusinessHealth(),
+    ).thenAnswer((_) async => _health);
+    when(
+      () => mockPcrRepository.fetchSummary(),
+    ).thenAnswer((_) async => _emptyPcrSummary);
   });
 
-  testWidgets('shows a loading indicator per section before data arrives', (tester) async {
-    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer(
+  testWidgets('shows a loading indicator per section before data arrives', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchKpis(
+        period: 'this_month',
+        dateFrom: null,
+        dateTo: null,
+      ),
+    ).thenAnswer(
       (_) => Future.delayed(const Duration(seconds: 1), () => _kpis),
     );
     when(() => mockRepository.fetchTodaysOverview()).thenAnswer(
@@ -119,7 +139,11 @@ void main() {
       (_) => Future.delayed(const Duration(seconds: 1), () => <RecentCase>[]),
     );
 
-    await _pumpScreen(tester, mockRepository: mockRepository, mockPcrRepository: mockPcrRepository);
+    await _pumpScreen(
+      tester,
+      mockRepository: mockRepository,
+      mockPcrRepository: mockPcrRepository,
+    );
     await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsWidgets);
@@ -129,15 +153,34 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets('renders KPI values, overview counts, and recent case data', (tester) async {
-    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
-    when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-    when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => [_recentCase]);
+  testWidgets('renders KPI values, overview counts, and recent case data', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchKpis(
+        period: 'this_month',
+        dateFrom: null,
+        dateTo: null,
+      ),
+    ).thenAnswer((_) async => _kpis);
+    when(
+      () => mockRepository.fetchTodaysOverview(),
+    ).thenAnswer((_) async => _overview);
+    when(
+      () => mockRepository.fetchRecentCases(),
+    ).thenAnswer((_) async => [_recentCase]);
 
-    await _pumpScreen(tester, mockRepository: mockRepository, mockPcrRepository: mockPcrRepository);
+    await _pumpScreen(
+      tester,
+      mockRepository: mockRepository,
+      mockPcrRepository: mockPcrRepository,
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('800.00'), findsWidgets); // Total Outstanding + case amount
+    expect(
+      find.text('800.00'),
+      findsWidgets,
+    ); // Total Outstanding + case amount
     expect(find.text('100.00'), findsOneWidget); // Collected (This Month)
     expect(find.text('400.00'), findsOneWidget); // Overdue Amount
     expect(find.text('2'), findsOneWidget); // High Risk Customers
@@ -157,89 +200,187 @@ void main() {
     expect(find.text('Global Search'), findsOneWidget);
   });
 
-  testWidgets('selecting Somali localizes the Home Dashboard, not just Settings', (tester) async {
-    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
-    when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-    when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
+  testWidgets(
+    'selecting Somali localizes the Home Dashboard, not just Settings',
+    (tester) async {
+      when(
+        () => mockRepository.fetchKpis(
+          period: 'this_month',
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer((_) async => _kpis);
+      when(
+        () => mockRepository.fetchTodaysOverview(),
+      ).thenAnswer((_) async => _overview);
+      when(
+        () => mockRepository.fetchRecentCases(),
+      ).thenAnswer((_) async => <RecentCase>[]);
+
+      await _pumpScreen(
+        tester,
+        mockRepository: mockRepository,
+        mockPcrRepository: mockPcrRepository,
+        locale: const Locale('so'),
+      );
+      await tester.pumpAndSettle();
+
+      // Section headings, KPI labels, and Quick Actions all render in Somali —
+      // proof the locale change reaches beyond the Settings screen.
+      expect(find.text('Guudmarka Maanta'), findsOneWidget); // Today's Overview
+      expect(
+        find.text('Ficillada Degdegga ah'),
+        findsOneWidget,
+      ); // Quick Actions
+      expect(
+        find.text('Wadarta Hadhaysa'),
+        findsOneWidget,
+      ); // Total Outstanding
+      expect(
+        find.text('Lacagta Dib u Dhacday'),
+        findsOneWidget,
+      ); // Overdue Amount
+      expect(
+        find.text('Macaamiisha Khatarta Sare'),
+        findsOneWidget,
+      ); // High Risk Customers
+      expect(find.text('Ku Dar Kiis'), findsOneWidget); // Add Case
+      expect(
+        find.text('Diiwaan Geli Lacag-bixin'),
+        findsOneWidget,
+      ); // Record Payment
+      expect(find.text('Ku Dar Xasuusin'), findsOneWidget); // Add Reminder
+      expect(find.text('Raadinta Guud'), findsOneWidget); // Global Search
+      expect(find.text('Kiisaska Dhawaan'), findsOneWidget); // Recent Cases
+      expect(
+        find.text('Wax dhaqdhaqaaq ah lama arag'),
+        findsOneWidget,
+      ); // No recent activity
+
+      // No stray English string leaked through for the strings we just
+      // asserted in Somali above.
+      expect(find.text("Today's Overview"), findsNothing);
+      expect(find.text('Quick Actions'), findsNothing);
+    },
+  );
+
+  testWidgets('shows the explicit empty state when there are no recent cases', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchKpis(
+        period: 'this_month',
+        dateFrom: null,
+        dateTo: null,
+      ),
+    ).thenAnswer((_) async => _kpis);
+    when(
+      () => mockRepository.fetchTodaysOverview(),
+    ).thenAnswer((_) async => _overview);
+    when(
+      () => mockRepository.fetchRecentCases(),
+    ).thenAnswer((_) async => <RecentCase>[]);
 
     await _pumpScreen(
       tester,
       mockRepository: mockRepository,
       mockPcrRepository: mockPcrRepository,
-      locale: const Locale('so'),
     );
-    await tester.pumpAndSettle();
-
-    // Section headings, KPI labels, and Quick Actions all render in Somali —
-    // proof the locale change reaches beyond the Settings screen.
-    expect(find.text('Guudmarka Maanta'), findsOneWidget); // Today's Overview
-    expect(find.text('Ficillada Degdegga ah'), findsOneWidget); // Quick Actions
-    expect(find.text('Wadarta Hadhaysa'), findsOneWidget); // Total Outstanding
-    expect(find.text('Lacagta Dib u Dhacday'), findsOneWidget); // Overdue Amount
-    expect(find.text('Macaamiisha Khatarta Sare'), findsOneWidget); // High Risk Customers
-    expect(find.text('Ku Dar Kiis'), findsOneWidget); // Add Case
-    expect(find.text('Diiwaan Geli Lacag-bixin'), findsOneWidget); // Record Payment
-    expect(find.text('Ku Dar Xasuusin'), findsOneWidget); // Add Reminder
-    expect(find.text('Raadinta Guud'), findsOneWidget); // Global Search
-    expect(find.text('Kiisaska Dhawaan'), findsOneWidget); // Recent Cases
-    expect(find.text('Wax dhaqdhaqaaq ah lama arag'), findsOneWidget); // No recent activity
-
-    // No stray English string leaked through for the strings we just
-    // asserted in Somali above.
-    expect(find.text("Today's Overview"), findsNothing);
-    expect(find.text('Quick Actions'), findsNothing);
-  });
-
-  testWidgets('shows the explicit empty state when there are no recent cases', (tester) async {
-    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
-    when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-    when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
-
-    await _pumpScreen(tester, mockRepository: mockRepository, mockPcrRepository: mockPcrRepository);
     await tester.pumpAndSettle();
 
     expect(find.text('No recent activity'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when a section fails to load, isolated from the others', (tester) async {
-    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenThrow(Exception('network down'));
-    when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-    when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
+  testWidgets(
+    'shows a retry affordance when a section fails to load, isolated from the others',
+    (tester) async {
+      when(
+        () => mockRepository.fetchKpis(
+          period: 'this_month',
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenThrow(Exception('network down'));
+      when(
+        () => mockRepository.fetchTodaysOverview(),
+      ).thenAnswer((_) async => _overview);
+      when(
+        () => mockRepository.fetchRecentCases(),
+      ).thenAnswer((_) async => <RecentCase>[]);
 
-    await _pumpScreen(tester, mockRepository: mockRepository, mockPcrRepository: mockPcrRepository);
-    await tester.pumpAndSettle();
+      await _pumpScreen(
+        tester,
+        mockRepository: mockRepository,
+        mockPcrRepository: mockPcrRepository,
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Could not load KPIs.'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
-    // Today's Overview still rendered its real data despite the KPI failure.
-    expect(find.text('9'), findsOneWidget);
+      expect(find.text('Could not load KPIs.'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+      // Today's Overview still rendered its real data despite the KPI failure.
+      expect(find.text('9'), findsOneWidget);
 
-    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
-    await tester.tap(find.text('Retry'));
-    await tester.pumpAndSettle();
+      when(
+        () => mockRepository.fetchKpis(
+          period: 'this_month',
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer((_) async => _kpis);
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('800.00'), findsWidgets);
-  });
+      expect(find.text('800.00'), findsWidgets);
+    },
+  );
 
   testWidgets('pull to refresh re-fetches all three sections', (tester) async {
-    when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
-    when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-    when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
+    when(
+      () => mockRepository.fetchKpis(
+        period: 'this_month',
+        dateFrom: null,
+        dateTo: null,
+      ),
+    ).thenAnswer((_) async => _kpis);
+    when(
+      () => mockRepository.fetchTodaysOverview(),
+    ).thenAnswer((_) async => _overview);
+    when(
+      () => mockRepository.fetchRecentCases(),
+    ).thenAnswer((_) async => <RecentCase>[]);
 
-    await _pumpScreen(tester, mockRepository: mockRepository, mockPcrRepository: mockPcrRepository);
+    await _pumpScreen(
+      tester,
+      mockRepository: mockRepository,
+      mockPcrRepository: mockPcrRepository,
+    );
     await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).called(1);
+    verify(
+      () => mockRepository.fetchKpis(
+        period: 'this_month',
+        dateFrom: null,
+        dateTo: null,
+      ),
+    ).called(1);
 
     // Exercises the exact same callback a real pull gesture invokes,
     // without depending on scroll-physics/overscroll timing in the test
     // harness (RefreshIndicator's own gesture-to-trigger mechanics are
     // Flutter framework behavior, not this app's code).
-    final refreshIndicator = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator));
+    final refreshIndicator = tester.widget<RefreshIndicator>(
+      find.byType(RefreshIndicator),
+    );
     await refreshIndicator.onRefresh();
     await tester.pumpAndSettle();
 
-    verify(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).called(1);
+    verify(
+      () => mockRepository.fetchKpis(
+        period: 'this_month',
+        dateFrom: null,
+        dateTo: null,
+      ),
+    ).called(1);
   });
 
   group('navigation', () {
@@ -249,16 +390,30 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null)).thenAnswer((_) async => _kpis);
-      when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-      when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => [_recentCase]);
-      when(() => mockPcrRepository.fetchSummary()).thenAnswer((_) async => _emptyPcrSummary);
+      when(
+        () => mockRepository.fetchKpis(
+          period: 'this_month',
+          dateFrom: null,
+          dateTo: null,
+        ),
+      ).thenAnswer((_) async => _kpis);
+      when(
+        () => mockRepository.fetchTodaysOverview(),
+      ).thenAnswer((_) async => _overview);
+      when(
+        () => mockRepository.fetchRecentCases(),
+      ).thenAnswer((_) async => [_recentCase]);
+      when(
+        () => mockPcrRepository.fetchSummary(),
+      ).thenAnswer((_) async => _emptyPcrSummary);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             dashboardRepositoryProvider.overrideWithValue(mockRepository),
-            professionalCollectionRepositoryProvider.overrideWithValue(mockPcrRepository),
+            professionalCollectionRepositoryProvider.overrideWithValue(
+              mockPcrRepository,
+            ),
           ],
           child: MaterialApp.router(
             routerConfig: router,
@@ -271,14 +426,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('Total Outstanding opens the tenant-wide Debts report', (tester) async {
+    testWidgets('Total Outstanding opens the tenant-wide Debts report', (
+      tester,
+    ) async {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
           GoRoute(
             path: '/analytics/reports/debts',
-            builder: (_, state) => Text('Debts Report — status=${state.uri.queryParameters['status']}'),
+            builder: (_, state) => Text(
+              'Debts Report — status=${state.uri.queryParameters['status']}',
+            ),
           ),
         ],
       );
@@ -290,31 +449,39 @@ void main() {
       expect(find.text('Debts Report — status=null'), findsOneWidget);
     });
 
-    testWidgets('Overdue Amount opens the Debts report pre-filtered to overdue', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
-          GoRoute(
-            path: '/analytics/reports/debts',
-            builder: (_, state) => Text('Debts Report — status=${state.uri.queryParameters['status']}'),
-          ),
-        ],
-      );
-      await pumpWithRouter(tester, router);
+    testWidgets(
+      'Overdue Amount opens the Debts report pre-filtered to overdue',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+            GoRoute(
+              path: '/analytics/reports/debts',
+              builder: (_, state) => Text(
+                'Debts Report — status=${state.uri.queryParameters['status']}',
+              ),
+            ),
+          ],
+        );
+        await pumpWithRouter(tester, router);
 
-      await tester.tap(find.text('Overdue Amount'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Overdue Amount'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Debts Report — status=overdue'), findsOneWidget);
-    });
+        expect(find.text('Debts Report — status=overdue'), findsOneWidget);
+      },
+    );
 
     testWidgets('Collected (period) opens Analytics', (tester) async {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
-          GoRoute(path: '/analytics', builder: (_, _) => const Text('Analytics Screen')),
+          GoRoute(
+            path: '/analytics',
+            builder: (_, _) => const Text('Analytics Screen'),
+          ),
         ],
       );
       await pumpWithRouter(tester, router);
@@ -325,31 +492,38 @@ void main() {
       expect(find.text('Analytics Screen'), findsOneWidget);
     });
 
-    testWidgets('High Risk Customers opens Cases pre-filtered to the high_risk tab', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
-          GoRoute(
-            path: '/cases',
-            builder: (_, state) => Text('Cases — tab=${state.uri.queryParameters['tab']}'),
-          ),
-        ],
-      );
-      await pumpWithRouter(tester, router);
+    testWidgets(
+      'High Risk Customers opens Cases pre-filtered to the high_risk tab',
+      (tester) async {
+        final router = GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
+            GoRoute(
+              path: '/cases',
+              builder: (_, state) =>
+                  Text('Cases — tab=${state.uri.queryParameters['tab']}'),
+            ),
+          ],
+        );
+        await pumpWithRouter(tester, router);
 
-      await tester.tap(find.text('High Risk Customers'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('High Risk Customers'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Cases — tab=high_risk'), findsOneWidget);
-    });
+        expect(find.text('Cases — tab=high_risk'), findsOneWidget);
+      },
+    );
 
     testWidgets('Recent Cases "View All" opens the Cases tab', (tester) async {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
-          GoRoute(path: '/cases', builder: (_, _) => const Text('Cases Screen')),
+          GoRoute(
+            path: '/cases',
+            builder: (_, _) => const Text('Cases Screen'),
+          ),
         ],
       );
       await pumpWithRouter(tester, router);
@@ -362,14 +536,17 @@ void main() {
       expect(find.text('Cases Screen'), findsOneWidget);
     });
 
-    testWidgets('tapping a Recent Cases row opens that case\'s detail screen', (tester) async {
+    testWidgets('tapping a Recent Cases row opens that case\'s detail screen', (
+      tester,
+    ) async {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(path: '/', builder: (_, _) => const HomeDashboardScreen()),
           GoRoute(
             path: '/cases/:id',
-            builder: (_, state) => Text('Case Detail — ${state.pathParameters['id']}'),
+            builder: (_, state) =>
+                Text('Case Detail — ${state.pathParameters['id']}'),
           ),
         ],
       );
@@ -382,66 +559,110 @@ void main() {
     });
   });
 
-  group('KPI Period Selector (Item 8 — a real refetch, not just a label swap)', () {
-    const lastYearKpis = DashboardKpis(
-      totalOutstandingAmount: '800.00',
-      totalCollectedPeriod: '9999.00',
-      highRiskCustomers: 2,
-      overdueCount: 2,
-      overdueValue: '400.00',
-      customersOverCreditLimit: 1,
-      activeCollectionCases: 3,
-    );
+  group(
+    'KPI Period Selector (Item 8 — a real refetch, not just a label swap)',
+    () {
+      const lastYearKpis = DashboardKpis(
+        totalOutstandingAmount: '800.00',
+        totalCollectedPeriod: '9999.00',
+        highRiskCustomers: 2,
+        overdueCount: 2,
+        overdueValue: '400.00',
+        customersOverCreditLimit: 1,
+        activeCollectionCases: 3,
+      );
 
-    testWidgets('selecting a period refetches KPIs with the real backend key and updates the Collected label',
+      testWidgets(
+        'selecting a period refetches KPIs with the real backend key and updates the Collected label',
         (tester) async {
-      when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null))
-          .thenAnswer((_) async => _kpis);
-      when(() => mockRepository.fetchKpis(period: 'last_year', dateFrom: null, dateTo: null))
-          .thenAnswer((_) async => lastYearKpis);
-      when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-      when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
+          when(
+            () => mockRepository.fetchKpis(
+              period: 'this_month',
+              dateFrom: null,
+              dateTo: null,
+            ),
+          ).thenAnswer((_) async => _kpis);
+          when(
+            () => mockRepository.fetchKpis(
+              period: 'last_year',
+              dateFrom: null,
+              dateTo: null,
+            ),
+          ).thenAnswer((_) async => lastYearKpis);
+          when(
+            () => mockRepository.fetchTodaysOverview(),
+          ).thenAnswer((_) async => _overview);
+          when(
+            () => mockRepository.fetchRecentCases(),
+          ).thenAnswer((_) async => <RecentCase>[]);
 
-      await _pumpScreen(tester, mockRepository: mockRepository, mockPcrRepository: mockPcrRepository);
-      await tester.pumpAndSettle();
+          await _pumpScreen(
+            tester,
+            mockRepository: mockRepository,
+            mockPcrRepository: mockPcrRepository,
+          );
+          await tester.pumpAndSettle();
 
-      expect(find.text('Collected (This Month)'), findsOneWidget);
-      expect(find.text('100.00'), findsOneWidget);
+          expect(find.text('Collected (This Month)'), findsOneWidget);
+          expect(find.text('100.00'), findsOneWidget);
 
-      await tester.tap(find.text('This Month'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Last Year'));
-      await tester.pumpAndSettle();
+          await tester.tap(find.text('This Month'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Last Year'));
+          await tester.pumpAndSettle();
 
-      verify(() => mockRepository.fetchKpis(period: 'last_year', dateFrom: null, dateTo: null)).called(1);
-      expect(find.text('Collected (Last Year)'), findsOneWidget);
-      expect(find.text('9999.00'), findsOneWidget);
-    });
+          verify(
+            () => mockRepository.fetchKpis(
+              period: 'last_year',
+              dateFrom: null,
+              dateTo: null,
+            ),
+          ).called(1);
+          expect(find.text('Collected (Last Year)'), findsOneWidget);
+          expect(find.text('9999.00'), findsOneWidget);
+        },
+      );
 
-    testWidgets('Custom Date Range opens the platform date-range picker', (tester) async {
-      when(() => mockRepository.fetchKpis(period: 'this_month', dateFrom: null, dateTo: null))
-          .thenAnswer((_) async => _kpis);
-      when(() => mockRepository.fetchTodaysOverview()).thenAnswer((_) async => _overview);
-      when(() => mockRepository.fetchRecentCases()).thenAnswer((_) async => <RecentCase>[]);
+      testWidgets('Custom Date Range opens the platform date-range picker', (
+        tester,
+      ) async {
+        when(
+          () => mockRepository.fetchKpis(
+            period: 'this_month',
+            dateFrom: null,
+            dateTo: null,
+          ),
+        ).thenAnswer((_) async => _kpis);
+        when(
+          () => mockRepository.fetchTodaysOverview(),
+        ).thenAnswer((_) async => _overview);
+        when(
+          () => mockRepository.fetchRecentCases(),
+        ).thenAnswer((_) async => <RecentCase>[]);
 
-      await _pumpScreen(tester, mockRepository: mockRepository, mockPcrRepository: mockPcrRepository);
-      await tester.pumpAndSettle();
+        await _pumpScreen(
+          tester,
+          mockRepository: mockRepository,
+          mockPcrRepository: mockPcrRepository,
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('This Month'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Custom Date Range'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('This Month'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Custom Date Range'));
+        await tester.pumpAndSettle();
 
-      // The platform DateRangePickerDialog is now open (its own "Save"
-      // action, and a leading close icon rather than a text "Cancel"
-      // button in this Material version) — dismissing it must leave the
-      // previously selected period untouched rather than crashing or
-      // clearing the selection.
-      expect(find.text('Save'), findsOneWidget);
-      await tester.tap(find.byType(CloseButton));
-      await tester.pumpAndSettle();
+        // The platform DateRangePickerDialog is now open (its own "Save"
+        // action, and a leading close icon rather than a text "Cancel"
+        // button in this Material version) — dismissing it must leave the
+        // previously selected period untouched rather than crashing or
+        // clearing the selection.
+        expect(find.text('Save'), findsOneWidget);
+        await tester.tap(find.byType(CloseButton));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Collected (This Month)'), findsOneWidget);
-    });
-  });
+        expect(find.text('Collected (This Month)'), findsOneWidget);
+      });
+    },
+  );
 }

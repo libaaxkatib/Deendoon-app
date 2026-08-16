@@ -24,11 +24,11 @@ class DocumentEvent {
   });
 
   factory DocumentEvent.fromJson(Map<String, dynamic> json) => DocumentEvent(
-        id: json['id'].toString(),
-        documentType: json['document_type'] as String,
-        documentId: json['document_id'].toString(),
-        eventType: json['event_type'] as String,
-        userId: json['user_id']?.toString(),
-        occurredAt: json['occurred_at'] as String,
-      );
+    id: json['id'].toString(),
+    documentType: json['document_type'] as String,
+    documentId: json['document_id'].toString(),
+    eventType: json['event_type'] as String,
+    userId: json['user_id']?.toString(),
+    occurredAt: json['occurred_at'] as String,
+  );
 }

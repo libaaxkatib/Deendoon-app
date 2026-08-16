@@ -58,8 +58,15 @@ void main() {
   });
 
   test('fetchReminders passes tab through and returns the page', () async {
-    const page = ReminderPage(reminders: [_reminder], currentPage: 1, lastPage: 2, total: 21);
-    when(() => mockApi.list(page: 1, tab: 'today')).thenAnswer((_) async => page);
+    const page = ReminderPage(
+      reminders: [_reminder],
+      currentPage: 1,
+      lastPage: 2,
+      total: 21,
+    );
+    when(
+      () => mockApi.list(page: 1, tab: 'today'),
+    ).thenAnswer((_) async => page);
 
     final result = await repository.fetchReminders(page: 1, tab: 'today');
 
@@ -73,7 +80,12 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: '/reminders'),
           statusCode: 401,
-          data: {'success': false, 'message': 'Unauthenticated.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'Unauthenticated.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -81,7 +93,9 @@ void main() {
 
     expect(
       () => repository.fetchReminders(page: 1),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+      ),
     );
   });
 
@@ -92,18 +106,20 @@ void main() {
   });
 
   test('createReminder delegates every field to the api', () async {
-    when(() => mockApi.create(
-          type: 'payment_due',
-          relatedEntityType: 'customer',
-          relatedEntityId: '01CUST',
-          relatedCaseId: null,
-          dueDate: '2026-08-01T10:00:00.000',
-          amountDue: '250.00',
-          timingRule: 'same_day',
-          customFireAt: null,
-          deliveryMethods: ['in_app', 'sms'],
-          notes: 'Please pay soon',
-        )).thenAnswer((_) async => _reminder);
+    when(
+      () => mockApi.create(
+        type: 'payment_due',
+        relatedEntityType: 'customer',
+        relatedEntityId: '01CUST',
+        relatedCaseId: null,
+        dueDate: '2026-08-01T10:00:00.000',
+        amountDue: '250.00',
+        timingRule: 'same_day',
+        customFireAt: null,
+        deliveryMethods: ['in_app', 'sms'],
+        notes: 'Please pay soon',
+      ),
+    ).thenAnswer((_) async => _reminder);
 
     final result = await repository.createReminder(
       type: 'payment_due',
@@ -152,9 +168,15 @@ void main() {
       status: 'sent',
       sentAt: '2026-07-28T10:00:00.000000Z',
     );
-    when(() => mockApi.send(id: '1', channel: 'whatsapp', templateId: '01TPL')).thenAnswer((_) async => sentMessage);
+    when(
+      () => mockApi.send(id: '1', channel: 'whatsapp', templateId: '01TPL'),
+    ).thenAnswer((_) async => sentMessage);
 
-    final result = await repository.sendReminder(id: '1', channel: 'whatsapp', templateId: '01TPL');
+    final result = await repository.sendReminder(
+      id: '1',
+      channel: 'whatsapp',
+      templateId: '01TPL',
+    );
 
     expect(result, sentMessage);
   });
@@ -168,17 +190,30 @@ void main() {
       createdAt: '2026-07-01T00:00:00.000000Z',
       updatedAt: '2026-07-01T00:00:00.000000Z',
     );
-    when(() => mockApi.messageTemplates(channel: 'whatsapp')).thenAnswer((_) async => [template]);
+    when(
+      () => mockApi.messageTemplates(channel: 'whatsapp'),
+    ).thenAnswer((_) async => [template]);
 
-    expect(await repository.fetchMessageTemplates(channel: 'whatsapp'), [template]);
+    expect(await repository.fetchMessageTemplates(channel: 'whatsapp'), [
+      template,
+    ]);
   });
 
   test('renderMessage delegates to the api', () async {
-    when(() => mockApi.renderMessage(templateId: '1', reminderId: '2')).thenAnswer(
-      (_) async => {'rendered_text': 'Hi there', 'recipient_name': 'Moshe', 'recipient_phone': '+252612345678'},
+    when(
+      () => mockApi.renderMessage(templateId: '1', reminderId: '2'),
+    ).thenAnswer(
+      (_) async => {
+        'rendered_text': 'Hi there',
+        'recipient_name': 'Moshe',
+        'recipient_phone': '+252612345678',
+      },
     );
 
-    final result = await repository.renderMessage(templateId: '1', reminderId: '2');
+    final result = await repository.renderMessage(
+      templateId: '1',
+      reminderId: '2',
+    );
 
     expect(result['recipient_name'], 'Moshe');
   });

@@ -105,15 +105,28 @@ class _OverviewRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: iconColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: iconColor.withValues(alpha: 0.25), width: 1),
+              border: Border.all(
+                color: iconColor.withValues(alpha: 0.25),
+                width: 1,
+              ),
             ),
             child: Icon(icon, color: iconColor, size: 15),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary))),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
+          ),
           Text(
             '$count',
-            style: AppTypography.subheading.copyWith(fontWeight: FontWeight.w800, color: context.colors.textPrimary),
+            style: AppTypography.subheading.copyWith(
+              fontWeight: FontWeight.w800,
+              color: context.colors.textPrimary,
+            ),
           ),
           const SizedBox(width: 6),
           Container(
@@ -123,7 +136,11 @@ class _OverviewRow extends StatelessWidget {
               color: context.colors.textSecondary.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.chevron_right, size: 16, color: context.colors.textSecondary),
+            child: Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),

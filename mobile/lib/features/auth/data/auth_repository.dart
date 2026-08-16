@@ -41,7 +41,10 @@ class AuthRepository {
   Future<Authenticated> validateAndRotate() async {
     try {
       final (user, token) = await _api.refresh();
-      await _storage.saveSession(token: token, userJson: jsonEncode(user.toJson()));
+      await _storage.saveSession(
+        token: token,
+        userJson: jsonEncode(user.toJson()),
+      );
       return Authenticated(user: user, token: token);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
@@ -51,7 +54,10 @@ class AuthRepository {
   Future<Authenticated> login(String email, String password) async {
     try {
       final (user, token) = await _api.login(email, password);
-      await _storage.saveSession(token: token, userJson: jsonEncode(user.toJson()));
+      await _storage.saveSession(
+        token: token,
+        userJson: jsonEncode(user.toJson()),
+      );
       return Authenticated(user: user, token: token);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
@@ -77,7 +83,10 @@ class AuthRepository {
         password: password,
         passwordConfirmation: passwordConfirmation,
       );
-      await _storage.saveSession(token: token, userJson: jsonEncode(user.toJson()));
+      await _storage.saveSession(
+        token: token,
+        userJson: jsonEncode(user.toJson()),
+      );
       return Authenticated(user: user, token: token);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
@@ -108,12 +117,33 @@ class AuthRepository {
 
   /// Throws `ApiException` on an incorrect current password (422) or a
   /// validation failure (e.g. new password too short).
-  Future<String> changePassword({required String currentPassword, required String newPassword}) async {
+  Future<String> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
     try {
-      return await _api.changePassword(currentPassword: currentPassword, newPassword: newPassword);
+      return await _api.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
+  }
+
+  /// Self-service Close Account. Throws `ApiException` on an incorrect
+  /// password (422) or a network failure — local session storage is left
+  /// untouched on failure so the caller stays logged in and can retry.
+  /// On success, clears local session storage the same way `logout()`
+  /// does (the server has already revoked the token, so there is nothing
+  /// left to keep).
+  Future<void> closeAccount({required String password}) async {
+    try {
+      await _api.closeAccount(password: password);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+    await _storage.clear();
   }
 
   /// Throws `ApiException` on an invalid/expired token or a validation

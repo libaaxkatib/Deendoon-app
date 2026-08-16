@@ -15,12 +15,15 @@ String _isoDate(DateTime date) => date.toIso8601String().split('T').first;
 /// `perPage: 100` — same one-shot-request rationale as
 /// `AnalyticsApi.agingAnalysis()`, no infinite-scroll UI for a detail
 /// breakdown screen.
-final averageDaysDebtsProvider = FutureProvider.family<List<Debt>, DateTimeRange>((ref, range) async {
-  final page = await ref.read(analyticsRepositoryProvider).fetchReportDebts(
-        page: 1,
-        paidDateFrom: _isoDate(range.start),
-        paidDateTo: _isoDate(range.end),
-        perPage: 100,
-      );
-  return page.debts;
-});
+final averageDaysDebtsProvider =
+    FutureProvider.family<List<Debt>, DateTimeRange>((ref, range) async {
+      final page = await ref
+          .read(analyticsRepositoryProvider)
+          .fetchReportDebts(
+            page: 1,
+            paidDateFrom: _isoDate(range.start),
+            paidDateTo: _isoDate(range.end),
+            perPage: 100,
+          );
+      return page.debts;
+    });

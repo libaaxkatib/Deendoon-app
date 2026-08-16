@@ -37,8 +37,15 @@ void main() {
   });
 
   test('fetchCases passes tab through and returns the page', () async {
-    const page = CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 2, total: 21);
-    when(() => mockApi.list(page: 1, tab: 'high_risk', customerId: null)).thenAnswer((_) async => page);
+    const page = CollectionCasePage(
+      cases: [_case],
+      currentPage: 1,
+      lastPage: 2,
+      total: 21,
+    );
+    when(
+      () => mockApi.list(page: 1, tab: 'high_risk', customerId: null),
+    ).thenAnswer((_) async => page);
 
     final result = await repository.fetchCases(page: 1, tab: 'high_risk');
 
@@ -46,22 +53,39 @@ void main() {
   });
 
   test('fetchCases passes customerId through and returns the page', () async {
-    const page = CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1);
-    when(() => mockApi.list(page: 1, tab: null, customerId: '01CUST')).thenAnswer((_) async => page);
+    const page = CollectionCasePage(
+      cases: [_case],
+      currentPage: 1,
+      lastPage: 1,
+      total: 1,
+    );
+    when(
+      () => mockApi.list(page: 1, tab: null, customerId: '01CUST'),
+    ).thenAnswer((_) async => page);
 
     final result = await repository.fetchCases(page: 1, customerId: '01CUST');
 
     expect(result.cases, [_case]);
   });
 
-  test('fetchCasesForCustomer returns the flat case list for that customer', () async {
-    const page = CollectionCasePage(cases: [_case], currentPage: 1, lastPage: 1, total: 1);
-    when(() => mockApi.list(page: 1, tab: null, customerId: '01CUST')).thenAnswer((_) async => page);
+  test(
+    'fetchCasesForCustomer returns the flat case list for that customer',
+    () async {
+      const page = CollectionCasePage(
+        cases: [_case],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      );
+      when(
+        () => mockApi.list(page: 1, tab: null, customerId: '01CUST'),
+      ).thenAnswer((_) async => page);
 
-    final result = await repository.fetchCasesForCustomer('01CUST');
+      final result = await repository.fetchCasesForCustomer('01CUST');
 
-    expect(result, [_case]);
-  });
+      expect(result, [_case]);
+    },
+  );
 
   test('fetchCases throws ApiException on failure', () async {
     when(() => mockApi.list(page: 1, tab: null, customerId: null)).thenThrow(
@@ -70,7 +94,12 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: '/collection-cases'),
           statusCode: 401,
-          data: {'success': false, 'message': 'Unauthenticated.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'Unauthenticated.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -78,7 +107,9 @@ void main() {
 
     expect(
       () => repository.fetchCases(page: 1),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+      ),
     );
   });
 
@@ -89,12 +120,24 @@ void main() {
   });
 
   test('recordActivity delegates to the api with the given details', () async {
-    when(() => mockApi.recordActivity(caseId: '1', details: 'Contacted — spoke to customer'))
-        .thenAnswer((_) async {});
+    when(
+      () => mockApi.recordActivity(
+        caseId: '1',
+        details: 'Contacted — spoke to customer',
+      ),
+    ).thenAnswer((_) async {});
 
-    await repository.recordActivity(caseId: '1', details: 'Contacted — spoke to customer');
+    await repository.recordActivity(
+      caseId: '1',
+      details: 'Contacted — spoke to customer',
+    );
 
-    verify(() => mockApi.recordActivity(caseId: '1', details: 'Contacted — spoke to customer')).called(1);
+    verify(
+      () => mockApi.recordActivity(
+        caseId: '1',
+        details: 'Contacted — spoke to customer',
+      ),
+    ).called(1);
   });
 
   test('close delegates to the api and returns the closed case', () async {
@@ -114,9 +157,14 @@ void main() {
       createdAt: '2026-07-01T10:00:00.000000Z',
       closedAt: '2026-07-28T11:00:00.000000Z',
     );
-    when(() => mockApi.close(caseId: '1', closureOutcome: 'Paid in full')).thenAnswer((_) async => closed);
+    when(
+      () => mockApi.close(caseId: '1', closureOutcome: 'Paid in full'),
+    ).thenAnswer((_) async => closed);
 
-    final result = await repository.close(caseId: '1', closureOutcome: 'Paid in full');
+    final result = await repository.close(
+      caseId: '1',
+      closureOutcome: 'Paid in full',
+    );
 
     expect(result, closed);
   });
@@ -128,31 +176,40 @@ void main() {
     expect(await repository.fetchHistory('1'), history);
   });
 
-  test('updateNotes delegates to the api and returns the updated case', () async {
-    const updated = CollectionCase(
-      id: '1',
-      debtId: '01DEBT',
-      customerId: '01CUST',
-      customerName: 'Somali Builders',
-      outstandingAmount: '4467.40',
-      riskLevel: 'high',
-      referenceNumber: 'COL-0001',
-      assignedOfficerUserId: null,
-      caseStatus: 'open',
-      closureOutcome: null,
-      notes: 'Called customer, promised payment next week.',
-      lastActivityAt: '2026-07-28T12:00:00.000000Z',
-      createdAt: '2026-07-01T10:00:00.000000Z',
-      closedAt: null,
-    );
-    when(() => mockApi.updateNotes(caseId: '1', notes: 'Called customer, promised payment next week.'))
-        .thenAnswer((_) async => updated);
+  test(
+    'updateNotes delegates to the api and returns the updated case',
+    () async {
+      const updated = CollectionCase(
+        id: '1',
+        debtId: '01DEBT',
+        customerId: '01CUST',
+        customerName: 'Somali Builders',
+        outstandingAmount: '4467.40',
+        riskLevel: 'high',
+        referenceNumber: 'COL-0001',
+        assignedOfficerUserId: null,
+        caseStatus: 'open',
+        closureOutcome: null,
+        notes: 'Called customer, promised payment next week.',
+        lastActivityAt: '2026-07-28T12:00:00.000000Z',
+        createdAt: '2026-07-01T10:00:00.000000Z',
+        closedAt: null,
+      );
+      when(
+        () => mockApi.updateNotes(
+          caseId: '1',
+          notes: 'Called customer, promised payment next week.',
+        ),
+      ).thenAnswer((_) async => updated);
 
-    final result =
-        await repository.updateNotes(caseId: '1', notes: 'Called customer, promised payment next week.');
+      final result = await repository.updateNotes(
+        caseId: '1',
+        notes: 'Called customer, promised payment next week.',
+      );
 
-    expect(result, updated);
-  });
+      expect(result, updated);
+    },
+  );
 
   test('updateNotes throws ApiException on failure', () async {
     when(() => mockApi.updateNotes(caseId: '1', notes: null)).thenThrow(
@@ -161,7 +218,12 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: '/collection-cases/1'),
           statusCode: 403,
-          data: {'success': false, 'message': 'This action is unauthorized.', 'data': null, 'errors': null},
+          data: {
+            'success': false,
+            'message': 'This action is unauthorized.',
+            'data': null,
+            'errors': null,
+          },
         ),
         type: DioExceptionType.badResponse,
       ),
@@ -169,7 +231,9 @@ void main() {
 
     expect(
       () => repository.updateNotes(caseId: '1', notes: null),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403),
+      ),
     );
   });
 }

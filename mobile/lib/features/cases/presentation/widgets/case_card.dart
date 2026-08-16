@@ -24,7 +24,12 @@ class CaseCard extends StatelessWidget {
   final String? activeTab;
   final VoidCallback onTap;
 
-  const CaseCard({super.key, required this.collectionCase, required this.activeTab, required this.onTap});
+  const CaseCard({
+    super.key,
+    required this.collectionCase,
+    required this.activeTab,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,15 +50,20 @@ class CaseCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      collectionCase.customerName ?? l10n.caseCardUnknownCustomer,
-                      style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                      collectionCase.customerName ??
+                          l10n.caseCardUnknownCustomer,
+                      style: AppTypography.body.copyWith(
+                        color: context.colors.textPrimary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       collectionCase.referenceNumber,
-                      style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                      style: AppTypography.caption.copyWith(
+                        color: context.colors.textSecondary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -75,10 +85,18 @@ class CaseCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(l10n.caseCardOutstandingLabel, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+              Text(
+                l10n.caseCardOutstandingLabel,
+                style: AppTypography.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
+              ),
               Text(
                 collectionCase.outstandingAmount ?? '—',
-                style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 16),
+                style: AppTypography.subheading.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
@@ -88,12 +106,16 @@ class CaseCard extends StatelessWidget {
               Icon(
                 assigned ? Icons.person : Icons.person_outline,
                 size: 16,
-                color: assigned ? AppColors.primary : context.colors.textSecondary,
+                color: assigned
+                    ? AppColors.primary
+                    : context.colors.textSecondary,
               ),
               const SizedBox(width: 4),
               Text(
                 assigned ? l10n.statusAssigned : l10n.caseUnassignedLabel,
-                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                style: AppTypography.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
               if (activeTab == 'follow_up') ...[
                 const SizedBox(width: 10),
@@ -101,13 +123,18 @@ class CaseCard extends StatelessWidget {
               ],
               if (activeTab == 'promise_due') ...[
                 const SizedBox(width: 10),
-                _Tag(label: l10n.caseListTabPromiseDue, color: AppColors.accent),
+                _Tag(
+                  label: l10n.caseListTabPromiseDue,
+                  color: AppColors.accent,
+                ),
               ],
               Expanded(
                 child: Text(
                   collectionCase.lastActivityAt,
                   textAlign: TextAlign.end,
-                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -130,8 +157,18 @@ class _Tag extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

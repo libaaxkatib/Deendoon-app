@@ -19,15 +19,18 @@ void main() {
       expect(analytics.averageDays, 10.0);
     });
 
-    test('parses a null average_days when no debts were paid in the period', () {
-      final analytics = CollectionAnalytics.fromJson({
-        'collection_rate': 0.0,
-        'total_collected': '0.00',
-        'average_days': null,
-      });
+    test(
+      'parses a null average_days when no debts were paid in the period',
+      () {
+        final analytics = CollectionAnalytics.fromJson({
+          'collection_rate': 0.0,
+          'total_collected': '0.00',
+          'average_days': null,
+        });
 
-      expect(analytics.averageDays, isNull);
-    });
+        expect(analytics.averageDays, isNull);
+      },
+    );
   });
 
   group('RiskDistribution', () {
@@ -87,7 +90,12 @@ void main() {
             'aging_bucket': 'current',
           },
         ],
-        'pagination': {'current_page': 1, 'per_page': 100, 'total': 1, 'last_page': 1},
+        'pagination': {
+          'current_page': 1,
+          'per_page': 100,
+          'total': 1,
+          'last_page': 1,
+        },
       });
 
       expect(aging.buckets.keys, containsAll(agingBucketOrder));
@@ -99,18 +107,32 @@ void main() {
   });
 
   group('PaymentPage', () {
-    test('parses the payments + pagination envelope from GET /reports/payments', () {
-      final page = PaymentPage.fromJson({
-        'payments': [
-          {'id': '01PAY', 'debt_id': '01DEBT', 'amount': '100.00', 'payment_date': '2026-07-28', 'payment_method': null},
-        ],
-        'pagination': {'current_page': 1, 'per_page': 15, 'total': 1, 'last_page': 1},
-      });
+    test(
+      'parses the payments + pagination envelope from GET /reports/payments',
+      () {
+        final page = PaymentPage.fromJson({
+          'payments': [
+            {
+              'id': '01PAY',
+              'debt_id': '01DEBT',
+              'amount': '100.00',
+              'payment_date': '2026-07-28',
+              'payment_method': null,
+            },
+          ],
+          'pagination': {
+            'current_page': 1,
+            'per_page': 15,
+            'total': 1,
+            'last_page': 1,
+          },
+        });
 
-      expect(page.payments, hasLength(1));
-      expect(page.payments.first.amount, '100.00');
-      expect(page.currentPage, 1);
-      expect(page.total, 1);
-    });
+        expect(page.payments, hasLength(1));
+        expect(page.payments.first.amount, '100.00');
+        expect(page.currentPage, 1);
+        expect(page.total, 1);
+      },
+    );
   });
 }

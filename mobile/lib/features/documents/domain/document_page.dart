@@ -26,7 +26,9 @@ class DocumentPage {
     final pagination = json['pagination'] as Map<String, dynamic>;
     final items = json['documents'] as List<dynamic>;
     return DocumentPage(
-      documents: items.map((e) => DocumentSummary.fromJson(e as Map<String, dynamic>)).toList(),
+      documents: items
+          .map((e) => DocumentSummary.fromJson(e as Map<String, dynamic>))
+          .toList(),
       currentPage: pagination['current_page'] as int,
       lastPage: pagination['last_page'] as int,
       total: pagination['total'] as int,

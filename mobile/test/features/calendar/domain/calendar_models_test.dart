@@ -85,7 +85,11 @@ void main() {
     });
 
     test('parses an empty entries array', () {
-      final data = CalendarData.fromJson({'from': '2026-08-01', 'to': '2026-08-31', 'entries': []});
+      final data = CalendarData.fromJson({
+        'from': '2026-08-01',
+        'to': '2026-08-31',
+        'entries': [],
+      });
 
       expect(data.entries, isEmpty);
     });

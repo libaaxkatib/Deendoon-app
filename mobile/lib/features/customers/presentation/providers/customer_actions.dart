@@ -7,7 +7,9 @@ import '../../domain/duplicate_warning.dart';
 import 'customer_detail_providers.dart';
 import 'customer_list_provider.dart';
 
-final customerActionsProvider = Provider<CustomerActions>((ref) => CustomerActions(ref));
+final customerActionsProvider = Provider<CustomerActions>(
+  (ref) => CustomerActions(ref),
+);
 
 /// The real, backend-supported Customer mutations: create, update,
 /// archive, restore, and the dedicated credit-limit endpoint — plus the
@@ -28,8 +30,12 @@ class CustomerActions {
     String? address,
     required String creditLimit,
   }) async {
-    final result =
-        await _repository.createCustomer(name: name, phone: phone, address: address, creditLimit: creditLimit);
+    final result = await _repository.createCustomer(
+      name: name,
+      phone: phone,
+      address: address,
+      creditLimit: creditLimit,
+    );
     _ref.invalidate(customerListProvider);
     return result;
   }
@@ -69,20 +75,28 @@ class CustomerActions {
     _ref.invalidate(customerListProvider);
   }
 
-  Future<void> updateCreditLimit({required String id, required String creditLimit}) async {
+  Future<void> updateCreditLimit({
+    required String id,
+    required String creditLimit,
+  }) async {
     await _repository.updateCreditLimit(id: id, creditLimit: creditLimit);
     _ref.invalidate(customerDetailProvider(id));
     _ref.invalidate(customerListProvider);
   }
 
-  Future<void> updateStatus({required String id, required String customerStatus}) async {
+  Future<void> updateStatus({
+    required String id,
+    required String customerStatus,
+  }) async {
     await _repository.updateStatus(id: id, customerStatus: customerStatus);
     _ref.invalidate(customerDetailProvider(id));
     _ref.invalidate(customerListProvider);
   }
 
-  Future<DuplicateWarning?> checkDuplicate({required String name, required String phone}) =>
-      _repository.checkDuplicateCustomer(name: name, phone: phone);
+  Future<DuplicateWarning?> checkDuplicate({
+    required String name,
+    required String phone,
+  }) => _repository.checkDuplicateCustomer(name: name, phone: phone);
 
   Future<DocumentSummary> generateStatement(String customerId) async {
     final statement = await _repository.generateStatement(customerId);

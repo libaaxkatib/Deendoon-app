@@ -27,7 +27,12 @@ class CustomerCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onRestore;
 
-  const CustomerCard({super.key, required this.customer, required this.onTap, this.onRestore});
+  const CustomerCard({
+    super.key,
+    required this.customer,
+    required this.onTap,
+    this.onRestore,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,19 +50,29 @@ class CustomerCard extends StatelessWidget {
                 children: [
                   Text(
                     customer.name,
-                    style: AppTypography.body.copyWith(color: context.colors.textSecondary),
+                    style: AppTypography.body.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  Text(customer.phone, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                  Text(
+                    customer.phone,
+                    style: AppTypography.caption.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   _ArchivedBadge(label: l10n.customerCardArchivedBadge),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            OutlinedButton(onPressed: onRestore, child: Text(l10n.customerCardRestoreButton)),
+            OutlinedButton(
+              onPressed: onRestore,
+              child: Text(l10n.customerCardRestoreButton),
+            ),
           ],
         ),
       );
@@ -79,26 +94,37 @@ class CustomerCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         customer.name,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (customer.isReadOnly) ...[
                       const SizedBox(width: 6),
-                      const Icon(Icons.lock_outline, size: 14, color: AppColors.warning),
+                      const Icon(
+                        Icons.lock_outline,
+                        size: 14,
+                        color: AppColors.warning,
+                      ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   customer.phone,
-                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   customer.outstandingBalance,
-                  style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 18),
+                  style: AppTypography.subheading.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 18,
+                  ),
                 ),
               ],
             ),
@@ -131,7 +157,12 @@ class _ArchivedBadge extends StatelessWidget {
         color: context.colors.background,
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(label, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(
+          color: context.colors.textSecondary,
+        ),
+      ),
     );
   }
 }

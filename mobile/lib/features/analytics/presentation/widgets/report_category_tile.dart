@@ -11,7 +11,12 @@ class ReportCategoryTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const ReportCategoryTile({super.key, required this.icon, required this.label, required this.onTap});
+  const ReportCategoryTile({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +27,18 @@ class ReportCategoryTile extends StatelessWidget {
           Icon(icon, color: AppColors.primary, size: 22),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            child: Text(
+              label,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
           ),
-          Icon(Icons.chevron_right, size: 20, color: context.colors.textSecondary),
+          Icon(
+            Icons.chevron_right,
+            size: 20,
+            color: context.colors.textSecondary,
+          ),
         ],
       ),
     );

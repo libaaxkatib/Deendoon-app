@@ -19,7 +19,11 @@ class LoginScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(l10n.loginAppName, style: AppTypography.display, textAlign: TextAlign.center),
+                Text(
+                  l10n.loginAppName,
+                  style: AppTypography.display,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   l10n.loginTagline,

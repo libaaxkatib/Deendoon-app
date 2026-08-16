@@ -39,10 +39,16 @@ class ReminderSummaryRow extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(l10n.reminderSummaryDueTodayLabel, style: AppTypography.caption),
+                Text(
+                  l10n.reminderSummaryDueTodayLabel,
+                  style: AppTypography.caption,
+                ),
                 Text(
                   '${summary.totalDueToday}',
-                  style: AppTypography.subheading.copyWith(color: AppColors.primary, fontSize: 20),
+                  style: AppTypography.subheading.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 20,
+                  ),
                 ),
               ],
             ),
@@ -54,7 +60,9 @@ class ReminderSummaryRow extends ConsumerWidget {
                 child: _MiniStat(
                   label: l10n.todaysOverviewClientVisits,
                   value: summary.clientVisits,
-                  onTap: () => ref.read(reminderListProvider.notifier).filterByType('client_visit'),
+                  onTap: () => ref
+                      .read(reminderListProvider.notifier)
+                      .filterByType('client_visit'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -62,7 +70,9 @@ class ReminderSummaryRow extends ConsumerWidget {
                 child: _MiniStat(
                   label: l10n.todaysOverviewFollowUps,
                   value: summary.followUpCalls,
-                  onTap: () => ref.read(reminderListProvider.notifier).filterByType('follow_up_call'),
+                  onTap: () => ref
+                      .read(reminderListProvider.notifier)
+                      .filterByType('follow_up_call'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -70,7 +80,9 @@ class ReminderSummaryRow extends ConsumerWidget {
                 child: _MiniStat(
                   label: l10n.reminderFilterPayments,
                   value: summary.paymentsDue,
-                  onTap: () => ref.read(reminderListProvider.notifier).filterByType('payment_due'),
+                  onTap: () => ref
+                      .read(reminderListProvider.notifier)
+                      .filterByType('payment_due'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -79,7 +91,9 @@ class ReminderSummaryRow extends ConsumerWidget {
                   label: l10n.statusOverdue,
                   value: summary.overdueCount,
                   color: AppColors.danger,
-                  onTap: () => ref.read(reminderListProvider.notifier).filterByTab('overdue'),
+                  onTap: () => ref
+                      .read(reminderListProvider.notifier)
+                      .filterByTab('overdue'),
                 ),
               ),
             ],
@@ -96,7 +110,12 @@ class _MiniStat extends StatelessWidget {
   final Color? color;
   final VoidCallback onTap;
 
-  const _MiniStat({required this.label, required this.value, required this.onTap, this.color});
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -105,9 +124,19 @@ class _MiniStat extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       child: Column(
         children: [
-          Text('$value', style: AppTypography.subheading.copyWith(color: color ?? AppColors.primary)),
+          Text(
+            '$value',
+            style: AppTypography.subheading.copyWith(
+              color: color ?? AppColors.primary,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: AppTypography.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            label,
+            style: AppTypography.caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

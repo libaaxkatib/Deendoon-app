@@ -20,7 +20,9 @@ class NotificationPage {
     final pagination = json['pagination'] as Map<String, dynamic>;
     final items = json['notifications'] as List<dynamic>;
     return NotificationPage(
-      notifications: items.map((e) => AppNotification.fromJson(e as Map<String, dynamic>)).toList(),
+      notifications: items
+          .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
+          .toList(),
       currentPage: pagination['current_page'] as int,
       lastPage: pagination['last_page'] as int,
       total: pagination['total'] as int,

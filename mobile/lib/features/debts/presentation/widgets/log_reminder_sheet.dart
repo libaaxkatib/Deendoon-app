@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/debt_actions.dart';
@@ -18,7 +19,11 @@ import '../providers/debt_actions.dart';
 /// attempt happened, using the released backend endpoints. Actual message
 /// delivery remains the responsibility of Reminder Center scheduling or
 /// external communication channels — this is not that workflow.
-Future<void> showLogReminderSheet(BuildContext context, String debtId, String channel) {
+Future<void> showLogReminderSheet(
+  BuildContext context,
+  String debtId,
+  String channel,
+) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -58,11 +63,20 @@ class _LogReminderSheetState extends ConsumerState<_LogReminderSheet> {
     try {
       switch (widget.channel) {
         case 'whatsapp':
-          await actions.logWhatsAppReminder(debtId: widget.debtId, details: details.isEmpty ? null : details);
+          await actions.logWhatsAppReminder(
+            debtId: widget.debtId,
+            details: details.isEmpty ? null : details,
+          );
         case 'sms':
-          await actions.logSmsReminder(debtId: widget.debtId, details: details.isEmpty ? null : details);
+          await actions.logSmsReminder(
+            debtId: widget.debtId,
+            details: details.isEmpty ? null : details,
+          );
         case 'call':
-          await actions.logCallReminder(debtId: widget.debtId, details: details.isEmpty ? null : details);
+          await actions.logCallReminder(
+            debtId: widget.debtId,
+            details: details.isEmpty ? null : details,
+          );
       }
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
@@ -82,30 +96,36 @@ class _LogReminderSheetState extends ConsumerState<_LogReminderSheet> {
     };
     final label = channelLabels[widget.channel] ?? widget.channel;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.logReminderSheetTitle(label), style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            l10n.logReminderSheetTitle(label),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _detailsController,
             maxLines: 3,
-            decoration: InputDecoration(labelText: l10n.logReminderDetailsLabel),
+            decoration: InputDecoration(
+              labelText: l10n.logReminderDetailsLabel,
+            ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
           const SizedBox(height: 12),
-          PrimaryButton(label: l10n.logReminderSheetTitle(label), isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(
+            label: l10n.logReminderSheetTitle(label),
+            isLoading: _isLoading,
+            onPressed: _submit,
+          ),
         ],
       ),
     );

@@ -15,6 +15,7 @@ class CaseListState {
   final int total;
   final String? tab;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const CaseListState({
     required this.cases,
@@ -23,6 +24,7 @@ class CaseListState {
     required this.total,
     required this.tab,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -34,6 +36,7 @@ class CaseListState {
     int? total,
     String? tab,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return CaseListState(
       cases: cases ?? this.cases,
@@ -42,17 +45,21 @@ class CaseListState {
       total: total ?? this.total,
       tab: tab ?? this.tab,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
-final caseListProvider = AsyncNotifierProvider<CaseListNotifier, CaseListState>(CaseListNotifier.new);
+final caseListProvider = AsyncNotifierProvider<CaseListNotifier, CaseListState>(
+  CaseListNotifier.new,
+);
 
 class CaseListNotifier extends AsyncNotifier<CaseListState> {
   @override
   Future<CaseListState> build() => _fetchFirstPage(tab: null);
 
-  CollectionCaseRepository get _repository => ref.read(collectionCaseRepositoryProvider);
+  CollectionCaseRepository get _repository =>
+      ref.read(collectionCaseRepositoryProvider);
 
   /// `tab` is one of the four real, approved filter values (or null for
   /// "All") — always a real API call, never a client-side filter.
@@ -70,18 +77,28 @@ class CaseListNotifier extends AsyncNotifier<CaseListState> {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
-      final next = await _repository.fetchCases(page: current.currentPage + 1, tab: current.tab);
-      state = AsyncData(current.copyWith(
-        cases: [...current.cases, ...next.cases],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      final next = await _repository.fetchCases(
+        page: current.currentPage + 1,
+        tab: current.tab,
+      );
+      state = AsyncData(
+        current.copyWith(
+          cases: [...current.cases, ...next.cases],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 

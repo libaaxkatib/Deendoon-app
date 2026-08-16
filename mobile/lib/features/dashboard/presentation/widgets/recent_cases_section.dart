@@ -48,7 +48,9 @@ class RecentCasesSection extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
                   l10n.recentCasesEmptyState,
-                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.body.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
               );
             }
@@ -57,10 +59,16 @@ class RecentCasesSection extends ConsumerWidget {
                 for (final recentCase in data) ...[
                   AppCard(
                     onTap: () => context.push('/cases/${recentCase.id}'),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
-                        AvatarInitial(name: recentCase.customerName, radius: 18),
+                        AvatarInitial(
+                          name: recentCase.customerName,
+                          radius: 18,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

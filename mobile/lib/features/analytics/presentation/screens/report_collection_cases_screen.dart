@@ -11,8 +11,11 @@ import '../../../cases/presentation/widgets/case_card.dart';
 import '../providers/report_collection_cases_provider.dart';
 import '../widgets/export_action.dart';
 
-Map<String?, String> _statusFilters(AppLocalizations l10n) =>
-    {null: l10n.debtListFilterAll, 'open': l10n.statusOpen, 'closed': l10n.statusClosed};
+Map<String?, String> _statusFilters(AppLocalizations l10n) => {
+  null: l10n.debtListFilterAll,
+  'open': l10n.statusOpen,
+  'closed': l10n.statusClosed,
+};
 
 /// §5.2 Reports — Collection Cases category, filtered by real `case_status`
 /// (open/closed) — a different query param from the Cases module's own
@@ -23,10 +26,12 @@ class ReportCollectionCasesScreen extends ConsumerStatefulWidget {
   const ReportCollectionCasesScreen({super.key});
 
   @override
-  ConsumerState<ReportCollectionCasesScreen> createState() => _ReportCollectionCasesScreenState();
+  ConsumerState<ReportCollectionCasesScreen> createState() =>
+      _ReportCollectionCasesScreenState();
 }
 
-class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCasesScreen> {
+class _ReportCollectionCasesScreenState
+    extends ConsumerState<ReportCollectionCasesScreen> {
   final _scrollController = ScrollController();
 
   @override
@@ -43,7 +48,8 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(reportCollectionCasesProvider.notifier).loadMore();
     }
   }
@@ -65,7 +71,10 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
               context,
               ref,
               reportType: 'collection-cases',
-              filters: {if (casesAsync.valueOrNull?.status != null) 'status': casesAsync.valueOrNull!.status},
+              filters: {
+                if (casesAsync.valueOrNull?.status != null)
+                  'status': casesAsync.valueOrNull!.status,
+              },
             ),
           ),
         ],
@@ -84,7 +93,9 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
                     _FilterChip(
                       label: entry.value,
                       selected: casesAsync.valueOrNull?.status == entry.key,
-                      onTap: () => ref.read(reportCollectionCasesProvider.notifier).filterByStatus(entry.key),
+                      onTap: () => ref
+                          .read(reportCollectionCasesProvider.notifier)
+                          .filterByStatus(entry.key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -98,7 +109,8 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
                 error: (error, _) => Center(
                   child: RetrySection(
                     message: l10n.reportCollectionCasesLoadError,
-                    onRetry: () => ref.invalidate(reportCollectionCasesProvider),
+                    onRetry: () =>
+                        ref.invalidate(reportCollectionCasesProvider),
                   ),
                 ),
                 data: (state) {
@@ -106,26 +118,46 @@ class _ReportCollectionCasesScreenState extends ConsumerState<ReportCollectionCa
                     return Center(
                       child: Text(
                         l10n.caseListEmptyFilteredState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(reportCollectionCasesProvider.notifier).refresh(),
+                    onRefresh: () => ref
+                        .read(reportCollectionCasesProvider.notifier)
+                        .refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
                       itemCount: state.cases.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.cases.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(
+                                            reportCollectionCasesProvider
+                                                .notifier,
+                                          )
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final item = state.cases[index];
-                        return CaseCard(collectionCase: item, activeTab: null, onTap: () => context.push('/cases/${item.id}'));
+                        return CaseCard(
+                          collectionCase: item,
+                          activeTab: null,
+                          onTap: () => context.push('/cases/${item.id}'),
+                        );
                       },
                     ),
                   );
@@ -144,7 +176,11 @@ class _FilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +189,9 @@ class _FilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

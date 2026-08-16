@@ -43,18 +43,18 @@ class Customer {
   bool get isArchived => archivedAt != null;
 
   factory Customer.fromJson(Map<String, dynamic> json) => Customer(
-        id: json['id'].toString(),
-        name: json['name'] as String,
-        phone: json['phone'] as String,
-        address: json['address'] as String?,
-        customerStatus: json['customer_status'] as String,
-        creditLimit: json['credit_limit'] as String,
-        outstandingBalance: json['outstanding_balance'] as String,
-        remainingCredit: json['remaining_credit'] as String,
-        riskLevel: json['risk_level'] as String?,
-        creditScore: json['credit_score'] as int?,
-        creditScoreBand: json['credit_score_band'] as String?,
-        isReadOnly: json['is_read_only'] as bool? ?? false,
-        archivedAt: json['archived_at'] as String?,
-      );
+    id: json['id'].toString(),
+    name: json['name'] as String,
+    phone: json['phone'] as String,
+    address: json['address'] as String?,
+    customerStatus: json['customer_status'] as String,
+    creditLimit: json['credit_limit'] as String,
+    outstandingBalance: json['outstanding_balance'] as String,
+    remainingCredit: json['remaining_credit'] as String,
+    riskLevel: json['risk_level'] as String?,
+    creditScore: json['credit_score'] as int?,
+    creditScoreBand: json['credit_score_band'] as String?,
+    isReadOnly: json['is_read_only'] as bool? ?? false,
+    archivedAt: json['archived_at'] as String?,
+  );
 }

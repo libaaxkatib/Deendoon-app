@@ -29,13 +29,15 @@ class Attachment {
   });
 
   factory Attachment.fromJson(Map<String, dynamic> json) => Attachment(
-        id: json['id'].toString(),
-        entityId: (json['customer_id'] ?? json['debt_id'] ?? json['collection_case_id']).toString(),
-        uploadedByUserId: json['uploaded_by_user_id']?.toString(),
-        originalFilename: json['original_filename'] as String,
-        mimeType: json['mime_type'] as String,
-        fileSize: json['file_size'] as int,
-        description: json['description'] as String?,
-        createdAt: json['created_at'] as String,
-      );
+    id: json['id'].toString(),
+    entityId:
+        (json['customer_id'] ?? json['debt_id'] ?? json['collection_case_id'])
+            .toString(),
+    uploadedByUserId: json['uploaded_by_user_id']?.toString(),
+    originalFilename: json['original_filename'] as String,
+    mimeType: json['mime_type'] as String,
+    fileSize: json['file_size'] as int,
+    description: json['description'] as String?,
+    createdAt: json['created_at'] as String,
+  );
 }

@@ -42,13 +42,21 @@ class Subscription {
   factory Subscription.fromJson(Map<String, dynamic> json) {
     final trialStatus = json['trial_status'] as Map<String, dynamic>;
     return Subscription(
-      plan: json['plan'] == null ? null : SubscriptionPlan.fromJson(json['plan'] as Map<String, dynamic>),
+      plan: json['plan'] == null
+          ? null
+          : SubscriptionPlan.fromJson(json['plan'] as Map<String, dynamic>),
       planName: json['plan_name'] as String?,
       planPrice: json['plan_price'] as String?,
       onTrial: trialStatus['on_trial'] as bool,
-      trialEndsAt: trialStatus['trial_ends_at'] == null ? null : DateTime.parse(trialStatus['trial_ends_at'] as String),
-      startedAt: json['started_at'] == null ? null : DateTime.parse(json['started_at'] as String),
-      expiresAt: json['expires_at'] == null ? null : DateTime.parse(json['expires_at'] as String),
+      trialEndsAt: trialStatus['trial_ends_at'] == null
+          ? null
+          : DateTime.parse(trialStatus['trial_ends_at'] as String),
+      startedAt: json['started_at'] == null
+          ? null
+          : DateTime.parse(json['started_at'] as String),
+      expiresAt: json['expires_at'] == null
+          ? null
+          : DateTime.parse(json['expires_at'] as String),
       subscriptionStatus: json['subscription_status'] as String?,
       customerUsage: json['customer_usage'] as int,
       customerLimit: json['customer_limit'] as int?,

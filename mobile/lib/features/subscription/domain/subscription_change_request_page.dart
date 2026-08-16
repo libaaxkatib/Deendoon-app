@@ -21,7 +21,12 @@ class SubscriptionChangeRequestPage {
     final pagination = json['pagination'] as Map<String, dynamic>;
     final items = json['change_requests'] as List<dynamic>;
     return SubscriptionChangeRequestPage(
-      changeRequests: items.map((e) => SubscriptionChangeRequest.fromJson(e as Map<String, dynamic>)).toList(),
+      changeRequests: items
+          .map(
+            (e) =>
+                SubscriptionChangeRequest.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
       currentPage: pagination['current_page'] as int,
       lastPage: pagination['last_page'] as int,
       total: pagination['total'] as int,

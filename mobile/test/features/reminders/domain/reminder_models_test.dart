@@ -10,26 +10,25 @@ Map<String, dynamic> _reminderJson({
   String? relatedCaseId,
   String? amountDue,
   String? completedAt,
-}) =>
-    {
-      'id': '01REM',
-      'type': 'payment_due',
-      'title': 'Payment Due',
-      'related_entity_type': 'debt',
-      'related_entity_id': '01DEBT',
-      'related_case_id': relatedCaseId,
-      'due_date': '2026-08-01T10:00:00.000000Z',
-      'amount_due': amountDue,
-      'timing_rule': 'one_day_before',
-      'custom_fire_at': null,
-      'delivery_methods': ['in_app', 'whatsapp'],
-      'notes': 'Call before visiting',
-      'status': status,
-      'created_by_user_id': '01USER',
-      'created_at': '2026-07-25T09:00:00.000000Z',
-      'updated_at': '2026-07-25T09:00:00.000000Z',
-      'completed_at': completedAt,
-    };
+}) => {
+  'id': '01REM',
+  'type': 'payment_due',
+  'title': 'Payment Due',
+  'related_entity_type': 'debt',
+  'related_entity_id': '01DEBT',
+  'related_case_id': relatedCaseId,
+  'due_date': '2026-08-01T10:00:00.000000Z',
+  'amount_due': amountDue,
+  'timing_rule': 'one_day_before',
+  'custom_fire_at': null,
+  'delivery_methods': ['in_app', 'whatsapp'],
+  'notes': 'Call before visiting',
+  'status': status,
+  'created_by_user_id': '01USER',
+  'created_at': '2026-07-25T09:00:00.000000Z',
+  'updated_at': '2026-07-25T09:00:00.000000Z',
+  'completed_at': completedAt,
+};
 
 void main() {
   group('Reminder', () {
@@ -52,11 +51,13 @@ void main() {
     });
 
     test('parses a completed reminder with a related case id', () {
-      final reminder = Reminder.fromJson(_reminderJson(
-        status: 'completed',
-        relatedCaseId: '01CASE',
-        completedAt: '2026-07-30T09:00:00.000000Z',
-      ));
+      final reminder = Reminder.fromJson(
+        _reminderJson(
+          status: 'completed',
+          relatedCaseId: '01CASE',
+          completedAt: '2026-07-30T09:00:00.000000Z',
+        ),
+      );
 
       expect(reminder.status, 'completed');
       expect(reminder.relatedCaseId, '01CASE');
@@ -74,7 +75,12 @@ void main() {
     test('parses the reminders + pagination envelope from GET /reminders', () {
       final page = ReminderPage.fromJson({
         'reminders': [_reminderJson()],
-        'pagination': {'current_page': 1, 'per_page': 15, 'total': 3, 'last_page': 1},
+        'pagination': {
+          'current_page': 1,
+          'per_page': 15,
+          'total': 3,
+          'last_page': 1,
+        },
       });
 
       expect(page.reminders, hasLength(1));
@@ -85,27 +91,30 @@ void main() {
   });
 
   group('ReminderSummary', () {
-    test('parses total_due_today, overdue_count, and all five per_type keys', () {
-      final summary = ReminderSummary.fromJson({
-        'total_due_today': 7,
-        'overdue_count': 2,
-        'per_type': {
-          'client_visit': 1,
-          'follow_up_call': 2,
-          'payment_due': 3,
-          'contract_renewal': 0,
-          'promise_to_pay': 1,
-        },
-      });
+    test(
+      'parses total_due_today, overdue_count, and all five per_type keys',
+      () {
+        final summary = ReminderSummary.fromJson({
+          'total_due_today': 7,
+          'overdue_count': 2,
+          'per_type': {
+            'client_visit': 1,
+            'follow_up_call': 2,
+            'payment_due': 3,
+            'contract_renewal': 0,
+            'promise_to_pay': 1,
+          },
+        });
 
-      expect(summary.totalDueToday, 7);
-      expect(summary.overdueCount, 2);
-      expect(summary.clientVisits, 1);
-      expect(summary.followUpCalls, 2);
-      expect(summary.paymentsDue, 3);
-      expect(summary.contractRenewals, 0);
-      expect(summary.promisesToPay, 1);
-    });
+        expect(summary.totalDueToday, 7);
+        expect(summary.overdueCount, 2);
+        expect(summary.clientVisits, 1);
+        expect(summary.followUpCalls, 2);
+        expect(summary.paymentsDue, 3);
+        expect(summary.contractRenewals, 0);
+        expect(summary.promisesToPay, 1);
+      },
+    );
 
     test('defaults a missing per_type key to zero', () {
       final summary = ReminderSummary.fromJson({
@@ -125,7 +134,8 @@ void main() {
         'id': '01TPL',
         'name': 'Friendly Reminder',
         'channel': 'whatsapp',
-        'body': 'Hi {customer_name}, your payment of {amount_due} is due {due_date}.',
+        'body':
+            'Hi {customer_name}, your payment of {amount_due} is due {due_date}.',
         'created_at': '2026-07-01T00:00:00.000000Z',
         'updated_at': '2026-07-01T00:00:00.000000Z',
       });

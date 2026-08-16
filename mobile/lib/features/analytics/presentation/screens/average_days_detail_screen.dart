@@ -55,8 +55,13 @@ class AverageDaysDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(analytics.averageDays?.toStringAsFixed(1) ?? '—',
-                        style: AppTypography.heading.copyWith(fontSize: 32, color: AppColors.primary)),
+                    Text(
+                      analytics.averageDays?.toStringAsFixed(1) ?? '—',
+                      style: AppTypography.heading.copyWith(
+                        fontSize: 32,
+                        color: AppColors.primary,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       l10n.averageDaysDetailDescription,
@@ -67,7 +72,10 @@ class AverageDaysDetailScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text(l10n.averageDaysDetailDebtsHeading, style: AppTypography.heading),
+            Text(
+              l10n.averageDaysDetailDebtsHeading,
+              style: AppTypography.heading,
+            ),
             const SizedBox(height: 12),
             debtsAsync.when(
               loading: () => const Padding(
@@ -80,12 +88,19 @@ class AverageDaysDetailScreen extends ConsumerWidget {
               ),
               data: (debts) {
                 if (debts.isEmpty) {
-                  return Text(l10n.averageDaysDetailEmptyState, style: AppTypography.body);
+                  return Text(
+                    l10n.averageDaysDetailEmptyState,
+                    style: AppTypography.body,
+                  );
                 }
                 return Column(
                   children: [
                     for (final debt in debts) ...[
-                      DebtCard(debt: debt, riskLevel: null, onTap: () => context.push('/debts/${debt.id}')),
+                      DebtCard(
+                        debt: debt,
+                        riskLevel: null,
+                        onTap: () => context.push('/debts/${debt.id}'),
+                      ),
                       const SizedBox(height: 12),
                     ],
                   ],

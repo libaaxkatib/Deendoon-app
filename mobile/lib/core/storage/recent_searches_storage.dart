@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final recentSearchesStorageProvider =
-    Provider<RecentSearchesStorage>((ref) => const RecentSearchesStorage());
+final recentSearchesStorageProvider = Provider<RecentSearchesStorage>(
+  (ref) => const RecentSearchesStorage(),
+);
 
 /// Global Search's "Recent Searches" — device-local only, never sent to
 /// the backend (no such endpoint exists, and none was requested). Newest

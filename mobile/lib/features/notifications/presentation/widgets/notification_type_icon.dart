@@ -4,7 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
-/// Client-side rendering for the 9 real `NotificationType` enum values
+/// Client-side rendering for the 14 real `NotificationType` enum values
 /// (`deendoon/app/Enums/NotificationType.php`) — the backend resource
 /// carries no title/message text, so icon, color, and label are all
 /// derived from `type` here, the same polymorphic-by-convention pattern
@@ -15,18 +15,45 @@ class NotificationTypeIcon extends StatelessWidget {
 
   const NotificationTypeIcon({super.key, required this.type, this.size = 40});
 
-  static (IconData, Color) _iconAndColor(BuildContext context, String type) => switch (type) {
-        'credit_limit_reached' => (Icons.warning_amber_outlined, AppColors.danger),
-        'payment_received' => (Icons.payments_outlined, AppColors.success),
-        'document_available' => (Icons.description_outlined, AppColors.info),
-        'collection_assignment' => (Icons.assignment_outlined, AppColors.accent),
-        'reminder_sent' => (Icons.notifications_active_outlined, AppColors.primary),
-        'promise_to_pay_due' => (Icons.handshake_outlined, AppColors.warning),
-        'professional_collection_request_update' => (Icons.support_agent_outlined, AppColors.accent),
-        'subscription_request_update' => (Icons.card_membership_outlined, AppColors.accent),
-        'storage_request_update' => (Icons.storage_outlined, AppColors.accent),
-        _ => (Icons.notifications_outlined, context.colors.textSecondary),
-      };
+  static (IconData, Color) _iconAndColor(
+    BuildContext context,
+    String type,
+  ) => switch (type) {
+    'credit_limit_reached' => (Icons.warning_amber_outlined, AppColors.danger),
+    'payment_received' => (Icons.payments_outlined, AppColors.success),
+    'document_available' => (Icons.description_outlined, AppColors.info),
+    'collection_assignment' => (Icons.assignment_outlined, AppColors.accent),
+    'reminder_sent' => (Icons.notifications_active_outlined, AppColors.primary),
+    'promise_to_pay_due' => (Icons.handshake_outlined, AppColors.warning),
+    'professional_collection_request_update' => (
+      Icons.support_agent_outlined,
+      AppColors.accent,
+    ),
+    'subscription_request_update' => (
+      Icons.card_membership_outlined,
+      AppColors.accent,
+    ),
+    'storage_request_update' => (Icons.storage_outlined, AppColors.accent),
+    'support_ticket_created' => (
+      Icons.support_agent_outlined,
+      AppColors.primary,
+    ),
+    'support_ticket_replied' => (Icons.support_agent_outlined, AppColors.info),
+    'support_ticket_status_changed' => (
+      Icons.support_agent_outlined,
+      AppColors.warning,
+    ),
+    'support_ticket_closed' => (
+      Icons.support_agent_outlined,
+      AppColors.success,
+    ),
+    'support_ticket_reopened' => (
+      Icons.support_agent_outlined,
+      AppColors.warning,
+    ),
+    'admin_announcement' => (Icons.campaign_outlined, AppColors.primary),
+    _ => (Icons.notifications_outlined, context.colors.textSecondary),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +61,10 @@ class NotificationTypeIcon extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
       child: Icon(icon, color: color, size: size * 0.5),
     );
   }
@@ -52,9 +82,17 @@ String notificationTypeLabel(BuildContext context, String type) {
     'collection_assignment' => l10n.notificationTypeCollectionAssignment,
     'reminder_sent' => l10n.notificationTypeReminderSent,
     'promise_to_pay_due' => l10n.notificationTypePromiseToPayDue,
-    'professional_collection_request_update' => l10n.notificationTypeCollectionRequestUpdate,
+    'professional_collection_request_update' =>
+      l10n.notificationTypeCollectionRequestUpdate,
     'subscription_request_update' => l10n.notificationTypeSubscriptionUpdate,
     'storage_request_update' => l10n.notificationTypeStorageAddonUpdate,
+    'support_ticket_created' => l10n.notificationTypeSupportTicketCreated,
+    'support_ticket_replied' => l10n.notificationTypeSupportTicketReplied,
+    'support_ticket_status_changed' =>
+      l10n.notificationTypeSupportTicketStatusChanged,
+    'support_ticket_closed' => l10n.notificationTypeSupportTicketClosed,
+    'support_ticket_reopened' => l10n.notificationTypeSupportTicketReopened,
+    'admin_announcement' => l10n.notificationTypeAdminAnnouncement,
     _ => l10n.notificationTypeFallback,
   };
 }

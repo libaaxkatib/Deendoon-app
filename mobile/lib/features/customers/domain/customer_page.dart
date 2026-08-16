@@ -19,7 +19,9 @@ class CustomerPage {
     final pagination = json['pagination'] as Map<String, dynamic>;
     final items = json['customers'] as List<dynamic>;
     return CustomerPage(
-      customers: items.map((e) => Customer.fromJson(e as Map<String, dynamic>)).toList(),
+      customers: items
+          .map((e) => Customer.fromJson(e as Map<String, dynamic>))
+          .toList(),
       currentPage: pagination['current_page'] as int,
       lastPage: pagination['last_page'] as int,
       total: pagination['total'] as int,

@@ -6,7 +6,9 @@ import '../../domain/subscription_change_request.dart';
 import 'subscription_change_request_list_provider.dart';
 import 'subscription_providers.dart';
 
-final subscriptionActionsProvider = Provider<SubscriptionActions>((ref) => SubscriptionActions(ref));
+final subscriptionActionsProvider = Provider<SubscriptionActions>(
+  (ref) => SubscriptionActions(ref),
+);
 
 /// The real, backend-supported Business Owner actions on Subscriptions and
 /// Storage Add-ons: request an upgrade/downgrade, cancel a still-pending
@@ -19,7 +21,8 @@ class SubscriptionActions {
 
   const SubscriptionActions(this._ref);
 
-  SubscriptionRepository get _repository => _ref.read(subscriptionRepositoryProvider);
+  SubscriptionRepository get _repository =>
+      _ref.read(subscriptionRepositoryProvider);
 
   /// Creates a pending Subscription Change Request. Doesn't change the
   /// tenant's current active plan — that only happens once a Platform

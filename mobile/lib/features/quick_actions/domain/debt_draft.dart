@@ -15,5 +15,10 @@ class DebtDraft {
   final String? notes;
   final PickedAttachmentFile? invoiceFile;
 
-  const DebtDraft({required this.amount, required this.dueDate, this.notes, this.invoiceFile});
+  const DebtDraft({
+    required this.amount,
+    required this.dueDate,
+    this.notes,
+    this.invoiceFile,
+  });
 }

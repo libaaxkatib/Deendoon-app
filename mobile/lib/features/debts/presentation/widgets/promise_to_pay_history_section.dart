@@ -33,7 +33,10 @@ class PromiseToPayHistorySection extends ConsumerWidget {
         if (promises.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(l10n.promiseToPayHistoryEmptyState, style: AppTypography.body),
+            child: Text(
+              l10n.promiseToPayHistoryEmptyState,
+              style: AppTypography.body,
+            ),
           );
         }
 
@@ -48,10 +51,17 @@ class PromiseToPayHistorySection extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(l10n.promiseToPayHistoryPromisedLabel(promise.promisedDate), style: AppTypography.body),
+                          Text(
+                            l10n.promiseToPayHistoryPromisedLabel(
+                              promise.promisedDate,
+                            ),
+                            style: AppTypography.body,
+                          ),
                           const SizedBox(height: 2),
                           Text(
-                            l10n.promiseToPayHistoryRecordedLabel(promise.createdAt.split('T').first),
+                            l10n.promiseToPayHistoryRecordedLabel(
+                              promise.createdAt.split('T').first,
+                            ),
                             style: AppTypography.caption,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

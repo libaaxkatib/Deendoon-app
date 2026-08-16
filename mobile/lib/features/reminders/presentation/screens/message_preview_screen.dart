@@ -75,10 +75,15 @@ class MessagePreviewScreen extends ConsumerStatefulWidget {
   /// original default.
   final String? initialChannel;
 
-  const MessagePreviewScreen({super.key, required this.reminderId, this.initialChannel});
+  const MessagePreviewScreen({
+    super.key,
+    required this.reminderId,
+    this.initialChannel,
+  });
 
   @override
-  ConsumerState<MessagePreviewScreen> createState() => _MessagePreviewScreenState();
+  ConsumerState<MessagePreviewScreen> createState() =>
+      _MessagePreviewScreenState();
 }
 
 class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
@@ -100,7 +105,10 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
     try {
       final rendered = await ref
           .read(reminderRepositoryProvider)
-          .renderMessage(templateId: template.id, reminderId: widget.reminderId);
+          .renderMessage(
+            templateId: template.id,
+            reminderId: widget.reminderId,
+          );
       if (!mounted) return;
       setState(() {
         _renderedText = rendered['rendered_text'] as String?;
@@ -124,7 +132,9 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final phone = _recipientPhone;
     if (phone == null || phone.trim().isEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.reminderNoPhoneNumberMessage)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.reminderNoPhoneNumberMessage)),
+      );
       return;
     }
 
@@ -135,13 +145,24 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
     final navigator = Navigator.of(context);
     final launched = _channel == 'whatsapp'
         ? await _launchWhatsApp(phone, _renderedText!)
-        : await launchUrl(Uri(scheme: 'sms', path: phone, queryParameters: {'body': _renderedText!}), mode: LaunchMode.externalApplication);
+        : await launchUrl(
+            Uri(
+              scheme: 'sms',
+              path: phone,
+              queryParameters: {'body': _renderedText!},
+            ),
+            mode: LaunchMode.externalApplication,
+          );
     if (!mounted) return;
     setState(() => _isSending = false);
     if (launched) {
       navigator.pop();
     } else {
-      setState(() => _error = _channel == 'whatsapp' ? l10n.messagePreviewWhatsAppOpenError : l10n.messagePreviewMessagingAppOpenError);
+      setState(
+        () => _error = _channel == 'whatsapp'
+            ? l10n.messagePreviewWhatsAppOpenError
+            : l10n.messagePreviewMessagingAppOpenError,
+      );
     }
   }
 
@@ -158,9 +179,14 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
   /// fallback rather than surfacing as an unhandled error.
   Future<bool> _launchWhatsApp(String phone, String text) async {
     final digitsOnlyPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    final nativeUri = Uri(scheme: 'whatsapp', host: 'send', queryParameters: {'phone': digitsOnlyPhone, 'text': text});
+    final nativeUri = Uri(
+      scheme: 'whatsapp',
+      host: 'send',
+      queryParameters: {'phone': digitsOnlyPhone, 'text': text},
+    );
     try {
-      if (await launchUrl(nativeUri, mode: LaunchMode.externalApplication)) return true;
+      if (await launchUrl(nativeUri, mode: LaunchMode.externalApplication))
+        return true;
     } on PlatformException {
       // WhatsApp not installed — fall through to the web fallback below.
     }
@@ -193,11 +219,18 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
           children: [
             SegmentedButton<String>(
               segments: [
-                ButtonSegment(value: 'whatsapp', label: Text(l10n.reminderDetailWhatsAppButton)),
-                ButtonSegment(value: 'sms', label: Text(l10n.reminderDetailSmsButton)),
+                ButtonSegment(
+                  value: 'whatsapp',
+                  label: Text(l10n.reminderDetailWhatsAppButton),
+                ),
+                ButtonSegment(
+                  value: 'sms',
+                  label: Text(l10n.reminderDetailSmsButton),
+                ),
               ],
               selected: {_channel},
-              onSelectionChanged: (selection) => _switchChannel(selection.first),
+              onSelectionChanged: (selection) =>
+                  _switchChannel(selection.first),
             ),
             const SizedBox(height: 16),
             if (_recipientName != null || _recipientPhone != null)
@@ -210,8 +243,16 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_recipientName ?? l10n.messagePreviewUnknownRecipient, style: AppTypography.body),
-                          if (_recipientPhone != null) Text(_recipientPhone!, style: AppTypography.caption),
+                          Text(
+                            _recipientName ??
+                                l10n.messagePreviewUnknownRecipient,
+                            style: AppTypography.body,
+                          ),
+                          if (_recipientPhone != null)
+                            Text(
+                              _recipientPhone!,
+                              style: AppTypography.caption,
+                            ),
                         ],
                       ),
                     ),
@@ -224,16 +265,25 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => RetrySection(
                   message: l10n.messagePreviewTemplatesLoadError,
-                  onRetry: () => ref.invalidate(messageTemplatesProvider(_channel)),
+                  onRetry: () =>
+                      ref.invalidate(messageTemplatesProvider(_channel)),
                 ),
                 data: (templates) {
                   if (templates.isEmpty) {
-                    return Center(child: Text(l10n.messagePreviewEmptyTemplatesState, style: AppTypography.body));
+                    return Center(
+                      child: Text(
+                        l10n.messagePreviewEmptyTemplatesState,
+                        style: AppTypography.body,
+                      ),
+                    );
                   }
 
                   return ListView(
                     children: [
-                      Text(l10n.messagePreviewUseTemplateHeading, style: AppTypography.heading),
+                      Text(
+                        l10n.messagePreviewUseTemplateHeading,
+                        style: AppTypography.heading,
+                      ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -248,12 +298,23 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      if (_isRendering) const Center(child: CircularProgressIndicator()),
+                      if (_isRendering)
+                        const Center(child: CircularProgressIndicator()),
                       if (_renderedText != null)
-                        AppCard(child: Text(_renderedText!, style: AppTypography.body.copyWith(height: 1.6))),
+                        AppCard(
+                          child: Text(
+                            _renderedText!,
+                            style: AppTypography.body.copyWith(height: 1.6),
+                          ),
+                        ),
                       if (_error != null) ...[
                         const SizedBox(height: 12),
-                        Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
                       ],
                     ],
                   );
@@ -262,10 +323,23 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: (_selectedTemplate == null || _renderedText == null || _isSending) ? null : _send,
+              onPressed:
+                  (_selectedTemplate == null ||
+                      _renderedText == null ||
+                      _isSending)
+                  ? null
+                  : _send,
               child: _isSending
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(_channel == 'whatsapp' ? l10n.messagePreviewSendViaWhatsAppButton : l10n.messagePreviewSendViaSmsButton),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      _channel == 'whatsapp'
+                          ? l10n.messagePreviewSendViaWhatsAppButton
+                          : l10n.messagePreviewSendViaSmsButton,
+                    ),
             ),
           ],
         ),

@@ -11,9 +11,12 @@ class AddCaseReviewInput {
   final CustomerDraft? customerDraft;
   final DebtDraft debtDraft;
 
-  const AddCaseReviewInput({this.existingCustomer, this.customerDraft, required this.debtDraft})
-      : assert(
-          (existingCustomer == null) != (customerDraft == null),
-          'Exactly one of existingCustomer/customerDraft must be set',
-        );
+  const AddCaseReviewInput({
+    this.existingCustomer,
+    this.customerDraft,
+    required this.debtDraft,
+  }) : assert(
+         (existingCustomer == null) != (customerDraft == null),
+         'Exactly one of existingCustomer/customerDraft must be set',
+       );
 }

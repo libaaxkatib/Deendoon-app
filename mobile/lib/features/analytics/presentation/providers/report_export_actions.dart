@@ -5,9 +5,15 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../data/analytics_repository.dart';
 
-final reportExportActionsProvider = Provider<ReportExportActions>((ref) => ReportExportActions(ref));
+final reportExportActionsProvider = Provider<ReportExportActions>(
+  (ref) => ReportExportActions(ref),
+);
 
-const _extensions = <String, String>{'pdf': 'pdf', 'excel': 'xlsx', 'csv': 'csv'};
+const _extensions = <String, String>{
+  'pdf': 'pdf',
+  'excel': 'xlsx',
+  'csv': 'csv',
+};
 
 /// §5.2 "export the resulting list" — exports exactly the same filtered
 /// dataset already shown on screen (the caller passes its current filter
@@ -28,7 +34,11 @@ class ReportExportActions {
     required String format,
     Map<String, dynamic> filters = const {},
   }) async {
-    final bytes = await _repository.exportReport(reportType: reportType, format: format, filters: filters);
+    final bytes = await _repository.exportReport(
+      reportType: reportType,
+      format: format,
+      filters: filters,
+    );
     final extension = _extensions[format] ?? format;
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$reportType.$extension');

@@ -36,6 +36,10 @@ Future<void> startAddCaseFlow(BuildContext context) async {
 
   await context.push(
     '/add-case/review',
-    extra: AddCaseReviewInput(existingCustomer: existingCustomer, customerDraft: customerDraft, debtDraft: debtDraft),
+    extra: AddCaseReviewInput(
+      existingCustomer: existingCustomer,
+      customerDraft: customerDraft,
+      debtDraft: debtDraft,
+    ),
   );
 }

@@ -7,9 +7,11 @@ import 'package:intl/intl.dart';
 final _friendlyDateTimeFormat = DateFormat('dd MMM yyyy, h:mm a');
 final _friendlyDateFormat = DateFormat('dd MMM yyyy');
 
-String formatFriendlyDateTime(DateTime dateTime) => _friendlyDateTimeFormat.format(dateTime.toLocal());
+String formatFriendlyDateTime(DateTime dateTime) =>
+    _friendlyDateTimeFormat.format(dateTime.toLocal());
 
-String formatFriendlyDate(DateTime dateTime) => _friendlyDateFormat.format(dateTime.toLocal());
+String formatFriendlyDate(DateTime dateTime) =>
+    _friendlyDateFormat.format(dateTime.toLocal());
 
 /// Parses a raw ISO 8601 string (as returned by the backend) and formats
 /// it. Falls back to the original string if it isn't parseable, rather

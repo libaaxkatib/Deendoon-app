@@ -5,7 +5,9 @@ import '../../../core/network/api_endpoints.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/user.dart';
 
-final authApiProvider = Provider<AuthApi>((ref) => AuthApi(ref.read(dioProvider)));
+final authApiProvider = Provider<AuthApi>(
+  (ref) => AuthApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around the auth endpoints — mirrors
 /// `App\Http\Controllers\AuthController` exactly.
@@ -15,10 +17,10 @@ class AuthApi {
   const AuthApi(this._dio);
 
   Future<(User, String)> login(String email, String password) async {
-    final response = await _dio.post(ApiEndpoints.login, data: {
-      'email': email,
-      'password': password,
-    });
+    final response = await _dio.post(
+      ApiEndpoints.login,
+      data: {'email': email, 'password': password},
+    );
     return _parseAuthPayload(response.data);
   }
 
@@ -33,14 +35,17 @@ class AuthApi {
     required String password,
     required String passwordConfirmation,
   }) async {
-    final response = await _dio.post(ApiEndpoints.register, data: {
-      'business_name': businessName,
-      'name': name,
-      'phone': phone,
-      'email': email,
-      'password': password,
-      'password_confirmation': passwordConfirmation,
-    });
+    final response = await _dio.post(
+      ApiEndpoints.register,
+      data: {
+        'business_name': businessName,
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
     return _parseAuthPayload(response.data);
   }
 
@@ -57,9 +62,10 @@ class AuthApi {
   /// the same generic message whether or not the email is registered
   /// (enumeration-safe by design; do not infer success/failure from it).
   Future<String> forgotPassword(String email) async {
-    final response = await _dio.post(ApiEndpoints.forgotPassword, data: {
-      'email': email,
-    });
+    final response = await _dio.post(
+      ApiEndpoints.forgotPassword,
+      data: {'email': email},
+    );
     return response.data['message'] as String;
   }
 
@@ -73,12 +79,15 @@ class AuthApi {
     required String password,
     required String passwordConfirmation,
   }) async {
-    final response = await _dio.post(ApiEndpoints.resetPassword, data: {
-      'email': email,
-      'token': token,
-      'password': password,
-      'password_confirmation': passwordConfirmation,
-    });
+    final response = await _dio.post(
+      ApiEndpoints.resetPassword,
+      data: {
+        'email': email,
+        'token': token,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
     return response.data['message'] as String;
   }
 
@@ -87,13 +96,27 @@ class AuthApi {
   /// project-wide default policy). A wrong current password returns a 422
   /// with a specific message, surfaced by `ApiException` like any other
   /// validation failure.
-  Future<String> changePassword({required String currentPassword, required String newPassword}) async {
-    final response = await _dio.post('change-password', data: {
-      'current_password': currentPassword,
-      'password': newPassword,
-      'password_confirmation': newPassword,
-    });
+  Future<String> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _dio.post(
+      'change-password',
+      data: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': newPassword,
+      },
+    );
     return response.data['message'] as String;
+  }
+
+  /// `POST /account/close` (`CloseAccountRequest`) — self-service Close
+  /// Account. `password` re-proves ownership, same shape as
+  /// `changePassword`'s `current_password`. A wrong password returns a
+  /// 422, surfaced by `ApiException` like any other validation failure.
+  Future<void> closeAccount({required String password}) async {
+    await _dio.post('account/close', data: {'password': password});
   }
 
   (User, String) _parseAuthPayload(Map<String, dynamic> body) {

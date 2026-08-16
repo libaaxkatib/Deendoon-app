@@ -13,6 +13,7 @@ class NotificationListState {
   final int total;
   final String? type;
   final bool isLoadingMore;
+  final bool loadMoreError;
 
   const NotificationListState({
     required this.notifications,
@@ -21,6 +22,7 @@ class NotificationListState {
     required this.total,
     required this.type,
     this.isLoadingMore = false,
+    this.loadMoreError = false,
   });
 
   bool get hasMore => currentPage < lastPage;
@@ -33,6 +35,7 @@ class NotificationListState {
     int? total,
     String? type,
     bool? isLoadingMore,
+    bool? loadMoreError,
   }) {
     return NotificationListState(
       notifications: notifications ?? this.notifications,
@@ -41,18 +44,22 @@ class NotificationListState {
       total: total ?? this.total,
       type: type ?? this.type,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: loadMoreError ?? this.loadMoreError,
     );
   }
 }
 
 final notificationListProvider =
-    AsyncNotifierProvider<NotificationListNotifier, NotificationListState>(NotificationListNotifier.new);
+    AsyncNotifierProvider<NotificationListNotifier, NotificationListState>(
+      NotificationListNotifier.new,
+    );
 
 class NotificationListNotifier extends AsyncNotifier<NotificationListState> {
   @override
   Future<NotificationListState> build() => _fetchFirstPage(type: null);
 
-  NotificationRepository get _repository => ref.read(notificationRepositoryProvider);
+  NotificationRepository get _repository =>
+      ref.read(notificationRepositoryProvider);
 
   Future<void> filterByType(String? type) async {
     state = const AsyncLoading();
@@ -68,18 +75,28 @@ class NotificationListNotifier extends AsyncNotifier<NotificationListState> {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, loadMoreError: false),
+    );
     try {
-      final next = await _repository.fetchNotifications(page: current.currentPage + 1, type: current.type);
-      state = AsyncData(current.copyWith(
-        notifications: [...current.notifications, ...next.notifications],
-        currentPage: next.currentPage,
-        lastPage: next.lastPage,
-        total: next.total,
-        isLoadingMore: false,
-      ));
+      final next = await _repository.fetchNotifications(
+        page: current.currentPage + 1,
+        type: current.type,
+      );
+      state = AsyncData(
+        current.copyWith(
+          notifications: [...current.notifications, ...next.notifications],
+          currentPage: next.currentPage,
+          lastPage: next.lastPage,
+          total: next.total,
+          isLoadingMore: false,
+          loadMoreError: false,
+        ),
+      );
     } catch (_) {
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: true),
+      );
     }
   }
 
@@ -92,11 +109,14 @@ class NotificationListNotifier extends AsyncNotifier<NotificationListState> {
     if (target == null || target.isRead) return;
 
     await _repository.markRead(id);
-    state = AsyncData(current.copyWith(
-      notifications: [
-        for (final n in current.notifications) if (n.id == id) n.copyWith(readAt: DateTime.now()) else n,
-      ],
-    ));
+    state = AsyncData(
+      current.copyWith(
+        notifications: [
+          for (final n in current.notifications)
+            if (n.id == id) n.copyWith(readAt: DateTime.now()) else n,
+        ],
+      ),
+    );
   }
 
   Future<void> markAllRead() async {
@@ -105,9 +125,33 @@ class NotificationListNotifier extends AsyncNotifier<NotificationListState> {
 
     await _repository.markAllRead();
     final now = DateTime.now();
-    state = AsyncData(current.copyWith(
-      notifications: [for (final n in current.notifications) n.isRead ? n : n.copyWith(readAt: now)],
-    ));
+    state = AsyncData(
+      current.copyWith(
+        notifications: [
+          for (final n in current.notifications)
+            n.isRead ? n : n.copyWith(readAt: now),
+        ],
+      ),
+    );
+  }
+
+  /// Deletes against the real endpoint, then removes it from the loaded
+  /// page in place — same "avoid re-fetching for one change" approach as
+  /// [markRead].
+  Future<void> delete(String id) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    await _repository.deleteNotification(id);
+    state = AsyncData(
+      current.copyWith(
+        notifications: [
+          for (final n in current.notifications)
+            if (n.id != id) n,
+        ],
+        total: current.total > 0 ? current.total - 1 : 0,
+      ),
+    );
   }
 
   Future<NotificationListState> _fetchFirstPage({required String? type}) async {

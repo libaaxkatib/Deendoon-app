@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/customer_actions.dart';
@@ -10,11 +11,18 @@ import '../providers/customer_actions.dart';
 /// endpoint (`UpdateCustomerCreditLimitRequest`: `credit_limit` only), a
 /// faster path than opening the full Edit Customer form just to change one
 /// field. Same modal-bottom-sheet pattern as `close_case_sheet.dart`.
-Future<void> showCreditLimitSheet(BuildContext context, String customerId, String currentCreditLimit) {
+Future<void> showCreditLimitSheet(
+  BuildContext context,
+  String customerId,
+  String currentCreditLimit,
+) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _CreditLimitSheet(customerId: customerId, currentCreditLimit: currentCreditLimit),
+    builder: (_) => _CreditLimitSheet(
+      customerId: customerId,
+      currentCreditLimit: currentCreditLimit,
+    ),
   );
 }
 
@@ -22,7 +30,10 @@ class _CreditLimitSheet extends ConsumerStatefulWidget {
   final String customerId;
   final String currentCreditLimit;
 
-  const _CreditLimitSheet({required this.customerId, required this.currentCreditLimit});
+  const _CreditLimitSheet({
+    required this.customerId,
+    required this.currentCreditLimit,
+  });
 
   @override
   ConsumerState<_CreditLimitSheet> createState() => _CreditLimitSheetState();
@@ -30,7 +41,9 @@ class _CreditLimitSheet extends ConsumerStatefulWidget {
 
 class _CreditLimitSheetState extends ConsumerState<_CreditLimitSheet> {
   final _formKey = GlobalKey<FormState>();
-  late final _creditLimitController = TextEditingController(text: widget.currentCreditLimit);
+  late final _creditLimitController = TextEditingController(
+    text: widget.currentCreditLimit,
+  );
   bool _isLoading = false;
   String? _error;
 
@@ -49,7 +62,9 @@ class _CreditLimitSheetState extends ConsumerState<_CreditLimitSheet> {
     });
 
     try {
-      await ref.read(customerActionsProvider).updateCreditLimit(
+      await ref
+          .read(customerActionsProvider)
+          .updateCreditLimit(
             id: widget.customerId,
             creditLimit: _creditLimitController.text.trim(),
           );
@@ -64,39 +79,50 @@ class _CreditLimitSheetState extends ConsumerState<_CreditLimitSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.creditLimitSheetTitle, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.creditLimitSheetTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _creditLimitController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: l10n.creditLimitLabel, hintText: l10n.creditLimitHint),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: l10n.creditLimitLabel,
+                hintText: l10n.creditLimitHint,
+              ),
               validator: (value) {
                 final trimmed = value?.trim() ?? '';
                 if (trimmed.isEmpty) return l10n.creditLimitRequiredValidator;
                 final parsed = double.tryParse(trimmed);
-                if (parsed == null || parsed < 0) return l10n.creditLimitInvalidValidator;
+                if (parsed == null || parsed < 0) {
+                  return l10n.creditLimitInvalidValidator;
+                }
                 return null;
               },
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: l10n.commonSave, isLoading: _isLoading, onPressed: _submit),
+            PrimaryButton(
+              label: l10n.commonSave,
+              isLoading: _isLoading,
+              onPressed: _submit,
+            ),
           ],
         ),
       ),

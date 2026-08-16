@@ -25,13 +25,18 @@ import '../providers/professional_collection_detail_providers.dart';
 class ProfessionalCollectionMessagesScreen extends ConsumerStatefulWidget {
   final String requestId;
 
-  const ProfessionalCollectionMessagesScreen({super.key, required this.requestId});
+  const ProfessionalCollectionMessagesScreen({
+    super.key,
+    required this.requestId,
+  });
 
   @override
-  ConsumerState<ProfessionalCollectionMessagesScreen> createState() => _ProfessionalCollectionMessagesScreenState();
+  ConsumerState<ProfessionalCollectionMessagesScreen> createState() =>
+      _ProfessionalCollectionMessagesScreenState();
 }
 
-class _ProfessionalCollectionMessagesScreenState extends ConsumerState<ProfessionalCollectionMessagesScreen> {
+class _ProfessionalCollectionMessagesScreenState
+    extends ConsumerState<ProfessionalCollectionMessagesScreen> {
   final _contentController = TextEditingController();
   bool _isSending = false;
   String? _error;
@@ -52,10 +57,9 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
     });
 
     try {
-      await ref.read(professionalCollectionActionsProvider).postMessage(
-            requestId: widget.requestId,
-            content: content,
-          );
+      await ref
+          .read(professionalCollectionActionsProvider)
+          .postMessage(requestId: widget.requestId, content: content);
       _contentController.clear();
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -67,8 +71,12 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final messagesAsync = ref.watch(professionalCollectionMessagesProvider(widget.requestId));
-    final requestAsync = ref.watch(professionalCollectionDetailProvider(widget.requestId));
+    final messagesAsync = ref.watch(
+      professionalCollectionMessagesProvider(widget.requestId),
+    );
+    final requestAsync = ref.watch(
+      professionalCollectionDetailProvider(widget.requestId),
+    );
     final authState = ref.watch(authProvider);
     final currentUserId = authState is Authenticated ? authState.user.id : null;
     final isTerminal = requestAsync.valueOrNull?.isTerminal ?? false;
@@ -83,7 +91,9 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
               error: (error, _) => Center(
                 child: RetrySection(
                   message: l10n.professionalCollectionMessagesLoadError,
-                  onRetry: () => ref.invalidate(professionalCollectionMessagesProvider(widget.requestId)),
+                  onRetry: () => ref.invalidate(
+                    professionalCollectionMessagesProvider(widget.requestId),
+                  ),
                 ),
               ),
               data: (messages) {
@@ -91,7 +101,9 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
                   return Center(
                     child: Text(
                       l10n.professionalCollectionMessagesEmptyState,
-                      style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                      style: AppTypography.body.copyWith(
+                        color: context.colors.textPrimary,
+                      ),
                     ),
                   );
                 }
@@ -102,8 +114,13 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final message = messages[index];
-                    final isOwnMessage = currentUserId != null && message.senderUserId == currentUserId;
-                    return _MessageBubble(message: message, isOwnMessage: isOwnMessage);
+                    final isOwnMessage =
+                        currentUserId != null &&
+                        message.senderUserId == currentUserId;
+                    return _MessageBubble(
+                      message: message,
+                      isOwnMessage: isOwnMessage,
+                    );
                   },
                 );
               },
@@ -114,7 +131,9 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
               padding: const EdgeInsets.all(16),
               child: Text(
                 l10n.professionalCollectionMessagesClosedNotice,
-                style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                style: AppTypography.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
             )
@@ -126,7 +145,12 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_error != null) ...[
-                      Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                     ],
                     Row(
@@ -136,14 +160,26 @@ class _ProfessionalCollectionMessagesScreenState extends ConsumerState<Professio
                             controller: _contentController,
                             maxLines: 3,
                             minLines: 1,
-                            decoration: InputDecoration(hintText: l10n.professionalCollectionMessageInputHint),
+                            decoration: InputDecoration(
+                              hintText:
+                                  l10n.professionalCollectionMessageInputHint,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         IconButton(
                           icon: _isSending
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.send, color: AppColors.primary),
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.send,
+                                  color: AppColors.primary,
+                                ),
                           onPressed: _isSending ? null : _send,
                         ),
                       ],
@@ -168,7 +204,9 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Row(
-      mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: isOwnMessage
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       children: [
         Flexible(
           child: AppCard(
@@ -179,17 +217,23 @@ class _MessageBubble extends StatelessWidget {
                   isOwnMessage
                       ? l10n.professionalCollectionMessageSenderYou
                       : l10n.professionalCollectionMessageSenderTeam,
-                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   message.content,
-                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.body.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   message.createdAt.split('T').first,
-                  style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                 ),
               ],
             ),

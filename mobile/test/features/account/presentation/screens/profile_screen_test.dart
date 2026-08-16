@@ -11,8 +11,10 @@ import 'package:mobile/l10n/generated/app_localizations.dart';
 
 class _FakeAuthNotifier extends AuthNotifier {
   @override
-  AuthState build() =>
-      const Authenticated(user: User(id: '1', name: 'Test User', email: 'test@example.com'), token: 't');
+  AuthState build() => const Authenticated(
+    user: User(id: '1', name: 'Test User', email: 'test@example.com'),
+    token: 't',
+  );
 }
 
 void main() {
@@ -38,7 +40,9 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('shows the user\'s avatar, name, email, and Change Password', (tester) async {
+  testWidgets('shows the user\'s avatar, name, email, and Change Password', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     expect(find.text('Test User'), findsOneWidget);

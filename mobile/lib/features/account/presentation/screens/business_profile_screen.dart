@@ -26,7 +26,8 @@ class BusinessProfileScreen extends ConsumerStatefulWidget {
   const BusinessProfileScreen({super.key});
 
   @override
-  ConsumerState<BusinessProfileScreen> createState() => _BusinessProfileScreenState();
+  ConsumerState<BusinessProfileScreen> createState() =>
+      _BusinessProfileScreenState();
 }
 
 class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
@@ -101,9 +102,14 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
     try {
       final logo = _pickedLogo == null
           ? null
-          : await MultipartFile.fromFile(_pickedLogo!.path, filename: _pickedLogo!.name);
+          : await MultipartFile.fromFile(
+              _pickedLogo!.path,
+              filename: _pickedLogo!.name,
+            );
 
-      await ref.read(businessProfileRepositoryProvider).updateBusinessProfile(
+      await ref
+          .read(businessProfileRepositoryProvider)
+          .updateBusinessProfile(
             businessName: _businessNameController.text.trim(),
             address: _addressController.text.trim(),
             contactEmail: _contactEmailController.text.trim(),
@@ -141,65 +147,93 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen> {
         ),
         data: (profile) {
           _prefillFromExisting(profile);
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppCard(
-                    child: _LogoPicker(
-                      pickedLogo: _pickedLogo,
-                      hasExistingLogo: profile.logoPath != null,
-                      error: _logoError,
-                      onTap: _pickLogo,
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppCard(
+                      child: _LogoPicker(
+                        pickedLogo: _pickedLogo,
+                        hasExistingLogo: profile.logoPath != null,
+                        error: _logoError,
+                        onTap: _pickLogo,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _businessNameController,
-                    decoration: InputDecoration(labelText: l10n.businessProfileCompanyNameLabel),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return l10n.businessProfileCompanyNameRequired;
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _contactEmailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(labelText: l10n.businessProfileContactEmailLabel),
-                    validator: (value) {
-                      final trimmed = value?.trim() ?? '';
-                      if (trimmed.isEmpty) return null;
-                      final validEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(trimmed);
-                      return validEmail ? null : l10n.businessProfileContactEmailInvalid;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _contactPhoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(labelText: l10n.businessProfileContactPhoneLabel),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _addressController,
-                    maxLines: 3,
-                    decoration: InputDecoration(labelText: l10n.businessProfileAddressLabel),
-                  ),
-                  if (_error != null) ...[
                     const SizedBox(height: 16),
-                    Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  ],
-                  if (_successMessage != null) ...[
+                    TextFormField(
+                      controller: _businessNameController,
+                      decoration: InputDecoration(
+                        labelText: l10n.businessProfileCompanyNameLabel,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return l10n.businessProfileCompanyNameRequired;
+                        }
+                        return null;
+                      },
+                    ),
                     const SizedBox(height: 16),
-                    Text(_successMessage!, style: const TextStyle(color: Colors.green)),
+                    TextFormField(
+                      controller: _contactEmailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: l10n.businessProfileContactEmailLabel,
+                      ),
+                      validator: (value) {
+                        final trimmed = value?.trim() ?? '';
+                        if (trimmed.isEmpty) return null;
+                        final validEmail = RegExp(
+                          r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                        ).hasMatch(trimmed);
+                        return validEmail
+                            ? null
+                            : l10n.businessProfileContactEmailInvalid;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _contactPhoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: l10n.businessProfileContactPhoneLabel,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _addressController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: l10n.businessProfileAddressLabel,
+                      ),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                    if (_successMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _successMessage!,
+                        style: const TextStyle(color: Colors.green),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    PrimaryButton(
+                      label: l10n.saveChanges,
+                      isLoading: _isSaving,
+                      onPressed: _save,
+                    ),
                   ],
-                  const SizedBox(height: 24),
-                  PrimaryButton(label: l10n.saveChanges, isLoading: _isSaving, onPressed: _save),
-                ],
+                ),
               ),
             ),
           );
@@ -242,12 +276,16 @@ class _LogoPicker extends StatelessWidget {
             decoration: BoxDecoration(
               color: context.colors.background,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: context.colors.textSecondary.withValues(alpha: 0.24)),
+              border: Border.all(
+                color: context.colors.textSecondary.withValues(alpha: 0.24),
+              ),
             ),
             child: pickedLogo != null
                 ? Image.file(File(pickedLogo!.path), fit: BoxFit.cover)
                 : Icon(
-                    hasExistingLogo ? Icons.business_outlined : Icons.add_photo_alternate_outlined,
+                    hasExistingLogo
+                        ? Icons.business_outlined
+                        : Icons.add_photo_alternate_outlined,
                     size: 36,
                     color: context.colors.textSecondary,
                   ),
@@ -257,12 +295,19 @@ class _LogoPicker extends StatelessWidget {
         Text(
           pickedLogo != null
               ? l10n.businessProfileLogoNewSelected
-              : (hasExistingLogo ? l10n.businessProfileLogoOnFile : l10n.businessProfileLogoTapToAdd),
-          style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+              : (hasExistingLogo
+                    ? l10n.businessProfileLogoOnFile
+                    : l10n.businessProfileLogoTapToAdd),
+          style: AppTypography.caption.copyWith(
+            color: context.colors.textSecondary,
+          ),
         ),
         if (error != null) ...[
           const SizedBox(height: 4),
-          Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Text(
+            error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
         ],
       ],
     );

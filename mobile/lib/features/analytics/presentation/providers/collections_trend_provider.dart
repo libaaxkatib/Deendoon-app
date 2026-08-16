@@ -11,9 +11,12 @@ String _isoDate(DateTime date) => date.toIso8601String().split('T').first;
 /// tab's full chart (driven by `trendsDateRangeProvider`) each fetch their
 /// own independent range without fighting over one shared provider.
 /// `collected_amount` is the only metric — see `collections_trend.dart`.
-final collectionsTrendProvider = FutureProvider.family<CollectionsTrend, DateTimeRange>((ref, range) {
-  return ref.read(analyticsRepositoryProvider).fetchCollectionsTrend(
-        dateFrom: _isoDate(range.start),
-        dateTo: _isoDate(range.end),
-      );
-});
+final collectionsTrendProvider =
+    FutureProvider.family<CollectionsTrend, DateTimeRange>((ref, range) {
+      return ref
+          .read(analyticsRepositoryProvider)
+          .fetchCollectionsTrend(
+            dateFrom: _isoDate(range.start),
+            dateTo: _isoDate(range.end),
+          );
+    });

@@ -19,24 +19,25 @@ const _localizationsDelegates = <LocalizationsDelegate<dynamic>>[
   SomaliCupertinoLocalizationsDelegate(),
 ];
 
-class _MockSubscriptionRepository extends Mock implements SubscriptionRepository {}
+class _MockSubscriptionRepository extends Mock
+    implements SubscriptionRepository {}
 
 Subscription _subscription({required bool analyticsEnabled}) => Subscription(
-      plan: null,
-      planName: 'Small Business',
-      planPrice: '20.00',
-      onTrial: false,
-      trialEndsAt: null,
-      startedAt: null,
-      expiresAt: null,
-      subscriptionStatus: 'active',
-      customerUsage: 10,
-      customerLimit: 100,
-      storageUsageBytes: 0,
-      storageLimit: 10,
-      analyticsEnabled: analyticsEnabled,
-      readOnly: false,
-    );
+  plan: null,
+  planName: 'Small Business',
+  planPrice: '20.00',
+  onTrial: false,
+  trialEndsAt: null,
+  startedAt: null,
+  expiresAt: null,
+  subscriptionStatus: 'active',
+  customerUsage: 10,
+  customerLimit: 100,
+  storageUsageBytes: 0,
+  storageLimit: 10,
+  analyticsEnabled: analyticsEnabled,
+  readOnly: false,
+);
 
 void main() {
   late _MockSubscriptionRepository mockRepository;
@@ -48,19 +49,26 @@ void main() {
   testWidgets(
     'a plan without analytics shows the locked/upgrade state instead of the tabs',
     (tester) async {
-      when(() => mockRepository.fetchSubscription()).thenAnswer((_) async => _subscription(analyticsEnabled: false));
+      when(
+        () => mockRepository.fetchSubscription(),
+      ).thenAnswer((_) async => _subscription(analyticsEnabled: false));
 
       final router = GoRouter(
         initialLocation: '/',
         routes: [
           GoRoute(path: '/', builder: (_, _) => const AnalyticsScreen()),
-          GoRoute(path: '/account/subscription', builder: (_, _) => const Text('Subscription Screen')),
+          GoRoute(
+            path: '/account/subscription',
+            builder: (_, _) => const Text('Subscription Screen'),
+          ),
         ],
       );
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [subscriptionRepositoryProvider.overrideWithValue(mockRepository)],
+          overrides: [
+            subscriptionRepositoryProvider.overrideWithValue(mockRepository),
+          ],
           child: MaterialApp.router(
             routerConfig: router,
             locale: const Locale('en'),
@@ -83,45 +91,59 @@ void main() {
     },
   );
 
-  testWidgets('a plan with analytics shows the real Overview/Reports/Trends tabs', (tester) async {
-    when(() => mockRepository.fetchSubscription()).thenAnswer((_) async => _subscription(analyticsEnabled: true));
+  testWidgets(
+    'a plan with analytics shows the real Overview/Reports/Trends tabs',
+    (tester) async {
+      when(
+        () => mockRepository.fetchSubscription(),
+      ).thenAnswer((_) async => _subscription(analyticsEnabled: true));
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [subscriptionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp(
-          locale: const Locale('en'),
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: _localizationsDelegates,
-          home: const AnalyticsScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            subscriptionRepositoryProvider.overrideWithValue(mockRepository),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+            home: const AnalyticsScreen(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Analytics Not Included'), findsNothing);
-    expect(find.text('Overview'), findsOneWidget);
-    expect(find.text('Reports'), findsOneWidget);
-    expect(find.text('Trends'), findsOneWidget);
-  });
+      expect(find.text('Analytics Not Included'), findsNothing);
+      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text('Reports'), findsOneWidget);
+      expect(find.text('Trends'), findsOneWidget);
+    },
+  );
 
-  testWidgets('a subscription fetch failure fails open and still shows the tabs', (tester) async {
-    when(() => mockRepository.fetchSubscription()).thenThrow(Exception('network down'));
+  testWidgets(
+    'a subscription fetch failure fails open and still shows the tabs',
+    (tester) async {
+      when(
+        () => mockRepository.fetchSubscription(),
+      ).thenThrow(Exception('network down'));
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [subscriptionRepositoryProvider.overrideWithValue(mockRepository)],
-        child: MaterialApp(
-          locale: const Locale('en'),
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: _localizationsDelegates,
-          home: const AnalyticsScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            subscriptionRepositoryProvider.overrideWithValue(mockRepository),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: _localizationsDelegates,
+            home: const AnalyticsScreen(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Analytics Not Included'), findsNothing);
-    expect(find.text('Overview'), findsOneWidget);
-  });
+      expect(find.text('Analytics Not Included'), findsNothing);
+      expect(find.text('Overview'), findsOneWidget);
+    },
+  );
 }

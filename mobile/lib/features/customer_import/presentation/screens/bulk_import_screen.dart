@@ -42,7 +42,9 @@ class BulkImportScreen extends ConsumerWidget {
     if (picked == null) return;
     if (!context.mounted) return;
     final l10n = AppLocalizations.of(context);
-    ref.read(customerImportProvider.notifier).selectFile(
+    ref
+        .read(customerImportProvider.notifier)
+        .selectFile(
           path: picked.path,
           name: picked.name,
           size: picked.size,
@@ -58,48 +60,68 @@ class BulkImportScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.bulkImportTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(l10n.bulkImportSampleTemplateHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
-          const SizedBox(height: 8),
-          const _SampleTemplateSection(),
-          const SizedBox(height: 24),
-          Text(l10n.bulkImportUploadFileHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
-          const SizedBox(height: 8),
-          Text(
-            l10n.bulkImportAcceptedFormats,
-            style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
-          ),
-          const SizedBox(height: 12),
-          switch (state) {
-            ImportFileSelected(fileName: final name, fileSize: final size) => _SelectedFileCard(
-                fileName: name,
-                fileSize: size,
-                onRemove: notifier.clear,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              l10n.bulkImportSampleTemplateHeading,
+              style: AppTypography.subheading.copyWith(
+                color: context.colors.textPrimary,
               ),
-            ImportRunning(fileName: final name) => _SelectedFileCard(fileName: name, fileSize: null, onRemove: null),
-            ImportSucceeded() || ImportFailed() || ImportInitial() => _UploadFilePrompt(
-                onTap: () => _pickFile(context, ref),
-              ),
-          },
-          const SizedBox(height: 16),
-          if (state is ImportFailed)
-            RetrySection(
-              message: state.message,
-              onRetry: notifier.clear,
             ),
-          if (state is ImportFailed) const SizedBox(height: 16),
-          PrimaryButton(
-            label: l10n.bulkImportButton,
-            isLoading: state is ImportRunning,
-            onPressed: state is ImportFileSelected ? notifier.startImport : null,
-          ),
-          if (state is ImportSucceeded) ...[
+            const SizedBox(height: 8),
+            const _SampleTemplateSection(),
             const SizedBox(height: 24),
-            _ImportSummarySection(preview: state.preview.rows, result: state.result),
+            Text(
+              l10n.bulkImportUploadFileHeading,
+              style: AppTypography.subheading.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.bulkImportAcceptedFormats,
+              style: AppTypography.caption.copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            switch (state) {
+              ImportFileSelected(fileName: final name, fileSize: final size) =>
+                _SelectedFileCard(
+                  fileName: name,
+                  fileSize: size,
+                  onRemove: notifier.clear,
+                ),
+              ImportRunning(fileName: final name) => _SelectedFileCard(
+                fileName: name,
+                fileSize: null,
+                onRemove: null,
+              ),
+              ImportSucceeded() || ImportFailed() || ImportInitial() =>
+                _UploadFilePrompt(onTap: () => _pickFile(context, ref)),
+            },
+            const SizedBox(height: 16),
+            if (state is ImportFailed)
+              RetrySection(message: state.message, onRetry: notifier.clear),
+            if (state is ImportFailed) const SizedBox(height: 16),
+            PrimaryButton(
+              label: l10n.bulkImportButton,
+              isLoading: state is ImportRunning,
+              onPressed: state is ImportFileSelected
+                  ? notifier.startImport
+                  : null,
+            ),
+            if (state is ImportSucceeded) ...[
+              const SizedBox(height: 24),
+              _ImportSummarySection(
+                preview: state.preview.rows,
+                result: state.result,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -117,12 +139,25 @@ class _UploadFilePrompt extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          const Icon(Icons.upload_file_outlined, color: AppColors.primary, size: 22),
+          const Icon(
+            Icons.upload_file_outlined,
+            color: AppColors.primary,
+            size: 22,
+          ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(l10n.bulkImportSelectFilePrompt, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+            child: Text(
+              l10n.bulkImportSelectFilePrompt,
+              style: AppTypography.body.copyWith(
+                color: context.colors.textPrimary,
+              ),
+            ),
           ),
-          Icon(Icons.chevron_right, color: context.colors.textSecondary, size: 20),
+          Icon(
+            Icons.chevron_right,
+            color: context.colors.textSecondary,
+            size: 20,
+          ),
         ],
       ),
     );
@@ -134,14 +169,22 @@ class _SelectedFileCard extends StatelessWidget {
   final int? fileSize;
   final VoidCallback? onRemove;
 
-  const _SelectedFileCard({required this.fileName, required this.fileSize, required this.onRemove});
+  const _SelectedFileCard({
+    required this.fileName,
+    required this.fileSize,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
       child: Row(
         children: [
-          const Icon(Icons.description_outlined, color: AppColors.primary, size: 22),
+          const Icon(
+            Icons.description_outlined,
+            color: AppColors.primary,
+            size: 22,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -149,17 +192,27 @@ class _SelectedFileCard extends StatelessWidget {
               children: [
                 Text(
                   fileName,
-                  style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                  style: AppTypography.body.copyWith(
+                    color: context.colors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (fileSize != null)
-                  Text(_formatFileSize(fileSize!), style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                  Text(
+                    _formatFileSize(fileSize!),
+                    style: AppTypography.caption.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ),
           if (onRemove != null)
-            IconButton(icon: Icon(Icons.close, color: context.colors.textSecondary), onPressed: onRemove),
+            IconButton(
+              icon: Icon(Icons.close, color: context.colors.textSecondary),
+              onPressed: onRemove,
+            ),
         ],
       ),
     );
@@ -179,41 +232,80 @@ class _ImportSummarySection extends StatelessWidget {
       return UnavailableSection(reason: l10n.bulkImportNoRowsFoundMessage);
     }
 
-    final createdCount = result.results.where((r) => r.outcome == 'created' || r.outcome == 'updated').length;
-    final duplicateSkippedCount = result.results.where((r) => r.outcome == 'skipped').length;
-    final failedRows = result.results.where((r) => r.outcome == 'skipped_invalid').toList();
+    final createdCount = result.results
+        .where((r) => r.outcome == 'created' || r.outcome == 'updated')
+        .length;
+    final duplicateSkippedCount = result.results
+        .where((r) => r.outcome == 'skipped')
+        .length;
+    final failedRows = result.results
+        .where((r) => r.outcome == 'skipped_invalid')
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.bulkImportSummaryHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+        Text(
+          l10n.bulkImportSummaryHeading,
+          style: AppTypography.subheading.copyWith(
+            color: context.colors.textPrimary,
+          ),
+        ),
         const SizedBox(height: 8),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SummaryRow(label: l10n.bulkImportImportedSuccessfullyLabel, value: createdCount, color: AppColors.success),
+              _SummaryRow(
+                label: l10n.bulkImportImportedSuccessfullyLabel,
+                value: createdCount,
+                color: AppColors.success,
+              ),
               const SizedBox(height: 10),
-              _SummaryRow(label: l10n.bulkImportSkippedDuplicateLabel, value: duplicateSkippedCount, color: AppColors.warning),
+              _SummaryRow(
+                label: l10n.bulkImportSkippedDuplicateLabel,
+                value: duplicateSkippedCount,
+                color: AppColors.warning,
+              ),
               const SizedBox(height: 10),
-              _SummaryRow(label: l10n.bulkImportFailedLabel, value: failedRows.length, color: AppColors.danger),
+              _SummaryRow(
+                label: l10n.bulkImportFailedLabel,
+                value: failedRows.length,
+                color: AppColors.danger,
+              ),
               if (result.message.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Divider(height: 1, color: context.colors.textSecondary.withValues(alpha: 0.12)),
+                Divider(
+                  height: 1,
+                  color: context.colors.textSecondary.withValues(alpha: 0.12),
+                ),
                 const SizedBox(height: 12),
-                Text(result.message, style: AppTypography.caption.copyWith(color: context.colors.textSecondary)),
+                Text(
+                  result.message,
+                  style: AppTypography.caption.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
               ],
             ],
           ),
         ),
         if (failedRows.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text(l10n.bulkImportFailedRowsHeading, style: AppTypography.subheading.copyWith(color: context.colors.textPrimary)),
+          Text(
+            l10n.bulkImportFailedRowsHeading,
+            style: AppTypography.subheading.copyWith(
+              color: context.colors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
           for (final row in failedRows) ...[
             _FailedRowCard(
               rowNumber: row.rowNumber,
-              errors: preview.where((r) => r.rowNumber == row.rowNumber).firstOrNull?.validationErrors,
+              errors: preview
+                  .where((r) => r.rowNumber == row.rowNumber)
+                  .firstOrNull
+                  ?.validationErrors,
             ),
             const SizedBox(height: 8),
           ],
@@ -228,15 +320,28 @@ class _SummaryRow extends StatelessWidget {
   final int value;
   final Color color;
 
-  const _SummaryRow({required this.label, required this.value, required this.color});
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
-        Text('$value', style: AppTypography.body.copyWith(color: color, fontWeight: FontWeight.w700)),
+        Text(
+          label,
+          style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+        ),
+        Text(
+          '$value',
+          style: AppTypography.body.copyWith(
+            color: color,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
     );
   }
@@ -257,10 +362,17 @@ class _FailedRowCard extends StatelessWidget {
         children: [
           Text(
             l10n.bulkImportRowLabel(rowNumber),
-            style: AppTypography.body.copyWith(color: context.colors.textPrimary, fontWeight: FontWeight.w700),
+            style: AppTypography.body.copyWith(
+              color: context.colors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           if (errors != null)
-            for (final error in errors!) Text(error, style: AppTypography.caption.copyWith(color: AppColors.danger)),
+            for (final error in errors!)
+              Text(
+                error,
+                style: AppTypography.caption.copyWith(color: AppColors.danger),
+              ),
         ],
       ),
     );
@@ -275,10 +387,12 @@ class _SampleTemplateSection extends ConsumerStatefulWidget {
   const _SampleTemplateSection();
 
   @override
-  ConsumerState<_SampleTemplateSection> createState() => _SampleTemplateSectionState();
+  ConsumerState<_SampleTemplateSection> createState() =>
+      _SampleTemplateSectionState();
 }
 
-class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> {
+class _SampleTemplateSectionState
+    extends ConsumerState<_SampleTemplateSection> {
   bool _isDownloading = false;
   String? _error;
 
@@ -291,11 +405,17 @@ class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> 
     });
 
     try {
-      final bytes = await ref.read(customerImportRepositoryProvider).downloadTemplate();
+      final bytes = await ref
+          .read(customerImportRepositoryProvider)
+          .downloadTemplate();
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/customer-import-template.xlsx');
       await file.writeAsBytes(bytes, flush: true);
-      if (mounted) messenger.showSnackBar(SnackBar(content: Text(l10n.exportSavedToPathMessage(file.path))));
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.exportSavedToPathMessage(file.path))),
+        );
+      }
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {
@@ -310,10 +430,17 @@ class _SampleTemplateSectionState extends ConsumerState<_SampleTemplateSection> 
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_error != null) ...[
-          Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
           const SizedBox(height: 8),
         ],
-        PrimaryButton(label: l10n.bulkImportDownloadTemplateButton, isLoading: _isDownloading, onPressed: _download),
+        PrimaryButton(
+          label: l10n.bulkImportDownloadTemplateButton,
+          isLoading: _isDownloading,
+          onPressed: _download,
+        ),
       ],
     );
   }

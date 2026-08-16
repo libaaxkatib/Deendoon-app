@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/business_profile.dart';
 
-final businessProfileApiProvider =
-    Provider<BusinessProfileApi>((ref) => BusinessProfileApi(ref.read(dioProvider)));
+final businessProfileApiProvider = Provider<BusinessProfileApi>(
+  (ref) => BusinessProfileApi(ref.read(dioProvider)),
+);
 
 /// Thin wrapper around `GET/PUT /admin/settings/company-profile` — mirrors
 /// `App\Http\Controllers\AdminSettingsController` exactly (FR-068). The
@@ -20,7 +21,9 @@ class BusinessProfileApi {
 
   Future<BusinessProfile> fetch() async {
     final response = await _dio.get('admin/settings/company-profile');
-    return BusinessProfile.fromJson(response.data['data'] as Map<String, dynamic>);
+    return BusinessProfile.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 
   /// Sent as a real `POST` with a `_method` override field rather than a
@@ -48,11 +51,20 @@ class BusinessProfileApi {
       '_method': 'PUT',
       'business_name': businessName,
       'address': ?(address != null && address.isNotEmpty ? address : null),
-      'contact_email': ?(contactEmail != null && contactEmail.isNotEmpty ? contactEmail : null),
-      'contact_phone': ?(contactPhone != null && contactPhone.isNotEmpty ? contactPhone : null),
+      'contact_email': ?(contactEmail != null && contactEmail.isNotEmpty
+          ? contactEmail
+          : null),
+      'contact_phone': ?(contactPhone != null && contactPhone.isNotEmpty
+          ? contactPhone
+          : null),
       'logo': ?logo,
     });
-    final response = await _dio.post('admin/settings/company-profile', data: formData);
-    return BusinessProfile.fromJson(response.data['data'] as Map<String, dynamic>);
+    final response = await _dio.post(
+      'admin/settings/company-profile',
+      data: formData,
+    );
+    return BusinessProfile.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
   }
 }

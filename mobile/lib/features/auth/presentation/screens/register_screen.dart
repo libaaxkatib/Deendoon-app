@@ -18,9 +18,7 @@ class RegisterScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const RegisterForm(),
-              ],
+              children: [const RegisterForm()],
             ),
           ),
         ),

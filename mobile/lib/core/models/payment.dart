@@ -18,10 +18,10 @@ class Payment {
   });
 
   factory Payment.fromJson(Map<String, dynamic> json) => Payment(
-        id: json['id'].toString(),
-        debtId: json['debt_id'].toString(),
-        amount: json['amount'] as String,
-        paymentDate: json['payment_date'] as String,
-        paymentMethod: json['payment_method'] as String?,
-      );
+    id: json['id'].toString(),
+    debtId: json['debt_id'].toString(),
+    amount: json['amount'] as String,
+    paymentDate: json['payment_date'] as String,
+    paymentMethod: json['payment_method'] as String?,
+  );
 }

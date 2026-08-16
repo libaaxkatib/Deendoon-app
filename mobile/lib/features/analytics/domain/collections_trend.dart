@@ -10,10 +10,8 @@ class TrendPoint {
 
   const TrendPoint({required this.date, required this.value});
 
-  factory TrendPoint.fromJson(Map<String, dynamic> json) => TrendPoint(
-        date: json['date'] as String,
-        value: json['value'] as String,
-      );
+  factory TrendPoint.fromJson(Map<String, dynamic> json) =>
+      TrendPoint(date: json['date'] as String, value: json['value'] as String);
 }
 
 class CollectionsTrend {
@@ -26,7 +24,9 @@ class CollectionsTrend {
     final series = json['series'] as List<dynamic>;
     return CollectionsTrend(
       metric: json['metric'] as String,
-      series: series.map((e) => TrendPoint.fromJson(e as Map<String, dynamic>)).toList(),
+      series: series
+          .map((e) => TrendPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

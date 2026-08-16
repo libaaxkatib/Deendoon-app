@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/password_field.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/auth_state.dart';
@@ -36,9 +38,12 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    ref.read(authProvider.notifier).clearError();
     if (_formKey.currentState?.validate() != true) return;
-    ref.read(authProvider.notifier).register(
+    await ref
+        .read(authProvider.notifier)
+        .register(
           businessName: _businessNameController.text.trim(),
           name: _nameController.text.trim(),
           phone: _phoneController.text.trim(),
@@ -46,6 +51,22 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           password: _passwordController.text,
           passwordConfirmation: _confirmController.text,
         );
+    // See LoginForm._submit: rebuilding alone doesn't re-run validators.
+    if (mounted) _formKey.currentState?.validate();
+  }
+
+  /// Reads backend field errors fresh — see LoginForm._backendFieldError.
+  String? _backendFieldError(String key) {
+    final state = ref.read(authProvider);
+    return state is AuthError
+        ? ApiException.fieldErrorFor(state.fieldErrors, key)
+        : null;
+  }
+
+  ({String? confirmationMismatch, String? other}) _backendPasswordError() {
+    final state = ref.read(authProvider);
+    if (state is! AuthError) return (confirmationMismatch: null, other: null);
+    return ApiException.splitConfirmedFieldError(state.fieldErrors, 'password');
   }
 
   @override
@@ -62,9 +83,15 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
         children: [
           TextFormField(
             controller: _businessNameController,
-            decoration: InputDecoration(labelText: l10n.registerBusinessNameLabel),
+            decoration: InputDecoration(
+              labelText: l10n.registerBusinessNameLabel,
+            ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return l10n.registerBusinessNameRequired;
+              final backendError = _backendFieldError('business_name');
+              if (backendError != null) return backendError;
+              if (value == null || value.trim().isEmpty) {
+                return l10n.registerBusinessNameRequired;
+              }
               return null;
             },
           ),
@@ -73,7 +100,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             controller: _nameController,
             decoration: InputDecoration(labelText: l10n.registerFullNameLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return l10n.registerFullNameRequired;
+              final backendError = _backendFieldError('name');
+              if (backendError != null) return backendError;
+              if (value == null || value.trim().isEmpty) {
+                return l10n.registerFullNameRequired;
+              }
               return null;
             },
           ),
@@ -84,7 +115,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             maxLength: 30,
             decoration: InputDecoration(labelText: l10n.registerPhoneLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return l10n.registerPhoneValidatorRequired;
+              final backendError = _backendFieldError('phone');
+              if (backendError != null) return backendError;
+              if (value == null || value.trim().isEmpty) {
+                return l10n.registerPhoneValidatorRequired;
+              }
               return null;
             },
           ),
@@ -94,18 +129,30 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(labelText: l10n.authEmailLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return l10n.authEmailRequired;
-              if (!_emailPattern.hasMatch(value.trim())) return l10n.authEmailInvalid;
+              final backendError = _backendFieldError('email');
+              if (backendError != null) return backendError;
+              if (value == null || value.trim().isEmpty) {
+                return l10n.authEmailRequired;
+              }
+              if (!_emailPattern.hasMatch(value.trim())) {
+                return l10n.authEmailInvalid;
+              }
               return null;
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
+          PasswordField(
             controller: _passwordController,
-            obscureText: true,
-            decoration: InputDecoration(labelText: l10n.authPasswordLabel),
+            labelText: l10n.authPasswordLabel,
             validator: (value) {
-              if (value == null || value.isEmpty) return l10n.authPasswordRequired;
+              final backendPasswordError = _backendPasswordError();
+              final backendError =
+                  backendPasswordError.other ??
+                  backendPasswordError.confirmationMismatch;
+              if (backendError != null) return backendError;
+              if (value == null || value.isEmpty) {
+                return l10n.authPasswordRequired;
+              }
               if (value.length < _minPasswordLength) {
                 return l10n.authPasswordMinLength(_minPasswordLength);
               }
@@ -113,17 +160,25 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
+          PasswordField(
             controller: _confirmController,
-            obscureText: true,
-            decoration: InputDecoration(labelText: l10n.registerConfirmPasswordLabel),
+            labelText: l10n.registerConfirmPasswordLabel,
             validator: (value) {
-              if (value == null || value.isEmpty) return l10n.registerConfirmPasswordRequired;
-              if (value != _passwordController.text) return l10n.authPasswordsMismatch;
+              final backendError = _backendPasswordError().confirmationMismatch;
+              if (backendError != null) return backendError;
+              if (value == null || value.isEmpty) {
+                return l10n.registerConfirmPasswordRequired;
+              }
+              if (value != _passwordController.text) {
+                return l10n.authPasswordsMismatch;
+              }
               return null;
             },
           ),
-          if (authState is AuthError) ...[
+          // See LoginForm: only shown for errors that aren't per-field.
+          if (authState is AuthError &&
+              (authState.fieldErrors == null ||
+                  authState.fieldErrors!.isEmpty)) ...[
             const SizedBox(height: 12),
             Text(
               authState.message,

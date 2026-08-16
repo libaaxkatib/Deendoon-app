@@ -93,7 +93,9 @@ ThemeData buildAppLightTheme() {
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: colors.surface,
       indicatorColor: colors.primary.withValues(alpha: 0.2),
-      labelTextStyle: WidgetStateProperty.all(AppTypography.caption.copyWith(color: colors.textSecondary)),
+      labelTextStyle: WidgetStateProperty.all(
+        AppTypography.caption.copyWith(color: colors.textSecondary),
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(

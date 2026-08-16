@@ -40,7 +40,12 @@ class CustomerCasesScreen extends ConsumerWidget {
           ),
           data: (cases) {
             if (cases.isEmpty) {
-              return Center(child: Text(l10n.customerCasesEmptyState, style: AppTypography.body));
+              return Center(
+                child: Text(
+                  l10n.customerCasesEmptyState,
+                  style: AppTypography.body,
+                ),
+              );
             }
 
             return ListView.separated(

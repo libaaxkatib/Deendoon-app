@@ -27,14 +27,17 @@ void main() {
     repository = SearchRepository(mockApi);
   });
 
-  test('search delegates the query to the api and returns the results', () async {
-    when(() => mockApi.search('asad')).thenAnswer((_) async => _results);
+  test(
+    'search delegates the query to the api and returns the results',
+    () async {
+      when(() => mockApi.search('asad')).thenAnswer((_) async => _results);
 
-    final result = await repository.search('asad');
+      final result = await repository.search('asad');
 
-    expect(result, _results);
-    verify(() => mockApi.search('asad')).called(1);
-  });
+      expect(result, _results);
+      verify(() => mockApi.search('asad')).called(1);
+    },
+  );
 
   test('search throws ApiException on failure', () async {
     when(() => mockApi.search('asad')).thenThrow(
@@ -58,7 +61,9 @@ void main() {
 
     expect(
       () => repository.search('asad'),
-      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 422)),
+      throwsA(
+        isA<ApiException>().having((e) => e.statusCode, 'statusCode', 422),
+      ),
     );
   });
 }

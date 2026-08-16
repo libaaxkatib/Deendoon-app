@@ -11,8 +11,12 @@ import '../../../customers/presentation/widgets/customer_card.dart';
 import '../providers/report_credit_risk_provider.dart';
 import '../widgets/export_action.dart';
 
-Map<String?, String> _riskFilters(AppLocalizations l10n) =>
-    {null: l10n.debtListFilterAll, 'high': l10n.riskHigh, 'medium': l10n.riskMedium, 'low': l10n.riskLow};
+Map<String?, String> _riskFilters(AppLocalizations l10n) => {
+  null: l10n.debtListFilterAll,
+  'high': l10n.riskHigh,
+  'medium': l10n.riskMedium,
+  'low': l10n.riskLow,
+};
 
 /// §5.2 Reports — Credit Risk category. Same `Customer` shape as the
 /// Customers report, ordered by `credit_score` desc server-side
@@ -21,10 +25,12 @@ class ReportCreditRiskScreen extends ConsumerStatefulWidget {
   const ReportCreditRiskScreen({super.key});
 
   @override
-  ConsumerState<ReportCreditRiskScreen> createState() => _ReportCreditRiskScreenState();
+  ConsumerState<ReportCreditRiskScreen> createState() =>
+      _ReportCreditRiskScreenState();
 }
 
-class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen> {
+class _ReportCreditRiskScreenState
+    extends ConsumerState<ReportCreditRiskScreen> {
   final _scrollController = ScrollController();
 
   @override
@@ -41,7 +47,8 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(reportCreditRiskProvider.notifier).loadMore();
     }
   }
@@ -63,7 +70,10 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
               context,
               ref,
               reportType: 'credit-risk',
-              filters: {if (customersAsync.valueOrNull?.riskLevel != null) 'riskLevel': customersAsync.valueOrNull!.riskLevel},
+              filters: {
+                if (customersAsync.valueOrNull?.riskLevel != null)
+                  'riskLevel': customersAsync.valueOrNull!.riskLevel,
+              },
             ),
           ),
         ],
@@ -81,8 +91,11 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
                   for (final entry in riskFilters.entries) ...[
                     _FilterChip(
                       label: entry.value,
-                      selected: customersAsync.valueOrNull?.riskLevel == entry.key,
-                      onTap: () => ref.read(reportCreditRiskProvider.notifier).filterByRiskLevel(entry.key),
+                      selected:
+                          customersAsync.valueOrNull?.riskLevel == entry.key,
+                      onTap: () => ref
+                          .read(reportCreditRiskProvider.notifier)
+                          .filterByRiskLevel(entry.key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -104,26 +117,45 @@ class _ReportCreditRiskScreenState extends ConsumerState<ReportCreditRiskScreen>
                     return Center(
                       child: Text(
                         l10n.reportCustomersEmptyState,
-                        style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                        style: AppTypography.body.copyWith(
+                          color: context.colors.textPrimary,
+                        ),
                       ),
                     );
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(reportCreditRiskProvider.notifier).refresh(),
+                    onRefresh: () =>
+                        ref.read(reportCreditRiskProvider.notifier).refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
-                      itemCount: state.customers.length + (state.hasMore ? 1 : 0),
+                      itemCount:
+                          state.customers.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.customers.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(
+                                            reportCreditRiskProvider.notifier,
+                                          )
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final customer = state.customers[index];
-                        return CustomerCard(customer: customer, onTap: () => context.push('/customers/${customer.id}'));
+                        return CustomerCard(
+                          customer: customer,
+                          onTap: () =>
+                              context.push('/customers/${customer.id}'),
+                        );
                       },
                     ),
                   );
@@ -142,7 +174,11 @@ class _FilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +187,9 @@ class _FilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

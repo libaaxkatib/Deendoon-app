@@ -7,7 +7,9 @@ import 'professional_collection_detail_providers.dart';
 import 'professional_collection_list_provider.dart';
 
 final professionalCollectionActionsProvider =
-    Provider<ProfessionalCollectionActions>((ref) => ProfessionalCollectionActions(ref));
+    Provider<ProfessionalCollectionActions>(
+      (ref) => ProfessionalCollectionActions(ref),
+    );
 
 /// The real, backend-supported Business Owner actions on Professional
 /// Collection Requests: submit (from a Collection Case) and post a
@@ -19,7 +21,8 @@ class ProfessionalCollectionActions {
 
   const ProfessionalCollectionActions(this._ref);
 
-  ProfessionalCollectionRepository get _repository => _ref.read(professionalCollectionRepositoryProvider);
+  ProfessionalCollectionRepository get _repository =>
+      _ref.read(professionalCollectionRepositoryProvider);
 
   Future<ProfessionalCollectionRequest> submit({
     required String caseId,
@@ -39,8 +42,14 @@ class ProfessionalCollectionActions {
     return request;
   }
 
-  Future<RequestMessage> postMessage({required String requestId, required String content}) async {
-    final message = await _repository.postMessage(id: requestId, content: content);
+  Future<RequestMessage> postMessage({
+    required String requestId,
+    required String content,
+  }) async {
+    final message = await _repository.postMessage(
+      id: requestId,
+      content: content,
+    );
     _ref.invalidate(professionalCollectionMessagesProvider(requestId));
     return message;
   }
@@ -50,7 +59,11 @@ class ProfessionalCollectionActions {
     required String filePath,
     required String fileName,
   }) async {
-    await _repository.uploadAttachment(id: requestId, filePath: filePath, fileName: fileName);
+    await _repository.uploadAttachment(
+      id: requestId,
+      filePath: filePath,
+      fileName: fileName,
+    );
     _ref.invalidate(professionalCollectionAttachmentsProvider(requestId));
   }
 }

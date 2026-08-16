@@ -9,7 +9,8 @@ import 'package:mobile/features/professional_collection/presentation/screens/pro
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockProfessionalCollectionRepository extends Mock implements ProfessionalCollectionRepository {}
+class _MockProfessionalCollectionRepository extends Mock
+    implements ProfessionalCollectionRepository {}
 
 void main() {
   late _MockProfessionalCollectionRepository mockRepository;
@@ -21,7 +22,11 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [professionalCollectionRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          professionalCollectionRepositoryProvider.overrideWithValue(
+            mockRepository,
+          ),
+        ],
         child: const MaterialApp(
           locale: Locale('en'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -40,21 +45,25 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders timeline events with real fields, no write UI', (tester) async {
-    when(() => mockRepository.fetchTimeline('1')).thenAnswer((_) async => const [
-          ProfessionalCollectionTimelineEvent(
-            id: '1',
-            professionalCollectionRequestId: '1',
-            eventType: 'field_visit',
-            officerUserId: '02USER',
-            occurredAt: '2026-08-02T00:00:00.000000Z',
-            notes: 'Visited the customer premises.',
-            outcome: 'no_answer',
-            attachments: [],
-            createdAt: '2026-08-02T00:00:00.000000Z',
-            updatedAt: '2026-08-02T00:00:00.000000Z',
-          ),
-        ]);
+  testWidgets('renders timeline events with real fields, no write UI', (
+    tester,
+  ) async {
+    when(() => mockRepository.fetchTimeline('1')).thenAnswer(
+      (_) async => const [
+        ProfessionalCollectionTimelineEvent(
+          id: '1',
+          professionalCollectionRequestId: '1',
+          eventType: 'field_visit',
+          officerUserId: '02USER',
+          occurredAt: '2026-08-02T00:00:00.000000Z',
+          notes: 'Visited the customer premises.',
+          outcome: 'no_answer',
+          attachments: [],
+          createdAt: '2026-08-02T00:00:00.000000Z',
+          updatedAt: '2026-08-02T00:00:00.000000Z',
+        ),
+      ],
+    );
 
     await pumpScreen(tester);
 
@@ -66,7 +75,9 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
   });
 
-  testWidgets('shows the explicit empty state when there are no events yet', (tester) async {
+  testWidgets('shows the explicit empty state when there are no events yet', (
+    tester,
+  ) async {
     when(() => mockRepository.fetchTimeline('1')).thenAnswer((_) async => []);
 
     await pumpScreen(tester);
@@ -75,7 +86,9 @@ void main() {
   });
 
   testWidgets('shows a retry affordance when the fetch fails', (tester) async {
-    when(() => mockRepository.fetchTimeline('1')).thenThrow(Exception('network down'));
+    when(
+      () => mockRepository.fetchTimeline('1'),
+    ).thenThrow(Exception('network down'));
 
     await pumpScreen(tester);
 

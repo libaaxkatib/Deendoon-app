@@ -18,8 +18,8 @@ class StorageUsage {
   });
 
   factory StorageUsage.fromJson(Map<String, dynamic> json) => StorageUsage(
-        usedBytes: json['used_bytes'] as int,
-        totalBytes: json['total_bytes'] as int,
-        usedPercentage: (json['used_percentage'] as num).toDouble(),
-      );
+    usedBytes: json['used_bytes'] as int,
+    totalBytes: json['total_bytes'] as int,
+    usedPercentage: (json['used_percentage'] as num).toDouble(),
+  );
 }

@@ -47,7 +47,8 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(customerListProvider.notifier).loadMore();
     }
   }
@@ -57,7 +58,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(customerActionsProvider).restore(customerId);
-      messenger.showSnackBar(SnackBar(content: Text(l10n.customerRestoredSuccessfully)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.customerRestoredSuccessfully)),
+      );
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     }
@@ -69,7 +72,13 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     final customersAsync = ref.watch(customerListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.selectionMode ? l10n.customerListSelectTitle : l10n.customerListTitle)),
+      appBar: AppBar(
+        title: Text(
+          widget.selectionMode
+              ? l10n.customerListSelectTitle
+              : l10n.customerListTitle,
+        ),
+      ),
       floatingActionButton: widget.selectionMode
           ? null
           : FloatingActionButton(
@@ -83,7 +92,8 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             CustomerSearchBar(
-              onChanged: (query) => ref.read(customerListProvider.notifier).search(query),
+              onChanged: (query) =>
+                  ref.read(customerListProvider.notifier).search(query),
             ),
             const SizedBox(height: 12),
             Align(
@@ -91,7 +101,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               child: FilterChip(
                 label: Text(l10n.customerListShowArchivedFilter),
                 selected: customersAsync.valueOrNull?.includeArchived ?? false,
-                onSelected: (_) => ref.read(customerListProvider.notifier).toggleIncludeArchived(),
+                onSelected: (_) => ref
+                    .read(customerListProvider.notifier)
+                    .toggleIncludeArchived(),
               ),
             ),
             const SizedBox(height: 12),
@@ -117,16 +129,27 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(customerListProvider.notifier).refresh(),
+                    onRefresh: () =>
+                        ref.read(customerListProvider.notifier).refresh(),
                     child: ListView.separated(
                       controller: _scrollController,
-                      itemCount: state.customers.length + (state.hasMore ? 1 : 0),
+                      itemCount:
+                          state.customers.length + (state.hasMore ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index >= state.customers.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: state.loadMoreError
+                                  ? RetrySection(
+                                      message: l10n.paginationLoadMoreError,
+                                      onRetry: () => ref
+                                          .read(customerListProvider.notifier)
+                                          .loadMore(),
+                                    )
+                                  : const CircularProgressIndicator(),
+                            ),
                           );
                         }
                         final customer = state.customers[index];
@@ -136,7 +159,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                               ? () => context.pop(customer)
                               : () => context.push('/customers/${customer.id}'),
                           onRestore:
-                              (!widget.selectionMode && customer.isArchived) ? () => _restore(customer.id) : null,
+                              (!widget.selectionMode && customer.isArchived)
+                              ? () => _restore(customer.id)
+                              : null,
                         );
                       },
                     ),

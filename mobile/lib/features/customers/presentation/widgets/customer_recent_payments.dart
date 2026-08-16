@@ -37,7 +37,10 @@ class CustomerRecentPayments extends ConsumerWidget {
         if (payments.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(l10n.customerPaymentsEmptyState, style: AppTypography.body),
+            child: Text(
+              l10n.customerPaymentsEmptyState,
+              style: AppTypography.body,
+            ),
           );
         }
 
@@ -52,9 +55,18 @@ class CustomerRecentPayments extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(payment.amount, style: AppTypography.body.copyWith(color: AppColors.primary)),
+                        Text(
+                          payment.amount,
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
                         const SizedBox(height: 2),
-                        Text(payment.paymentMethod ?? l10n.customerPaymentsMethodNotRecorded, style: AppTypography.caption),
+                        Text(
+                          payment.paymentMethod ??
+                              l10n.customerPaymentsMethodNotRecorded,
+                          style: AppTypography.caption,
+                        ),
                       ],
                     ),
                     Text(payment.paymentDate, style: AppTypography.caption),

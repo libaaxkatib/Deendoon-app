@@ -12,7 +12,11 @@ void main() {
       'sms_reminder_days': [3],
       'call_reminder_days': [7],
       'professional_collection_threshold_days': 30,
-      'notification_settings': {'push_enabled': true, 'reminder_enabled': true, 'payment_enabled': false},
+      'notification_settings': {
+        'push_enabled': true,
+        'reminder_enabled': true,
+        'payment_enabled': false,
+      },
       'updated_at': '2026-08-03T12:00:00.000000Z',
     });
 
@@ -29,27 +33,30 @@ void main() {
     expect(settings.paymentNotificationsEnabled, false);
   });
 
-  test('defaults every nullable field to a safe value on a freshly-created row', () {
-    final settings = SystemSettings.fromJson({
-      'id': '2',
-      'default_credit_limit': '0.00',
-      'credit_limit_reminder_enabled': true,
-      'soft_limit_warning_threshold': null,
-      'whatsapp_reminder_days': null,
-      'sms_reminder_days': null,
-      'call_reminder_days': null,
-      'professional_collection_threshold_days': null,
-      'notification_settings': null,
-      'updated_at': '2026-08-03T12:00:00.000000Z',
-    });
+  test(
+    'defaults every nullable field to a safe value on a freshly-created row',
+    () {
+      final settings = SystemSettings.fromJson({
+        'id': '2',
+        'default_credit_limit': '0.00',
+        'credit_limit_reminder_enabled': true,
+        'soft_limit_warning_threshold': null,
+        'whatsapp_reminder_days': null,
+        'sms_reminder_days': null,
+        'call_reminder_days': null,
+        'professional_collection_threshold_days': null,
+        'notification_settings': null,
+        'updated_at': '2026-08-03T12:00:00.000000Z',
+      });
 
-    expect(settings.softLimitWarningThreshold, isNull);
-    expect(settings.whatsappReminderDays, isEmpty);
-    expect(settings.smsReminderDays, isEmpty);
-    expect(settings.callReminderDays, isEmpty);
-    expect(settings.professionalCollectionThresholdDays, isNull);
-    expect(settings.pushNotificationsEnabled, false);
-    expect(settings.reminderNotificationsEnabled, false);
-    expect(settings.paymentNotificationsEnabled, false);
-  });
+      expect(settings.softLimitWarningThreshold, isNull);
+      expect(settings.whatsappReminderDays, isEmpty);
+      expect(settings.smsReminderDays, isEmpty);
+      expect(settings.callReminderDays, isEmpty);
+      expect(settings.professionalCollectionThresholdDays, isNull);
+      expect(settings.pushNotificationsEnabled, false);
+      expect(settings.reminderNotificationsEnabled, false);
+      expect(settings.paymentNotificationsEnabled, false);
+    },
+  );
 }

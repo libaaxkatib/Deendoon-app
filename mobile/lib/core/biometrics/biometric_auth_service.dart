@@ -2,7 +2,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 
-final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) => BiometricAuthService());
+final biometricAuthServiceProvider = Provider<BiometricAuthService>(
+  (ref) => BiometricAuthService(),
+);
 
 /// Settings §Security — Biometric Login. Device-local only, no backend
 /// involved. `isSupported()` is a real hardware/enrollment capability
@@ -16,7 +18,8 @@ final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) => Bio
 /// Sprint 2 report rather than silently implied.
 class BiometricAuthService {
   final LocalAuthentication _auth;
-  BiometricAuthService([LocalAuthentication? auth]) : _auth = auth ?? LocalAuthentication();
+  BiometricAuthService([LocalAuthentication? auth])
+    : _auth = auth ?? LocalAuthentication();
 
   Future<bool> isSupported() async {
     try {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/password_field.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../app/router/route_paths.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -24,7 +25,9 @@ class ResetPasswordForm extends ConsumerStatefulWidget {
 
 class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
   final _formKey = GlobalKey<FormState>();
-  late final _emailController = TextEditingController(text: widget.initialEmail);
+  late final _emailController = TextEditingController(
+    text: widget.initialEmail,
+  );
   final _tokenController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -39,6 +42,7 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
+  Map<String, dynamic>? _fieldErrors;
 
   @override
   void dispose() {
@@ -50,6 +54,7 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
   }
 
   Future<void> _submit() async {
+    setState(() => _fieldErrors = null);
     if (_formKey.currentState?.validate() != true) return;
 
     setState(() {
@@ -59,7 +64,9 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
     });
 
     try {
-      final message = await ref.read(authRepositoryProvider).resetPassword(
+      final message = await ref
+          .read(authRepositoryProvider)
+          .resetPassword(
             email: _emailController.text.trim(),
             token: _tokenController.text.trim(),
             password: _passwordController.text,
@@ -71,7 +78,11 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
         if (mounted) context.go(RoutePaths.login);
       }
     } on ApiException catch (e) {
-      setState(() => _errorMessage = e.detailedMessage);
+      setState(() {
+        _errorMessage = e.detailedMessage;
+        _fieldErrors = e.fieldErrors;
+      });
+      _formKey.currentState?.validate();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -91,8 +102,17 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(labelText: l10n.authEmailLabel),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return l10n.authEmailRequired;
-              if (!_emailPattern.hasMatch(value.trim())) return l10n.authEmailInvalid;
+              final backendError = ApiException.fieldErrorFor(
+                _fieldErrors,
+                'email',
+              );
+              if (backendError != null) return backendError;
+              if (value == null || value.trim().isEmpty) {
+                return l10n.authEmailRequired;
+              }
+              if (!_emailPattern.hasMatch(value.trim())) {
+                return l10n.authEmailInvalid;
+              }
               return null;
             },
           ),
@@ -104,17 +124,34 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
               helperText: l10n.resetPasswordCodeHelper,
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) return l10n.resetPasswordCodeRequired;
+              final backendError = ApiException.fieldErrorFor(
+                _fieldErrors,
+                'token',
+              );
+              if (backendError != null) return backendError;
+              if (value == null || value.trim().isEmpty) {
+                return l10n.resetPasswordCodeRequired;
+              }
               return null;
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
+          PasswordField(
             controller: _passwordController,
-            obscureText: true,
-            decoration: InputDecoration(labelText: l10n.resetPasswordNewPasswordLabel),
+            labelText: l10n.resetPasswordNewPasswordLabel,
             validator: (value) {
-              if (value == null || value.isEmpty) return l10n.authPasswordRequired;
+              final backendPasswordError =
+                  ApiException.splitConfirmedFieldError(
+                    _fieldErrors,
+                    'password',
+                  );
+              final backendError =
+                  backendPasswordError.other ??
+                  backendPasswordError.confirmationMismatch;
+              if (backendError != null) return backendError;
+              if (value == null || value.isEmpty) {
+                return l10n.authPasswordRequired;
+              }
               if (value.length < _minPasswordLength) {
                 return l10n.authPasswordMinLength(_minPasswordLength);
               }
@@ -122,16 +159,24 @@ class _ResetPasswordFormState extends ConsumerState<ResetPasswordForm> {
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
+          PasswordField(
             controller: _confirmController,
-            obscureText: true,
-            decoration: InputDecoration(labelText: l10n.resetPasswordConfirmLabel),
+            labelText: l10n.resetPasswordConfirmLabel,
             validator: (value) {
-              if (value != _passwordController.text) return l10n.authPasswordsMismatch;
+              final backendError = ApiException.splitConfirmedFieldError(
+                _fieldErrors,
+                'password',
+              ).confirmationMismatch;
+              if (backendError != null) return backendError;
+              if (value != _passwordController.text) {
+                return l10n.authPasswordsMismatch;
+              }
               return null;
             },
           ),
-          if (_errorMessage != null) ...[
+          // See ForgotPasswordForm: only shown for errors that aren't per-field.
+          if (_errorMessage != null &&
+              (_fieldErrors == null || _fieldErrors!.isEmpty)) ...[
             const SizedBox(height: 12),
             Text(
               _errorMessage!,

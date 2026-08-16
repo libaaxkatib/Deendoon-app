@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/bottom_sheet_content.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/case_actions.dart';
@@ -16,11 +17,17 @@ import '../providers/case_actions.dart';
 /// baked into the free-text `details` so the real Timeline stays
 /// readable — it is not a backend-enforced field (see the Sprint 13
 /// summary's "Missing Backend Support Required").
-Future<void> showRecordActivitySheet(BuildContext context, String caseId, {required String title, String? label}) {
+Future<void> showRecordActivitySheet(
+  BuildContext context,
+  String caseId, {
+  required String title,
+  String? label,
+}) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _RecordActivitySheet(caseId: caseId, title: title, label: label),
+    builder: (_) =>
+        _RecordActivitySheet(caseId: caseId, title: title, label: label),
   );
 }
 
@@ -29,10 +36,15 @@ class _RecordActivitySheet extends ConsumerStatefulWidget {
   final String title;
   final String? label;
 
-  const _RecordActivitySheet({required this.caseId, required this.title, required this.label});
+  const _RecordActivitySheet({
+    required this.caseId,
+    required this.title,
+    required this.label,
+  });
 
   @override
-  ConsumerState<_RecordActivitySheet> createState() => _RecordActivitySheetState();
+  ConsumerState<_RecordActivitySheet> createState() =>
+      _RecordActivitySheetState();
 }
 
 class _RecordActivitySheetState extends ConsumerState<_RecordActivitySheet> {
@@ -58,7 +70,9 @@ class _RecordActivitySheetState extends ConsumerState<_RecordActivitySheet> {
         : (text.isEmpty ? widget.label : '${widget.label} — $text');
 
     try {
-      await ref.read(caseActionsProvider).recordActivity(caseId: widget.caseId, details: details);
+      await ref
+          .read(caseActionsProvider)
+          .recordActivity(caseId: widget.caseId, details: details);
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -70,13 +84,7 @@ class _RecordActivitySheetState extends ConsumerState<_RecordActivitySheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+    return BottomSheetContent(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -87,14 +95,23 @@ class _RecordActivitySheetState extends ConsumerState<_RecordActivitySheet> {
             controller: _detailsController,
             maxLength: 1000,
             maxLines: 3,
-            decoration: InputDecoration(labelText: l10n.recordPaymentNotesLabel),
+            decoration: InputDecoration(
+              labelText: l10n.recordPaymentNotesLabel,
+            ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
           const SizedBox(height: 12),
-          PrimaryButton(label: l10n.commonSave, isLoading: _isLoading, onPressed: _submit),
+          PrimaryButton(
+            label: l10n.commonSave,
+            isLoading: _isLoading,
+            onPressed: _submit,
+          ),
         ],
       ),
     );

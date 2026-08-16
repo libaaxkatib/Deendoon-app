@@ -38,36 +38,60 @@ void main() {
 
   group('login', () {
     test('persists the session and returns Authenticated on success', () async {
-      when(() => mockApi.login('test@example.com', 'password'))
-          .thenAnswer((_) async => (_user, 'new-token'));
-      when(() => mockStorage.saveSession(token: any(named: 'token'), userJson: any(named: 'userJson')))
-          .thenAnswer((_) async {});
+      when(
+        () => mockApi.login('test@example.com', 'password'),
+      ).thenAnswer((_) async => (_user, 'new-token'));
+      when(
+        () => mockStorage.saveSession(
+          token: any(named: 'token'),
+          userJson: any(named: 'userJson'),
+        ),
+      ).thenAnswer((_) async {});
 
       final result = await repository.login('test@example.com', 'password');
 
       expect(result.user, _user);
       expect(result.token, 'new-token');
-      verify(() => mockStorage.saveSession(token: 'new-token', userJson: any(named: 'userJson'))).called(1);
-    });
-
-    test('throws ApiException with the server message on invalid credentials', () async {
-      when(() => mockApi.login('test@example.com', 'wrong')).thenThrow(
-        DioException(
-          requestOptions: RequestOptions(path: '/login'),
-          response: Response(
-            requestOptions: RequestOptions(path: '/login'),
-            statusCode: 401,
-            data: {'success': false, 'message': 'Invalid credentials', 'data': null, 'errors': null},
-          ),
-          type: DioExceptionType.badResponse,
+      verify(
+        () => mockStorage.saveSession(
+          token: 'new-token',
+          userJson: any(named: 'userJson'),
         ),
-      );
-
-      expect(
-        () => repository.login('test@example.com', 'wrong'),
-        throwsA(isA<ApiException>().having((e) => e.message, 'message', 'Invalid credentials')),
-      );
+      ).called(1);
     });
+
+    test(
+      'throws ApiException with the server message on invalid credentials',
+      () async {
+        when(() => mockApi.login('test@example.com', 'wrong')).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(path: '/login'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/login'),
+              statusCode: 401,
+              data: {
+                'success': false,
+                'message': 'Invalid credentials',
+                'data': null,
+                'errors': null,
+              },
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
+
+        expect(
+          () => repository.login('test@example.com', 'wrong'),
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.message,
+              'message',
+              'Invalid credentials',
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('readCachedSession', () {
@@ -79,9 +103,12 @@ void main() {
     });
 
     test('returns Authenticated when a token and cached user exist', () async {
-      when(() => mockStorage.readToken()).thenAnswer((_) async => 'cached-token');
-      when(() => mockStorage.readUserJson())
-          .thenAnswer((_) async => '{"id":"1","name":"Test User","email":"test@example.com"}');
+      when(
+        () => mockStorage.readToken(),
+      ).thenAnswer((_) async => 'cached-token');
+      when(() => mockStorage.readUserJson()).thenAnswer(
+        (_) async => '{"id":"1","name":"Test User","email":"test@example.com"}',
+      );
 
       final result = await repository.readCachedSession();
 
@@ -92,16 +119,30 @@ void main() {
   });
 
   group('validateAndRotate', () {
-    test('persists the rotated token and returns Authenticated on success', () async {
-      when(() => mockApi.refresh()).thenAnswer((_) async => (_user, 'rotated-token'));
-      when(() => mockStorage.saveSession(token: any(named: 'token'), userJson: any(named: 'userJson')))
-          .thenAnswer((_) async {});
+    test(
+      'persists the rotated token and returns Authenticated on success',
+      () async {
+        when(
+          () => mockApi.refresh(),
+        ).thenAnswer((_) async => (_user, 'rotated-token'));
+        when(
+          () => mockStorage.saveSession(
+            token: any(named: 'token'),
+            userJson: any(named: 'userJson'),
+          ),
+        ).thenAnswer((_) async {});
 
-      final result = await repository.validateAndRotate();
+        final result = await repository.validateAndRotate();
 
-      expect(result.token, 'rotated-token');
-      verify(() => mockStorage.saveSession(token: 'rotated-token', userJson: any(named: 'userJson'))).called(1);
-    });
+        expect(result.token, 'rotated-token');
+        verify(
+          () => mockStorage.saveSession(
+            token: 'rotated-token',
+            userJson: any(named: 'userJson'),
+          ),
+        ).called(1);
+      },
+    );
 
     test('throws ApiException on an idle-expired token (401)', () async {
       when(() => mockApi.refresh()).thenThrow(
@@ -110,7 +151,12 @@ void main() {
           response: Response(
             requestOptions: RequestOptions(path: '/refresh'),
             statusCode: 401,
-            data: {'success': false, 'message': 'Unauthenticated.', 'data': null, 'errors': null},
+            data: {
+              'success': false,
+              'message': 'Unauthenticated.',
+              'data': null,
+              'errors': null,
+            },
           ),
           type: DioExceptionType.badResponse,
         ),
@@ -118,7 +164,9 @@ void main() {
 
       expect(
         () => repository.validateAndRotate(),
-        throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401)),
+        throwsA(
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+        ),
       );
     });
   });
@@ -137,7 +185,8 @@ void main() {
   group('forgotPassword', () {
     test('returns the generic server message on success', () async {
       when(() => mockApi.forgotPassword('test@example.com')).thenAnswer(
-        (_) async => 'If an account with that email exists, a password reset link has been sent.',
+        (_) async =>
+            'If an account with that email exists, a password reset link has been sent.',
       );
 
       final message = await repository.forgotPassword('test@example.com');
@@ -169,66 +218,93 @@ void main() {
         () => repository.forgotPassword('bad'),
         throwsA(
           isA<ApiException>()
-              .having((e) => e.message, 'message', 'The given data was invalid.')
-              .having((e) => e.fieldErrors?['email'], 'fieldErrors[email]', isNotNull),
+              .having(
+                (e) => e.message,
+                'message',
+                'The given data was invalid.',
+              )
+              .having(
+                (e) => e.fieldErrors?['email'],
+                'fieldErrors[email]',
+                isNotNull,
+              ),
         ),
       );
     });
   });
 
   group('changePassword', () {
-    test('returns the success message when the current password is correct', () async {
-      when(() => mockApi.changePassword(
+    test(
+      'returns the success message when the current password is correct',
+      () async {
+        when(
+          () => mockApi.changePassword(
             currentPassword: 'old-password-123',
             newPassword: 'a-very-long-password',
-          )).thenAnswer((_) async => 'Password changed successfully');
+          ),
+        ).thenAnswer((_) async => 'Password changed successfully');
 
-      final message = await repository.changePassword(
-        currentPassword: 'old-password-123',
-        newPassword: 'a-very-long-password',
-      );
+        final message = await repository.changePassword(
+          currentPassword: 'old-password-123',
+          newPassword: 'a-very-long-password',
+        );
 
-      expect(message, 'Password changed successfully');
-    });
+        expect(message, 'Password changed successfully');
+      },
+    );
 
-    test('throws ApiException with the server message when the current password is wrong', () async {
-      when(() => mockApi.changePassword(
+    test(
+      'throws ApiException with the server message when the current password is wrong',
+      () async {
+        when(
+          () => mockApi.changePassword(
             currentPassword: 'wrong-password',
             newPassword: 'a-very-long-password',
-          )).thenThrow(
-        DioException(
-          requestOptions: RequestOptions(path: '/change-password'),
-          response: Response(
-            requestOptions: RequestOptions(path: '/change-password'),
-            statusCode: 422,
-            data: {
-              'success': false,
-              'message': 'The current password is incorrect.',
-              'data': null,
-              'errors': null,
-            },
           ),
-          type: DioExceptionType.badResponse,
-        ),
-      );
+        ).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(path: '/change-password'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/change-password'),
+              statusCode: 422,
+              data: {
+                'success': false,
+                'message': 'The current password is incorrect.',
+                'data': null,
+                'errors': null,
+              },
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
 
-      expect(
-        () => repository.changePassword(currentPassword: 'wrong-password', newPassword: 'a-very-long-password'),
-        throwsA(
-          isA<ApiException>().having((e) => e.message, 'message', 'The current password is incorrect.'),
-        ),
-      );
-    });
+        expect(
+          () => repository.changePassword(
+            currentPassword: 'wrong-password',
+            newPassword: 'a-very-long-password',
+          ),
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.message,
+              'message',
+              'The current password is incorrect.',
+            ),
+          ),
+        );
+      },
+    );
   });
 
   group('resetPassword', () {
     test('returns the success message when the token is valid', () async {
-      when(() => mockApi.resetPassword(
-            email: 'test@example.com',
-            token: 'valid-token',
-            password: 'a-very-long-password',
-            passwordConfirmation: 'a-very-long-password',
-          )).thenAnswer((_) async => 'Password reset successfully');
+      when(
+        () => mockApi.resetPassword(
+          email: 'test@example.com',
+          token: 'valid-token',
+          password: 'a-very-long-password',
+          passwordConfirmation: 'a-very-long-password',
+        ),
+      ).thenAnswer((_) async => 'Password reset successfully');
 
       final message = await repository.resetPassword(
         email: 'test@example.com',
@@ -240,44 +316,50 @@ void main() {
       expect(message, 'Password reset successfully');
     });
 
-    test('throws ApiException with the server message on an invalid/expired token', () async {
-      when(() => mockApi.resetPassword(
+    test(
+      'throws ApiException with the server message on an invalid/expired token',
+      () async {
+        when(
+          () => mockApi.resetPassword(
             email: 'test@example.com',
             token: 'bad-token',
             password: 'a-very-long-password',
             passwordConfirmation: 'a-very-long-password',
-          )).thenThrow(
-        DioException(
-          requestOptions: RequestOptions(path: '/reset-password'),
-          response: Response(
+          ),
+        ).thenThrow(
+          DioException(
             requestOptions: RequestOptions(path: '/reset-password'),
-            statusCode: 422,
-            data: {
-              'success': false,
-              'message': 'This password reset token is invalid or has expired.',
-              'data': null,
-              'errors': null,
-            },
+            response: Response(
+              requestOptions: RequestOptions(path: '/reset-password'),
+              statusCode: 422,
+              data: {
+                'success': false,
+                'message':
+                    'This password reset token is invalid or has expired.',
+                'data': null,
+                'errors': null,
+              },
+            ),
+            type: DioExceptionType.badResponse,
           ),
-          type: DioExceptionType.badResponse,
-        ),
-      );
+        );
 
-      expect(
-        () => repository.resetPassword(
-          email: 'test@example.com',
-          token: 'bad-token',
-          password: 'a-very-long-password',
-          passwordConfirmation: 'a-very-long-password',
-        ),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'This password reset token is invalid or has expired.',
+        expect(
+          () => repository.resetPassword(
+            email: 'test@example.com',
+            token: 'bad-token',
+            password: 'a-very-long-password',
+            passwordConfirmation: 'a-very-long-password',
           ),
-        ),
-      );
-    });
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.message,
+              'message',
+              'This password reset token is invalid or has expired.',
+            ),
+          ),
+        );
+      },
+    );
   });
 }

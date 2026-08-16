@@ -10,7 +10,11 @@ class LegalContentScreen extends StatelessWidget {
   final String title;
   final String content;
 
-  const LegalContentScreen({super.key, required this.title, required this.content});
+  const LegalContentScreen({
+    super.key,
+    required this.title,
+    required this.content,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +22,7 @@ class LegalContentScreen extends StatelessWidget {
       appBar: AppBar(title: Text(title)),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
-          Text(content, style: AppTypography.body),
-        ],
+        children: [Text(content, style: AppTypography.body)],
       ),
     );
   }

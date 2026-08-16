@@ -48,7 +48,7 @@ the app after an update means you accept the revised policy.
 
 Contact
 Questions about this policy can be sent through Contact Support in the
-app once that channel is available.
+app.
 ''';
 
 const String kTermsAndConditionsContent = '''
@@ -93,5 +93,5 @@ after an update means you accept the revised Terms.
 
 Contact
 Questions about these Terms can be sent through Contact Support in the
-app once that channel is available.
+app.
 ''';

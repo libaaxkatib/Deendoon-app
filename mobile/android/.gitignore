@@ -13,3 +13,9 @@ build/
 key.properties
 **/*.keystore
 **/*.jks
+
+# Mobile Fix #11: R8 mapping.txt archived per release (needed to
+# deobfuscate a future crash report against a specific build) — kept
+# locally alongside the keystore, not committed, same as key.properties
+# above.
+release-artifacts/

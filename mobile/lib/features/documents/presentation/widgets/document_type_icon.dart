@@ -12,15 +12,22 @@ class DocumentTypeIcon extends StatelessWidget {
   final String documentType;
   final double size;
 
-  const DocumentTypeIcon({super.key, required this.documentType, this.size = 40});
+  const DocumentTypeIcon({
+    super.key,
+    required this.documentType,
+    this.size = 40,
+  });
 
-  static (IconData, Color) _iconAndColor(BuildContext context, String documentType) => switch (documentType) {
-        'invoice' => (Icons.receipt_long_outlined, AppColors.info),
-        'receipt' => (Icons.receipt_outlined, AppColors.success),
-        'demand_letter' => (Icons.mail_outline, AppColors.danger),
-        'statement' => (Icons.description_outlined, AppColors.accent),
-        _ => (Icons.insert_drive_file_outlined, context.colors.textSecondary),
-      };
+  static (IconData, Color) _iconAndColor(
+    BuildContext context,
+    String documentType,
+  ) => switch (documentType) {
+    'invoice' => (Icons.receipt_long_outlined, AppColors.info),
+    'receipt' => (Icons.receipt_outlined, AppColors.success),
+    'demand_letter' => (Icons.mail_outline, AppColors.danger),
+    'statement' => (Icons.description_outlined, AppColors.accent),
+    _ => (Icons.insert_drive_file_outlined, context.colors.textSecondary),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +35,10 @@ class DocumentTypeIcon extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Icon(icon, color: color, size: size * 0.5),
     );
   }
@@ -52,7 +62,8 @@ String formatFileSize(BuildContext context, int? bytes) {
   if (bytes == null) return '—';
   final l10n = AppLocalizations.of(context);
   if (bytes < 1024) return '$bytes ${l10n.documentSizeUnitBytes}';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} ${l10n.documentSizeUnitKb}';
+  if (bytes < 1024 * 1024)
+    return '${(bytes / 1024).toStringAsFixed(1)} ${l10n.documentSizeUnitKb}';
   if (bytes < 1024 * 1024 * 1024) {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ${l10n.documentSizeUnitMb}';
   }

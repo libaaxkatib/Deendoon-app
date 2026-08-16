@@ -35,7 +35,8 @@ List<String> _weekdayNames(AppLocalizations l10n) => [
   l10n.calendarWeekdaySunday,
 ];
 
-String _monthLabel(AppLocalizations l10n, DateTime month) => '${_monthNames(l10n)[month.month - 1]} ${month.year}';
+String _monthLabel(AppLocalizations l10n, DateTime month) =>
+    '${_monthNames(l10n)[month.month - 1]} ${month.year}';
 
 String _selectedDayLabel(AppLocalizations l10n, DateTime date) =>
     '${_weekdayNames(l10n)[date.weekday - 1]}, ${_monthNames(l10n)[date.month - 1]} ${date.day}';
@@ -72,15 +73,21 @@ class CalendarScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.chevron_left),
                   tooltip: l10n.calendarPreviousMonthTooltip,
-                  onPressed: () => ref.read(visibleMonthProvider.notifier).state =
-                      DateTime(month.year, month.month - 1),
+                  onPressed: () =>
+                      ref.read(visibleMonthProvider.notifier).state = DateTime(
+                        month.year,
+                        month.month - 1,
+                      ),
                 ),
                 Text(_monthLabel(l10n, month), style: AppTypography.subheading),
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
                   tooltip: l10n.calendarNextMonthTooltip,
-                  onPressed: () => ref.read(visibleMonthProvider.notifier).state =
-                      DateTime(month.year, month.month + 1),
+                  onPressed: () =>
+                      ref.read(visibleMonthProvider.notifier).state = DateTime(
+                        month.year,
+                        month.month + 1,
+                      ),
                 ),
               ],
             ),
@@ -99,7 +106,9 @@ class CalendarScreen extends ConsumerWidget {
                 for (final entry in data.entries) {
                   entriesByDate.putIfAbsent(entry.date, () => []).add(entry);
                 }
-                final dayEntries = entriesByDate[_dateKey(selectedDate)] ?? const <CalendarEntry>[];
+                final dayEntries =
+                    entriesByDate[_dateKey(selectedDate)] ??
+                    const <CalendarEntry>[];
 
                 return ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -108,10 +117,14 @@ class CalendarScreen extends ConsumerWidget {
                       month: month,
                       selectedDate: selectedDate,
                       datesWithEntries: entriesByDate.keys.toSet(),
-                      onDaySelected: (date) => ref.read(selectedDateProvider.notifier).state = date,
+                      onDaySelected: (date) =>
+                          ref.read(selectedDateProvider.notifier).state = date,
                     ),
                     const SizedBox(height: 16),
-                    Text(_selectedDayLabel(l10n, selectedDate), style: AppTypography.subheading),
+                    Text(
+                      _selectedDayLabel(l10n, selectedDate),
+                      style: AppTypography.subheading,
+                    ),
                     const SizedBox(height: 12),
                     if (dayEntries.isEmpty)
                       PremiumEmptyState(

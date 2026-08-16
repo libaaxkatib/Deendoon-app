@@ -13,20 +13,20 @@ import '../widgets/document_type_icon.dart';
 import '../widgets/storage_usage_card.dart';
 
 Map<String?, String> _tabFilters(AppLocalizations l10n) => {
-      null: l10n.documentTabAll,
-      'invoices': l10n.documentTabInvoices,
-      'receipts': l10n.documentTabReceipts,
-      'letters': l10n.documentTabLetters,
-      'other': l10n.documentTabOther,
-    };
+  null: l10n.documentTabAll,
+  'invoices': l10n.documentTabInvoices,
+  'receipts': l10n.documentTabReceipts,
+  'letters': l10n.documentTabLetters,
+  'other': l10n.documentTabOther,
+};
 
 Map<String?, String> _emptyMessages(AppLocalizations l10n) => {
-      null: l10n.customerDocumentsEmptyState,
-      'invoices': l10n.documentEmptyInvoices,
-      'receipts': l10n.documentEmptyReceipts,
-      'letters': l10n.documentEmptyLetters,
-      'other': l10n.documentEmptyStatements,
-    };
+  null: l10n.customerDocumentsEmptyState,
+  'invoices': l10n.documentEmptyInvoices,
+  'receipts': l10n.documentEmptyReceipts,
+  'letters': l10n.documentEmptyLetters,
+  'other': l10n.documentEmptyStatements,
+};
 
 /// Documents Center (§8.1 "All Documents") — the real content of the
 /// Documents tab. Header search icon toggles a real, debounced search
@@ -41,7 +41,8 @@ class DocumentsHomeScreen extends ConsumerStatefulWidget {
   const DocumentsHomeScreen({super.key});
 
   @override
-  ConsumerState<DocumentsHomeScreen> createState() => _DocumentsHomeScreenState();
+  ConsumerState<DocumentsHomeScreen> createState() =>
+      _DocumentsHomeScreenState();
 }
 
 class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
@@ -66,7 +67,8 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                 controller: _searchController,
                 autofocus: true,
                 decoration: InputDecoration(hintText: l10n.documentSearchHint),
-                onChanged: (value) => ref.read(documentListProvider.notifier).search(value),
+                onChanged: (value) =>
+                    ref.read(documentListProvider.notifier).search(value),
               )
             : Text(l10n.navDocuments),
         actions: [
@@ -96,7 +98,9 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                     _TabFilterChip(
                       label: entry.value,
                       selected: documentsAsync.valueOrNull?.type == entry.key,
-                      onTap: () => ref.read(documentListProvider.notifier).filterByType(entry.key),
+                      onTap: () => ref
+                          .read(documentListProvider.notifier)
+                          .filterByType(entry.key),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -110,7 +114,9 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                 Expanded(
                   child: Text(
                     l10n.documentRecentDocumentsHeading,
-                    style: AppTypography.heading.copyWith(color: context.colors.textPrimary),
+                    style: AppTypography.heading.copyWith(
+                      color: context.colors.textPrimary,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -140,8 +146,11 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                       : Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(
-                            _emptyMessages(l10n)[state.type] ?? l10n.customerDocumentsEmptyState,
-                            style: AppTypography.body.copyWith(color: context.colors.textPrimary),
+                            _emptyMessages(l10n)[state.type] ??
+                                l10n.customerDocumentsEmptyState,
+                            style: AppTypography.body.copyWith(
+                              color: context.colors.textPrimary,
+                            ),
                           ),
                         );
                 }
@@ -150,7 +159,10 @@ class _DocumentsHomeScreenState extends ConsumerState<DocumentsHomeScreen> {
                 return Column(
                   children: [
                     for (final document in recent) ...[
-                      DocumentCard(document: document, onTap: () => context.push('/documents/${document.id}')),
+                      DocumentCard(
+                        document: document,
+                        onTap: () => context.push('/documents/${document.id}'),
+                      ),
                       const SizedBox(height: 10),
                     ],
                   ],
@@ -181,11 +193,18 @@ class _StatementsEmptyState extends StatelessWidget {
         children: [
           const DocumentTypeIcon(documentType: 'statement', size: 56),
           const SizedBox(height: 16),
-          Text(l10n.documentEmptyStatements, style: AppTypography.body.copyWith(color: context.colors.textPrimary)),
+          Text(
+            l10n.documentEmptyStatements,
+            style: AppTypography.body.copyWith(
+              color: context.colors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             l10n.documentEmptyStatementsCaption,
-            style: AppTypography.caption.copyWith(color: context.colors.textSecondary),
+            style: AppTypography.caption.copyWith(
+              color: context.colors.textSecondary,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -199,7 +218,11 @@ class _TabFilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabFilterChip({required this.label, required this.selected, required this.onTap});
+  const _TabFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +231,9 @@ class _TabFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
-      labelStyle: TextStyle(color: selected ? AppColors.primary : context.colors.textSecondary),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : context.colors.textSecondary,
+      ),
       backgroundColor: context.colors.surface,
       side: BorderSide.none,
     );

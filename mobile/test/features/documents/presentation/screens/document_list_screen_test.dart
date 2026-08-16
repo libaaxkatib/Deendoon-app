@@ -35,7 +35,9 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [documentRepositoryProvider.overrideWithValue(mockRepository)],
+        overrides: [
+          documentRepositoryProvider.overrideWithValue(mockRepository),
+        ],
         child: MaterialApp(
           locale: const Locale('en'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -54,8 +56,16 @@ void main() {
   }
 
   testWidgets('renders the full document list', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [_document], currentPage: 1, lastPage: 1, total: 1));
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [_document],
+        currentPage: 1,
+        lastPage: 1,
+        total: 1,
+      ),
+    );
 
     await pumpScreen(tester);
     await tester.pumpAndSettle();
@@ -64,9 +74,19 @@ void main() {
     expect(find.text('All Documents'), findsOneWidget);
   });
 
-  testWidgets('shows the explicit empty state when there are no documents', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: ''))
-        .thenAnswer((_) async => const DocumentPage(documents: [], currentPage: 1, lastPage: 1, total: 0));
+  testWidgets('shows the explicit empty state when there are no documents', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenAnswer(
+      (_) async => const DocumentPage(
+        documents: [],
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
+      ),
+    );
 
     await pumpScreen(tester);
     await tester.pumpAndSettle();
@@ -74,8 +94,12 @@ void main() {
     expect(find.text('No documents yet'), findsOneWidget);
   });
 
-  testWidgets('shows a retry affordance when the list fails to load', (tester) async {
-    when(() => mockRepository.fetchDocuments(page: 1, type: null, search: '')).thenThrow(Exception('network down'));
+  testWidgets('shows a retry affordance when the list fails to load', (
+    tester,
+  ) async {
+    when(
+      () => mockRepository.fetchDocuments(page: 1, type: null, search: ''),
+    ).thenThrow(Exception('network down'));
 
     await pumpScreen(tester);
     await tester.pumpAndSettle();
