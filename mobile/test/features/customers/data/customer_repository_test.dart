@@ -6,6 +6,7 @@ import 'package:mobile/features/customers/data/customer_api.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/customers/domain/customer_page.dart';
+import 'package:mobile/features/customers/domain/customer_phone_number.dart';
 import 'package:mobile/features/customers/domain/duplicate_warning.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -232,6 +233,40 @@ void main() {
     );
 
     expect(saved.customer, _customer);
+  });
+
+  test('Fix #23: createCustomer forwards phoneNumbers to the api', () async {
+    const result = (customer: _customer, warning: null);
+    const phoneNumbers = [
+      CustomerPhoneNumber(phone: '+252612345678', isPrimary: true),
+      CustomerPhoneNumber(phone: '+252699999999', isPrimary: false),
+    ];
+    when(
+      () => mockApi.store(
+        name: 'Somali Builders',
+        phone: '+252612345678',
+        address: null,
+        creditLimit: '5000.00',
+        phoneNumbers: phoneNumbers,
+      ),
+    ).thenAnswer((_) async => result);
+
+    await repository.createCustomer(
+      name: 'Somali Builders',
+      phone: '+252612345678',
+      creditLimit: '5000.00',
+      phoneNumbers: phoneNumbers,
+    );
+
+    verify(
+      () => mockApi.store(
+        name: 'Somali Builders',
+        phone: '+252612345678',
+        address: null,
+        creditLimit: '5000.00',
+        phoneNumbers: phoneNumbers,
+      ),
+    ).called(1);
   });
 
   test(

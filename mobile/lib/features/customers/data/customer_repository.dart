@@ -5,6 +5,7 @@ import '../../../core/models/document_summary.dart';
 import '../../../core/network/api_exception.dart';
 import '../domain/customer.dart';
 import '../domain/customer_page.dart';
+import '../domain/customer_phone_number.dart';
 import '../domain/customer_save_result.dart';
 import '../domain/duplicate_warning.dart';
 import '../../../core/models/payment.dart';
@@ -51,12 +52,14 @@ class CustomerRepository {
     required String phone,
     String? address,
     required String creditLimit,
+    List<CustomerPhoneNumber>? phoneNumbers,
   }) => _guard(
     () => _api.store(
       name: name,
       phone: phone,
       address: address,
       creditLimit: creditLimit,
+      phoneNumbers: phoneNumbers,
     ),
   );
 
@@ -66,6 +69,7 @@ class CustomerRepository {
     required String phone,
     String? address,
     required String creditLimit,
+    List<CustomerPhoneNumber>? phoneNumbers,
   }) => _guard(
     () => _api.update(
       id: id,
@@ -73,6 +77,7 @@ class CustomerRepository {
       phone: phone,
       address: address,
       creditLimit: creditLimit,
+      phoneNumbers: phoneNumbers,
     ),
   );
 

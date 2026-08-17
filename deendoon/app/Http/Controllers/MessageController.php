@@ -7,6 +7,7 @@ use App\Http\Requests\RenderMessageRequest;
 use App\Http\Requests\SendMessageRequest;
 use App\Http\Resources\MessageTemplateResource;
 use App\Http\Resources\SentMessageResource;
+use App\Models\CustomerPhoneNumber;
 use App\Models\MessageTemplate;
 use App\Models\Reminder;
 use App\Services\MessageDeliveryService;
@@ -51,7 +52,9 @@ class MessageController extends Controller
 
         $this->authorize('view', $reminder);
 
-        return $this->successResponse($this->rendering->renderForReminder($template, $reminder));
+        $phoneNumber = $this->resolvePhoneNumber($request->validated('phone_number_id'), $reminder);
+
+        return $this->successResponse($this->rendering->renderForReminder($template, $reminder, $phoneNumber));
     }
 
     public function sendWhatsApp(SendMessageRequest $request): JsonResponse
@@ -71,8 +74,27 @@ class MessageController extends Controller
 
         $this->authorize('send', $reminder);
 
-        $sentMessage = $this->delivery->sendReminder($reminder, $template, $channel, $request->user());
+        $phoneNumber = $this->resolvePhoneNumber($request->validated('phone_number_id'), $reminder);
+        $sentMessage = $this->delivery->sendReminder($reminder, $template, $channel, $request->user(), $phoneNumber);
 
         return $this->successResponse(new SentMessageResource($sentMessage), 'Message sent successfully');
+    }
+
+    /**
+     * Fix #23 Decision 8 — see the identical helper on
+     * ReminderCenterController for the full rationale (never trusts a
+     * client-supplied ID directly; resolved only via the related
+     * Customer's own tenant-scoped `phoneNumbers()` relation).
+     */
+    private function resolvePhoneNumber(?string $phoneNumberId, Reminder $reminder): ?CustomerPhoneNumber
+    {
+        if ($phoneNumberId === null) {
+            return null;
+        }
+
+        $customer = $reminder->relatedCustomer();
+        abort_if($customer === null, 404);
+
+        return $customer->phoneNumbers()->findOrFail($phoneNumberId);
     }
 }

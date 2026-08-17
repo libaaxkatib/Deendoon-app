@@ -16,6 +16,17 @@ class CustomerResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
+            // Fix #23 — additive; `phone` above is unchanged (still the
+            // primary, as a plain string) so older mobile clients that
+            // only read `phone` keep working without any change.
+            'phone_numbers' => $this->whenLoaded(
+                'phoneNumbers',
+                fn () => $this->phoneNumbers->map(fn ($p) => [
+                    'id' => $p->id,
+                    'phone' => $p->phone,
+                    'is_primary' => $p->is_primary,
+                ]),
+            ),
             'address' => $this->address,
             'customer_status' => $this->customer_status,
             'credit_limit' => $this->credit_limit,

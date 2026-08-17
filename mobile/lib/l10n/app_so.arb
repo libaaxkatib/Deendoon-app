@@ -117,6 +117,15 @@
   "loginForgotPasswordLink": "Furaha sirta ah ma xasuusan?",
   "loginSubmitButton": "Gal",
   "loginCreateAccountPrompt": "Akoon ma lihid? Samee Akoon",
+  "authOrDivider": "AMA",
+  "googleLoginButton": "Ku sii wad Google",
+  "googleLoginFailedMessage": "Gelitaanka Google wuu fashilmay. Fadlan isku day mar kale.",
+  "googleLoginNotConfiguredMessage": "Gelitaanka Google hadda lama heli karo.",
+
+  "googleRegisterTitle": "Dhammee Diiwaangelintaada",
+  "googleRegisterInstructions": "Ku dhawaad dhammaad! Geli magaca ganacsigaaga si aad u dhammaystirto abuurista akoonkaaga Deendoon ee {email}.",
+  "googleRegisterPhoneLabel": "Lambarka Taleefanka (Ikhtiyaari)",
+  "googleRegisterSubmitButton": "Dhammee Diiwaangelinta",
 
   "forgotPasswordTitle": "Furaha Sirta ah ma Xasuusan",
   "forgotPasswordInstructions": "Geli iimaylka la xiriira akoonkaaga, waxaanan kuu soo diri doonaa xiriiriye aad ku dib-u-dejiso furahaaga sirta ah.",
@@ -305,6 +314,16 @@
   "addEditCustomerContinueButton": "Sii Wad",
   "addEditCustomerDuplicateTitle": "Nuqul Suurtagal ah",
   "addEditCustomerViewExistingButton": "Fiiri Macmiilka Jira",
+
+  "addEditCustomerPhoneNumbersLabel": "Lambarrada Taleefanka",
+  "addEditCustomerPhonePrimaryBadge": "Aasaasiga ah",
+  "addEditCustomerSetPrimaryButton": "Ka Dhig Aasaasiga ah",
+  "addEditCustomerRemovePhoneButton": "Ka Saar",
+  "addEditCustomerAddPhoneButton": "Ku Dar Taleefan",
+  "addEditCustomerMaxPhoneNumbersMessage": "Waxaad ku dari kartaa ilaa 3 lambar oo taleefan ah.",
+
+  "phoneNumberPickerTitle": "Dooro Lambarka Taleefanka",
+  "phoneNumberPickerContinueButton": "Sii Wad",
 
   "customerDocumentsLoadError": "Dukumentiyada lama soo geli karin.",
   "customerDocumentsEmptyState": "Wali dukumenti ma jiro",

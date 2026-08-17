@@ -167,10 +167,15 @@ class ReminderApi {
   Future<Map<String, dynamic>> renderMessage({
     required String templateId,
     required String reminderId,
+    String? phoneNumberId,
   }) async {
     final response = await _dio.post(
       'messages/render',
-      data: {'template_id': templateId, 'reminder_id': reminderId},
+      data: {
+        'template_id': templateId,
+        'reminder_id': reminderId,
+        'phone_number_id': ?phoneNumberId,
+      },
     );
     return response.data['data'] as Map<String, dynamic>;
   }

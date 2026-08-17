@@ -5,6 +5,7 @@ import '../../../core/models/document_summary.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/customer.dart';
 import '../domain/customer_page.dart';
+import '../domain/customer_phone_number.dart';
 import '../domain/customer_save_result.dart';
 import '../domain/duplicate_warning.dart';
 import '../../../core/models/payment.dart';
@@ -83,6 +84,7 @@ class CustomerApi {
     required String phone,
     String? address,
     required String creditLimit,
+    List<CustomerPhoneNumber>? phoneNumbers,
   }) async {
     final response = await _dio.post(
       'customers',
@@ -91,6 +93,8 @@ class CustomerApi {
         'phone': phone,
         'address': address,
         'credit_limit': creditLimit,
+        if (phoneNumbers != null)
+          'phone_numbers': phoneNumbers.map((p) => p.toJson()).toList(),
       },
     );
     return _saveResultFrom(response.data['data'] as Map<String, dynamic>);
@@ -102,6 +106,7 @@ class CustomerApi {
     required String phone,
     String? address,
     required String creditLimit,
+    List<CustomerPhoneNumber>? phoneNumbers,
   }) async {
     final response = await _dio.put(
       'customers/$id',
@@ -110,6 +115,8 @@ class CustomerApi {
         'phone': phone,
         'address': address,
         'credit_limit': creditLimit,
+        if (phoneNumbers != null)
+          'phone_numbers': phoneNumbers.map((p) => p.toJson()).toList(),
       },
     );
     return _saveResultFrom(response.data['data'] as Map<String, dynamic>);

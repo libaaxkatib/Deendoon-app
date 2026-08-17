@@ -76,6 +76,20 @@ class Customer extends Model
     }
 
     /**
+     * Fix #23 — Multiple Customer Phone Numbers. `customers.phone` remains
+     * a maintained mirror of whichever row here has `is_primary = true`
+     * (see {@see App\Services\CustomerPhoneNumberService}) — every
+     * existing single-phone read path keeps reading `phone` directly and
+     * needs no changes.
+     */
+    public function phoneNumbers(): HasMany
+    {
+        return $this->hasMany(CustomerPhoneNumber::class)
+            ->orderByDesc('is_primary')
+            ->orderBy('created_at');
+    }
+
+    /**
      * BRL-017: Credit Limit minus Outstanding Balance. May be negative;
      * never clamped to zero. bcmath is used to keep this exact, matching
      * 06_Database_Design.md Principle 7 (money is never floating-point).

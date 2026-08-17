@@ -130,6 +130,21 @@
   "loginForgotPasswordLink": "Forgot password?",
   "loginSubmitButton": "Log In",
   "loginCreateAccountPrompt": "Don't have an account? Create Account",
+  "authOrDivider": "OR",
+  "googleLoginButton": "Continue with Google",
+  "googleLoginFailedMessage": "Google sign-in failed. Please try again.",
+  "googleLoginNotConfiguredMessage": "Google sign-in is not available right now.",
+
+  "googleRegisterTitle": "Complete Your Registration",
+  "googleRegisterInstructions": "Almost done! Enter your business name to finish creating your Deendoon account for {email}.",
+  "@googleRegisterInstructions": {
+    "description": "Instructions on the business-name-collection screen shown after a new Google sign-in, before the account is created",
+    "placeholders": {
+      "email": {"type": "String"}
+    }
+  },
+  "googleRegisterPhoneLabel": "Phone Number (Optional)",
+  "googleRegisterSubmitButton": "Complete Registration",
 
   "forgotPasswordTitle": "Forgot Password",
   "forgotPasswordInstructions": "Enter the email associated with your account and we'll send you a link to reset your password.",
@@ -342,6 +357,16 @@
   "addEditCustomerContinueButton": "Continue",
   "addEditCustomerDuplicateTitle": "Possible Duplicate",
   "addEditCustomerViewExistingButton": "View Existing Customer",
+
+  "addEditCustomerPhoneNumbersLabel": "Phone Numbers",
+  "addEditCustomerPhonePrimaryBadge": "Primary",
+  "addEditCustomerSetPrimaryButton": "Set Primary",
+  "addEditCustomerRemovePhoneButton": "Remove",
+  "addEditCustomerAddPhoneButton": "Add Phone",
+  "addEditCustomerMaxPhoneNumbersMessage": "You can add up to 3 phone numbers.",
+
+  "phoneNumberPickerTitle": "Choose Phone Number",
+  "phoneNumberPickerContinueButton": "Continue",
 
   "customerDocumentsLoadError": "Could not load documents.",
   "customerDocumentsEmptyState": "No documents yet",

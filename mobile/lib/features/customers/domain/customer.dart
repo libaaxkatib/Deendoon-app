@@ -1,3 +1,5 @@
+import 'customer_phone_number.dart';
+
 /// Mirrors `App\Http\Resources\CustomerResource` exactly — used for both
 /// the Customer List and Customer Details screens (the backend returns
 /// the identical shape from `GET /customers` and `GET /customers/{id}`).
@@ -9,10 +11,17 @@
 /// `generateDocuments` (including credit limit and status updates, both
 /// authorized via the `update` ability) for a read-only customer, while
 /// `view` stays unrestricted.
+///
+/// Fix #23 — Multiple Customer Phone Numbers: [phone] remains a plain
+/// string (the primary number, kept in sync by the backend) so every
+/// existing read of `customer.phone` keeps working unmodified; [phoneNumbers]
+/// is the additive list a caller reads when it needs to show/choose among
+/// all of the customer's numbers.
 class Customer {
   final String id;
   final String name;
   final String phone;
+  final List<CustomerPhoneNumber> phoneNumbers;
   final String? address;
   final String customerStatus;
   final String creditLimit;
@@ -28,6 +37,7 @@ class Customer {
     required this.id,
     required this.name,
     required this.phone,
+    this.phoneNumbers = const [],
     this.address,
     required this.customerStatus,
     required this.creditLimit,
@@ -46,6 +56,18 @@ class Customer {
     id: json['id'].toString(),
     name: json['name'] as String,
     phone: json['phone'] as String,
+    // Fix #23 — additive; falls back to a single synthesized primary
+    // entry if a response somehow omits `phone_numbers` (defensive only —
+    // every real backend response includes it).
+    phoneNumbers: json['phone_numbers'] != null
+        ? (json['phone_numbers'] as List<dynamic>)
+              .map(
+                (e) => CustomerPhoneNumber.fromJson(e as Map<String, dynamic>),
+              )
+              .toList()
+        : [
+            CustomerPhoneNumber(phone: json['phone'] as String, isPrimary: true),
+          ],
     address: json['address'] as String?,
     customerStatus: json['customer_status'] as String,
     creditLimit: json['credit_limit'] as String,

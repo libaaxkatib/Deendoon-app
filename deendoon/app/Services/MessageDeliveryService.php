@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\DocumentType;
 use App\Enums\MessageChannel;
+use App\Models\CustomerPhoneNumber;
 use App\Models\DemandLetter;
 use App\Models\Invoice;
 use App\Models\MessageTemplate;
@@ -30,11 +31,21 @@ class MessageDeliveryService
         private readonly InternalSmsChannel $sms,
     ) {}
 
-    public function sendReminder(Reminder $reminder, MessageTemplate $template, MessageChannel $channel, User $actor): SentMessage
+    /**
+     * Fix #23 Decision 7/8/10: `$phoneNumber` is an already
+     * ownership-verified selection (the caller resolved and authorized
+     * it — see `ReminderCenterController::send()`/`MessageController`);
+     * when omitted, the customer's primary phone (`recipient_phone`,
+     * mirrored from `customers.phone`) is used. There is no automatic
+     * fallback if the chosen number fails — a distinct, deliberate
+     * decision, not an oversight.
+     */
+    public function sendReminder(Reminder $reminder, MessageTemplate $template, MessageChannel $channel, User $actor, ?CustomerPhoneNumber $phoneNumber = null): SentMessage
     {
-        $rendered = $this->rendering->renderForReminder($template, $reminder);
+        $rendered = $this->rendering->renderForReminder($template, $reminder, $phoneNumber);
+        $recipientPhone = $rendered['recipient_phone'];
 
-        if (empty($rendered['recipient_phone'])) {
+        if (empty($recipientPhone)) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
                 'message' => 'This customer has no phone number on file to send a message to.',
@@ -43,17 +54,17 @@ class MessageDeliveryService
             ], 422));
         }
 
-        return DB::transaction(function () use ($reminder, $template, $channel, $actor, $rendered) {
+        return DB::transaction(function () use ($reminder, $template, $channel, $actor, $rendered, $recipientPhone) {
             $status = match ($channel) {
-                MessageChannel::WhatsApp => $this->whatsApp->deliver($rendered['recipient_phone'], $rendered['rendered_text']),
-                MessageChannel::Sms => $this->sms->deliver($rendered['recipient_phone'], $rendered['rendered_text']),
+                MessageChannel::WhatsApp => $this->whatsApp->deliver($recipientPhone, $rendered['rendered_text']),
+                MessageChannel::Sms => $this->sms->deliver($recipientPhone, $rendered['rendered_text']),
             };
 
             $sentMessage = new SentMessage([
                 'template_id' => $template->id,
                 'reminder_id' => $reminder->id,
                 'channel' => $channel->value,
-                'recipient_phone' => $rendered['recipient_phone'],
+                'recipient_phone' => $recipientPhone,
                 'rendered_text' => $rendered['rendered_text'],
                 'status' => $status,
                 'sent_by_user_id' => (string) $actor->id,

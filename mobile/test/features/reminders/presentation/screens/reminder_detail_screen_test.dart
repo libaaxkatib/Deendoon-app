@@ -7,12 +7,32 @@ import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/cases/data/collection_case_repository.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
+import 'package:mobile/features/customers/domain/customer_phone_number.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
 import 'package:mobile/features/reminders/data/reminder_repository.dart';
 import 'package:mobile/features/reminders/domain/reminder.dart';
 import 'package:mobile/features/reminders/presentation/screens/reminder_detail_screen.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+
+class _FakeUrlLauncher extends UrlLauncherPlatform {
+  final List<String> launchedUrls = [];
+  bool nextResult = true;
+
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> canLaunch(String url) async => true;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    launchedUrls.add(url);
+    return nextResult;
+  }
+}
 
 class _MockReminderRepository extends Mock implements ReminderRepository {}
 
@@ -111,6 +131,27 @@ const _customer = Customer(
   id: '01CUST',
   name: 'Somali Builders',
   phone: '+252612345678',
+  phoneNumbers: [
+    CustomerPhoneNumber(id: 'p1', phone: '+252612345678', isPrimary: true),
+  ],
+  customerStatus: 'good_standing',
+  creditLimit: '5000.00',
+  outstandingBalance: '800.00',
+  remainingCredit: '4200.00',
+  riskLevel: 'low',
+  creditScore: 720,
+  creditScoreBand: 'good',
+  archivedAt: null,
+);
+
+const _customerWithTwoPhones = Customer(
+  id: '01CUST',
+  name: 'Somali Builders',
+  phone: '+252612345678',
+  phoneNumbers: [
+    CustomerPhoneNumber(id: 'p1', phone: '+252612345678', isPrimary: true),
+    CustomerPhoneNumber(id: 'p2', phone: '+252699999999', isPrimary: false),
+  ],
   customerStatus: 'good_standing',
   creditLimit: '5000.00',
   outstandingBalance: '800.00',
@@ -148,9 +189,17 @@ Future<void> _pumpScreen(
       ),
       GoRoute(
         path: '/reminders/1/send',
-        builder: (_, state) => Scaffold(
-          body: Text('Send Screen ${state.uri.queryParameters['channel']}'),
-        ),
+        builder: (_, state) {
+          final channel = state.uri.queryParameters['channel'];
+          final phoneNumberId = state.uri.queryParameters['phoneNumberId'];
+          return Scaffold(
+            body: Text(
+              phoneNumberId != null
+                  ? 'Send Screen $channel $phoneNumberId'
+                  : 'Send Screen $channel',
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/cases/:id',
@@ -251,7 +300,10 @@ void main() {
         await tester.tap(find.text('WhatsApp'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Send Screen whatsapp'), findsOneWidget);
+        // Fix #23: even with only one phone number, its id is still
+        // passed through — see "Fix #23: phone number chooser" below for
+        // the multi-number case.
+        expect(find.text('Send Screen whatsapp p1'), findsOneWidget);
       },
     );
 
@@ -272,9 +324,133 @@ void main() {
         await tester.tap(find.text('SMS'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Send Screen sms'), findsOneWidget);
+        expect(find.text('Send Screen sms p1'), findsOneWidget);
       },
     );
+
+    group('Fix #23: phone number chooser', () {
+      late _FakeUrlLauncher fakeLauncher;
+      late UrlLauncherPlatform originalPlatform;
+
+      setUp(() {
+        originalPlatform = UrlLauncherPlatform.instance;
+        fakeLauncher = _FakeUrlLauncher();
+        UrlLauncherPlatform.instance = fakeLauncher;
+      });
+
+      tearDown(() {
+        UrlLauncherPlatform.instance = originalPlatform;
+      });
+
+      testWidgets(
+        'tapping Call launches the dialer directly when the customer has only one phone number',
+        (tester) async {
+          when(
+            () => mockReminderRepository.fetchReminder('1'),
+          ).thenAnswer((_) async => _followUpReminder);
+
+          await _pumpScreen(
+            tester,
+            reminderRepository: mockReminderRepository,
+            customerRepository: mockCustomerRepository,
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Call'));
+          await tester.pumpAndSettle();
+
+          expect(fakeLauncher.launchedUrls, ['tel:+252612345678']);
+          expect(find.text('Choose Phone Number'), findsNothing);
+        },
+      );
+
+      testWidgets(
+        'tapping Call with multiple phone numbers shows a chooser, and launches the selected one',
+        (tester) async {
+          when(
+            () => mockCustomerRepository.fetchCustomer('01CUST'),
+          ).thenAnswer((_) async => _customerWithTwoPhones);
+          when(
+            () => mockReminderRepository.fetchReminder('1'),
+          ).thenAnswer((_) async => _followUpReminder);
+
+          await _pumpScreen(
+            tester,
+            reminderRepository: mockReminderRepository,
+            customerRepository: mockCustomerRepository,
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Call'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Choose Phone Number'), findsOneWidget);
+          expect(find.text('+252612345678'), findsOneWidget);
+          expect(find.text('+252699999999'), findsOneWidget);
+
+          await tester.tap(find.text('+252699999999'));
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+
+          expect(fakeLauncher.launchedUrls, ['tel:+252699999999']);
+        },
+      );
+
+      testWidgets(
+        'tapping WhatsApp with multiple phone numbers passes the chosen phoneNumberId through',
+        (tester) async {
+          when(
+            () => mockCustomerRepository.fetchCustomer('01CUST'),
+          ).thenAnswer((_) async => _customerWithTwoPhones);
+          when(
+            () => mockReminderRepository.fetchReminder('1'),
+          ).thenAnswer((_) async => _followUpReminder);
+
+          await _pumpScreen(
+            tester,
+            reminderRepository: mockReminderRepository,
+            customerRepository: mockCustomerRepository,
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('WhatsApp'));
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('+252699999999'));
+          await tester.tap(find.text('Continue'));
+          await tester.pumpAndSettle();
+
+          expect(find.text('Send Screen whatsapp p2'), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        'cancelling the chooser (no selection made) does not navigate to the send screen',
+        (tester) async {
+          when(
+            () => mockCustomerRepository.fetchCustomer('01CUST'),
+          ).thenAnswer((_) async => _customerWithTwoPhones);
+          when(
+            () => mockReminderRepository.fetchReminder('1'),
+          ).thenAnswer((_) async => _followUpReminder);
+
+          await _pumpScreen(
+            tester,
+            reminderRepository: mockReminderRepository,
+            customerRepository: mockCustomerRepository,
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('WhatsApp'));
+          await tester.pumpAndSettle();
+          // Dismiss the sheet without choosing (tap the scrim above it).
+          await tester.tapAt(const Offset(20, 20));
+          await tester.pumpAndSettle();
+
+          expect(find.textContaining('Send Screen'), findsNothing);
+        },
+      );
+    });
 
     testWidgets(
       'Mark as Completed is disabled once the reminder is already completed',

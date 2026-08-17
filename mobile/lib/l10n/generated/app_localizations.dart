@@ -692,6 +692,54 @@ abstract class AppLocalizations {
   /// **'Don\'t have an account? Create Account'**
   String get loginCreateAccountPrompt;
 
+  /// No description provided for @authOrDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get authOrDivider;
+
+  /// No description provided for @googleLoginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get googleLoginButton;
+
+  /// No description provided for @googleLoginFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed. Please try again.'**
+  String get googleLoginFailedMessage;
+
+  /// No description provided for @googleLoginNotConfiguredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in is not available right now.'**
+  String get googleLoginNotConfiguredMessage;
+
+  /// No description provided for @googleRegisterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Your Registration'**
+  String get googleRegisterTitle;
+
+  /// Instructions on the business-name-collection screen shown after a new Google sign-in, before the account is created
+  ///
+  /// In en, this message translates to:
+  /// **'Almost done! Enter your business name to finish creating your Deendoon account for {email}.'**
+  String googleRegisterInstructions(String email);
+
+  /// No description provided for @googleRegisterPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number (Optional)'**
+  String get googleRegisterPhoneLabel;
+
+  /// No description provided for @googleRegisterSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Registration'**
+  String get googleRegisterSubmitButton;
+
   /// No description provided for @forgotPasswordTitle.
   ///
   /// In en, this message translates to:
@@ -1663,6 +1711,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View Existing Customer'**
   String get addEditCustomerViewExistingButton;
+
+  /// No description provided for @addEditCustomerPhoneNumbersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Numbers'**
+  String get addEditCustomerPhoneNumbersLabel;
+
+  /// No description provided for @addEditCustomerPhonePrimaryBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary'**
+  String get addEditCustomerPhonePrimaryBadge;
+
+  /// No description provided for @addEditCustomerSetPrimaryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Primary'**
+  String get addEditCustomerSetPrimaryButton;
+
+  /// No description provided for @addEditCustomerRemovePhoneButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get addEditCustomerRemovePhoneButton;
+
+  /// No description provided for @addEditCustomerAddPhoneButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Phone'**
+  String get addEditCustomerAddPhoneButton;
+
+  /// No description provided for @addEditCustomerMaxPhoneNumbersMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add up to 3 phone numbers.'**
+  String get addEditCustomerMaxPhoneNumbersMessage;
+
+  /// No description provided for @phoneNumberPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Phone Number'**
+  String get phoneNumberPickerTitle;
+
+  /// No description provided for @phoneNumberPickerContinueButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get phoneNumberPickerContinueButton;
 
   /// No description provided for @customerDocumentsLoadError.
   ///

@@ -7,6 +7,7 @@ import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/core/models/document_summary.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
+import 'package:mobile/features/customers/domain/customer_phone_number.dart';
 import 'package:mobile/core/models/payment.dart';
 import 'package:mobile/features/customers/presentation/screens/customer_detail_screen.dart';
 import 'package:mobile/l10n/generated/app_localizations.dart';
@@ -27,6 +28,24 @@ const _customer = Customer(
   id: '1',
   name: 'Somali Builders',
   phone: '+252612345678',
+  customerStatus: 'good_standing',
+  creditLimit: '5000.00',
+  outstandingBalance: '800.00',
+  remainingCredit: '4200.00',
+  riskLevel: 'low',
+  creditScore: 720,
+  creditScoreBand: 'good',
+  archivedAt: null,
+);
+
+const _customerWithTwoPhones = Customer(
+  id: '1',
+  name: 'Somali Builders',
+  phone: '+252612345678',
+  phoneNumbers: [
+    CustomerPhoneNumber(id: 'p1', phone: '+252612345678', isPrimary: true),
+    CustomerPhoneNumber(id: 'p2', phone: '+252699999999', isPrimary: false),
+  ],
   customerStatus: 'good_standing',
   creditLimit: '5000.00',
   outstandingBalance: '800.00',
@@ -118,6 +137,24 @@ void main() {
       // backend endpoint scopes either to a single customer.
       expect(find.textContaining('Active Cases'), findsNothing);
       expect(find.textContaining('Follow-up'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Fix #23: shows every phone number when the customer has more than one',
+    (tester) async {
+      when(
+        () => mockRepository.fetchCustomer('1'),
+      ).thenAnswer((_) async => _customerWithTwoPhones);
+      when(
+        () => mockRepository.fetchPayments('1'),
+      ).thenAnswer((_) async => []);
+
+      await _pumpScreen(tester, mockRepository: mockRepository);
+      await tester.pumpAndSettle();
+
+      expect(find.text('+252612345678'), findsOneWidget);
+      expect(find.text('+252699999999'), findsOneWidget);
     },
   );
 

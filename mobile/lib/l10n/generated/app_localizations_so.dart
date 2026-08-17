@@ -319,6 +319,34 @@ class AppLocalizationsSo extends AppLocalizations {
   String get loginCreateAccountPrompt => 'Akoon ma lihid? Samee Akoon';
 
   @override
+  String get authOrDivider => 'AMA';
+
+  @override
+  String get googleLoginButton => 'Ku sii wad Google';
+
+  @override
+  String get googleLoginFailedMessage =>
+      'Gelitaanka Google wuu fashilmay. Fadlan isku day mar kale.';
+
+  @override
+  String get googleLoginNotConfiguredMessage =>
+      'Gelitaanka Google hadda lama heli karo.';
+
+  @override
+  String get googleRegisterTitle => 'Dhammee Diiwaangelintaada';
+
+  @override
+  String googleRegisterInstructions(String email) {
+    return 'Ku dhawaad dhammaad! Geli magaca ganacsigaaga si aad u dhammaystirto abuurista akoonkaaga Deendoon ee $email.';
+  }
+
+  @override
+  String get googleRegisterPhoneLabel => 'Lambarka Taleefanka (Ikhtiyaari)';
+
+  @override
+  String get googleRegisterSubmitButton => 'Dhammee Diiwaangelinta';
+
+  @override
   String get forgotPasswordTitle => 'Furaha Sirta ah ma Xasuusan';
 
   @override
@@ -862,6 +890,31 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get addEditCustomerViewExistingButton => 'Fiiri Macmiilka Jira';
+
+  @override
+  String get addEditCustomerPhoneNumbersLabel => 'Lambarrada Taleefanka';
+
+  @override
+  String get addEditCustomerPhonePrimaryBadge => 'Aasaasiga ah';
+
+  @override
+  String get addEditCustomerSetPrimaryButton => 'Ka Dhig Aasaasiga ah';
+
+  @override
+  String get addEditCustomerRemovePhoneButton => 'Ka Saar';
+
+  @override
+  String get addEditCustomerAddPhoneButton => 'Ku Dar Taleefan';
+
+  @override
+  String get addEditCustomerMaxPhoneNumbersMessage =>
+      'Waxaad ku dari kartaa ilaa 3 lambar oo taleefan ah.';
+
+  @override
+  String get phoneNumberPickerTitle => 'Dooro Lambarka Taleefanka';
+
+  @override
+  String get phoneNumberPickerContinueButton => 'Sii Wad';
 
   @override
   String get customerDocumentsLoadError => 'Dukumentiyada lama soo geli karin.';

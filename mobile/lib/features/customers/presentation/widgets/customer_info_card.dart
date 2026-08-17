@@ -9,6 +9,7 @@ import '../../../../core/widgets/risk_badge.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/customer.dart';
+import '../../domain/customer_phone_number.dart';
 
 /// Customer Information + Contact Details + Outstanding Balance + Credit
 /// Limit + Risk Level — everything `GET /customers/{id}` (`CustomerResource`)
@@ -51,12 +52,27 @@ class CustomerInfoCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      customer.phone,
-                      style: AppTypography.caption.copyWith(
-                        color: context.colors.textSecondary,
+                    // Fix #23 — every phone number, primary first (the
+                    // backend orders the relation that way), instead of
+                    // just the single `phone` string, so the detail
+                    // screen is where all of a customer's numbers are
+                    // visible. Falls back to `phone` alone if the list is
+                    // ever empty (e.g. a `Customer` built directly rather
+                    // than parsed from a real API response).
+                    for (final phoneNumber in customer.phoneNumbers.isNotEmpty
+                        ? customer.phoneNumbers
+                        : [
+                            CustomerPhoneNumber(
+                              phone: customer.phone,
+                              isPrimary: true,
+                            ),
+                          ])
+                      Text(
+                        phoneNumber.phone,
+                        style: AppTypography.caption.copyWith(
+                          color: context.colors.textSecondary,
+                        ),
                       ),
-                    ),
                     if (customer.address != null &&
                         customer.address!.trim().isNotEmpty) ...[
                       const SizedBox(height: 2),

@@ -17,6 +17,7 @@ use App\Services\AdminSettingsService;
 use App\Services\AuditLogService;
 use App\Services\CreditScoreService;
 use App\Services\CustomerDuplicateDetectionService;
+use App\Services\CustomerPhoneNumberService;
 use App\Services\CustomerReadOnlyService;
 use App\Services\DocumentService;
 use App\Services\RiskLevelService;
@@ -38,13 +39,14 @@ class CustomerController extends Controller
         private readonly CustomerReadOnlyService $customerReadOnly,
         private readonly AdminSettingsService $adminSettings,
         private readonly DocumentService $documents,
+        private readonly CustomerPhoneNumberService $phoneNumbers,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Customer::class);
 
-        $query = Customer::query();
+        $query = Customer::query()->with('phoneNumbers');
 
         if ($request->boolean('includeArchived')) {
             $query->withTrashed();
@@ -133,6 +135,17 @@ class CustomerController extends Controller
                 'credit_limit' => $creditLimit,
             ]);
 
+            // Fix #23 — reconciles customer_phone_numbers from either the
+            // new `phone_numbers` array or (when absent) the legacy
+            // `phone` value alone; also mirrors the primary phone back
+            // into $customer->phone, so this always matches what was
+            // actually saved.
+            $entries = $this->phoneNumbers->normalizeEntries([
+                'phone' => $request->validated('phone'),
+                'phone_numbers' => $request->input('phone_numbers'),
+            ]);
+            $this->phoneNumbers->reconcile($customer, $entries);
+
             $this->auditLog->record(
                 action: AuditAction::Created,
                 entityType: 'customer',
@@ -151,7 +164,7 @@ class CustomerController extends Controller
         $this->customerReadOnly->recalculate($request->user()->tenant, $request->user());
 
         return $this->successResponse([
-            'customer' => new CustomerResource($customer->fresh()),
+            'customer' => new CustomerResource($customer->fresh()->load('phoneNumbers')),
             'warning' => $duplicate ? $this->duplicateWarning($duplicate) : null,
         ], 'Customer created successfully', 201);
     }
@@ -171,15 +184,27 @@ class CustomerController extends Controller
             $this->creditScore->recalculate($customer);
         }
 
-        return $this->successResponse(new CustomerResource($customer));
+        return $this->successResponse(new CustomerResource($customer->load('phoneNumbers')));
     }
 
     public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
         $this->authorize('update', $customer);
 
+        // Fix #23 — the canonical "new phone" used for both duplicate
+        // detection and the actual save is the normalized primary entry,
+        // not the raw `phone` field directly: when `phone_numbers` is
+        // present it takes precedence (kept internally consistent with
+        // whichever entry is marked primary), matching exactly what
+        // reconcile() below will actually persist.
+        $entries = $this->phoneNumbers->normalizeEntries([
+            'phone' => $request->validated('phone'),
+            'phone_numbers' => $request->input('phone_numbers'),
+        ]);
+        $newPrimaryPhone = collect($entries)->firstWhere('is_primary', true)['phone'] ?? $request->validated('phone');
+
         $identifyingFieldsChanged = $customer->name !== $request->validated('name')
-            || $customer->phone !== $request->validated('phone');
+            || $customer->phone !== $newPrimaryPhone;
 
         $creditLimitChanged = bccomp((string) $customer->credit_limit, (string) $request->validated('credit_limit'), 2) !== 0;
 
@@ -187,18 +212,20 @@ class CustomerController extends Controller
             ? $this->duplicateDetection->findPotentialDuplicate(
                 tenantId: $customer->tenant_id,
                 name: $request->validated('name'),
-                phone: $request->validated('phone'),
+                phone: $newPrimaryPhone,
                 excludeCustomerId: $customer->id,
             )
             : null;
 
-        DB::transaction(function () use ($request, $customer, $creditLimitChanged) {
+        DB::transaction(function () use ($request, $customer, $creditLimitChanged, $entries, $newPrimaryPhone) {
             $customer->update([
                 'name' => $request->validated('name'),
-                'phone' => $request->validated('phone'),
+                'phone' => $newPrimaryPhone,
                 'address' => $request->validated('address'),
                 'credit_limit' => $request->validated('credit_limit'),
             ]);
+
+            $this->phoneNumbers->reconcile($customer, $entries);
 
             $this->auditLog->record(
                 action: $creditLimitChanged ? AuditAction::CreditLimitChanged : AuditAction::Edited,
@@ -209,7 +236,7 @@ class CustomerController extends Controller
         });
 
         return $this->successResponse([
-            'customer' => new CustomerResource($customer->fresh()),
+            'customer' => new CustomerResource($customer->fresh()->load('phoneNumbers')),
             'warning' => $duplicate ? $this->duplicateWarning($duplicate) : null,
         ], 'Customer updated successfully');
     }
@@ -260,7 +287,7 @@ class CustomerController extends Controller
         // it lands in created_at order relative to the current limit.
         $this->customerReadOnly->recalculate($request->user()->tenant, $request->user());
 
-        return $this->successResponse(new CustomerResource($customer->fresh()), 'Customer restored successfully');
+        return $this->successResponse(new CustomerResource($customer->fresh()->load('phoneNumbers')), 'Customer restored successfully');
     }
 
     public function updateStatus(UpdateCustomerStatusRequest $request, Customer $customer): JsonResponse
@@ -280,14 +307,14 @@ class CustomerController extends Controller
             );
         });
 
-        return $this->successResponse(new CustomerResource($customer->fresh()), 'Customer status updated successfully');
+        return $this->successResponse(new CustomerResource($customer->fresh()->load('phoneNumbers')), 'Customer status updated successfully');
     }
 
     public function creditProfile(Customer $customer): JsonResponse
     {
         $this->authorize('view', $customer);
 
-        return $this->successResponse(new CustomerResource($customer));
+        return $this->successResponse(new CustomerResource($customer->load('phoneNumbers')));
     }
 
     public function updateCreditLimit(UpdateCustomerCreditLimitRequest $request, Customer $customer): JsonResponse
@@ -307,7 +334,7 @@ class CustomerController extends Controller
             );
         });
 
-        return $this->successResponse(new CustomerResource($customer->fresh()), 'Credit limit updated successfully');
+        return $this->successResponse(new CustomerResource($customer->fresh()->load('phoneNumbers')), 'Credit limit updated successfully');
     }
 
     /**

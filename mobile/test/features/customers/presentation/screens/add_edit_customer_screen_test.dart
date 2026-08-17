@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/localization/somali_fallback_delegates.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
+import 'package:mobile/features/customers/domain/customer_phone_number.dart';
 import 'package:mobile/features/customers/domain/duplicate_warning.dart';
 import 'package:mobile/features/customers/presentation/screens/add_edit_customer_screen.dart';
 import 'package:mobile/features/quick_actions/domain/customer_draft.dart';
@@ -27,6 +28,9 @@ const _existingCustomer = Customer(
   id: '1',
   name: 'Somali Builders',
   phone: '+252612345678',
+  phoneNumbers: [
+    CustomerPhoneNumber(id: 'p1', phone: '+252612345678', isPrimary: true),
+  ],
   customerStatus: 'good_standing',
   creditLimit: '5000.00',
   outstandingBalance: '800.00',
@@ -34,6 +38,24 @@ const _existingCustomer = Customer(
   riskLevel: 'low',
   creditScore: 720,
   creditScoreBand: 'good',
+  archivedAt: null,
+);
+
+const _existingCustomerWithTwoPhones = Customer(
+  id: '2',
+  name: 'Hodan Store',
+  phone: '+252611111111',
+  phoneNumbers: [
+    CustomerPhoneNumber(id: 'p1', phone: '+252611111111', isPrimary: true),
+    CustomerPhoneNumber(id: 'p2', phone: '+252622222222', isPrimary: false),
+  ],
+  customerStatus: 'active',
+  creditLimit: '3000.00',
+  outstandingBalance: '0.00',
+  remainingCredit: '3000.00',
+  riskLevel: null,
+  creditScore: null,
+  creditScoreBand: null,
   archivedAt: null,
 );
 
@@ -99,6 +121,7 @@ void main() {
           phone: any(named: 'phone'),
           address: any(named: 'address'),
           creditLimit: any(named: 'creditLimit'),
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       );
     });
@@ -118,6 +141,7 @@ void main() {
           phone: '+252611111111',
           address: null,
           creditLimit: '1000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).thenAnswer((_) async => (customer: _existingCustomer, warning: null));
 
@@ -146,6 +170,7 @@ void main() {
           phone: '+252611111111',
           address: null,
           creditLimit: '1000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).called(1);
       // Popped back to the router's home route (no Add Customer screen left).
@@ -204,6 +229,7 @@ void main() {
             phone: '+252611111111',
             address: null,
             creditLimit: '1000.00',
+            phoneNumbers: any(named: 'phoneNumbers'),
           ),
         ).thenAnswer(
           (_) async => (customer: _existingCustomer, warning: warning),
@@ -270,6 +296,7 @@ void main() {
           phone: '+252612345678',
           address: null,
           creditLimit: '9000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).thenAnswer((_) async => (customer: _existingCustomer, warning: null));
 
@@ -290,6 +317,7 @@ void main() {
           phone: '+252612345678',
           address: null,
           creditLimit: '9000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).called(1);
       verifyNever(
@@ -382,6 +410,7 @@ void main() {
             phone: any(named: 'phone'),
             address: any(named: 'address'),
             creditLimit: any(named: 'creditLimit'),
+            phoneNumbers: any(named: 'phoneNumbers'),
           ),
         );
         expect(find.text('Draft: New Customer'), findsOneWidget);
@@ -411,6 +440,7 @@ void main() {
           phone: '+252611111111',
           address: null,
           creditLimit: '1000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).thenAnswer((_) async => (customer: _existingCustomer, warning: null));
 
@@ -429,9 +459,18 @@ void main() {
         find.widgetWithText(TextFormField, 'Credit Limit'),
         '1000.00',
       );
+      await tester.pump();
 
-      await tester.ensureVisible(
+      // Fix #23 made this form taller (the multi-phone editor), so the
+      // submit button now starts out beyond the ListView's cache extent
+      // and isn't built into the tree at all yet — plain `ensureVisible`
+      // can't scroll to a widget that doesn't exist. `scrollUntilVisible`
+      // scrolls incrementally and re-checks after each step, which
+      // handles that correctly.
+      await tester.scrollUntilVisible(
         find.widgetWithText(ElevatedButton, 'Add Customer'),
+        200,
+        scrollable: find.byType(Scrollable).first,
       );
       await tester.tap(find.widgetWithText(ElevatedButton, 'Add Customer'));
       await tester.pumpAndSettle();
@@ -442,9 +481,215 @@ void main() {
           phone: '+252611111111',
           address: null,
           creditLimit: '1000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).called(1);
       expect(tester.takeException(), isNull);
     },
   );
+
+  group('Multiple phone numbers (Fix #23)', () {
+    testWidgets(
+      'Add Customer starts with exactly one phone field and no Remove button',
+      (tester) async {
+        await _pumpScreen(tester, repository: mockRepository);
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextFormField, 'Phone'), findsOneWidget);
+        expect(find.byIcon(Icons.close), findsNothing);
+        expect(find.text('Add Phone'), findsOneWidget);
+      },
+    );
+
+    testWidgets('Add Phone adds a second, non-primary phone field', (
+      tester,
+    ) async {
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add Phone'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextFormField, 'Phone'), findsNWidgets(2));
+      expect(find.text('Primary'), findsOneWidget);
+      expect(find.text('Set Primary'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsNWidgets(2));
+    });
+
+    testWidgets(
+      'a third phone can be added but a fourth cannot — Add Phone is replaced by the max-reached message',
+      (tester) async {
+        await _pumpScreen(tester, repository: mockRepository);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Add Phone'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Add Phone'));
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextFormField, 'Phone'), findsNWidgets(3));
+        expect(find.text('Add Phone'), findsNothing);
+        expect(
+          find.text('You can add up to 3 phone numbers.'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('Set Primary moves the Primary badge to the chosen entry', (
+      tester,
+    ) async {
+      await _pumpScreen(tester, repository: mockRepository);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Phone'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Set Primary'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Set Primary'), findsOneWidget); // now on the other row
+      expect(find.text('Primary'), findsOneWidget);
+    });
+
+    testWidgets(
+      'saving submits phoneNumbers with the chosen primary and the entered secondary number',
+      (tester) async {
+        when(
+          () => mockRepository.checkDuplicateCustomer(
+            name: any(named: 'name'),
+            phone: any(named: 'phone'),
+          ),
+        ).thenAnswer((_) async => null);
+        when(
+          () => mockRepository.createCustomer(
+            name: any(named: 'name'),
+            phone: any(named: 'phone'),
+            address: any(named: 'address'),
+            creditLimit: any(named: 'creditLimit'),
+            phoneNumbers: any(named: 'phoneNumbers'),
+          ),
+        ).thenAnswer((_) async => (customer: _existingCustomer, warning: null));
+
+        await _pumpScreen(tester, repository: mockRepository);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Name'),
+          'New Customer',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Phone').at(0),
+          '+252611111111',
+        );
+        await tester.tap(find.text('Add Phone'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Phone').at(1),
+          '+252622222222',
+        );
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Credit Limit'),
+          '1000.00',
+        );
+
+        await tester.scrollUntilVisible(
+          find.widgetWithText(ElevatedButton, 'Add Customer'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Add Customer'));
+        await tester.pumpAndSettle();
+
+        final captured = verify(
+          () => mockRepository.createCustomer(
+            name: 'New Customer',
+            phone: '+252611111111',
+            address: null,
+            creditLimit: '1000.00',
+            phoneNumbers: captureAny(named: 'phoneNumbers'),
+          ),
+        ).captured;
+        final phoneNumbers = captured.single as List<CustomerPhoneNumber>;
+        expect(phoneNumbers, hasLength(2));
+        expect(phoneNumbers[0].phone, '+252611111111');
+        expect(phoneNumbers[0].isPrimary, isTrue);
+        expect(phoneNumbers[1].phone, '+252622222222');
+        expect(phoneNumbers[1].isPrimary, isFalse);
+      },
+    );
+
+    testWidgets(
+      'removing the primary entry promotes the remaining one to primary',
+      (tester) async {
+        await _pumpScreen(tester, repository: mockRepository);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Add Phone'));
+        await tester.pumpAndSettle();
+
+        // Row 0 is primary; remove it via its Remove (close) icon.
+        await tester.tap(find.byIcon(Icons.close).first);
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextFormField, 'Phone'), findsOneWidget);
+        expect(find.text('Primary'), findsOneWidget);
+        // Only one phone left — Remove is hidden again.
+        expect(find.byIcon(Icons.close), findsNothing);
+      },
+    );
+
+    testWidgets('Edit Customer prefills every existing phone number', (
+      tester,
+    ) async {
+      when(
+        () => mockRepository.fetchCustomer('2'),
+      ).thenAnswer((_) async => _existingCustomerWithTwoPhones);
+
+      await _pumpScreen(tester, repository: mockRepository, customerId: '2');
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextFormField, 'Phone'), findsNWidgets(2));
+      expect(find.text('+252611111111'), findsOneWidget);
+      expect(find.text('+252622222222'), findsOneWidget);
+      expect(find.text('Primary'), findsOneWidget);
+    });
+
+    testWidgets(
+      'saving an edit with an existing phone id updates rather than duplicating it',
+      (tester) async {
+        when(
+          () => mockRepository.fetchCustomer('2'),
+        ).thenAnswer((_) async => _existingCustomerWithTwoPhones);
+        when(
+          () => mockRepository.updateCustomer(
+            id: '2',
+            name: 'Hodan Store',
+            phone: '+252611111111',
+            address: null,
+            creditLimit: '3000.00',
+            phoneNumbers: any(named: 'phoneNumbers'),
+          ),
+        ).thenAnswer(
+          (_) async => (customer: _existingCustomerWithTwoPhones, warning: null),
+        );
+
+        await _pumpScreen(tester, repository: mockRepository, customerId: '2');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Save Changes'));
+        await tester.pumpAndSettle();
+
+        final captured = verify(
+          () => mockRepository.updateCustomer(
+            id: '2',
+            name: 'Hodan Store',
+            phone: '+252611111111',
+            address: null,
+            creditLimit: '3000.00',
+            phoneNumbers: captureAny(named: 'phoneNumbers'),
+          ),
+        ).captured;
+        final phoneNumbers = captured.single as List<CustomerPhoneNumber>;
+        expect(phoneNumbers.map((p) => p.id), containsAll(['p1', 'p2']));
+      },
+    );
+  });
 }

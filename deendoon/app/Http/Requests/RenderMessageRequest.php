@@ -23,6 +23,13 @@ class RenderMessageRequest extends FormRequest
         return [
             'template_id' => ['required', 'string'],
             'reminder_id' => ['required', 'string'],
+            // Fix #23 Decision 8 — optional; when omitted, the customer's
+            // primary phone is used (Decision 7). This is the endpoint the
+            // mobile Message Preview screen actually calls for both
+            // WhatsApp and SMS — resolved and ownership-verified
+            // server-side in the controller, never trusted as a raw
+            // phone string.
+            'phone_number_id' => ['nullable', 'string'],
         ];
     }
 }

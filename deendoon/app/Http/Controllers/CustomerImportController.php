@@ -13,6 +13,7 @@ use App\Models\ImportRow;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\CustomerDuplicateDetectionService;
+use App\Services\CustomerPhoneNumberService;
 use App\Services\CustomerReadOnlyService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +31,7 @@ class CustomerImportController extends Controller
         private readonly CustomerDuplicateDetectionService $duplicateDetection,
         private readonly AuditLogService $auditLog,
         private readonly CustomerReadOnlyService $customerReadOnly,
+        private readonly CustomerPhoneNumberService $phoneNumbers,
     ) {}
 
     /**
@@ -41,13 +43,17 @@ class CustomerImportController extends Controller
      * (rows + headings) rather than introducing a dedicated Export class
      * for what is structurally the same concern — one example row shows
      * the expected format without inventing any new field.
+     *
+     * Fix #23 Decision 11: `Phone` became `Primary Phone`/`Secondary
+     * Phone` (secondary optional) — a third phone isn't importable, only
+     * addable later from Customer Edit.
      */
     public function template(): BinaryFileResponse
     {
         $this->authorize('import', Customer::class);
 
-        $headings = ['Name', 'Phone', 'Credit Limit'];
-        $exampleRow = collect([['Jane Trader', '+254712345678', '5000']]);
+        $headings = ['Name', 'Primary Phone', 'Secondary Phone', 'Credit Limit'];
+        $exampleRow = collect([['Jane Trader', '+254712345678', '', '5000']]);
 
         return Excel::download(new ReportExport($exampleRow, $headings), 'customer-import-template.xlsx');
     }
@@ -85,20 +91,29 @@ class CustomerImportController extends Controller
             $rowNumber = $index + 1;
 
             $name = trim((string) ($sourceRow['name'] ?? ''));
-            $phone = trim((string) ($sourceRow['phone'] ?? ''));
+            // Fix #23 Decision 11: `primary_phone` is the current column;
+            // a file still using the older `phone` header is accepted as
+            // the primary phone rather than rejected outright.
+            $primaryPhone = trim((string) ($sourceRow['primary_phone'] ?? $sourceRow['phone'] ?? ''));
+            $secondaryPhone = trim((string) ($sourceRow['secondary_phone'] ?? ''));
             $creditLimit = $sourceRow['credit_limit'] ?? null;
 
-            $errors = $this->validateRow($name, $phone, $creditLimit);
+            $errors = $this->validateRow($name, $primaryPhone, $creditLimit);
             $isValid = empty($errors);
 
             $duplicate = $isValid
-                ? $this->duplicateDetection->findPotentialDuplicate($user->tenant_id, $name, $phone)
+                ? $this->duplicateDetection->findPotentialDuplicate($user->tenant_id, $name, $primaryPhone)
                 : null;
 
             $importRow = ImportRow::create([
                 'batch_id' => $batch->id,
                 'row_number' => $rowNumber,
-                'row_data' => ['name' => $name, 'phone' => $phone, 'credit_limit' => $creditLimit],
+                'row_data' => [
+                    'name' => $name,
+                    'primary_phone' => $primaryPhone,
+                    'secondary_phone' => $secondaryPhone !== '' ? $secondaryPhone : null,
+                    'credit_limit' => $creditLimit,
+                ],
                 'validation_status' => $isValid ? 'valid' : 'invalid',
                 'validation_errors' => $isValid ? null : $errors,
                 'duplicate_match_customer_id' => $duplicate?->id,
@@ -208,9 +223,9 @@ class CustomerImportController extends Controller
 
             $customer->update([
                 'name' => $data['name'],
-                'phone' => $data['phone'],
                 'credit_limit' => $data['credit_limit'],
             ]);
+            $this->phoneNumbers->upsertFromImport($customer, $data['primary_phone'], $data['secondary_phone'] ?? null);
 
             $this->auditLog->record(AuditAction::Edited, 'customer', $customer->id, $user);
             $row->update(['resolution' => 'update', 'resulting_customer_id' => $customer->id]);
@@ -231,10 +246,11 @@ class CustomerImportController extends Controller
 
         $customer = Customer::create([
             'name' => $data['name'],
-            'phone' => $data['phone'],
+            'phone' => $data['primary_phone'],
             'customer_status' => 'active',
             'credit_limit' => $data['credit_limit'],
         ]);
+        $this->phoneNumbers->upsertFromImport($customer, $data['primary_phone'], $data['secondary_phone'] ?? null);
 
         if ($customerCount !== null) {
             $customerCount++;
@@ -249,7 +265,7 @@ class CustomerImportController extends Controller
     /**
      * @return array<int, string>
      */
-    private function validateRow(string $name, string $phone, mixed $creditLimit): array
+    private function validateRow(string $name, string $primaryPhone, mixed $creditLimit): array
     {
         $errors = [];
 
@@ -257,8 +273,8 @@ class CustomerImportController extends Controller
             $errors[] = 'name is required';
         }
 
-        if ($phone === '') {
-            $errors[] = 'phone is required';
+        if ($primaryPhone === '') {
+            $errors[] = 'primary_phone is required';
         }
 
         if ($creditLimit === null || $creditLimit === '' || ! is_numeric($creditLimit) || (float) $creditLimit < 0) {

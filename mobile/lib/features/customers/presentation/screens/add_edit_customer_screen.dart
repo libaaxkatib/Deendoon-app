@@ -6,9 +6,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/deendoon_colors.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../quick_actions/domain/customer_draft.dart';
+import '../../domain/customer_phone_number.dart';
 import '../../domain/duplicate_warning.dart';
 import '../providers/customer_actions.dart';
 import '../providers/customer_detail_providers.dart';
@@ -27,6 +29,13 @@ import '../providers/customer_detail_providers.dart';
 /// return an optional possible-duplicate `warning` (BRL-013) alongside the
 /// saved customer — surfaced here as a post-save dialog, never blocking
 /// the save itself.
+///
+/// Fix #23 — Multiple Customer Phone Numbers: the phone field becomes a
+/// repeatable 1-3 entry editor (add/remove/set-primary) for a real
+/// create/edit. The Add Case wizard's `deferSubmit` step deliberately
+/// keeps the original single-phone field — extending it to multi-phone
+/// was never part of the approved decisions, and `CustomerDraft` mirrors
+/// `StoreCustomerRequest`'s single-`phone` shape by design.
 class AddEditCustomerScreen extends ConsumerStatefulWidget {
   final String? customerId;
 
@@ -49,14 +58,30 @@ class AddEditCustomerScreen extends ConsumerStatefulWidget {
       _AddEditCustomerScreenState();
 }
 
+/// A single row in the multi-phone editor. [id] is null for a phone the
+/// user has just added locally and not yet saved.
+class _PhoneEntry {
+  final String? id;
+  final TextEditingController controller;
+  bool isPrimary;
+
+  _PhoneEntry({this.id, required String phone, required this.isPrimary})
+    : controller = TextEditingController(text: phone);
+}
+
 class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
   bool get _isEdit => widget.customerId != null;
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  // Only used by the deferSubmit (Add Case wizard) path — see class doc.
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _creditLimitController = TextEditingController();
+
+  List<_PhoneEntry> _phoneEntries = [
+    _PhoneEntry(phone: '', isPrimary: true),
+  ];
 
   bool _prefilled = false;
   bool _isSaving = false;
@@ -72,6 +97,9 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     _phoneController.dispose();
     _addressController.dispose();
     _creditLimitController.dispose();
+    for (final entry in _phoneEntries) {
+      entry.controller.dispose();
+    }
     super.dispose();
   }
 
@@ -82,6 +110,58 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     _phoneController.text = customer.phone as String;
     _addressController.text = (customer.address as String?) ?? '';
     _creditLimitController.text = customer.creditLimit as String;
+
+    // Falls back to the legacy `phone` string when `phoneNumbers` is empty
+    // — every real API response already guarantees at least one entry
+    // (see `Customer.fromJson`), but this keeps the form correct even for
+    // a `Customer` built directly (e.g. a test fixture) without going
+    // through that parsing path.
+    final existingPhoneNumbers = customer.phoneNumbers as List<CustomerPhoneNumber>;
+    final normalized = existingPhoneNumbers.isNotEmpty
+        ? existingPhoneNumbers
+        : [CustomerPhoneNumber(phone: customer.phone as String, isPrimary: true)];
+    for (final entry in _phoneEntries) {
+      entry.controller.dispose();
+    }
+    _phoneEntries = normalized
+        .map((p) => _PhoneEntry(id: p.id, phone: p.phone, isPrimary: p.isPrimary))
+        .toList();
+  }
+
+  String get _primaryPhoneText {
+    if (widget.deferSubmit) return _phoneController.text;
+    final primary = _phoneEntries.firstWhere(
+      (e) => e.isPrimary,
+      orElse: () => _phoneEntries.first,
+    );
+    return primary.controller.text;
+  }
+
+  void _setPrimary(_PhoneEntry entry) {
+    setState(() {
+      for (final e in _phoneEntries) {
+        e.isPrimary = identical(e, entry);
+      }
+    });
+  }
+
+  void _removePhoneEntry(_PhoneEntry entry) {
+    if (_phoneEntries.length <= 1) return;
+    setState(() {
+      final wasPrimary = entry.isPrimary;
+      _phoneEntries.remove(entry);
+      entry.controller.dispose();
+      if (wasPrimary && _phoneEntries.isNotEmpty) {
+        _phoneEntries.first.isPrimary = true;
+      }
+    });
+  }
+
+  void _addPhoneEntry() {
+    if (_phoneEntries.length >= 3) return;
+    setState(() {
+      _phoneEntries.add(_PhoneEntry(phone: '', isPrimary: false));
+    });
   }
 
   /// Add-only: `POST /customers/check-duplicate` has no `excludeCustomerId`
@@ -92,7 +172,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
 
     _duplicateDebounce?.cancel();
     final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
+    final phone = _primaryPhoneText.trim();
     if (name.isEmpty || phone.isEmpty) {
       setState(() => _liveDuplicateWarning = null);
       return;
@@ -144,7 +224,6 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     if (_formKey.currentState?.validate() != true) return;
 
     final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
     final address = _addressController.text.trim();
     final creditLimit = _creditLimitController.text.trim();
 
@@ -152,13 +231,24 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
       GoRouter.of(context).pop(
         CustomerDraft(
           name: name,
-          phone: phone,
+          phone: _phoneController.text.trim(),
           address: address.isEmpty ? null : address,
           creditLimit: creditLimit,
         ),
       );
       return;
     }
+
+    final phoneNumbers = _phoneEntries
+        .map(
+          (e) => CustomerPhoneNumber(
+            id: e.id,
+            phone: e.controller.text.trim(),
+            isPrimary: e.isPrimary,
+          ),
+        )
+        .toList();
+    final phone = phoneNumbers.firstWhere((p) => p.isPrimary).phone;
 
     setState(() {
       _isSaving = true;
@@ -176,6 +266,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
                   phone: phone,
                   address: address.isEmpty ? null : address,
                   creditLimit: creditLimit,
+                  phoneNumbers: phoneNumbers,
                 )
           : await ref
                 .read(customerActionsProvider)
@@ -184,6 +275,7 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
                   phone: phone,
                   address: address.isEmpty ? null : address,
                   creditLimit: creditLimit,
+                  phoneNumbers: phoneNumbers,
                 );
 
       if (!mounted) return;
@@ -239,6 +331,81 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
     return _buildForm(context, l10n);
   }
 
+  Widget _buildPhoneNumbersEditor(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.addEditCustomerPhoneNumbersLabel,
+          style: AppTypography.body,
+        ),
+        const SizedBox(height: 8),
+        for (final entry in _phoneEntries)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: entry.controller,
+                    maxLength: 30,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: l10n.addEditCustomerPhoneLabel,
+                    ),
+                    onChanged: (_) => _onIdentifyingFieldChanged(),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? l10n.addEditCustomerPhoneRequired
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                if (entry.isPrimary)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Chip(
+                      label: Text(l10n.addEditCustomerPhonePrimaryBadge),
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: TextButton(
+                      onPressed: () => _setPrimary(entry),
+                      child: Text(l10n.addEditCustomerSetPrimaryButton),
+                    ),
+                  ),
+                if (_phoneEntries.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: l10n.addEditCustomerRemovePhoneButton,
+                      onPressed: () => _removePhoneEntry(entry),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        if (_phoneEntries.length < 3)
+          TextButton.icon(
+            onPressed: _addPhoneEntry,
+            icon: const Icon(Icons.add),
+            label: Text(l10n.addEditCustomerAddPhoneButton),
+          )
+        else
+          Text(
+            l10n.addEditCustomerMaxPhoneNumbersMessage,
+            style: AppTypography.caption.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildForm(BuildContext context, AppLocalizations l10n) {
     final title = _isEdit
         ? l10n.customerEditTitle
@@ -264,18 +431,22 @@ class _AddEditCustomerScreenState extends ConsumerState<AddEditCustomerScreen> {
                     ? l10n.addEditCustomerNameRequired
                     : null,
               ),
-              TextFormField(
-                controller: _phoneController,
-                maxLength: 30,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: l10n.addEditCustomerPhoneLabel,
-                ),
-                onChanged: (_) => _onIdentifyingFieldChanged(),
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? l10n.addEditCustomerPhoneRequired
-                    : null,
-              ),
+              if (widget.deferSubmit)
+                TextFormField(
+                  controller: _phoneController,
+                  maxLength: 30,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: l10n.addEditCustomerPhoneLabel,
+                  ),
+                  onChanged: (_) => _onIdentifyingFieldChanged(),
+                  validator: (value) =>
+                      (value == null || value.trim().isEmpty)
+                      ? l10n.addEditCustomerPhoneRequired
+                      : null,
+                )
+              else
+                _buildPhoneNumbersEditor(context, l10n),
               if (_liveDuplicateWarning != null) ...[
                 const SizedBox(height: 8),
                 Text(

@@ -75,10 +75,18 @@ class MessagePreviewScreen extends ConsumerStatefulWidget {
   /// original default.
   final String? initialChannel;
 
+  /// Fix #23 Decision 8 — the phone number the user chose on Reminder
+  /// Detail's picker, if the customer had more than one. Passed straight
+  /// through to `POST /messages/render` on every template selection; when
+  /// null, the backend defaults to the customer's primary phone
+  /// (Decision 7).
+  final String? phoneNumberId;
+
   const MessagePreviewScreen({
     super.key,
     required this.reminderId,
     this.initialChannel,
+    this.phoneNumberId,
   });
 
   @override
@@ -108,6 +116,7 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
           .renderMessage(
             templateId: template.id,
             reminderId: widget.reminderId,
+            phoneNumberId: widget.phoneNumberId,
           );
       if (!mounted) return;
       setState(() {

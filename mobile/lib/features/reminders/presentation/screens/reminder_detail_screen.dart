@@ -12,10 +12,12 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/retry_section.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../customers/domain/customer_phone_number.dart';
 import '../../../debts/presentation/widgets/log_reminder_sheet.dart';
 import '../providers/reminder_actions.dart';
 import '../providers/reminder_detail_providers.dart';
 import '../providers/related_entity_provider.dart';
+import '../widgets/phone_number_picker.dart';
 import '../widgets/reminder_type_icon.dart';
 
 /// Reminder Details (§7.4): header with edit/delete icons; icon, title,
@@ -173,11 +175,16 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
   /// recorded. Otherwise falls back to launching the device dialer
   /// directly with the resolved customer's phone number (real action, no
   /// persistence — there is no non-debt call-logging endpoint).
+  ///
+  /// Fix #23 Decision 8: when the customer has more than one number,
+  /// [pickPhoneNumber] shows a chooser first; with exactly one it's
+  /// skipped entirely, so this behaves exactly as before for the common
+  /// case.
   Future<void> _placeCall(
     BuildContext context,
     String relatedEntityType,
     String relatedEntityId,
-    String? phone,
+    List<CustomerPhoneNumber> phoneNumbers,
   ) async {
     if (relatedEntityType == 'debt') {
       await showLogReminderSheet(context, relatedEntityId, 'call');
@@ -185,18 +192,44 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
     }
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    if (phone == null || phone.trim().isEmpty) {
+    if (phoneNumbers.isEmpty) {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.reminderNoPhoneNumberMessage)),
       );
       return;
     }
-    final launched = await launchUrl(Uri(scheme: 'tel', path: phone));
+    final chosen = await pickPhoneNumber(context, phoneNumbers);
+    if (chosen == null) return;
+    if (!context.mounted) return;
+    final launched = await launchUrl(Uri(scheme: 'tel', path: chosen.phone));
     if (!launched && context.mounted) {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.reminderCouldNotOpenDialerMessage)),
       );
     }
+  }
+
+  /// Fix #23 Decision 8: shows the phone chooser first when there's a
+  /// real choice to make; with 0 or 1 numbers this resolves immediately
+  /// (see [pickPhoneNumber]) and the WhatsApp/SMS navigation is
+  /// unaffected — the destination screen still handles a missing phone
+  /// number itself, unchanged.
+  Future<void> _openSend(
+    BuildContext context,
+    String channel,
+    List<CustomerPhoneNumber> phoneNumbers,
+  ) async {
+    String? phoneNumberId;
+    if (phoneNumbers.isNotEmpty) {
+      final chosen = await pickPhoneNumber(context, phoneNumbers);
+      if (chosen == null) return;
+      phoneNumberId = chosen.id;
+    }
+    if (!context.mounted) return;
+    final query = phoneNumberId != null
+        ? 'channel=$channel&phoneNumberId=$phoneNumberId'
+        : 'channel=$channel';
+    context.push('/reminders/${widget.reminderId}/send?$query');
   }
 
   @override
@@ -398,7 +431,7 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                           context,
                           reminder.relatedEntityType,
                           reminder.relatedEntityId,
-                          relatedAsync.valueOrNull?.phone,
+                          relatedAsync.valueOrNull?.phoneNumbers ?? const [],
                         ),
                       ),
                     ),
@@ -407,8 +440,10 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                       child: _CommunicationActionButton(
                         icon: Icons.chat_outlined,
                         label: l10n.reminderDetailWhatsAppButton,
-                        onPressed: () => context.push(
-                          '/reminders/${widget.reminderId}/send?channel=whatsapp',
+                        onPressed: () => _openSend(
+                          context,
+                          'whatsapp',
+                          relatedAsync.valueOrNull?.phoneNumbers ?? const [],
                         ),
                       ),
                     ),
@@ -417,8 +452,10 @@ class _ReminderDetailScreenState extends ConsumerState<ReminderDetailScreen> {
                       child: _CommunicationActionButton(
                         icon: Icons.sms_outlined,
                         label: l10n.reminderDetailSmsButton,
-                        onPressed: () => context.push(
-                          '/reminders/${widget.reminderId}/send?channel=sms',
+                        onPressed: () => _openSend(
+                          context,
+                          'sms',
+                          relatedAsync.valueOrNull?.phoneNumbers ?? const [],
                         ),
                       ),
                     ),

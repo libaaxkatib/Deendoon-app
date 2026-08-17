@@ -217,4 +217,28 @@ void main() {
 
     expect(result['recipient_name'], 'Moshe');
   });
+
+  test('Fix #23: renderMessage forwards phoneNumberId to the api', () async {
+    when(
+      () => mockApi.renderMessage(
+        templateId: '1',
+        reminderId: '2',
+        phoneNumberId: 'p2',
+      ),
+    ).thenAnswer(
+      (_) async => {
+        'rendered_text': 'Hi there',
+        'recipient_name': 'Moshe',
+        'recipient_phone': '+252699999999',
+      },
+    );
+
+    final result = await repository.renderMessage(
+      templateId: '1',
+      reminderId: '2',
+      phoneNumberId: 'p2',
+    );
+
+    expect(result['recipient_phone'], '+252699999999');
+  });
 }

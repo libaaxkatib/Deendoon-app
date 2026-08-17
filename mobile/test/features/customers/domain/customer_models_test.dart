@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
 import 'package:mobile/features/customers/domain/customer_page.dart';
+import 'package:mobile/features/customers/domain/customer_phone_number.dart';
 import 'package:mobile/core/models/payment.dart';
 
 void main() {
@@ -86,6 +87,77 @@ void main() {
       });
 
       expect(customer.isReadOnly, isFalse);
+    });
+
+    test('parses the phone_numbers array when present', () {
+      final customer = Customer.fromJson({
+        'id': '01ABC',
+        'name': 'Somali Builders',
+        'phone': '+252612345678',
+        'phone_numbers': [
+          {'id': '01P1', 'phone': '+252612345678', 'is_primary': true},
+          {'id': '01P2', 'phone': '+252611111111', 'is_primary': false},
+        ],
+        'customer_status': 'good_standing',
+        'credit_limit': '5000.00',
+        'outstanding_balance': '800.00',
+        'remaining_credit': '4200.00',
+        'risk_level': null,
+        'credit_score': null,
+        'credit_score_band': null,
+      });
+
+      expect(customer.phoneNumbers, hasLength(2));
+      expect(customer.phoneNumbers.first.phone, '+252612345678');
+      expect(customer.phoneNumbers.first.isPrimary, isTrue);
+      expect(customer.phoneNumbers.last.isPrimary, isFalse);
+    });
+
+    test(
+      'falls back to a single synthesized primary entry when phone_numbers is absent '
+      '(defensive only — every real backend response includes it)',
+      () {
+        final customer = Customer.fromJson({
+          'id': '01ABC',
+          'name': 'Somali Builders',
+          'phone': '+252612345678',
+          'customer_status': 'good_standing',
+          'credit_limit': '5000.00',
+          'outstanding_balance': '800.00',
+          'remaining_credit': '4200.00',
+          'risk_level': null,
+          'credit_score': null,
+          'credit_score_band': null,
+        });
+
+        expect(customer.phoneNumbers, hasLength(1));
+        expect(customer.phoneNumbers.first.phone, '+252612345678');
+        expect(customer.phoneNumbers.first.isPrimary, isTrue);
+      },
+    );
+  });
+
+  group('CustomerPhoneNumber', () {
+    test('parses id/phone/is_primary', () {
+      final phone = CustomerPhoneNumber.fromJson({
+        'id': '01P1',
+        'phone': '+252612345678',
+        'is_primary': true,
+      });
+
+      expect(phone.id, '01P1');
+      expect(phone.phone, '+252612345678');
+      expect(phone.isPrimary, isTrue);
+    });
+
+    test('toJson round-trips including a null id (a locally-added, unsaved entry)', () {
+      const phone = CustomerPhoneNumber(phone: '+252611111111', isPrimary: false);
+
+      expect(phone.toJson(), {
+        'id': null,
+        'phone': '+252611111111',
+        'is_primary': false,
+      });
     });
   });
 

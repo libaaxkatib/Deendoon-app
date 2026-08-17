@@ -28,7 +28,9 @@ import '../../features/customer_import/presentation/screens/bulk_import_screen.d
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/providers/biometric_lock_provider.dart';
 import '../../features/auth/presentation/screens/biometric_lock_screen.dart';
+import '../../features/auth/domain/google_registration_input.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/google_register_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
@@ -90,6 +92,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.register,
         builder: (_, _) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.googleRegister,
+        builder: (_, state) =>
+            GoogleRegisterScreen(input: state.extra! as GoogleRegistrationInput),
       ),
       GoRoute(
         path: RoutePaths.forgotPassword,
@@ -258,6 +265,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => MessagePreviewScreen(
           reminderId: state.pathParameters['id']!,
           initialChannel: state.uri.queryParameters['channel'],
+          phoneNumberId: state.uri.queryParameters['phoneNumberId'],
         ),
       ),
       GoRoute(
@@ -439,6 +447,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 const _publicRoutes = {
   RoutePaths.login,
   RoutePaths.register,
+  RoutePaths.googleRegister,
   RoutePaths.forgotPassword,
   RoutePaths.resetPassword,
 };

@@ -154,4 +154,72 @@ void main() {
       expect(buttonAfter.onPressed, isNotNull);
     },
   );
+
+  testWidgets(
+    'Fix #23: passes the phoneNumberId chosen on Reminder Detail through to render',
+    (tester) async {
+      when(
+        () => mockRepository.fetchMessageTemplates(channel: 'whatsapp'),
+      ).thenAnswer((_) async => [_template('First Reminder')]);
+      when(
+        () => mockRepository.renderMessage(
+          templateId: 'First Reminder',
+          reminderId: '1',
+          phoneNumberId: 'p2',
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'rendered_text': 'Hello',
+          'recipient_name': 'Hodan Store',
+          'recipient_phone': '254799999999',
+        },
+      );
+
+      final router = GoRouter(
+        initialLocation: '/send',
+        routes: [
+          GoRoute(
+            path: '/send',
+            builder: (_, _) => const MessagePreviewScreen(
+              reminderId: '1',
+              phoneNumberId: 'p2',
+            ),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            reminderRepositoryProvider.overrideWithValue(mockRepository),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              SomaliMaterialLocalizationsDelegate(),
+              SomaliCupertinoLocalizationsDelegate(),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('First Reminder'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => mockRepository.renderMessage(
+          templateId: 'First Reminder',
+          reminderId: '1',
+          phoneNumberId: 'p2',
+        ),
+      ).called(1);
+      expect(find.text('254799999999'), findsOneWidget);
+    },
+  );
 }

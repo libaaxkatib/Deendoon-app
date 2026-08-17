@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CollectionCase;
 use App\Models\Customer;
+use App\Models\CustomerPhoneNumber;
 use App\Models\Debt;
 use App\Models\DemandLetter;
 use App\Models\Invoice;
@@ -28,9 +29,16 @@ use RuntimeException;
 class MessageRenderingService
 {
     /**
+     * Fix #23 Decision 7/8: `$phoneNumber` is an already
+     * ownership-verified selection (the caller resolved and authorized
+     * it) — when omitted, the customer's primary phone
+     * (`$customer->phone`, mirrored from the primary `customer_phone_numbers`
+     * row) is used. This is the render call the mobile Message Preview
+     * screen actually invokes for both WhatsApp and SMS.
+     *
      * @return array{rendered_text: string, recipient_name: ?string, recipient_phone: ?string}
      */
-    public function renderForReminder(MessageTemplate $template, Reminder $reminder): array
+    public function renderForReminder(MessageTemplate $template, Reminder $reminder, ?CustomerPhoneNumber $phoneNumber = null): array
     {
         $customer = $reminder->relatedCustomer();
         $amountDue = $reminder->amount_due ?? $this->resolveOutstandingAmount($reminder);
@@ -45,7 +53,7 @@ class MessageRenderingService
         return [
             'rendered_text' => strtr($template->body, $replacements),
             'recipient_name' => $customer?->name,
-            'recipient_phone' => $customer?->phone,
+            'recipient_phone' => $phoneNumber?->phone ?? $customer?->phone,
         ];
     }
 

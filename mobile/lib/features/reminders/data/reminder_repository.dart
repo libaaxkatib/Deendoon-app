@@ -101,8 +101,13 @@ class ReminderRepository {
   Future<Map<String, dynamic>> renderMessage({
     required String templateId,
     required String reminderId,
+    String? phoneNumberId,
   }) => _guard(
-    () => _api.renderMessage(templateId: templateId, reminderId: reminderId),
+    () => _api.renderMessage(
+      templateId: templateId,
+      reminderId: reminderId,
+      phoneNumberId: phoneNumberId,
+    ),
   );
 
   Future<T> _guard<T>(Future<T> Function() call) async {

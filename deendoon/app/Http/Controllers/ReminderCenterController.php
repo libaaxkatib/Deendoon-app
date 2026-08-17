@@ -8,6 +8,7 @@ use App\Http\Requests\StoreReminderRequest;
 use App\Http\Requests\UpdateReminderRequest;
 use App\Http\Resources\ReminderResource;
 use App\Http\Resources\SentMessageResource;
+use App\Models\CustomerPhoneNumber;
 use App\Models\MessageTemplate;
 use App\Models\Reminder;
 use App\Services\MessageDeliveryService;
@@ -143,10 +144,31 @@ class ReminderCenterController extends Controller
 
         $messageChannel = MessageChannel::from($request->validated('channel'));
         $template = MessageTemplate::findOrFail($request->validated('template_id'));
+        $phoneNumber = $this->resolvePhoneNumber($request->validated('phone_number_id'), $reminder);
 
-        $sentMessage = $this->delivery->sendReminder($reminder, $template, $messageChannel, $request->user());
+        $sentMessage = $this->delivery->sendReminder($reminder, $template, $messageChannel, $request->user(), $phoneNumber);
 
         return $this->successResponse(new SentMessageResource($sentMessage), 'Reminder sent successfully');
+    }
+
+    /**
+     * Fix #23 Decision 8: never trusts a client-supplied phone-number ID
+     * directly — resolved only via the related Customer's own
+     * `phoneNumbers()` relation, which is itself tenant-scoped
+     * ({@see App\Models\Concerns\BelongsToTenant}), so an ID belonging to
+     * a different customer or a different tenant 404s here rather than
+     * ever being usable.
+     */
+    private function resolvePhoneNumber(?string $phoneNumberId, Reminder $reminder): ?CustomerPhoneNumber
+    {
+        if ($phoneNumberId === null) {
+            return null;
+        }
+
+        $customer = $reminder->relatedCustomer();
+        abort_if($customer === null, 404);
+
+        return $customer->phoneNumbers()->findOrFail($phoneNumberId);
     }
 
     /**

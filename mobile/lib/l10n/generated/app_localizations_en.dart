@@ -314,6 +314,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'Don\'t have an account? Create Account';
 
   @override
+  String get authOrDivider => 'OR';
+
+  @override
+  String get googleLoginButton => 'Continue with Google';
+
+  @override
+  String get googleLoginFailedMessage =>
+      'Google sign-in failed. Please try again.';
+
+  @override
+  String get googleLoginNotConfiguredMessage =>
+      'Google sign-in is not available right now.';
+
+  @override
+  String get googleRegisterTitle => 'Complete Your Registration';
+
+  @override
+  String googleRegisterInstructions(String email) {
+    return 'Almost done! Enter your business name to finish creating your Deendoon account for $email.';
+  }
+
+  @override
+  String get googleRegisterPhoneLabel => 'Phone Number (Optional)';
+
+  @override
+  String get googleRegisterSubmitButton => 'Complete Registration';
+
+  @override
   String get forgotPasswordTitle => 'Forgot Password';
 
   @override
@@ -845,6 +873,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addEditCustomerViewExistingButton => 'View Existing Customer';
+
+  @override
+  String get addEditCustomerPhoneNumbersLabel => 'Phone Numbers';
+
+  @override
+  String get addEditCustomerPhonePrimaryBadge => 'Primary';
+
+  @override
+  String get addEditCustomerSetPrimaryButton => 'Set Primary';
+
+  @override
+  String get addEditCustomerRemovePhoneButton => 'Remove';
+
+  @override
+  String get addEditCustomerAddPhoneButton => 'Add Phone';
+
+  @override
+  String get addEditCustomerMaxPhoneNumbersMessage =>
+      'You can add up to 3 phone numbers.';
+
+  @override
+  String get phoneNumberPickerTitle => 'Choose Phone Number';
+
+  @override
+  String get phoneNumberPickerContinueButton => 'Continue';
 
   @override
   String get customerDocumentsLoadError => 'Could not load documents.';

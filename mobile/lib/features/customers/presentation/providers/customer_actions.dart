@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/document_summary.dart';
 import '../../data/customer_repository.dart';
+import '../../domain/customer_phone_number.dart';
 import '../../domain/customer_save_result.dart';
 import '../../domain/duplicate_warning.dart';
 import 'customer_detail_providers.dart';
@@ -29,12 +30,14 @@ class CustomerActions {
     required String phone,
     String? address,
     required String creditLimit,
+    List<CustomerPhoneNumber>? phoneNumbers,
   }) async {
     final result = await _repository.createCustomer(
       name: name,
       phone: phone,
       address: address,
       creditLimit: creditLimit,
+      phoneNumbers: phoneNumbers,
     );
     _ref.invalidate(customerListProvider);
     return result;
@@ -46,6 +49,7 @@ class CustomerActions {
     required String phone,
     String? address,
     required String creditLimit,
+    List<CustomerPhoneNumber>? phoneNumbers,
   }) async {
     final result = await _repository.updateCustomer(
       id: id,
@@ -53,6 +57,7 @@ class CustomerActions {
       phone: phone,
       address: address,
       creditLimit: creditLimit,
+      phoneNumbers: phoneNumbers,
     );
     _ref.invalidate(customerDetailProvider(id));
     _ref.invalidate(customerListProvider);
