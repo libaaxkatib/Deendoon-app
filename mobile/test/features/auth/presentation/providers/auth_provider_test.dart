@@ -8,6 +8,7 @@ import 'package:mobile/core/network/dio_client.dart';
 import 'package:mobile/core/storage/biometric_preference_storage.dart';
 import 'package:mobile/features/auth/data/auth_repository.dart';
 import 'package:mobile/features/auth/domain/auth_state.dart';
+import 'package:mobile/features/auth/domain/google_login_result.dart';
 import 'package:mobile/features/auth/domain/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:mobile/features/auth/presentation/providers/biometric_lock_provider.dart';
@@ -190,6 +191,127 @@ void main() {
       final state = container.read(authProvider);
       expect(state, isA<AuthError>());
       expect((state as AuthError).message, 'Invalid credentials');
+    });
+  });
+
+  group('googleLogin', () {
+    test('ends Authenticated on an existing-account result', () async {
+      const authenticated = GoogleLoginAuthenticated(
+        user: _user,
+        token: 'g-token',
+      );
+      when(
+        () => mockRepository.googleLogin('valid-id-token'),
+      ).thenAnswer((_) async => authenticated);
+
+      final result = await container
+          .read(authProvider.notifier)
+          .googleLogin('valid-id-token');
+
+      expect(result, isA<GoogleLoginAuthenticated>());
+      final state = container.read(authProvider);
+      expect(state, isA<Authenticated>());
+      expect((state as Authenticated).token, 'g-token');
+    });
+
+    test(
+      'leaves state at Unauthenticated (not AuthError) on a registration-required result',
+      () async {
+        when(() => mockRepository.googleLogin('new-id-token')).thenAnswer(
+          (_) async => const GoogleLoginRegistrationRequired(
+            email: 'new@example.com',
+          ),
+        );
+
+        final result = await container
+            .read(authProvider.notifier)
+            .googleLogin('new-id-token');
+
+        expect(result, isA<GoogleLoginRegistrationRequired>());
+        expect(container.read(authProvider), isA<Unauthenticated>());
+      },
+    );
+
+    test(
+      'rethrows ApiException (e.g. invalid token, email collision) and resets state to Unauthenticated',
+      () async {
+        when(() => mockRepository.googleLogin('bad-token')).thenThrow(
+          const ApiException(
+            message: 'Invalid or expired Google credential.',
+            statusCode: 401,
+          ),
+        );
+
+        await expectLater(
+          () => container.read(authProvider.notifier).googleLogin('bad-token'),
+          throwsA(isA<ApiException>()),
+        );
+        expect(container.read(authProvider), isA<Unauthenticated>());
+      },
+    );
+
+    test('unlocks a pending biometric lock on an existing-account result', () async {
+      container.read(biometricLockProvider.notifier).lock();
+      const authenticated = GoogleLoginAuthenticated(
+        user: _user,
+        token: 'g-token',
+      );
+      when(
+        () => mockRepository.googleLogin('valid-id-token'),
+      ).thenAnswer((_) async => authenticated);
+
+      await container
+          .read(authProvider.notifier)
+          .googleLogin('valid-id-token');
+
+      expect(container.read(biometricLockProvider), isFalse);
+    });
+  });
+
+  group('completeGoogleRegistration', () {
+    test('ends Authenticated on success', () async {
+      const authenticated = Authenticated(user: _user, token: 'new-account-token');
+      when(
+        () => mockRepository.googleRegister(
+          idToken: 'valid-id-token',
+          businessName: 'Acme Traders',
+          phone: null,
+        ),
+      ).thenAnswer((_) async => authenticated);
+
+      await container.read(authProvider.notifier).completeGoogleRegistration(
+        idToken: 'valid-id-token',
+        businessName: 'Acme Traders',
+      );
+
+      expect(container.read(authProvider), authenticated);
+    });
+
+    test('ends AuthError with the server message on failure', () async {
+      when(
+        () => mockRepository.googleRegister(
+          idToken: 'valid-id-token',
+          businessName: 'Acme Traders',
+          phone: null,
+        ),
+      ).thenThrow(
+        const ApiException(
+          message: 'An account for this Google identity already exists.',
+          statusCode: 409,
+        ),
+      );
+
+      await container.read(authProvider.notifier).completeGoogleRegistration(
+        idToken: 'valid-id-token',
+        businessName: 'Acme Traders',
+      );
+
+      final state = container.read(authProvider);
+      expect(state, isA<AuthError>());
+      expect(
+        (state as AuthError).message,
+        'An account for this Google identity already exists.',
+      );
     });
   });
 

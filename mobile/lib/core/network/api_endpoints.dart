@@ -7,4 +7,6 @@ class ApiEndpoints {
   static const logout = 'logout';
   static const forgotPassword = 'forgot-password';
   static const resetPassword = 'reset-password';
+  static const googleLogin = 'google-login';
+  static const googleRegister = 'google-register';
 }

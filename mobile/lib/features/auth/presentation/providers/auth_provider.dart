@@ -4,6 +4,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/biometric_preference_storage.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/auth_state.dart';
+import '../../domain/google_login_result.dart';
 import 'biometric_lock_provider.dart';
 import 'tenant_scoped_providers.dart';
 
@@ -88,6 +89,56 @@ class AuthNotifier extends Notifier<AuthState> {
         email: email,
         password: password,
         passwordConfirmation: passwordConfirmation,
+      );
+      resetTenantScopedProviders(ref);
+      ref.read(biometricLockProvider.notifier).unlock();
+    } on ApiException catch (e) {
+      state = AuthError(e.detailedMessage, fieldErrors: e.fieldErrors);
+    }
+  }
+
+  /// Mobile Fix #22 — Google Login. Deliberately returns the outcome
+  /// instead of encoding it into `AuthState` — no new `AuthState` variant
+  /// is added. An existing-account result behaves exactly like [login];
+  /// a registration-required result leaves `state` at `Unauthenticated`
+  /// so the caller can navigate to the business-name-collection screen
+  /// without a stray `AuthError` flash. A genuine failure (invalid token,
+  /// email already tied to a password account) is a real `ApiException`
+  /// and is rethrown for the caller to handle — it is not folded into
+  /// this method's own result type.
+  Future<GoogleLoginResult> googleLogin(String idToken) async {
+    state = const Authenticating();
+    try {
+      final result = await _repository.googleLogin(idToken);
+      if (result is GoogleLoginAuthenticated) {
+        state = Authenticated(user: result.user, token: result.token);
+        resetTenantScopedProviders(ref);
+        ref.read(biometricLockProvider.notifier).unlock();
+      } else {
+        state = const Unauthenticated();
+      }
+      return result;
+    } catch (_) {
+      state = const Unauthenticated();
+      rethrow;
+    }
+  }
+
+  /// Mobile Fix #22 — Google Login. Completes registration for a Google
+  /// identity [googleLogin] reported as new — same shape as [register],
+  /// including how an [ApiException] (e.g. the identity was registered by
+  /// a concurrent request) becomes an [AuthError] rather than propagating.
+  Future<void> completeGoogleRegistration({
+    required String idToken,
+    required String businessName,
+    String? phone,
+  }) async {
+    state = const Authenticating();
+    try {
+      state = await _repository.googleRegister(
+        idToken: idToken,
+        businessName: businessName,
+        phone: phone,
       );
       resetTenantScopedProviders(ref);
       ref.read(biometricLockProvider.notifier).unlock();

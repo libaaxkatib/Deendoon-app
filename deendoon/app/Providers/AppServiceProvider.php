@@ -141,6 +141,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        // Mobile Fix #22 — Google Login. Keyed by IP only, matching
+        // 'register' — there's no email field to key by until after the
+        // token is verified, and the id_token itself changes every
+        // attempt so it isn't a useful key either.
+        RateLimiter::for('google-login', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
         // Sprint 1.1 — Password Recovery. 08_Security_and_RBAC.md §8:
         // rate limiting "applied at minimum to... POST /auth/forgot-password
         // (reset-token exhaustion)". Same shape as 'login' (keyed by

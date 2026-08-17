@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_endpoints.dart';
 import '../../../core/network/dio_client.dart';
+import '../domain/google_login_result.dart';
 import '../domain/user.dart';
 
 final authApiProvider = Provider<AuthApi>(
@@ -44,6 +45,52 @@ class AuthApi {
         'email': email,
         'password': password,
         'password_confirmation': passwordConfirmation,
+      },
+    );
+    return _parseAuthPayload(response.data);
+  }
+
+  /// `App\Http\Controllers\AuthController::googleLogin` — sends only the
+  /// verified-on-device Google ID token, never a client-supplied email/
+  /// name. Two real outcomes: an existing Google-linked account (treat
+  /// like a normal login) or no account yet (the caller collects a
+  /// business name and calls [googleRegister]). Any other outcome (an
+  /// invalid token, or the email already belonging to a password account)
+  /// is a real HTTP error and throws via the normal Dio/ApiException path.
+  Future<GoogleLoginResult> googleLogin(String idToken) async {
+    final response = await _dio.post(
+      ApiEndpoints.googleLogin,
+      data: {'id_token': idToken},
+    );
+    final data = response.data['data'] as Map<String, dynamic>;
+
+    if (data['registration_required'] == true) {
+      final google = data['google'] as Map<String, dynamic>;
+      return GoogleLoginRegistrationRequired(
+        email: google['email'] as String,
+        name: google['name'] as String?,
+      );
+    }
+
+    final (user, token) = _parseAuthPayload(response.data);
+    return GoogleLoginAuthenticated(user: user, token: token);
+  }
+
+  /// `App\Http\Controllers\AuthController::googleRegister` — re-sends the
+  /// same `id_token` from the preceding [googleLogin] call alongside the
+  /// business name the user just entered; the backend re-verifies the
+  /// token itself rather than trusting anything from that earlier call.
+  Future<(User, String)> googleRegister({
+    required String idToken,
+    required String businessName,
+    String? phone,
+  }) async {
+    final response = await _dio.post(
+      ApiEndpoints.googleRegister,
+      data: {
+        'id_token': idToken,
+        'business_name': businessName,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
       },
     );
     return _parseAuthPayload(response.data);

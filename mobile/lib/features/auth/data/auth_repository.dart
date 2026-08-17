@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/secure_token_storage.dart';
 import '../domain/auth_state.dart';
+import '../domain/google_login_result.dart';
 import '../domain/user.dart';
 import 'auth_api.dart';
 
@@ -82,6 +83,47 @@ class AuthRepository {
         email: email,
         password: password,
         passwordConfirmation: passwordConfirmation,
+      );
+      await _storage.saveSession(
+        token: token,
+        userJson: jsonEncode(user.toJson()),
+      );
+      return Authenticated(user: user, token: token);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+  /// The existing-account outcome persists a session exactly like
+  /// [login]; the registration-required outcome persists nothing yet —
+  /// there is no session until [googleRegister] actually creates one.
+  Future<GoogleLoginResult> googleLogin(String idToken) async {
+    try {
+      final result = await _api.googleLogin(idToken);
+      if (result is GoogleLoginAuthenticated) {
+        await _storage.saveSession(
+          token: result.token,
+          userJson: jsonEncode(result.user.toJson()),
+        );
+      }
+      return result;
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+  /// Completes registration for a Google identity `googleLogin` reported
+  /// as new — same session-persistence side effect as [register].
+  Future<Authenticated> googleRegister({
+    required String idToken,
+    required String businessName,
+    String? phone,
+  }) async {
+    try {
+      final (user, token) = await _api.googleRegister(
+        idToken: idToken,
+        businessName: businessName,
+        phone: phone,
       );
       await _storage.saveSession(
         token: token,

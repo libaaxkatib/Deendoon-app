@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditAction;
+use App\Exceptions\InvalidGoogleTokenException;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\CloseAccountRequest;
 use App\Http\Requests\ForgotPasswordRequest;
+use App\Http\Requests\GoogleLoginRequest;
+use App\Http\Requests\GoogleRegisterRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
@@ -15,6 +18,7 @@ use App\Models\User;
 use App\Services\AccountClosureService;
 use App\Services\AuditLogService;
 use App\Services\CustomerReadOnlyService;
+use App\Services\GoogleIdTokenVerifier;
 use App\Services\MessageTemplateService;
 use App\Services\PasswordResetService;
 use App\Services\ReferenceDataService;
@@ -56,6 +60,7 @@ class AuthController extends Controller
         private readonly CustomerReadOnlyService $customerReadOnly,
         private readonly ReferenceDataService $referenceData,
         private readonly AccountClosureService $accountClosure,
+        private readonly GoogleIdTokenVerifier $googleTokenVerifier,
     ) {}
 
     /**
@@ -129,7 +134,13 @@ class AuthController extends Controller
     {
         $user = User::where('email', $request->validated('email'))->first();
 
-        if (! $user || ! Hash::check($request->validated('password'), $user->password)) {
+        // Mobile Fix #22: a Google-only account (no password ever set) has
+        // a null `password` column — Hash::check() requires a string, so
+        // this must short-circuit before it rather than let a Google-only
+        // user's email hit Hash::check(..., null). Same generic response
+        // and security-log entry as any other failed password attempt —
+        // does not reveal that the account exists via Google only.
+        if (! $user || $user->password === null || ! Hash::check($request->validated('password'), $user->password)) {
             $this->securityLog->loginFailed($request->validated('email'), $request->ip());
 
             return $this->errorResponse('Invalid credentials', null, 401);
@@ -280,5 +291,124 @@ class AuthController extends Controller
         }
 
         return $this->successResponse(null, 'Account closed successfully');
+    }
+
+    /**
+     * Mobile Fix #22 — Google Login, existing-identity path. The token is
+     * verified entirely server-side ({@see GoogleIdTokenVerifier}) — never
+     * trusts a client-supplied email/name as identity. Three outcomes:
+     *
+     * 1. `google_id` already matches a user — log them in exactly like
+     *    login(), just skipping the password check (Google already proved
+     *    identity).
+     * 2. No `google_id` match, but the verified email belongs to an
+     *    existing password account — refuse (409), deliberately WITHOUT
+     *    authenticating or silently attaching the Google identity. Emails
+     *    are a global-unique column here, not tenant-scoped, so this is a
+     *    real, expected case, not an edge case — auto-linking on email
+     *    match alone would let anyone controlling a Google account with a
+     *    matching email take over an existing Deendoon account.
+     * 3. No match at all — this is a genuinely new signup, but creating
+     *    the required Tenant needs a `business_name` a Google identity
+     *    never supplies. Returns the verified (never client-supplied)
+     *    email/name so the app can collect a business name and complete
+     *    registration via googleRegister() — not an error, `success: true`.
+     */
+    public function googleLogin(GoogleLoginRequest $request): JsonResponse
+    {
+        try {
+            $identity = $this->googleTokenVerifier->verify($request->validated('id_token'));
+        } catch (InvalidGoogleTokenException) {
+            return $this->errorResponse('Invalid or expired Google credential.', null, 401);
+        }
+
+        $user = User::where('google_id', $identity['sub'])->first();
+
+        if ($user) {
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            $this->auditLog->record(AuditAction::Login, 'user', (string) $user->id, $user);
+
+            return $this->successResponse([
+                'user' => new UserResource($user),
+                'token' => $token,
+            ], 'Login successful');
+        }
+
+        if (User::where('email', $identity['email'])->exists()) {
+            return $this->errorResponse(
+                'An account with this email already exists. Log in with your password to continue, then link your Google account from Settings.',
+                null,
+                409,
+            );
+        }
+
+        return $this->successResponse([
+            'registration_required' => true,
+            'google' => [
+                'email' => $identity['email'],
+                'name' => $identity['name'],
+            ],
+        ], 'No account found for this Google identity. Complete registration to continue.');
+    }
+
+    /**
+     * Mobile Fix #22 — Google Login, new-account path. Reached only after
+     * googleLogin() returned `registration_required` — the mobile app
+     * collects `business_name` (the same one field RegisterRequest already
+     * requires) and re-submits the SAME id_token here. Re-verifying it
+     * (rather than trusting a prior verification result) means this
+     * endpoint never depends on any unverified client-supplied identity
+     * claim, even though it's a second round trip.
+     *
+     * Reuses the exact Tenant + Business Owner creation transaction
+     * register() already runs — the only differences are the credential
+     * source (`google_id` instead of a hashed `password`) and that `name`
+     * comes from the verified Google identity, not a form field.
+     */
+    public function googleRegister(GoogleRegisterRequest $request): JsonResponse
+    {
+        try {
+            $identity = $this->googleTokenVerifier->verify($request->validated('id_token'));
+        } catch (InvalidGoogleTokenException) {
+            return $this->errorResponse('Invalid or expired Google credential.', null, 401);
+        }
+
+        if (User::where('google_id', $identity['sub'])->exists() || User::where('email', $identity['email'])->exists()) {
+            return $this->errorResponse('An account for this Google identity already exists.', null, 409);
+        }
+
+        $user = DB::transaction(function () use ($request, $identity) {
+            $tenant = Tenant::create([
+                'business_name' => $request->validated('business_name'),
+            ]);
+
+            $this->messageTemplates->provisionDefaults($tenant);
+            $this->referenceData->provisionDefaults($tenant);
+
+            $user = new User([
+                'name' => $identity['name'] ?? $identity['email'],
+                'email' => $identity['email'],
+                'phone' => $request->validated('phone'),
+                'google_id' => $identity['sub'],
+            ]);
+            $user->tenant_id = $tenant->id;
+            $user->save();
+            $user->assignRole('admin');
+
+            $this->subscriptions->provisionTrial($tenant, $user);
+            $this->customerReadOnly->recalculate($tenant, $user);
+
+            $this->auditLog->record(AuditAction::Created, 'user', (string) $user->id, $user);
+
+            return $user->fresh();
+        });
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return $this->successResponse([
+            'user' => new UserResource($user),
+            'token' => $token,
+        ], 'Registration successful', 201);
     }
 }

@@ -112,7 +112,11 @@ class PasswordResetService
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): bool
     {
-        if (! Hash::check($currentPassword, $user->password)) {
+        // Mobile Fix #22: a Google-only account has a null password —
+        // Hash::check() requires a string. Same "incorrect password"
+        // response as any other mismatch (AuthController::changePassword()
+        // doesn't distinguish "no password set" from "wrong password").
+        if ($user->password === null || ! Hash::check($currentPassword, $user->password)) {
             return false;
         }
 

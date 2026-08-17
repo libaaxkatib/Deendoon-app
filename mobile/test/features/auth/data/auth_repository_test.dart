@@ -5,6 +5,7 @@ import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/core/storage/secure_token_storage.dart';
 import 'package:mobile/features/auth/data/auth_api.dart';
 import 'package:mobile/features/auth/data/auth_repository.dart';
+import 'package:mobile/features/auth/domain/google_login_result.dart';
 import 'package:mobile/features/auth/domain/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_provider.dart';
 import 'package:mocktail/mocktail.dart';
@@ -88,6 +89,190 @@ void main() {
               'message',
               'Invalid credentials',
             ),
+          ),
+        );
+      },
+    );
+  });
+
+  group('googleLogin', () {
+    test(
+      'persists the session and returns GoogleLoginAuthenticated for an existing account',
+      () async {
+        when(() => mockApi.googleLogin('valid-id-token')).thenAnswer(
+          (_) async =>
+              const GoogleLoginAuthenticated(user: _user, token: 'g-token'),
+        );
+        when(
+          () => mockStorage.saveSession(
+            token: any(named: 'token'),
+            userJson: any(named: 'userJson'),
+          ),
+        ).thenAnswer((_) async {});
+
+        final result = await repository.googleLogin('valid-id-token');
+
+        expect(result, isA<GoogleLoginAuthenticated>());
+        expect((result as GoogleLoginAuthenticated).token, 'g-token');
+        verify(
+          () => mockStorage.saveSession(
+            token: 'g-token',
+            userJson: any(named: 'userJson'),
+          ),
+        ).called(1);
+      },
+    );
+
+    test(
+      'persists nothing and returns GoogleLoginRegistrationRequired for a new identity',
+      () async {
+        when(() => mockApi.googleLogin('new-id-token')).thenAnswer(
+          (_) async => const GoogleLoginRegistrationRequired(
+            email: 'new@example.com',
+            name: 'New User',
+          ),
+        );
+
+        final result = await repository.googleLogin('new-id-token');
+
+        expect(result, isA<GoogleLoginRegistrationRequired>());
+        expect(
+          (result as GoogleLoginRegistrationRequired).email,
+          'new@example.com',
+        );
+        verifyNever(
+          () => mockStorage.saveSession(
+            token: any(named: 'token'),
+            userJson: any(named: 'userJson'),
+          ),
+        );
+      },
+    );
+
+    test(
+      'throws ApiException on an invalid/expired token, never reaching saveSession',
+      () async {
+        when(() => mockApi.googleLogin('bad-token')).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(path: '/google-login'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/google-login'),
+              statusCode: 401,
+              data: {
+                'success': false,
+                'message': 'Invalid or expired Google credential.',
+                'data': null,
+                'errors': null,
+              },
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
+
+        expect(
+          () => repository.googleLogin('bad-token'),
+          throwsA(
+            isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401),
+          ),
+        );
+      },
+    );
+
+    test(
+      'throws ApiException on an email already tied to a password account',
+      () async {
+        when(() => mockApi.googleLogin('collides')).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(path: '/google-login'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/google-login'),
+              statusCode: 409,
+              data: {
+                'success': false,
+                'message':
+                    'An account with this email already exists. Log in with your password to continue, then link your Google account from Settings.',
+                'data': null,
+                'errors': null,
+              },
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
+
+        expect(
+          () => repository.googleLogin('collides'),
+          throwsA(
+            isA<ApiException>().having((e) => e.statusCode, 'statusCode', 409),
+          ),
+        );
+      },
+    );
+  });
+
+  group('googleRegister', () {
+    test('persists the session and returns Authenticated on success', () async {
+      when(
+        () => mockApi.googleRegister(
+          idToken: 'valid-id-token',
+          businessName: 'Acme Traders',
+          phone: null,
+        ),
+      ).thenAnswer((_) async => (_user, 'new-account-token'));
+      when(
+        () => mockStorage.saveSession(
+          token: any(named: 'token'),
+          userJson: any(named: 'userJson'),
+        ),
+      ).thenAnswer((_) async {});
+
+      final result = await repository.googleRegister(
+        idToken: 'valid-id-token',
+        businessName: 'Acme Traders',
+      );
+
+      expect(result.user, _user);
+      expect(result.token, 'new-account-token');
+      verify(
+        () => mockStorage.saveSession(
+          token: 'new-account-token',
+          userJson: any(named: 'userJson'),
+        ),
+      ).called(1);
+    });
+
+    test(
+      'throws ApiException when the identity was registered by a concurrent request',
+      () async {
+        when(
+          () => mockApi.googleRegister(
+            idToken: 'valid-id-token',
+            businessName: 'Acme Traders',
+            phone: null,
+          ),
+        ).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(path: '/google-register'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/google-register'),
+              statusCode: 409,
+              data: {
+                'success': false,
+                'message': 'An account for this Google identity already exists.',
+                'data': null,
+                'errors': null,
+              },
+            ),
+            type: DioExceptionType.badResponse,
+          ),
+        );
+
+        expect(
+          () => repository.googleRegister(
+            idToken: 'valid-id-token',
+            businessName: 'Acme Traders',
+          ),
+          throwsA(
+            isA<ApiException>().having((e) => e.statusCode, 'statusCode', 409),
           ),
         );
       },

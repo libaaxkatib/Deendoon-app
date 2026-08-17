@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    // Mobile Fix #22 — Google Login. Only the OAuth Client ID is needed —
+    // the app verifies a Google-issued ID token's `aud` claim against
+    // this value; there is no client *secret* involved anywhere in this
+    // flow (native on-device sign-in, not a server-side authorization-code
+    // exchange), so nothing sensitive is stored here.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
 ];

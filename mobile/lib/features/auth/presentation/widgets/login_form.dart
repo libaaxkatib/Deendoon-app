@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
+import '../../../../core/google_auth/google_auth_service.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/password_field.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/auth_state.dart';
+import '../../domain/google_login_result.dart';
+import '../../domain/google_registration_input.dart';
 import '../providers/auth_provider.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
@@ -21,6 +24,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isGoogleLoading = false;
 
   static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
@@ -41,6 +45,60 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     // validator (Flutter only does that on an explicit validate() call) —
     // re-validate so a fresh per-field backend error actually renders.
     if (mounted) _formKey.currentState?.validate();
+  }
+
+  /// Mobile Fix #22 — Google Login. `signIn()` returns `null` only on a
+  /// user-initiated cancellation (a no-op, not an error); any other
+  /// failure — misconfiguration, an invalid/expired token the backend
+  /// rejects, an already-linked-by-password email — surfaces as a snackbar
+  /// instead of the form's own per-field error UI, since there's no login
+  /// form to attach it to.
+  Future<void> _handleGoogleSignIn() async {
+    final l10n = AppLocalizations.of(context);
+    final googleAuthService = ref.read(googleAuthServiceProvider);
+
+    if (!googleAuthService.isConfigured) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.googleLoginNotConfiguredMessage)));
+      return;
+    }
+
+    setState(() => _isGoogleLoading = true);
+    try {
+      final idToken = await googleAuthService.signIn();
+      if (idToken == null) return;
+
+      final result = await ref.read(authProvider.notifier).googleLogin(idToken);
+      if (!mounted) return;
+
+      if (result is GoogleLoginRegistrationRequired) {
+        context.push(
+          RoutePaths.googleRegister,
+          extra: GoogleRegistrationInput(
+            idToken: idToken,
+            email: result.email,
+            name: result.name,
+          ),
+        );
+      }
+      // GoogleLoginAuthenticated: AuthState is now Authenticated — the
+      // router's redirect already sends the app to /home on its own.
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.detailedMessage)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.googleLoginFailedMessage)));
+      }
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
   }
 
   /// Reads backend field errors fresh (not the build-time [authState]
@@ -120,7 +178,31 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           PrimaryButton(
             label: l10n.loginSubmitButton,
             isLoading: isLoading,
-            onPressed: _submit,
+            onPressed: _isGoogleLoading ? null : _submit,
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(l10n.authOrDivider),
+              ),
+              const Expanded(child: Divider()),
+            ],
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton(
+            onPressed: (isLoading || _isGoogleLoading)
+                ? null
+                : _handleGoogleSignIn,
+            child: _isGoogleLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(l10n.googleLoginButton),
           ),
           const SizedBox(height: 16),
           Center(

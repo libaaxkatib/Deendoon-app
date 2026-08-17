@@ -37,6 +37,9 @@ Route::prefix('v1')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:forgot-password');
     Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:reset-password');
+    // Mobile Fix #22 — Google Login.
+    Route::post('google-login', [AuthController::class, 'googleLogin'])->middleware('throttle:google-login');
+    Route::post('google-register', [AuthController::class, 'googleRegister'])->middleware('throttle:google-login');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
