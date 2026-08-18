@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/biometric_preference_storage.dart';
+import '../../../../core/storage/remembered_credentials_storage.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/auth_state.dart';
 import '../../domain/google_login_result.dart';
@@ -24,6 +25,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   BiometricPreferenceStorage get _biometricPreferenceStorage =>
       ref.read(biometricPreferenceStorageProvider);
+
+  RememberedCredentialsStorage get _rememberedCredentialsStorage =>
+      ref.read(rememberedCredentialsStorageProvider);
 
   /// Called once by the splash screen. Optimistically restores a stored
   /// session for a zero-latency return to `/home`, then validates it in the
@@ -51,9 +55,14 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       state = await _repository.validateAndRotate();
     } catch (_) {
-      // The Dio auth interceptor already reacted to the underlying 401 by
-      // calling forceLogout() (state is already Unauthenticated) — nothing
-      // further to do here.
+      // This call is marked exempt from AuthInterceptor's forced logout
+      // (see its class doc) — a failure here deliberately leaves `state`
+      // at the optimistically-restored cached session rather than wiping
+      // it or touching the biometric preference. If that cached token is
+      // genuinely invalid, the very next real authenticated request made
+      // during normal use will 401 through the interceptor's unmarked,
+      // unchanged path and force a real logout then — this only defers
+      // that detection, it never skips it.
     }
   }
 
@@ -163,6 +172,12 @@ class AuthNotifier extends Notifier<AuthState> {
   /// user/tenant id, so leaving it set would silently require biometric
   /// login from whichever account signs in next on this device, even
   /// though that account never opted in.
+  ///
+  /// Mobile QA Fix — Remember Me (Product Decision): deliberately does
+  /// NOT clear the Remember Me preference. Unlike the biometric toggle,
+  /// Remember Me only remembers the user's own checkbox choice — no
+  /// credential, no session — so there is no cross-tenant leak risk in
+  /// leaving it as-is; it stays on until the user explicitly unchecks it.
   Future<void> forceLogout() async {
     await _repository.logout();
     state = const Unauthenticated();
@@ -175,10 +190,17 @@ class AuthNotifier extends Notifier<AuthState> {
   /// and let the user retry — unlike `forceLogout()`, this must not
   /// silently succeed from the caller's point of view. Only transitions
   /// to `Unauthenticated` once the server call has actually succeeded.
+  ///
+  /// Mobile QA Fix — Remember Me (Product Decision: 2026-08-18): also
+  /// clears any remembered email/password. Unlike a normal logout, the
+  /// account itself no longer exists afterward, so there is nothing left
+  /// to conveniently log back into — remembering it would be pure
+  /// liability with no benefit.
   Future<void> closeAccount(String password) async {
     await _repository.closeAccount(password: password);
     state = const Unauthenticated();
     resetTenantScopedProviders(ref);
     await _biometricPreferenceStorage.saveEnabled(false);
+    await _rememberedCredentialsStorage.clear();
   }
 }

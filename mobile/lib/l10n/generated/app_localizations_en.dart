@@ -304,6 +304,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginTagline => 'Smart Debt Recovery Assistant';
 
   @override
+  String get loginRememberMeLabel => 'Remember Me';
+
+  @override
   String get loginForgotPasswordLink => 'Forgot password?';
 
   @override

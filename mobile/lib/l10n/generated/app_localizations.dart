@@ -674,6 +674,12 @@ abstract class AppLocalizations {
   /// **'Smart Debt Recovery Assistant'**
   String get loginTagline;
 
+  /// No description provided for @loginRememberMeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember Me'**
+  String get loginRememberMeLabel;
+
   /// No description provided for @loginForgotPasswordLink.
   ///
   /// In en, this message translates to:

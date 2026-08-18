@@ -10,6 +10,7 @@ import 'package:mobile/features/attachments/domain/attachment.dart';
 import 'package:mobile/features/cases/domain/collection_case.dart';
 import 'package:mobile/features/customers/data/customer_repository.dart';
 import 'package:mobile/features/customers/domain/customer.dart';
+import 'package:mobile/features/customers/domain/customer_phone_number.dart';
 import 'package:mobile/features/debts/data/debt_repository.dart';
 import 'package:mobile/features/debts/domain/debt.dart';
 import 'package:mobile/features/quick_actions/domain/add_case_review_input.dart';
@@ -218,6 +219,7 @@ void main() {
           name: 'New Traders',
           phone: '+252699999999',
           creditLimit: '1000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).thenAnswer((_) async => (customer: _newCustomer, warning: null));
       when(
@@ -239,6 +241,9 @@ void main() {
             name: 'New Traders',
             phone: '+252699999999',
             creditLimit: '1000.00',
+            phoneNumbers: [
+              CustomerPhoneNumber(phone: '+252699999999', isPrimary: true),
+            ],
           ),
           debtDraft: _debtDraft,
         ),
@@ -256,6 +261,7 @@ void main() {
           name: 'New Traders',
           phone: '+252699999999',
           creditLimit: '1000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).called(1);
       verify(
@@ -278,6 +284,7 @@ void main() {
           name: 'New Traders',
           phone: '+252699999999',
           creditLimit: '1000.00',
+          phoneNumbers: any(named: 'phoneNumbers'),
         ),
       ).thenAnswer((_) async => (customer: _newCustomer, warning: null));
       when(
@@ -296,6 +303,9 @@ void main() {
             name: 'New Traders',
             phone: '+252699999999',
             creditLimit: '1000.00',
+            phoneNumbers: [
+              CustomerPhoneNumber(phone: '+252699999999', isPrimary: true),
+            ],
           ),
           debtDraft: _debtDraft,
         ),

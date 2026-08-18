@@ -310,6 +310,9 @@ class AppLocalizationsSo extends AppLocalizations {
   String get loginTagline => 'Kaaliyaha Caqliga Leh ee Soo-celinta Daymaha';
 
   @override
+  String get loginRememberMeLabel => 'I Xasuuso';
+
+  @override
   String get loginForgotPasswordLink => 'Furaha sirta ah ma xasuusan?';
 
   @override

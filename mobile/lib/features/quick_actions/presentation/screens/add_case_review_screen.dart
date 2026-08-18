@@ -95,6 +95,7 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
               phone: draft.phone,
               address: draft.address,
               creditLimit: draft.creditLimit,
+              phoneNumbers: draft.phoneNumbers,
             );
         customer = result.customer;
       } on ApiException catch (e) {

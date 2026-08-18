@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/localization/somali_fallback_delegates.dart';
+import 'package:mobile/core/storage/remembered_credentials_storage.dart';
 import 'package:mobile/core/storage/secure_token_storage.dart';
 import 'package:mobile/features/account/presentation/screens/close_account_screen.dart';
 import 'package:mobile/features/auth/data/auth_api.dart';
@@ -18,9 +19,13 @@ class _MockAuthApi extends Mock implements AuthApi {}
 
 class _MockSecureTokenStorage extends Mock implements SecureTokenStorage {}
 
+class _MockRememberedCredentialsStorage extends Mock
+    implements RememberedCredentialsStorage {}
+
 void main() {
   late _MockAuthApi mockApi;
   late _MockSecureTokenStorage mockStorage;
+  late _MockRememberedCredentialsStorage mockCredentialsStorage;
 
   setUp(() {
     // Mobile Fix #17: closeAccount() now also clears the biometric
@@ -28,6 +33,10 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     mockApi = _MockAuthApi();
     mockStorage = _MockSecureTokenStorage();
+    mockCredentialsStorage = _MockRememberedCredentialsStorage();
+    // Mobile QA Fix — Remember Me (credentials): closeAccount() also
+    // clears any remembered email/password (see AuthNotifier.closeAccount).
+    when(() => mockCredentialsStorage.clear()).thenAnswer((_) async {});
   });
 
   Future<ProviderContainer> pumpScreen(WidgetTester tester) async {
@@ -49,6 +58,9 @@ void main() {
       overrides: [
         authApiProvider.overrideWithValue(mockApi),
         secureTokenStorageProvider.overrideWithValue(mockStorage),
+        rememberedCredentialsStorageProvider.overrideWithValue(
+          mockCredentialsStorage,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -157,6 +169,7 @@ void main() {
         () => mockApi.closeAccount(password: 'CorrectPassword123!'),
       ).called(1);
       verify(() => mockStorage.clear()).called(1);
+      verify(() => mockCredentialsStorage.clear()).called(1);
       expect(container.read(authProvider), isA<Unauthenticated>());
     },
   );

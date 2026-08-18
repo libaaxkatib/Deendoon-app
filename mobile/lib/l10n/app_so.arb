@@ -114,6 +114,7 @@
 
   "loginAppName": "Deendoon",
   "loginTagline": "Kaaliyaha Caqliga Leh ee Soo-celinta Daymaha",
+  "loginRememberMeLabel": "I Xasuuso",
   "loginForgotPasswordLink": "Furaha sirta ah ma xasuusan?",
   "loginSubmitButton": "Gal",
   "loginCreateAccountPrompt": "Akoon ma lihid? Samee Akoon",

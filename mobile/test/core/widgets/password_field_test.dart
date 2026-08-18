@@ -9,6 +9,7 @@ Future<void> _pumpField(
   WidgetTester tester, {
   required TextEditingController controller,
   String? Function(String?)? validator,
+  Iterable<String>? autofillHints,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -28,6 +29,7 @@ Future<void> _pumpField(
             controller: controller,
             labelText: 'Password',
             validator: validator,
+            autofillHints: autofillHints,
           ),
         ),
       ),
@@ -96,6 +98,37 @@ void main() {
 
     expect(controller.text, 'CorrectPassword123!');
   });
+
+  testWidgets(
+    'autofillHints defaults to null when not provided (unaffected callers)',
+    (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+
+      await _pumpField(tester, controller: controller);
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.autofillHints, isNull);
+    },
+  );
+
+  testWidgets(
+    'Mobile QA Fix — Remember Me: autofillHints is passed through to the '
+    'underlying field when provided',
+    (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+
+      await _pumpField(
+        tester,
+        controller: controller,
+        autofillHints: const [AutofillHints.password],
+      );
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.autofillHints, [AutofillHints.password]);
+    },
+  );
 
   testWidgets('the validator is passed through and runs on form validation', (
     tester,

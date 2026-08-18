@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/core/network/dio_client.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/core/storage/biometric_preference_storage.dart';
+import 'package:mobile/core/storage/remember_me_preference_storage.dart';
+import 'package:mobile/core/storage/remembered_credentials_storage.dart';
 import 'package:mobile/features/auth/data/auth_repository.dart';
 import 'package:mobile/features/auth/domain/auth_state.dart';
 import 'package:mobile/features/auth/domain/google_login_result.dart';
@@ -23,6 +26,56 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockAuthRepository extends Mock implements AuthRepository {}
+
+/// Real, in-memory `FlutterSecureStorage` stand-in — this is a pure `test/`
+/// unit-test file (no `TestWidgetsFlutterBinding`), so the real platform
+/// channel `RememberedCredentialsStorage()`'s default would use is never
+/// initialized here.
+class _InMemorySecureStorage extends Fake implements FlutterSecureStorage {
+  final Map<String, String> _values = {};
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    if (value == null) {
+      _values.remove(key);
+    } else {
+      _values[key] = value;
+    }
+  }
+
+  @override
+  Future<String?> read({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async => _values[key];
+
+  @override
+  Future<void> delete({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    _values.remove(key);
+  }
+}
 
 class _MockCustomerRepository extends Mock implements CustomerRepository {}
 
@@ -101,12 +154,19 @@ const _tenantBCustomer = Customer(
 void main() {
   late _MockAuthRepository mockRepository;
   late ProviderContainer container;
+  late RememberedCredentialsStorage credentialsStorage;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     mockRepository = _MockAuthRepository();
+    credentialsStorage = RememberedCredentialsStorage(_InMemorySecureStorage());
     container = ProviderContainer(
-      overrides: [authRepositoryProvider.overrideWithValue(mockRepository)],
+      overrides: [
+        authRepositoryProvider.overrideWithValue(mockRepository),
+        rememberedCredentialsStorageProvider.overrideWithValue(
+          credentialsStorage,
+        ),
+      ],
     );
     addTearDown(container.dispose);
   });
@@ -218,9 +278,8 @@ void main() {
       'leaves state at Unauthenticated (not AuthError) on a registration-required result',
       () async {
         when(() => mockRepository.googleLogin('new-id-token')).thenAnswer(
-          (_) async => const GoogleLoginRegistrationRequired(
-            email: 'new@example.com',
-          ),
+          (_) async =>
+              const GoogleLoginRegistrationRequired(email: 'new@example.com'),
         );
 
         final result = await container
@@ -250,27 +309,33 @@ void main() {
       },
     );
 
-    test('unlocks a pending biometric lock on an existing-account result', () async {
-      container.read(biometricLockProvider.notifier).lock();
-      const authenticated = GoogleLoginAuthenticated(
-        user: _user,
-        token: 'g-token',
-      );
-      when(
-        () => mockRepository.googleLogin('valid-id-token'),
-      ).thenAnswer((_) async => authenticated);
+    test(
+      'unlocks a pending biometric lock on an existing-account result',
+      () async {
+        container.read(biometricLockProvider.notifier).lock();
+        const authenticated = GoogleLoginAuthenticated(
+          user: _user,
+          token: 'g-token',
+        );
+        when(
+          () => mockRepository.googleLogin('valid-id-token'),
+        ).thenAnswer((_) async => authenticated);
 
-      await container
-          .read(authProvider.notifier)
-          .googleLogin('valid-id-token');
+        await container
+            .read(authProvider.notifier)
+            .googleLogin('valid-id-token');
 
-      expect(container.read(biometricLockProvider), isFalse);
-    });
+        expect(container.read(biometricLockProvider), isFalse);
+      },
+    );
   });
 
   group('completeGoogleRegistration', () {
     test('ends Authenticated on success', () async {
-      const authenticated = Authenticated(user: _user, token: 'new-account-token');
+      const authenticated = Authenticated(
+        user: _user,
+        token: 'new-account-token',
+      );
       when(
         () => mockRepository.googleRegister(
           idToken: 'valid-id-token',
@@ -279,10 +344,12 @@ void main() {
         ),
       ).thenAnswer((_) async => authenticated);
 
-      await container.read(authProvider.notifier).completeGoogleRegistration(
-        idToken: 'valid-id-token',
-        businessName: 'Acme Traders',
-      );
+      await container
+          .read(authProvider.notifier)
+          .completeGoogleRegistration(
+            idToken: 'valid-id-token',
+            businessName: 'Acme Traders',
+          );
 
       expect(container.read(authProvider), authenticated);
     });
@@ -301,10 +368,12 @@ void main() {
         ),
       );
 
-      await container.read(authProvider.notifier).completeGoogleRegistration(
-        idToken: 'valid-id-token',
-        businessName: 'Acme Traders',
-      );
+      await container
+          .read(authProvider.notifier)
+          .completeGoogleRegistration(
+            idToken: 'valid-id-token',
+            businessName: 'Acme Traders',
+          );
 
       final state = container.read(authProvider);
       expect(state, isA<AuthError>());
@@ -344,6 +413,29 @@ void main() {
         expect(container.read(biometricLockProvider), isTrue);
       },
     );
+
+    test('restoreSession(): a validateAndRotate() failure while biometric lock '
+        'is active does not disable biometric login or force a logout (Mobile '
+        'QA Fix — Biometric Login: the restore-time refresh is exempt from '
+        'forced logout, see AuthInterceptor)', () async {
+      await const BiometricPreferenceStorage().saveEnabled(true);
+      const cached = Authenticated(user: _user, token: 'cached-token');
+      when(
+        () => mockRepository.readCachedSession(),
+      ).thenAnswer((_) async => cached);
+      when(() => mockRepository.validateAndRotate()).thenThrow(
+        const ApiException(message: 'Unauthenticated.', statusCode: 401),
+      );
+
+      await container.read(authProvider.notifier).restoreSession();
+
+      // Left exactly as set before the failed refresh — the biometric
+      // lock remains the sole gate to the app; nothing disabled a
+      // preference the user never touched.
+      expect(container.read(authProvider), isA<Authenticated>());
+      expect(container.read(biometricLockProvider), isTrue);
+      expect(await const BiometricPreferenceStorage().readEnabled(), isTrue);
+    });
 
     test(
       'restoreSession() does not lock when biometric login is disabled (the default)',
@@ -433,6 +525,90 @@ void main() {
 
       expect(await const BiometricPreferenceStorage().readEnabled(), isFalse);
     });
+
+    test('Mobile QA Fix — Remember Me (Product Decision): forceLogout() clears '
+        'the authenticated session as normal but does NOT clear a Remember Me '
+        'preference the user left ON', () async {
+      await const RememberMePreferenceStorage().saveEnabled(true);
+      when(() => mockRepository.logout()).thenAnswer((_) async {});
+
+      await container.read(authProvider.notifier).forceLogout();
+
+      expect(container.read(authProvider), isA<Unauthenticated>());
+      verify(() => mockRepository.logout()).called(1);
+      expect(await const RememberMePreferenceStorage().readEnabled(), isTrue);
+    });
+
+    test(
+      'Mobile QA Fix — Remember Me: forceLogout() leaves an OFF preference OFF',
+      () async {
+        when(() => mockRepository.logout()).thenAnswer((_) async {});
+
+        await container.read(authProvider.notifier).forceLogout();
+
+        expect(
+          await const RememberMePreferenceStorage().readEnabled(),
+          isFalse,
+        );
+      },
+    );
+
+    test('Mobile QA Fix — Remember Me: closeAccount() clears the session but '
+        'does NOT clear a Remember Me preference the user left ON', () async {
+      await const RememberMePreferenceStorage().saveEnabled(true);
+      when(
+        () => mockRepository.closeAccount(password: 'correct-password'),
+      ).thenAnswer((_) async {});
+
+      await container
+          .read(authProvider.notifier)
+          .closeAccount('correct-password');
+
+      expect(container.read(authProvider), isA<Unauthenticated>());
+      expect(await const RememberMePreferenceStorage().readEnabled(), isTrue);
+    });
+
+    test(
+      'Mobile QA Fix — Remember Me (credentials): forceLogout() clears the '
+      'session as normal but does NOT clear remembered email/password',
+      () async {
+        await credentialsStorage.saveCredentials(
+          email: 'owner@example.com',
+          password: 'CorrectHorseBatteryStaple123!',
+        );
+        when(() => mockRepository.logout()).thenAnswer((_) async {});
+
+        await container.read(authProvider.notifier).forceLogout();
+
+        expect(container.read(authProvider), isA<Unauthenticated>());
+        expect(await credentialsStorage.readEmail(), 'owner@example.com');
+        expect(
+          await credentialsStorage.readPassword(),
+          'CorrectHorseBatteryStaple123!',
+        );
+      },
+    );
+
+    test(
+      'Mobile QA Fix — Remember Me (credentials): closeAccount() clears '
+      'remembered email/password — the account no longer exists afterward',
+      () async {
+        await credentialsStorage.saveCredentials(
+          email: 'owner@example.com',
+          password: 'CorrectHorseBatteryStaple123!',
+        );
+        when(
+          () => mockRepository.closeAccount(password: 'correct-password'),
+        ).thenAnswer((_) async {});
+
+        await container
+            .read(authProvider.notifier)
+            .closeAccount('correct-password');
+
+        expect(await credentialsStorage.readEmail(), isNull);
+        expect(await credentialsStorage.readPassword(), isNull);
+      },
+    );
   });
 
   group('Mobile Fix #16: tenant-scoped provider reset at session boundaries', () {

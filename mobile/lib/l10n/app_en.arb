@@ -127,6 +127,7 @@
 
   "loginAppName": "Deendoon",
   "loginTagline": "Smart Debt Recovery Assistant",
+  "loginRememberMeLabel": "Remember Me",
   "loginForgotPasswordLink": "Forgot password?",
   "loginSubmitButton": "Log In",
   "loginCreateAccountPrompt": "Don't have an account? Create Account",

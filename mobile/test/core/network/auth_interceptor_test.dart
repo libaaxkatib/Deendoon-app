@@ -6,6 +6,7 @@ import 'package:mobile/features/auth/data/auth_repository.dart';
 import 'package:mobile/features/auth/domain/auth_state.dart';
 import 'package:mobile/features/auth/domain/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_provider.dart';
+import 'package:mobile/features/auth/presentation/providers/biometric_lock_provider.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -166,6 +167,39 @@ void main() {
 
         verifyNever(() => mockRepository.logout());
         expect(container.read(authProvider), isA<Authenticated>());
+      },
+    );
+
+    test(
+      'does NOT force logout on a 401 for the restore-session refresh request, '
+      'even though it carried a token while authenticated (Mobile QA Fix — '
+      'Biometric Login)',
+      () async {
+        container.read(authProvider.notifier).state = const Authenticated(
+          user: _user,
+          token: 'live-token',
+        );
+        container.read(biometricLockProvider.notifier).lock();
+
+        final requestOptions = RequestOptions(
+          path: '/refresh',
+          headers: {'Authorization': 'Bearer live-token'},
+          extra: {restoreSessionRefreshExtraKey: true},
+        );
+        final error = DioException(
+          requestOptions: requestOptions,
+          response: Response(requestOptions: requestOptions, statusCode: 401),
+          type: DioExceptionType.badResponse,
+        );
+
+        interceptor.onError(error, _CapturingErrorHandler());
+        await Future<void>.delayed(Duration.zero);
+
+        verifyNever(() => mockRepository.logout());
+        expect(container.read(authProvider), isA<Authenticated>());
+        // The biometric lock stays exactly as restoreSession() left it —
+        // still the sole gate to the app, unaffected by this exemption.
+        expect(container.read(biometricLockProvider), isTrue);
       },
     );
   });

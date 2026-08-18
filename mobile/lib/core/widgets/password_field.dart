@@ -12,11 +12,20 @@ class PasswordField extends StatefulWidget {
   final String labelText;
   final String? Function(String?)? validator;
 
+  /// Passed straight through to the underlying `TextFormField` — `null`
+  /// (the default) leaves autofill untouched for every existing caller
+  /// (Register, Change Password, Reset Password); only the Login screen
+  /// sets this, to let the platform's own credential manager offer to
+  /// save/fill the password (see `RememberMePreferenceStorage`'s doc
+  /// comment — the app itself never stores the password).
+  final Iterable<String>? autofillHints;
+
   const PasswordField({
     super.key,
     required this.controller,
     required this.labelText,
     this.validator,
+    this.autofillHints,
   });
 
   @override
@@ -34,6 +43,7 @@ class _PasswordFieldState extends State<PasswordField> {
     return TextFormField(
       controller: widget.controller,
       obscureText: _obscureText,
+      autofillHints: widget.autofillHints,
       decoration: InputDecoration(
         labelText: widget.labelText,
         suffixIcon: IconButton(

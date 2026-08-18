@@ -221,136 +221,142 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.messagePreviewTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SegmentedButton<String>(
-              segments: [
-                ButtonSegment(
-                  value: 'whatsapp',
-                  label: Text(l10n.reminderDetailWhatsAppButton),
-                ),
-                ButtonSegment(
-                  value: 'sms',
-                  label: Text(l10n.reminderDetailSmsButton),
-                ),
-              ],
-              selected: {_channel},
-              onSelectionChanged: (selection) =>
-                  _switchChannel(selection.first),
-            ),
-            const SizedBox(height: 16),
-            if (_recipientName != null || _recipientPhone != null)
-              AppCard(
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline, color: AppColors.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _recipientName ??
-                                l10n.messagePreviewUnknownRecipient,
-                            style: AppTypography.body,
-                          ),
-                          if (_recipientPhone != null)
-                            Text(
-                              _recipientPhone!,
-                              style: AppTypography.caption,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SegmentedButton<String>(
+                segments: [
+                  ButtonSegment(
+                    value: 'whatsapp',
+                    label: Text(l10n.reminderDetailWhatsAppButton),
+                  ),
+                  ButtonSegment(
+                    value: 'sms',
+                    label: Text(l10n.reminderDetailSmsButton),
+                  ),
+                ],
+                selected: {_channel},
+                onSelectionChanged: (selection) =>
+                    _switchChannel(selection.first),
               ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: templatesAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => RetrySection(
-                  message: l10n.messagePreviewTemplatesLoadError,
-                  onRetry: () =>
-                      ref.invalidate(messageTemplatesProvider(_channel)),
-                ),
-                data: (templates) {
-                  if (templates.isEmpty) {
-                    return Center(
-                      child: Text(
-                        l10n.messagePreviewEmptyTemplatesState,
-                        style: AppTypography.body,
-                      ),
-                    );
-                  }
-
-                  return ListView(
+              const SizedBox(height: 16),
+              if (_recipientName != null || _recipientPhone != null)
+                AppCard(
+                  child: Row(
                     children: [
-                      Text(
-                        l10n.messagePreviewUseTemplateHeading,
-                        style: AppTypography.heading,
+                      const Icon(
+                        Icons.person_outline,
+                        color: AppColors.primary,
                       ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final template in _sortedForDisplay(templates))
-                            ChoiceChip(
-                              label: Text(template.name),
-                              selected: _selectedTemplate?.id == template.id,
-                              onSelected: (_) => _selectTemplate(template),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _recipientName ??
+                                  l10n.messagePreviewUnknownRecipient,
+                              style: AppTypography.body,
                             ),
-                        ],
+                            if (_recipientPhone != null)
+                              Text(
+                                _recipientPhone!,
+                                style: AppTypography.caption,
+                              ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      if (_isRendering)
-                        const Center(child: CircularProgressIndicator()),
-                      if (_renderedText != null)
-                        AppCard(
-                          child: Text(
-                            _renderedText!,
-                            style: AppTypography.body.copyWith(height: 1.6),
-                          ),
-                        ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ],
                     ],
-                  );
-                },
+                  ),
+                ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: templatesAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => RetrySection(
+                    message: l10n.messagePreviewTemplatesLoadError,
+                    onRetry: () =>
+                        ref.invalidate(messageTemplatesProvider(_channel)),
+                  ),
+                  data: (templates) {
+                    if (templates.isEmpty) {
+                      return Center(
+                        child: Text(
+                          l10n.messagePreviewEmptyTemplatesState,
+                          style: AppTypography.body,
+                        ),
+                      );
+                    }
+
+                    return ListView(
+                      children: [
+                        Text(
+                          l10n.messagePreviewUseTemplateHeading,
+                          style: AppTypography.heading,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final template in _sortedForDisplay(templates))
+                              ChoiceChip(
+                                label: Text(template.name),
+                                selected: _selectedTemplate?.id == template.id,
+                                onSelected: (_) => _selectTemplate(template),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (_isRendering)
+                          const Center(child: CircularProgressIndicator()),
+                        if (_renderedText != null)
+                          AppCard(
+                            child: Text(
+                              _renderedText!,
+                              style: AppTypography.body.copyWith(height: 1.6),
+                            ),
+                          ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed:
-                  (_selectedTemplate == null ||
-                      _renderedText == null ||
-                      _isSending)
-                  ? null
-                  : _send,
-              child: _isSending
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      _channel == 'whatsapp'
-                          ? l10n.messagePreviewSendViaWhatsAppButton
-                          : l10n.messagePreviewSendViaSmsButton,
-                    ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed:
+                    (_selectedTemplate == null ||
+                        _renderedText == null ||
+                        _isSending)
+                    ? null
+                    : _send,
+                child: _isSending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        _channel == 'whatsapp'
+                            ? l10n.messagePreviewSendViaWhatsAppButton
+                            : l10n.messagePreviewSendViaSmsButton,
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

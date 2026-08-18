@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_endpoints.dart';
+import '../../../core/network/auth_interceptor.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/google_login_result.dart';
 import '../domain/user.dart';
@@ -96,8 +97,14 @@ class AuthApi {
     return _parseAuthPayload(response.data);
   }
 
+  /// Marked with [restoreSessionRefreshExtraKey] — see `AuthInterceptor`'s
+  /// class doc for why a 401 on this specific call must not force a full
+  /// logout the way it would on any other authenticated request.
   Future<(User, String)> refresh() async {
-    final response = await _dio.post(ApiEndpoints.refresh);
+    final response = await _dio.post(
+      ApiEndpoints.refresh,
+      options: Options(extra: {restoreSessionRefreshExtraKey: true}),
+    );
     return _parseAuthPayload(response.data);
   }
 
