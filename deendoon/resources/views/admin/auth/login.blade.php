@@ -29,8 +29,14 @@
             </div>
             <div>
                 <label for="password" class="mb-1 block text-sm font-medium text-slate-700">Password</label>
-                <input type="password" name="password" id="password" required
-                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-deendoon-teal focus:outline-none focus:ring-1 focus:ring-deendoon-teal">
+                <div class="relative">
+                    <input type="password" name="password" id="password" required
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-14 text-sm focus:border-deendoon-teal focus:outline-none focus:ring-1 focus:ring-deendoon-teal">
+                    <button type="button" id="togglePassword" aria-label="Show password"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-medium text-slate-500 hover:text-deendoon-teal">
+                        Show
+                    </button>
+                </div>
             </div>
             <label class="flex items-center gap-2 text-sm text-slate-600">
                 <input type="checkbox" name="remember" class="rounded border-slate-300 text-deendoon-teal focus:ring-deendoon-teal">
@@ -42,5 +48,15 @@
             </button>
         </form>
     </div>
+
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const input = document.getElementById('password');
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            this.textContent = isHidden ? 'Hide' : 'Show';
+            this.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        });
+    </script>
 </body>
 </html>
