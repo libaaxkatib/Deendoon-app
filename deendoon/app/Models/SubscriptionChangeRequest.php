@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Fillable and must be set via direct property assignment, matching
  * ProfessionalCollectionRequest's established pattern.
  */
-#[Fillable(['requested_plan_id', 'current_plan_id', 'payment_reference', 'status', 'requested_at', 'reviewed_by', 'reviewed_at', 'rejection_reason'])]
+#[Fillable(['requested_plan_id', 'current_plan_id', 'payment_reference', 'payment_phone', 'status', 'requested_at', 'reviewed_by', 'reviewed_at', 'rejection_reason'])]
 class SubscriptionChangeRequest extends Model
 {
     /** @use HasFactory<SubscriptionChangeRequestFactory> */

@@ -86,6 +86,8 @@
                             <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 <th class="px-3 py-2">Requested Plan</th>
                                 <th class="px-3 py-2">From</th>
+                                <th class="px-3 py-2">Payment Phone</th>
+                                <th class="px-3 py-2">Payment Reference</th>
                                 <th class="px-3 py-2">Status</th>
                                 <th class="px-3 py-2">Requested</th>
                                 <th class="px-3 py-2">Reviewed</th>
@@ -97,6 +99,8 @@
                                 <tr>
                                     <td class="px-3 py-2 font-medium text-slate-800">{{ $request->requestedPlan?->name ?? '—' }}</td>
                                     <td class="px-3 py-2 text-slate-500">{{ $request->currentPlan?->name ?? '—' }}</td>
+                                    <td class="px-3 py-2 text-slate-600">{{ $request->payment_phone ?? '—' }}</td>
+                                    <td class="px-3 py-2 text-slate-600">{{ $request->payment_reference ?? '—' }}</td>
                                     <td class="px-3 py-2">
                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $requestTone[$request->status] ?? 'bg-slate-100 text-slate-500' }}">
                                             {{ $requestStatuses[$request->status] ?? ucfirst($request->status) }}
@@ -115,7 +119,7 @@
                                 </tr>
                                 @if ($request->status === 'rejected')
                                     <tr>
-                                        <td colspan="6" class="bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                                        <td colspan="8" class="bg-slate-50 px-3 py-2 text-xs text-slate-500">
                                             Rejected: {{ $request->reasons->pluck('reason_label')->implode(', ') }}
                                             @if ($request->rejection_reason)
                                                 — "{{ $request->rejection_reason }}"
@@ -125,7 +129,7 @@
                                 @endif
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-3 py-6 text-center text-slate-400">No subscription change requests for this business.</td>
+                                    <td colspan="8" class="px-3 py-6 text-center text-slate-400">No subscription change requests for this business.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -194,6 +198,7 @@
                 <div class="rounded-xl border border-deendoon-warning/40 bg-deendoon-warning/5 p-6">
                     <h3 class="mb-2 text-sm font-semibold text-slate-700">Pending Plan Change</h3>
                     <p class="text-sm text-slate-600">Requested plan: <span class="font-medium">{{ $pendingChangeRequest->requestedPlan?->name }}</span></p>
+                    <p class="mt-1 text-xs text-slate-400">Payment phone: {{ $pendingChangeRequest->payment_phone ?? '—' }}</p>
                     <p class="mt-1 text-xs text-slate-400">Payment reference: {{ $pendingChangeRequest->payment_reference ?? '—' }}</p>
                     <div class="mt-4 flex gap-3">
                         <button type="button" onclick="document.getElementById('approve-change-request-dialog').showModal()"

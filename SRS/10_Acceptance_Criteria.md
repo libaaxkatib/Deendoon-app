@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-10 |
 | **Document Title** | Acceptance Criteria |
-| **Version** | 1.4 |
-| **Status** | ✅ Approved & Frozen |
+| **Version** | 1.5 |
+| **Status** | Reopened — Section 14 (Module 13 — Subscription & Storage Self-Service) added, closing a pre-existing documentation gap found during the Manual Mobile-Money Subscription Payment Flow Amendment audit |
 | **Author** | Business Analyst / Solution Architect (Claude) |
-| **Approved By** | Product Owner |
-| **Last Updated** | 2026-07-31 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.10 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.6) · `05_UI_UX_Specification.md` (Reopened, v1.5) · `06_Database_Design.md` (Reopened v1.6 — §6.1 amended, PostgreSQL) · `07_API_Design.md` (Reopened v1.5 — §5.4 amended) · `08_Security_and_RBAC.md` (Reopened v1.4 — §5 amended) · `09_Non_Functional_Requirements.md` (Approved, v1.2) |
+| **Approved By** | Product Owner (prior version); reopened section pending re-approval |
+| **Last Updated** | 2026-08-19 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.17 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.11) · `05_UI_UX_Specification.md` (Reopened, v1.9) · `06_Database_Design.md` (Reopened v1.9 — §6.1 amended, PostgreSQL) · `07_API_Design.md` (Reopened v1.8 — §5.4 amended) · `08_Security_and_RBAC.md` (Reopened v1.5 — §5 amended) · `09_Non_Functional_Requirements.md` (Approved, v1.2) |
 
 ---
 
@@ -23,6 +23,7 @@
 | 1.3 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `03`–`09` at their current versions following those documents' own updates. No acceptance criterion changed. | Claude |
 | 1.4 | 2026-07-31 | **Final architecture consistency audit correction.** AC-067-1 still assumed "seven approved roles" — missed by every prior sweep. Updated to reflect the single approved role (Business Owner, `admin`), matching FR-067's own amendment and the corresponding fix in `05_UI_UX_Specification.md` v1.5 (SCR-039/040/041). Scope Baseline updated to cite `05` at its current version. No other acceptance criterion changed. | Claude |
 | 1.0 | 2026-07-24 | Approved and frozen without changes. | Product Owner |
+| 1.5 | 2026-08-19 | **Documentation gap closure (Manual Mobile-Money Subscription Payment Flow Amendment audit finding), Product Owner-approved decision.** Added **Section 14 — Module 13 — Subscription & Storage Self-Service**: acceptance criteria for FR-077 through FR-084 (approved since the Subscription & Storage Self-Service Catch-Up, `03` Revision History 1.13, but never given criteria here — every FR-077–FR-084 "Acceptance Criteria References" line in `03` pointed here to nothing) plus the newly-added FR-086 (Platform Payment Destination Number). Former Section 14 (Traceability Confirmation) renumbered to Section 15 and its coverage table/summary line extended to include Module 13; former Section 15 (Criteria Pending Business Rule Resolution) renumbered to Section 16. FR-085 (Invoice Generation, Module 8) remains a separate, pre-existing gap, explicitly out of scope for this amendment. No existing criterion (AC-001 through AC-076-range) was changed. Scope Baseline updated to cite `03` v1.17, `04` v1.11, `05` v1.9, `06` v1.9, `07` v1.8, `08` v1.5. | Claude |
 
 ---
 
@@ -443,9 +444,68 @@ These apply universally, referenced by number from every module below rather tha
 
 ---
 
-## 14. Traceability Confirmation
+## 14. Module 13 — Subscription & Storage Self-Service *(added — closes a pre-existing documentation gap, Manual Mobile-Money Subscription Payment Flow Amendment)*
 
-Every Functional Requirement from **FR-001 through FR-076** has at least one corresponding Acceptance Criterion above — 76 of 76. No FR was skipped; no criterion was written for a capability without an approved FR to trace to.
+> **Added 2026-08-19.** Module 13 (`03_Functional_Requirements.md` FR-077–FR-084, FR-086) was approved and retroactively documented (Subscription & Storage Self-Service Catch-Up, `03` Revision History 1.13) but this document was never updated to add its Acceptance Criteria — every FR-077–FR-084 "Acceptance Criteria References" line pointed here to nothing. Closed alongside the Manual Mobile-Money Subscription Payment Flow Amendment, which also added FR-086. FR-085 (Invoice Generation, Module 8) is a separate, pre-existing gap not touched here — out of this amendment's scope.
+
+### FR-077 — View Subscription & Plan Catalog
+- **AC-077-1:** A Business Owner viewing the Subscription screen sees their tenant's current plan, trial/subscription status, billing dates, Customer/Storage usage vs. limits, Analytics availability, and read-only state.
+- **AC-077-2 (A1):** A tenant with no Subscription record at all is shown as being on the Free Plan for display purposes, not an error.
+- **AC-077-3:** The Plan Catalog always shows exactly the five fixed plans (Trial, Free, Small Business, Medium Business, Corporate) with their real price, Customer Limit (or Unlimited), Storage allowance, and Analytics inclusion — never a client-invented value.
+
+### FR-078 — Request Subscription Plan Change
+- **AC-078-1:** Submitting a target plan with a Payment Phone (Payment Reference optional) creates a Subscription Change Request with status Pending; Subscription Upgrade Requested event recorded; the tenant's active plan is unchanged.
+- **AC-078-2 (E2):** A submission missing Payment Phone or the requested plan is rejected with a field-level validation error; a submission missing only Payment Reference is **not** rejected (BRL-092).
+- **AC-078-3 (E3):** A second submission while one is already Pending for the tenant is rejected (`409`); an Approved, Rejected, or Cancelled prior request never blocks a new submission.
+- **AC-078-4 (E4):** A submission naming the tenant's current plan is rejected — there is nothing for the Deendoon Platform Administrator to approve.
+- **AC-078-5:** The request never becomes anything other than Pending as a direct result of submission — activation happens only via FR-084.
+
+### FR-079 — Subscription Change Request History & Cancellation
+- **AC-079-1:** A Business Owner sees only their own tenant's Subscription Change Request history — requested plan, prior plan, status, submitted date, and, once reviewed, the decision and any Rejection Reason(s).
+- **AC-079-2:** Cancelling a still-Pending request sets its status to Cancelled; the current Subscription and Plan Catalog are unaffected.
+- **AC-079-3 (E2):** Cancelling a request that is no longer Pending is rejected.
+
+### FR-080 — Storage Overview
+- **AC-080-1:** The Storage screen shows current usage (bytes and GB), effective Storage Limit (base plan allowance plus every active Storage Add-on), remaining allowance, and the list of purchased Add-ons with their status.
+
+### FR-081 — Request Storage Add-on
+- **AC-081-1:** Selecting one of the four fixed packages and submitting a Payment Reference creates a Storage Add-on Request with status Pending, server-derived size/price; Storage Addon Requested event recorded.
+- **AC-081-2 (E2):** A submission missing the package or Payment Reference is rejected with a field-level validation error.
+- **AC-081-3 (E3):** A second submission while one is already Pending for the tenant is rejected (`409`); an Approved, Rejected, or Cancelled prior request never blocks a new one.
+- **AC-081-4:** The size/price actually stored always matches the server's fixed package table, never a client-supplied value.
+
+### FR-082 — Storage Add-on Request History & Cancellation
+- **AC-082-1:** A Business Owner sees only their own tenant's Storage Add-on Request history with status, submitted date, and, once reviewed, the decision and any Rejection Reason(s).
+- **AC-082-2:** Cancelling a still-Pending request sets its status to Cancelled.
+- **AC-082-3 (E2):** Cancelling a request that is no longer Pending is rejected.
+
+### FR-083 — Subscription-Driven Customer Read-Only
+- **AC-083-1:** A Customer beyond the tenant's effective Customer Limit (oldest-first ordering) becomes read-only — not editable, not archivable, no document generation — while remaining fully viewable and searchable.
+- **AC-083-2:** A Customer newly within the limit (e.g., after a plan upgrade, or after an over-limit Customer is archived) is restored to editable.
+- **AC-083-3:** Attempting to create a new Customer while already at or over the effective limit is blocked outright, distinct from the read-only-existing-Customer behavior.
+- **AC-083-4 (A1):** A tenant whose Subscription cannot be resolved at all (not even the Free Plan fallback) has every Customer read-only and cannot create a new one — fails closed, never treated as unlimited.
+
+### FR-084 — Platform Administrator Review of Subscription & Storage Requests
+- **AC-084-1:** The Deendoon Platform Administrator sees every tenant's pending (and, filtered, historical) Subscription Change Requests and Storage Add-on Requests via the Deendoon Super Admin Web Panel.
+- **AC-084-2:** Approving a Subscription Change Request activates the requested plan (tenant's Subscription updated, status Active, new billing cycle) and triggers an immediate Customer read-only recalculation (FR-083); approving a Storage Add-on Request activates it with its own billing cycle. Both record a status-change event and notify the tenant's Business Owner.
+- **AC-084-3:** Rejecting a request without selecting at least one predefined Rejection Reason is rejected with a validation error (E4); a valid rejection records the reason(s), any free-text notes, and notifies the Business Owner. Nothing is activated.
+- **AC-084-4 (E2):** Actioning a request that is no longer Pending (already Approved/Rejected/Cancelled) is rejected.
+- **AC-084-5 (E3):** Approving a Subscription Change Request whose requested plan now equals the tenant's *current* plan (changed since submission) is rejected — re-checked at approval time, not against the request's original snapshot.
+- **AC-084-6:** No tenant-scoped session — including the Business Owner — can perform an approval/rejection action (`403`); only the Deendoon Platform Administrator can.
+
+### FR-086 — Platform Payment Destination Number *(added, Manual Mobile-Money Subscription Payment Flow Amendment)*
+- **AC-086-1:** The Deendoon Platform Administrator setting or updating the destination mobile-money number persists it as a single platform-level value and records the change in the Audit Trail (actor, timestamp).
+- **AC-086-2:** Every Business Owner's Payment Saved / Send Money step shows the current number, fetched live — never a value baked into the app build.
+- **AC-086-3 (A1):** Before any number has ever been set, the Payment Saved / Send Money step shows an explicit "not set yet" message, never a blank or placeholder number.
+- **AC-086-4 (E1):** A Business Owner session attempting to set or change the number is rejected (`403`); only the Deendoon Platform Administrator can.
+- **AC-086-5 (E2):** Submitting an empty value is rejected with a validation error.
+- **AC-086-6:** Tapping SAALAM BANK, EVC PLUS, or E-DAHAB (opening the device dialer pre-filled with that operator's fixed USSD code) never, by itself, changes any Subscription Change Request's status — the request remains exactly Pending Verification regardless of whether the dialer opened successfully.
+
+---
+
+## 15. Traceability Confirmation
+
+Every Functional Requirement from **FR-001 through FR-076** and **FR-077 through FR-084, FR-086** has at least one corresponding Acceptance Criterion above — 85 of 86 approved FRs (FR-085, Invoice Generation, is a separate pre-existing gap, out of scope for this amendment — see the note at the top of Section 14). No FR in scope was skipped; no criterion was written for a capability without an approved FR to trace to.
 
 | Module | FR Range | AC Coverage |
 |---|---|---|
@@ -456,15 +516,16 @@ Every Functional Requirement from **FR-001 through FR-076** has at least one cor
 | 5 — Recovery Workflow | FR-029–033 | Complete |
 | 6 — Payment Tracking | FR-034–039 | Complete |
 | 7 — Professional Collection | FR-040–046, FR-072–076 | Complete |
-| 8 — Documents | FR-047–052 | Complete |
+| 8 — Documents | FR-047–052 | Complete (FR-085 not covered — see Section 14 note) |
 | 9 — Reporting & Analytics | FR-053–057 | Complete |
 | 10 — Notifications & Calendar | FR-058–062 | Complete |
 | 11 — Search & Productivity | FR-063–065 | Complete |
 | 12 — Administration & Settings | FR-066–071 | Complete |
+| 13 — Subscription & Storage Self-Service | FR-077–084, FR-086 | Complete *(added, 2026-08-19)* |
 
 ---
 
-## 15. Criteria Pending Business Rule Resolution
+## 16. Criteria Pending Business Rule Resolution
 
 Consistent with `06`/`07`/`08`/`09`'s own registers, the following criteria are written to validate an invariant rather than a specific outcome, because the underlying `04_Business_Rules.md` Deferred Decision is unresolved:
 

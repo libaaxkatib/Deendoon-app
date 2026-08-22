@@ -4,13 +4,13 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-06 |
 | **Document Title** | Database Design |
-| **Version** | 1.8 |
-| **Status** | Reopened — Section 6.1 (`roles`) amended by the RBAC Architecture Amendment; Section 6.10 added by the Subscription & Storage Self-Service Catch-Up; Section 6.2 (`customers`) amended by the Client Visit Navigate Address Amendment |
+| **Version** | 1.9 |
+| **Status** | Reopened — Section 6.1 (`roles`) amended by the RBAC Architecture Amendment; Section 6.10 added by the Subscription & Storage Self-Service Catch-Up; Section 6.2 (`customers`) amended by the Client Visit Navigate Address Amendment; Section 6.10 further amended by the Manual Mobile-Money Subscription Payment Flow Amendment |
 | **State** | Frozen (pending re-freeze) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-08-09 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.13 — **Module 12 still awaiting its original approval**, see 03's Revision History 1.5) · `04_Business_Rules.md` (Reopened v1.9) · `05_UI_UX_Specification.md` (Reopened, v1.7) |
+| **Last Updated** | 2026-08-19 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.5) · `02_Business_Requirements.md` (Reopened v1.6) · `03_Functional_Requirements.md` (v1.17 — **Module 12 still awaiting its original approval**, see 03's Revision History 1.5) · `04_Business_Rules.md` (Reopened v1.11) · `05_UI_UX_Specification.md` (Reopened, v1.9) |
 
 ---
 
@@ -27,6 +27,7 @@
 | 1.6 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4), `03` (v1.10), `04` (v1.6), and `05` (Reopened, v1.3) following those documents' own updates. No table, column, or schema content changed. | Claude |
 | 1.7 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Added **Section 6.10 — Subscription & Storage Self-Service**: `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons` — every column, constraint, and index transcribed directly from the implemented migrations, not designed fresh. Amended Section 6.2's `customers` table to add the `is_read_only` column (implemented Phase 3.1, previously undocumented here). Added a "Subscription & Storage" group to Section 5 and six new entities to the Section 4 ERD. Added the two new partial unique indexes (`subscription_change_requests_one_pending_per_tenant`, `storage_addons_one_pending_per_tenant`) to Section 8's Business Rule Enforcement table. Added six new rows to Section 7's Relationship Definitions and Section 12's Traceability Matrix. Section 13's Decisions Required gains a note cross-referencing the confirmed Storage Add-on expiration gap already recorded as DD-047 in `04_Business_Rules.md`. Scope Baseline updated to cite `03` v1.13, `04` v1.9, `05` v1.7. No existing table, column, relationship, or constraint was altered. | Claude |
 | 1.8 | 2026-08-09 | **Client Visit Navigate Address Amendment (Product Owner-approved decision).** Amended Section 6.2's `customers` table to add an `address VARCHAR(500) NULLABLE` column, positioned after `phone` — a free-text street address so the mobile app's Client Visit reminder "Navigate" action can open a real location instead of a text search on the customer's name alone (previously no address field existed anywhere on Customer). `03_Functional_Requirements.md` FR-007 amended alongside this to list `address` as an optional Customer field. No other table, column, relationship, or constraint changed. | Claude |
+| 1.9 | 2026-08-19 | **Manual Mobile-Money Subscription Payment Flow Amendment (Product Owner-approved decision), extending Section 6.10.** Added `subscription_change_requests.payment_phone VARCHAR(20) NULLABLE` (required at the FormRequest layer) and amended `payment_reference` on the same table from "required at the application layer" to genuinely optional (BRL-092) — `storage_addons.payment_reference` is unchanged, this amendment is scoped to Subscription Change Requests only. Added a new table, **`platform_payment_settings`** (single platform-level row, not tenant-scoped): `destination_mobile_money_number`, `updated_by`, `updated_at`. Added a `platform_payment_destination_changed` action to the Audit Log's documented event set. Section 5's "Subscription & Storage Self-Service" group and Section 12's Traceability Matrix updated to include the new table. No existing table, column, relationship, or constraint was removed or renamed. Scope Baseline updated to cite `03` v1.17, `04` v1.11, `05` v1.9. | Claude |
 
 ---
 
@@ -184,7 +185,7 @@ Tables are grouped below to mirror the twelve approved Functional Requirements m
 | Documents | `receipts`, `demand_letters`, `statements`, `document_events` | 8 |
 | Notifications | `notifications` | 10 |
 | Administration | `system_settings`, `document_templates`, `reference_data` | 12 |
-| Subscription & Storage Self-Service | `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons` | 13 |
+| Subscription & Storage Self-Service | `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons`, `platform_payment_settings` *(added, Revision History 1.9)* | 13 |
 | Audit | `audit_log` | Cross-cutting (BR-030) |
 
 Reporting (Module 9) and Search (Module 11) introduce **no new tables** — per their own Scope Boundaries in `03_Functional_Requirements.md`, both are strictly read-only consumers of the tables above.
@@ -603,7 +604,8 @@ All three are **immutable after generation** (BRL-057) — no `UPDATE` path; reg
 | `tenant_id` | `CHAR(26)` | FK → `tenants.id`, NOT NULL | — | Identifies the *submitting* tenant; **the Deendoon Platform Administrator's queries against this table are an approved exception to tenant filtering** (Section 2), the same pattern already established for `professional_collection_requests` |
 | `requested_plan_id` | `CHAR(26)` | FK → `subscription_plans.id`, NOT NULL | — | |
 | `current_plan_id` | `CHAR(26)` | FK → `subscription_plans.id`, NULLABLE | NULL | Server-derived snapshot at submission time, never client-supplied; re-checked against the tenant's *current* plan at approval time, not trusted as still-accurate (BRL-085, Decision 26) |
-| `payment_reference` | `VARCHAR(100)` | NULLABLE (required at the application/FormRequest layer) | NULL | |
+| `payment_phone` | `VARCHAR(20)` | NULLABLE (required at the application/FormRequest layer) | NULL | *Added, Manual Mobile-Money Subscription Payment Flow, Revision History 1.9.* The mobile-money number the payment is sent from (BRL-092). Nullable at the schema level (additive column on an existing table) even though the FormRequest requires it for new submissions — matches this table's existing `payment_reference` nullability convention. |
+| `payment_reference` | `VARCHAR(100)` | NULLABLE (optional at the application/FormRequest layer, Revision History 1.9 — previously required) | NULL | *Amended, Manual Mobile-Money Subscription Payment Flow, Revision History 1.9:* the approved UX flow lets the Business Owner submit before the external mobile-money transaction reference is known, so this is now genuinely optional at both the schema and the application layer (BRL-092). |
 | `status` | `VARCHAR(20)` | NOT NULL, `CHECK (status IN ('pending','approved','rejected','cancelled'))` | `'pending'` | `'cancelled'` added after `'pending'/'approved'/'rejected'` (BRL-091) — same additive CHECK-constraint expansion pattern used throughout this schema |
 | `requested_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | |
 | `reviewed_by` | `CHAR(26)` | NULLABLE, no FK | NULL | Same `users.id` bigint/ULID mismatch as `tenant_subscriptions.approved_by` |
@@ -657,7 +659,19 @@ All three are **immutable after generation** (BRL-057) — no `UPDATE` path; reg
 
 **Foreign Keys:** `storage_addon_id`, explicitly indexed. **Indexes:** `(storage_addon_id, reason_label)` unique.
 
-**Not modeled:** any billing-gateway, payment-processor, or automated-charge table. Payment is a manually-entered free-text reference verified off-system by the Deendoon Platform Administrator (`03_Functional_Requirements.md` Module 13 Scope Boundary) — there is no payment-processing schema anywhere in this section, deliberately.
+#### `platform_payment_settings` *(added, Manual Mobile-Money Subscription Payment Flow, Revision History 1.9)*
+**Purpose:** The single, platform-level destination mobile-money number shown to a Business Owner on the Payment Saved / Send Money screen (Module 13, FR-086; BRL-092). Deliberately **not** tenant-scoped — one row for the whole platform, not one per tenant like `system_settings` (Section 6.8).
+
+| Column | Type | Constraints | Default | Notes |
+|---|---|---|---|---|
+| `id` | `CHAR(26)` | PK | — | |
+| `destination_mobile_money_number` | `VARCHAR(20)` | NULLABLE | NULL | NULL until the Deendoon Platform Administrator sets one; the Customer Mobile App shows an explicit "not set yet" message in that case rather than a blank value |
+| `updated_by` | `BIGINT UNSIGNED` | NULLABLE, no FK | NULL | `users.id` bigint reference, same convention/mismatch reasoning as `subscription_change_requests.reviewed_by` |
+| `updated_at` | `TIMESTAMPTZ` | NOT NULL | `now()` | Single timestamp column only — no `created_at`, matching `system_settings`' identical single-row-config convention |
+
+**Foreign Keys:** None. **Indexes:** None beyond the primary key — exactly one row is ever expected; enforced at the application layer (upsert), not a database constraint, matching this table's low-write-frequency, single-administrator-actor profile. Every change is recorded in the Audit Trail (`audit_log`, action `platform_payment_destination_changed`).
+
+**Not modeled:** any billing-gateway, payment-processor, or automated-charge table. Payment is a manually-entered mobile-money payment phone number plus an optional free-text reference, verified off-system by the Deendoon Platform Administrator (`03_Functional_Requirements.md` Module 13 Scope Boundary) — there is no payment-processing schema anywhere in this section, deliberately. `platform_payment_settings` is a **display-only** destination value, not a payment-verification mechanism — the system never confirms money actually reached it.
 
 **Reference Data note:** `subscription_rejection_reason` and `storage_rejection_reason` are two more categories added to the `reference_data.category` CHECK constraint (Section 6.8) by the implemented migrations, alongside `transfer_reason`/`requested_service` (Professional Collection Requests) — Section 6.8's own table definition predates all four of these additions and is not amended here; this is a pre-existing documentation gap in that subsection, not introduced by this revision, and is out of scope for this catch-up to close.
 
@@ -774,7 +788,8 @@ All three are **immutable after generation** (BRL-057) — no `UPDATE` path; reg
 | `reference_data` | FR-070 | BRL-075 |
 | `audit_log` | FR-071 | BRL-003, BRL-076 |
 | `subscription_plans`, `tenant_subscriptions` *(added)* | FR-077, FR-084 | BRL-083, BRL-085, BRL-086, BRL-090 |
-| `subscription_change_requests`, `subscription_change_request_rejection_reasons` *(added)* | FR-078, FR-079, FR-084 | BRL-084, BRL-085, BRL-091 |
+| `subscription_change_requests`, `subscription_change_request_rejection_reasons` *(added)* | FR-078, FR-079, FR-084 | BRL-084, BRL-085, BRL-091, BRL-092 |
+| `platform_payment_settings` *(added, Revision History 1.9)* | FR-086 | BRL-092 |
 | `storage_addons`, `storage_addon_rejection_reasons` *(added)* | FR-080, FR-081, FR-082, FR-084 | BRL-084, BRL-088, BRL-089, BRL-091 |
 
 Reporting (Module 9, FR-053–057) and Search (Module 11, FR-063–065) are covered by the read-only indexes above, not by dedicated tables (Section 5). FR-083 (subscription-driven Customer read-only) has no table of its own — it is enforced entirely via `customers.is_read_only` (Section 6.2, amended) read against `tenant_subscriptions`/`subscription_plans`.

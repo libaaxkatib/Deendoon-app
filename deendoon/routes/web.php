@@ -67,6 +67,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/payments/{payment}', [AdminPaymentController::class, 'show'])->name('payments.show');
 
         Route::get('/subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+        Route::get('/payment-requests', [AdminSubscriptionController::class, 'paymentRequestsIndex'])->name('payment-requests.index');
         Route::get('/subscriptions/{tenant}', [AdminSubscriptionController::class, 'show'])->name('subscriptions.show');
         Route::post('/subscriptions/change-requests/{subscriptionChangeRequest}/approve', [AdminSubscriptionController::class, 'approveChangeRequest'])->name('subscriptions.change-requests.approve');
         Route::post('/subscriptions/change-requests/{subscriptionChangeRequest}/reject', [AdminSubscriptionController::class, 'rejectChangeRequest'])->name('subscriptions.change-requests.reject');
@@ -131,6 +132,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::prefix('settings')->name('settings.')->group(function () {
             Route::get('/', [AdminSettingsController::class, 'index'])->name('index');
+            Route::post('/payment-destination', [AdminSettingsController::class, 'updatePaymentDestination'])->name('payment-destination.update');
             Route::get('/create', [AdminSettingsController::class, 'create'])->name('create');
             Route::post('/', [AdminSettingsController::class, 'store'])->name('store');
             Route::get('/{subscriptionPlan}/edit', [AdminSettingsController::class, 'edit'])->name('edit');

@@ -27,3 +27,10 @@ final subscriptionPlansProvider = FutureProvider<List<SubscriptionPlan>>(
 final subscriptionStorageProvider = FutureProvider<SubscriptionStorage>(
   (ref) => ref.watch(subscriptionRepositoryProvider).fetchStorage(),
 );
+
+/// Manual Mobile-Money Subscription Payment Flow (Product Owner decision):
+/// the platform's destination mobile-money number, shown on the "Send
+/// Money" step. Null until a Platform Administrator has set one.
+final subscriptionPaymentInfoProvider = FutureProvider<String?>(
+  (ref) => ref.watch(subscriptionRepositoryProvider).fetchPaymentInfo(),
+);

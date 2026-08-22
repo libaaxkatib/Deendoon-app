@@ -200,9 +200,16 @@ class SubscriptionService
 
     /**
      * Manual Payment Workflow, step 3-4: Business Owner submits
-     * requested_plan_id + payment_reference; system creates a pending
-     * SubscriptionChangeRequest. No approval, no activation, no plan
-     * change — those remain a later phase's responsibility.
+     * requested_plan_id + payment_phone (+ optional payment_reference);
+     * system creates a pending SubscriptionChangeRequest. No approval, no
+     * activation, no plan change — those remain a later phase's
+     * responsibility.
+     *
+     * Manual Mobile-Money Subscription Payment Flow (Product Owner
+     * decision): `payment_phone` (the mobile-money number the payment was
+     * sent from) is required; `payment_reference` is optional — the
+     * approved UX flow lets the Business Owner submit before the external
+     * mobile-money transaction reference is known.
      *
      * Rejects (409) only when a *pending* request already exists for this
      * tenant (Product Owner confirmation: approved and rejected requests
@@ -221,13 +228,13 @@ class SubscriptionService
      * converted to the identical 409 response, so the API behaves the
      * same regardless of which layer caught it.
      *
-     * The audit entry's `reason` carries `requested_plan_id` and
-     * `payment_reference` (tenant_id is already the audit_log row's own
-     * dedicated column) — audit_log has no separate metadata/JSON column,
-     * so this reuses the existing `reason` field, matching how other
-     * services already pack contextual detail into it (e.g.
-     * RiskLevelService's recalculation reason), per the Product Owner's
-     * requirement that this be sufficient for future Super Admin
+     * The audit entry's `reason` carries `requested_plan_id`,
+     * `payment_phone`, and `payment_reference` (tenant_id is already the
+     * audit_log row's own dedicated column) — audit_log has no separate
+     * metadata/JSON column, so this reuses the existing `reason` field,
+     * matching how other services already pack contextual detail into it
+     * (e.g. RiskLevelService's recalculation reason), per the Product
+     * Owner's requirement that this be sufficient for future Super Admin
      * auditing.
      *
      * Subscription Approval + Storage Add-on Approval (Product
@@ -235,9 +242,9 @@ class SubscriptionService
      * request for the plan the tenant is already subscribed to — there is
      * nothing for the Deendoon Platform Administrator to approve.
      */
-    public function requestUpgrade(Tenant $tenant, string $requestedPlanId, string $paymentReference, User $actor): SubscriptionChangeRequest
+    public function requestUpgrade(Tenant $tenant, string $requestedPlanId, string $paymentPhone, ?string $paymentReference, User $actor): SubscriptionChangeRequest
     {
-        return DB::transaction(function () use ($tenant, $requestedPlanId, $paymentReference, $actor) {
+        return DB::transaction(function () use ($tenant, $requestedPlanId, $paymentPhone, $paymentReference, $actor) {
             if (SubscriptionChangeRequest::where('tenant_id', $tenant->id)->where('status', 'pending')->exists()) {
                 $this->conflict('A pending Subscription Change Request already exists for this tenant.');
             }
@@ -248,6 +255,7 @@ class SubscriptionService
 
             $changeRequest = new SubscriptionChangeRequest([
                 'requested_plan_id' => $requestedPlanId,
+                'payment_phone' => $paymentPhone,
                 'payment_reference' => $paymentReference,
                 'status' => 'pending',
             ]);
@@ -265,7 +273,7 @@ class SubscriptionService
                 'subscription_change_request',
                 $changeRequest->id,
                 $actor,
-                "requested_plan_id={$requestedPlanId}; payment_reference={$paymentReference}",
+                "requested_plan_id={$requestedPlanId}; payment_phone={$paymentPhone}; payment_reference=".($paymentReference ?? ''),
                 $tenant->id,
             );
 

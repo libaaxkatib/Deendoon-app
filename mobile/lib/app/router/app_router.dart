@@ -72,8 +72,12 @@ import '../../features/reminders/presentation/screens/reminder_schedule_screen.d
 import '../../features/search/presentation/screens/global_search_screen.dart';
 import '../../features/shell/presentation/app_shell_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
+import '../../features/subscription/domain/subscription_plan.dart';
+import '../../features/subscription/presentation/screens/payment_information_screen.dart';
+import '../../features/subscription/presentation/screens/payment_saved_screen.dart';
 import '../../features/subscription/presentation/screens/storage_screen.dart';
 import '../../features/subscription/presentation/screens/subscription_screen.dart';
+import '../../features/subscription/presentation/screens/thank_you_screen.dart';
 import 'route_paths.dart';
 import 'router_refresh_notifier.dart';
 
@@ -381,6 +385,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/account/subscription',
         builder: (_, _) => const SubscriptionScreen(),
+      ),
+      GoRoute(
+        path: '/account/subscription/payment-information',
+        builder: (_, state) => PaymentInformationScreen(
+          plan: state.extra! as SubscriptionPlan,
+        ),
+      ),
+      GoRoute(
+        path: '/account/subscription/payment-saved',
+        builder: (_, _) => const PaymentSavedScreen(),
+      ),
+      GoRoute(
+        path: '/account/subscription/thank-you',
+        builder: (_, _) => const ThankYouScreen(),
       ),
       GoRoute(
         path: '/account/storage',

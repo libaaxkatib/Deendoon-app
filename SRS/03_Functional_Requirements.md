@@ -4,11 +4,11 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-03 |
 | **Document Title** | Functional Requirements |
-| **Version** | 1.16 |
-| **Status** | Reopened — RBAC Architecture Amendment (FR-041 retired, FR-067 narrowed), Risk Level Engine Architecture Amendment (FR-027 rewritten), Business Owner Backend Completion (Module 7 approved, FR-001/007/008/019/021/026/053 amended, see Revision History 1.11), SRS Final Alignment (FR-072/FR-074 amended to match the final implemented Professional Collection workflow, see Revision History 1.12), Subscription & Storage Self-Service Catch-Up (Module 13 added — FR-077–FR-084, see Revision History 1.13), Documentation Consistency Pass (Module 8 amended to add FR-085 — Invoice Generation, closing a gap between Revision History 1.11's claim and Module 8's own text, see Revision History 1.14), a Documentation Consistency Sweep (Notes & Attachments corrected across Modules 2/3/7, see Revision History 1.15), and the Client Visit Navigate Address Amendment (FR-007 gains an optional `address` field, see Revision History 1.16) all applied; Module 12 still awaiting its original approval (see Revision History 1.5) |
+| **Version** | 1.19 |
+| **Status** | Reopened — RBAC Architecture Amendment (FR-041 retired, FR-067 narrowed), Risk Level Engine Architecture Amendment (FR-027 rewritten), Business Owner Backend Completion (Module 7 approved, FR-001/007/008/019/021/026/053 amended, see Revision History 1.11), SRS Final Alignment (FR-072/FR-074 amended to match the final implemented Professional Collection workflow, see Revision History 1.12), Subscription & Storage Self-Service Catch-Up (Module 13 added — FR-077–FR-084, see Revision History 1.13), Documentation Consistency Pass (Module 8 amended to add FR-085 — Invoice Generation, closing a gap between Revision History 1.11's claim and Module 8's own text, see Revision History 1.14), a Documentation Consistency Sweep (Notes & Attachments corrected across Modules 2/3/7, see Revision History 1.15), the Client Visit Navigate Address Amendment (FR-007 gains an optional `address` field, see Revision History 1.16), the Manual Mobile-Money Subscription Payment Flow Amendment (Product Owner decision: FR-078 gains a required `payment_phone` field and an optional, not required, payment reference; new FR-086 — Platform Payment Destination Number, see Revision History 1.17), the final UX direction for that same flow (FR-078 Main Flow steps 4-5 superseded — two fixed operator USSD buttons and a static Thank You/Support terminus, no dedicated payment-status view, see Revision History 1.18), and a third operator, E-DAHAB, added to the same buttons (see Revision History 1.19) all applied; Module 12 still awaiting its original approval (see Revision History 1.5) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-08-09 |
+| **Last Updated** | 2026-08-20 |
 | **Scope Baseline** | `01_Project_Overview.md` (Reopened — Pending Re-Approval, v1.5) · `02_Business_Requirements.md` (Reopened — Pending Re-Approval, v1.6) |
 
 ---
@@ -43,6 +43,9 @@
 | 1.14 | 2026-08-08 | **Documentation Consistency Pass (Product Owner Decision): current implemented app + backend are the final product.** A targeted re-check of Revision History 1.11's claim "(a) Invoice as a fourth Document type alongside Receipt/Demand Letter/Statement" found that claim was never actually applied to Module 8's own text — the Functional Overview, Scope Boundary, Functional Requirements table, and Traceability Summary still described exactly three document types, with no Invoice-generation FR of its own. Corrected: added **FR-085 — Invoice Generation** (mirroring FR-047/FR-048/FR-049's structure: manual, user-initiated generation from Debt Details, `INV-000001` Auto Numbering per BR-036, immutable once generated); Functional Overview, Scope Boundary ("Ownership boundary"), the Module 8 Functional Requirements table, and the Module 8 Traceability Summary all updated to list Invoice as the fourth type; FR-050/FR-051/FR-052 (View/Download/History) already applied generically to "a generated document" and needed no Main Flow change — only their reference-only "Related Database Entities" lines were extended to name Invoice alongside Receipt/DemandLetter/Statement. No other module's FR text, numbering, or scope was touched — this entry corrects only the pre-existing gap between Revision History 1.11's summary and Module 8's body text; it does not introduce new scope beyond what 1.11 had already retroactively approved. | Claude |
 | 1.15 | 2026-08-08 | **Documentation Consistency Sweep (Product Owner Decision): current implemented app + backend are the final product.** Found and corrected a wider "Notes & Attachments" inconsistency: this generic phrase was used throughout the document to describe a capability that only half-exists. Corrected: FR-008 (Customer Profile display) no longer claims a Customer carries Notes/Attachments — the Customer entity has neither (only Debt and Collection Case have a real, implemented `notes` field, per `02_Business_Requirements.md` v1.7 BR-022); FR-019 (Debt Details display) and FR-042 (Case Details display) now say "Notes" instead of "Notes & Attachments," since Attachments (arbitrary file upload) were never implemented for any of the three entities; FR-042's Traceability Summary row corrected to cite BR-022 instead of a nonexistent Module 8 attachment capability. Also found and removed a leftover reference to "assigned Collection Officer" in FR-042's Main Flow — a retired concept (FR-041 retirement, v1.8) missed by that version's sweep. | Claude |
 | 1.16 | 2026-08-09 | **Client Visit Navigate Address Amendment (Product Owner-approved decision).** FR-007 (Customer Creation) Main Flow step 1 now names `address` explicitly (optional street address) alongside name and phone number — added so the mobile app's Client Visit reminder "Navigate" action can open a real location instead of a text search on the customer's name alone; previously no address field existed anywhere on Customer. Related Database Entities line unchanged (Customer already covers it). `06_Database_Design.md` v1.8 amended alongside this (`customers.address VARCHAR(500) NULLABLE`). No other Module 2 requirement changed. | Claude |
+| 1.17 | 2026-08-19 | **Manual Mobile-Money Subscription Payment Flow Amendment (Product Owner-approved decision), extending Module 13.** FR-078 (Request Subscription Plan Change) amended: the Business Owner now submits a required `payment_phone` (the mobile-money number the payment is sent from) alongside an *optional* payment reference — the approved UX flow (Choose Plan → Payment Information → Save Request → Payment Saved/Send Money → external mobile-money app → Pending Verification) lets the transaction reference be added after the external payment completes rather than requiring it up front; the prior text required a payment reference unconditionally. Added **FR-086 — Platform Payment Destination Number**: a new, Platform-Administrator-only-editable, auditable platform-level setting (not tenant-scoped, not a Subscription Plan field) giving Business Owners a real destination mobile-money number to pay into on the Send Money step — this concept did not exist anywhere in the product before this amendment. Also added three focused Customer Mobile App screens (Payment Information, Payment Saved/Send Money, Payment Status) alongside the existing Subscription screen's request history, per `05_UI_UX_Specification.md` v1.5 (amended alongside this). Also closes two pre-existing documentation gaps found during this amendment's audit (not new scope): `08_Security_and_RBAC.md` §5 never named Module 13 among the Deendoon Platform Administrator's approved cross-tenant capabilities, and `10_Acceptance_Criteria.md` had zero acceptance criteria for FR-077–FR-085 despite Module 13 being Approved — both corrected alongside this entry (`08_Security_and_RBAC.md` v1.5, `10_Acceptance_Criteria.md` v1.5). `06_Database_Design.md` §6.10 and `07_API_Design.md` §5.11/§15 amended alongside this (new `subscription_change_requests.payment_phone` column, new `platform_payment_settings` table, new `GET /subscription/payment-info` endpoint). No other module's FR text, numbering, or scope was touched. | Claude |
+| 1.18 | 2026-08-20 | **Final UX direction for the Manual Mobile-Money Subscription Payment Flow (Product Owner-approved decision), superseding v1.17's Send Money step.** FR-078 Main Flow steps 4-5 rewritten: the generic single "Send Money" destination-number affordance and the dedicated Payment Status view are replaced by two fixed-label buttons — **SAALAM BANK** (`*799*32666663*5#`) and **EVC PLUS** (`*712*615514692*5#`) — each opening the device dialer pre-filled with a Product-Owner-given USSD code (not sourced from the backend, not admin-configurable, distinct from the Platform Payment Destination Number display which is unchanged), followed by a "Done" action to a static Thank You/Support screen. No dedicated payment-status view exists in this flow anymore — the existing Subscription Change Request history (FR-079) and the backend Platform Administrator approval workflow (FR-084, unchanged) remain the only source of truth for the eventual outcome. `05_UI_UX_Specification.md` v1.10 amended alongside this (SCR-053 redesigned, SCR-054 retired, SCR-055 added). `04_Business_Rules.md` BRL-092 amended alongside this to note the two fixed USSD codes. No backend change of any kind — `06`/`07`/`08`/`10` are untouched by this entry. | Claude |
+| 1.19 | 2026-08-20 | **Third payment operator added (Product Owner-approved decision), extending v1.18's Payment Instructions step.** FR-078 Main Flow step 4 amended: a third fixed-label button, **E-DAHAB** (`*712*625514692*5#`), added alongside SAALAM BANK and EVC PLUS — same mechanism (fixed USSD code, device dialer, `#` percent-encoded to `%23`), same guarantee that tapping it never changes the request's status. `04_Business_Rules.md` BRL-092 and `05_UI_UX_Specification.md` SCR-053 amended alongside this to list all three operators. No other FR text, numbering, or scope touched; no backend change of any kind. | Claude |
 
 ---
 
@@ -68,7 +71,7 @@ Detailed field-level business logic is deferred to `04_Business_Rules.md`; scree
 | 10 | Notifications & Calendar | Approved |
 | 11 | Search & Productivity | Approved |
 | 12 | Administration & Settings | Submitted for Review |
-| 13 | Subscription & Storage Self-Service | Approved — added by Product Owner Decision (Subscription & Storage Self-Service Catch-Up); real, live-verified backend and Flutter capability retroactively documented (see Revision History 1.13) |
+| 13 | Subscription & Storage Self-Service | Approved — added by Product Owner Decision (Subscription & Storage Self-Service Catch-Up); real, live-verified backend and Flutter capability retroactively documented (see Revision History 1.13); amended to add FR-086 (Platform Payment Destination Number) and revise FR-078's payment fields (Manual Mobile-Money Subscription Payment Flow, see Revision History 1.17) |
 
 ---
 
@@ -2990,7 +2993,7 @@ None of the above items change Version 1 scope; they are implementation-level de
 
 ## 1. Functional Overview
 
-This module documents a real, implemented Business Owner self-service capability that was fully built (backend and Customer Mobile App) ahead of this SRS and is retroactively catalogued here per Product Owner decision (Subscription & Storage Self-Service Catch-Up, Revision History 1.13): a tenant's Business Owner can view their subscription/trial status and the fixed Plan Catalog, request a plan upgrade or downgrade with a payment reference, view and cancel their own pending Subscription Change Requests, view their Storage allowance/usage, request a Storage Add-on with a payment reference, and view and cancel their own pending Storage Add-on Requests. Approval is a manual, off-system-payment-verified workflow performed by the Deendoon Platform Administrator via the Deendoon Super Admin Web Panel — the same actor and interface already approved for Professional Collection Request review (Module 7) — introducing no new actor, role, or application interface. This module also documents the subscription-driven Customer read-only mechanism, since it is triggered by, and only meaningful in the context of, subscription plan limits.
+This module documents a real, implemented Business Owner self-service capability that was fully built (backend and Customer Mobile App) ahead of this SRS and is retroactively catalogued here per Product Owner decision (Subscription & Storage Self-Service Catch-Up, Revision History 1.13): a tenant's Business Owner can view their subscription/trial status and the fixed Plan Catalog, request a plan upgrade or downgrade with a mobile-money payment phone number and an optional payment reference (Manual Mobile-Money Subscription Payment Flow Amendment, Revision History 1.17), view and cancel their own pending Subscription Change Requests, view their Storage allowance/usage, request a Storage Add-on with a payment reference, and view and cancel their own pending Storage Add-on Requests. Approval is a manual, off-system-payment-verified workflow performed by the Deendoon Platform Administrator via the Deendoon Super Admin Web Panel — the same actor and interface already approved for Professional Collection Request review (Module 7) — introducing no new actor, role, or application interface. This module also documents the subscription-driven Customer read-only mechanism, since it is triggered by, and only meaningful in the context of, subscription plan limits, and the Platform Payment Destination Number the Deendoon Platform Administrator maintains for the Manual Mobile-Money Subscription Payment Flow (FR-086).
 
 ## Scope Boundary
 
@@ -2999,7 +3002,7 @@ This module documents a real, implemented Business Owner self-service capability
 - **Notifications (Module 10):** This module emits the two qualifying events consumed by Module 10 (Subscription Request Update, Storage Request Update, FR-084) but never renders or manages the Notification Center itself.
 - **Administration & Settings (Module 12):** This module's Plan Catalog and Storage Add-on packages are fixed, platform-owned data, not tenant-configurable System Preferences or Lookup & Reference Data — they are not reachable through Module 12's Administration surfaces. The Rejection Reasons a Deendoon Platform Administrator selects when rejecting a request (FR-084) are, however, ordinary tenant-scoped-to-`NULL` (platform-owned) Lookup & Reference Data rows, reusing Module 12's existing Reference Data mechanism (BC-003) rather than a new one.
 - **Ownership boundary:** This module owns the Subscription, Subscription Plan Catalog, Subscription Change Request, and Storage Add-on Request entities, and the `is_read_only` flag on Customer records (written here, read by Module 2's Policies).
-- **Payment processing:** Out of scope. Payment is a manually-entered free-text reference (e.g., a mobile-money transaction ID), verified off-system by the Deendoon Platform Administrator before approval — there is no payment-gateway integration, automatic charge, or billing-infrastructure configuration anywhere in this module.
+- **Payment processing:** Out of scope. Payment is a manually-entered mobile-money payment phone number plus an optional free-text transaction reference, verified off-system by the Deendoon Platform Administrator before approval — there is no payment-gateway integration, automatic charge, USSD dialing automation, or billing-infrastructure configuration anywhere in this module. The Platform Payment Destination Number (FR-086) is a display-only value shown to the Business Owner so they know where to send the payment — the system never verifies that a payment was actually sent to it, never receives a callback from any mobile-money provider, and never marks a request paid based on the Business Owner having tapped "Dir Lacagta" (open dialer) — only the Deendoon Platform Administrator's manual approval changes a request's status.
 - **Plan/pricing configuration:** Out of scope. The Plan Catalog (five plans: Trial, Free, Small Business, Medium Business, Corporate) and the four Storage Add-on packages are fixed, seeded, platform-owned data (BRL-083, BRL-088) — no Business Owner-facing or Platform Administrator-facing capability exists anywhere in the backend to create, edit, or re-price a Plan or a Storage Add-on package.
 
 ## 2. Functional Requirements
@@ -3007,13 +3010,14 @@ This module documents a real, implemented Business Owner self-service capability
 | ID | Requirement | Traces To |
 |---|---|---|
 | FR-077 | The system shall allow an authorized Business Owner to view their tenant's current Subscription (plan, trial/subscription status, billing dates, Customer/Storage usage and limits, Analytics availability) and the fixed Plan Catalog. | BC-003, BR-034 |
-| FR-078 | The system shall allow an authorized Business Owner to request a Subscription plan upgrade or downgrade, submitting a payment reference for manual verification. | BR-034 |
+| FR-078 | The system shall allow an authorized Business Owner to request a Subscription plan upgrade or downgrade, submitting a mobile-money payment phone number (required) and an optional payment reference for manual verification. | BR-034 |
 | FR-079 | The system shall allow an authorized Business Owner to view their tenant's Subscription Change Request history and cancel a still-pending request. | BR-034 |
 | FR-080 | The system shall allow an authorized Business Owner to view their tenant's Storage Overview: base plan allowance, active Storage Add-ons, effective (total) allowance, usage, and remaining allowance. | BR-034 |
 | FR-081 | The system shall allow an authorized Business Owner to request a Storage Add-on, submitting a payment reference for manual verification. | BR-034 |
 | FR-082 | The system shall allow an authorized Business Owner to view their tenant's Storage Add-on Request history and cancel a still-pending request. | BR-034 |
 | FR-083 | The system shall automatically restrict Customer creation and editing once a tenant reaches or exceeds its subscription plan's effective Customer Limit, without permanently deleting or hiding any Customer record. | BC-002, BR-034 |
 | FR-084 | The system shall allow the Deendoon Platform Administrator to review, approve, or reject a tenant's pending Subscription Change Request or Storage Add-on Request via the Deendoon Super Admin Web Panel. | BR-034 |
+| FR-086 | The system shall allow the Deendoon Platform Administrator to set and update a single, platform-level destination mobile-money number, and shall show that number to every Business Owner on the Payment Saved / Send Money step. | BR-034 |
 
 ---
 
@@ -3052,24 +3056,25 @@ This module documents a real, implemented Business Owner self-service capability
 **Triggers**
 - User selects a different plan from the Plan Catalog and submits a change request.
 
-**Main Flow**
-1. User selects a target plan (upgrade or downgrade) from the Plan Catalog.
-2. User enters a payment reference (e.g., a mobile-money transaction ID) confirming they have paid for the plan off-system.
-3. System validates the request and creates a Subscription Change Request with status **Pending**, recording the requested plan, a server-derived snapshot of the tenant's current plan, and the payment reference.
-4. The request becomes visible in the tenant's own Subscription Change Request history (FR-079) and in the Deendoon Platform Administrator's Approval Center (FR-084) for review.
+**Main Flow (amended, Manual Mobile-Money Subscription Payment Flow, Revision History 1.17; Main Flow steps 4–5 superseded by the final UX direction, Revision History 1.18)**
+1. User selects a target plan (upgrade or downgrade) from the Plan Catalog — the Payment Information screen auto-populates the selected Plan and its Amount (the user never re-enters either), and shows the tenant's own Business Name read-only for confirmation.
+2. User enters the mobile-money phone number the payment will be sent from (`payment_phone`, required). A transaction reference (`payment_reference`) is optional at this step — it may not exist yet, since the external mobile-money transaction hasn't happened until the next step.
+3. System validates the request and creates a Subscription Change Request with status **Pending**, recording the requested plan, a server-derived snapshot of the tenant's current plan, the payment phone, and the payment reference (if provided).
+4. System shows a Payment Instructions confirmation with the Platform Payment Destination Number (FR-086) and exactly three named-operator buttons — **SAALAM BANK**, **EVC PLUS**, and **E-DAHAB** — each opening the device's own dialer pre-filled with a fixed, Product-Owner-approved USSD code for that operator (BRL-092; not sourced from the backend, not admin-configurable). The system never assumes or simulates that the payment was actually sent; tapping any button never changes the request's status.
+5. The Business Owner taps **Done** once they return to the app — a neutral navigation action, not a success claim — reaching a static Thank You / Support screen. No dedicated payment-status view is shown in this flow; the request becomes visible in the tenant's own Subscription Change Request history (FR-079) and in the Deendoon Platform Administrator's Approval Center (FR-084) for review, exactly as before.
 
 **Alternate Flows**
 - None.
 
 **Exceptions**
 - **E1 — User lacks permission:** Action is not available.
-- **E2 — Payment reference or requested plan missing:** Submission is rejected with a field-level validation error.
+- **E2 — Payment phone or requested plan missing:** Submission is rejected with a field-level validation error. A missing payment reference is **not** an error (optional, per Revision History 1.17).
 - **E3 — A Subscription Change Request is already pending for this tenant:** Rejected; the tenant must wait for the existing request to be approved, rejected, or cancelled (FR-079) before submitting another.
 - **E4 — Requested plan is the tenant's current plan:** Rejected — there is nothing for the Deendoon Platform Administrator to approve.
 
-**Business Rule References:** BRL-084 (one pending request per tenant); BRL-085 (approval, activation, and billing cycle).
-**Related APIs (reference only):** `POST /subscription/upgrade-request` — see `07_API_Design.md`.
-**Related Database Entities (reference only):** SubscriptionChangeRequest, SubscriptionPlan, AuditLog — see `06_Database_Design.md`.
+**Business Rule References:** BRL-084 (one pending request per tenant); BRL-085 (approval, activation, and billing cycle); BRL-092 (payment phone required, payment reference optional, fixed operator USSD codes — Revision History 1.17/1.18).
+**Related APIs (reference only):** `POST /subscription/upgrade-request`, `GET /subscription/payment-info` — see `07_API_Design.md`.
+**Related Database Entities (reference only):** SubscriptionChangeRequest, SubscriptionPlan, PlatformPaymentSetting, AuditLog — see `06_Database_Design.md`.
 **Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-078.
 
 ---
@@ -3242,6 +3247,33 @@ This module documents a real, implemented Business Owner self-service capability
 
 ---
 
+### FR-086 — Platform Payment Destination Number (added, Manual Mobile-Money Subscription Payment Flow, Revision History 1.17)
+
+**Preconditions**
+- User is authenticated as the Deendoon Platform Administrator (for setting/updating) or a Business Owner (for viewing).
+
+**Triggers**
+- The Deendoon Platform Administrator sets or updates the platform's destination mobile-money number; or a Business Owner reaches the Payment Saved / Send Money step of FR-078.
+
+**Main Flow**
+1. The Deendoon Platform Administrator opens the Settings area of the Deendoon Super Admin Web Panel — the same platform-level settings surface already used for Plan Catalog management (Module 12) — and sets or updates a single destination mobile-money number.
+2. System stores the number as a single platform-level (not tenant-scoped) value and records the change in the Audit Trail, including who changed it and when.
+3. Every Business Owner's Payment Saved / Send Money step (FR-078) displays this number, fetched live from the backend — never hardcoded in the Customer Mobile App, so the Platform Administrator can correct it without an app release.
+
+**Alternate Flows**
+- **A1 — No destination number has ever been set:** The Payment Saved / Send Money step shows an explicit "not set yet" message instead of a blank or placeholder number.
+
+**Exceptions**
+- **E1 — A Business Owner attempts to set or change the number:** Action is not available — Platform-Administrator-only, consistent with every other platform-level setting in Module 12.
+- **E2 — Submitted value is empty:** Rejected with a field-level validation error.
+
+**Business Rule References:** BRL-092 (Manual Mobile-Money Subscription Payment Flow — destination number governance).
+**Related APIs (reference only):** `GET /subscription/payment-info` (Business Owner read), Deendoon Super Admin Web Panel `POST /admin/settings/payment-destination` (Platform Administrator write, Blade form) — see `07_API_Design.md`.
+**Related Database Entities (reference only):** PlatformPaymentSetting, AuditLog — see `06_Database_Design.md`.
+**Acceptance Criteria References:** To be defined in `10_Acceptance_Criteria.md` under FR-086.
+
+---
+
 ## Module 13 — Traceability Summary
 
 | FR | Business Requirement(s) | Related Modules |
@@ -3254,6 +3286,7 @@ This module documents a real, implemented Business Owner self-service capability
 | FR-082 | BR-034 | — |
 | FR-083 | BC-002, BR-034 | Module 2 (Customer Management — FR-007 Exception E3, FR-009/FR-010 read-only block) |
 | FR-084 | BR-034 | Module 7 (shared Deendoon Super Admin Web Panel actor/interface, not a new one); Module 10 (Notifications); Module 12 (Reference Data — Rejection Reasons) |
+| FR-086 | BR-034 | Module 12 (shared Settings surface, not a new one) |
 
 ---
 

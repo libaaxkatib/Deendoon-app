@@ -53,24 +53,39 @@ class SubscriptionApi {
     );
   }
 
-  /// `SubscriptionUpgradeRequestRequest`: both fields required. 409s if a
-  /// pending Subscription Change Request already exists for this tenant —
-  /// surfaced as an `ApiException` by the repository layer, not handled
-  /// here.
+  /// `SubscriptionUpgradeRequestRequest` (Manual Mobile-Money Subscription
+  /// Payment Flow, Product Owner decision): `paymentPhone` is required;
+  /// `paymentReference` is optional — the approved UX flow lets the
+  /// Business Owner submit before the external mobile-money transaction
+  /// reference is known. 409s if a pending Subscription Change Request
+  /// already exists for this tenant — surfaced as an `ApiException` by the
+  /// repository layer, not handled here.
   Future<SubscriptionChangeRequest> requestUpgrade({
     required String requestedPlanId,
-    required String paymentReference,
+    required String paymentPhone,
+    String? paymentReference,
   }) async {
     final response = await _dio.post(
       'subscription/upgrade-request',
       data: {
         'requested_plan_id': requestedPlanId,
+        'payment_phone': paymentPhone,
         'payment_reference': paymentReference,
       },
     );
     return SubscriptionChangeRequest.fromJson(
       response.data['data'] as Map<String, dynamic>,
     );
+  }
+
+  /// `SubscriptionController::paymentInfo()` — the platform's destination
+  /// mobile-money number, shown on the "Send Money" step. Never hardcoded
+  /// client-side: the Platform Administrator can change it without an app
+  /// release. Null until a Platform Administrator has set one.
+  Future<String?> fetchPaymentInfo() async {
+    final response = await _dio.get('subscription/payment-info');
+    final data = response.data['data'] as Map<String, dynamic>;
+    return data['destination_mobile_money_number'] as String?;
   }
 
   Future<SubscriptionChangeRequest> cancelChangeRequest(String id) async {

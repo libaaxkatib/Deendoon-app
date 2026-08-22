@@ -2360,6 +2360,74 @@ class AppLocalizationsEn extends AppLocalizations {
       'Payment reference must be 100 characters or fewer';
 
   @override
+  String get paymentInformationTitle => 'Payment Information';
+
+  @override
+  String get paymentInformationBusinessNameLabel => 'Business Name';
+
+  @override
+  String get paymentInformationPlanLabel => 'Selected Plan';
+
+  @override
+  String get paymentInformationAmountLabel => 'Amount';
+
+  @override
+  String get paymentInformationPhoneLabel => 'Payment Phone Number';
+
+  @override
+  String get paymentInformationPhoneHint =>
+      'The number you will send the payment from';
+
+  @override
+  String get paymentInformationPhoneRequiredValidator =>
+      'Payment phone number is required';
+
+  @override
+  String get paymentInformationContinueButton => 'Continue Payment';
+
+  @override
+  String get paymentSavedTitle => 'Payment Instructions';
+
+  @override
+  String get paymentSavedSuccessMessage => 'Your information has been saved.';
+
+  @override
+  String get paymentSavedInstructionMessage =>
+      'Please send the money to the Deendoon number below.';
+
+  @override
+  String get paymentSavedDestinationNumberLabel => 'Deendoon Payment Number';
+
+  @override
+  String get paymentSavedDestinationNumberUnavailable =>
+      'Not set yet — please contact support.';
+
+  @override
+  String get paymentSavedSaalamBankButton => 'SAALAM BANK';
+
+  @override
+  String get paymentSavedEvcPlusButton => 'EVC PLUS';
+
+  @override
+  String get paymentSavedEDahabButton => 'E-DAHAB';
+
+  @override
+  String get paymentSavedCouldNotOpenDialerMessage =>
+      'Could not open the dialer.';
+
+  @override
+  String get paymentSavedDoneButton => 'Done';
+
+  @override
+  String get thankYouTitle => 'Thank You';
+
+  @override
+  String get thankYouHeading => 'Mahadsanid';
+
+  @override
+  String get thankYouMessage => 'Waad ku mahadsan tahay isticmaalka Deendoon.';
+
+  @override
   String get storageTitle => 'Storage';
 
   @override

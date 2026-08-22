@@ -325,6 +325,7 @@ class FeatureAndReadOnlyEnforcementTest extends TestCase
 
         $this->postJson('/api/v1/subscription/upgrade-request', [
             'requested_plan_id' => $targetPlan->id,
+            'payment_phone' => '+252611234567',
             'payment_reference' => 'REF-12345',
         ])->assertStatus(201);
     }

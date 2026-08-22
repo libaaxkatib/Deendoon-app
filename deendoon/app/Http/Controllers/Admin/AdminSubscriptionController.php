@@ -84,6 +84,35 @@ class AdminSubscriptionController extends Controller
         private readonly ReferenceDataService $referenceData,
     ) {}
 
+    /**
+     * Manual Mobile-Money Subscription Payment Flow (Product Owner
+     * decision): a flat, cross-tenant queue of every Subscription Change
+     * Request (all statuses, filterable), so the Platform Administrator
+     * can find pending payments without first locating each tenant. Purely
+     * a navigational aid — "View" links into the existing per-tenant
+     * {@see show()} page, where the already-established Approve/Reject
+     * dialogs live; this method/view never duplicates that action surface
+     * or calls SubscriptionService itself, per the audit finding that no
+     * existing approval logic should be reimplemented a second time.
+     */
+    public function paymentRequestsIndex(Request $request): View
+    {
+        $requests = SubscriptionChangeRequest::with(['requestedPlan', 'currentPlan', 'tenant'])
+            ->when($request->filled('search'), fn ($query) => $query->whereHas('tenant', fn ($t) => $t->whereRaw(
+                'LOWER(business_name) LIKE ?', ['%'.mb_strtolower((string) $request->string('search')).'%']
+            )))
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->value()))
+            ->orderByDesc('requested_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.payment-requests.index', [
+            'title' => 'Payment Requests',
+            'requests' => $requests,
+            'requestStatuses' => self::REQUEST_STATUSES,
+        ]);
+    }
+
     public function index(Request $request): View
     {
         $tenants = Tenant::with(['subscription.plan'])

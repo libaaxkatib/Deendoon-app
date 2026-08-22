@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\PlatformPaymentSetting;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\User;
@@ -224,5 +225,60 @@ class AdminSettingsTest extends TestCase
         $plan = SubscriptionPlan::factory()->create(['active' => true]);
 
         $this->actingAs($this->businessOwner($tenant))->post("/admin/settings/{$plan->id}/deactivate")->assertForbidden();
+    }
+
+    // --- Payment Destination (Manual Mobile-Money Subscription Payment
+    // Flow, Product Owner decision) ---
+
+    public function test_platform_administrator_can_set_the_destination_mobile_money_number(): void
+    {
+        $response = $this->actingAs($this->platformAdmin())->post('/admin/settings/payment-destination', [
+            'destination_mobile_money_number' => '61XXXXXXX',
+        ]);
+
+        $response->assertRedirect(route('admin.settings.index'));
+        $this->assertDatabaseHas('platform_payment_settings', ['destination_mobile_money_number' => '61XXXXXXX']);
+    }
+
+    public function test_setting_the_destination_number_a_second_time_updates_the_single_row(): void
+    {
+        $admin = $this->platformAdmin();
+        $this->actingAs($admin)->post('/admin/settings/payment-destination', ['destination_mobile_money_number' => '61XXXXXXX']);
+
+        $this->actingAs($admin)->post('/admin/settings/payment-destination', ['destination_mobile_money_number' => '62YYYYYYY']);
+
+        $this->assertSame(1, PlatformPaymentSetting::count());
+        $this->assertDatabaseHas('platform_payment_settings', ['destination_mobile_money_number' => '62YYYYYYY']);
+    }
+
+    public function test_setting_the_destination_number_records_an_audit_log_entry(): void
+    {
+        $admin = $this->platformAdmin();
+
+        $this->actingAs($admin)->post('/admin/settings/payment-destination', [
+            'destination_mobile_money_number' => '61XXXXXXX',
+        ])->assertRedirect(route('admin.settings.index'));
+
+        $this->assertDatabaseHas('audit_log', [
+            'user_id' => (string) $admin->id,
+            'action' => 'platform_payment_destination_changed',
+            'entity_type' => 'platform_payment_setting',
+        ]);
+    }
+
+    public function test_setting_the_destination_number_requires_a_value(): void
+    {
+        $response = $this->actingAs($this->platformAdmin())->post('/admin/settings/payment-destination', []);
+
+        $response->assertSessionHasErrors(['destination_mobile_money_number']);
+    }
+
+    public function test_a_business_owner_cannot_set_the_destination_number(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        $this->actingAs($this->businessOwner($tenant))->post('/admin/settings/payment-destination', [
+            'destination_mobile_money_number' => '61XXXXXXX',
+        ])->assertForbidden();
     }
 }

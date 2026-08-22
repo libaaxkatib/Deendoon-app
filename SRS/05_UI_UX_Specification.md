@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-05 |
 | **Document Title** | UI/UX Specification |
-| **Version** | 1.8 |
-| **Status** | Reopened — RBAC Architecture Amendment (retroactive) applied; SRS Final Alignment (Product Owner Decision) applied; Subscription & Storage Self-Service Catch-Up (Product Owner Decision) applied; Documentation Consistency Sweep applied |
+| **Version** | 1.11 |
+| **Status** | Reopened — RBAC Architecture Amendment (retroactive) applied; SRS Final Alignment (Product Owner Decision) applied; Subscription & Storage Self-Service Catch-Up (Product Owner Decision) applied; Documentation Consistency Sweep applied; Manual Mobile-Money Subscription Payment Flow Amendment (Product Owner Decision) applied; SCR-053 redesigned and SCR-054 retired by the final UX direction (Product Owner Decision); SCR-053 gains a third operator, E-DAHAB (Product Owner Decision) |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Product Owner |
-| **Last Updated** | 2026-08-08 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened, v1.6) · `02_Business_Requirements.md` (Reopened, v1.7) · `03_Functional_Requirements.md` (v1.15) · `04_Business_Rules.md` (Reopened, v1.10) |
+| **Last Updated** | 2026-08-20 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened, v1.6) · `02_Business_Requirements.md` (Reopened, v1.7) · `03_Functional_Requirements.md` (v1.19) · `04_Business_Rules.md` (Reopened, v1.13) |
 
 ---
 
@@ -26,6 +26,9 @@
 | 1.6 | 2026-08-08 | **SRS Final Alignment (Product Owner Decision): current implemented app + backend are the final product.** SCR-025's Deendoon Hand-off tab and Validation rule amended: Submit Case to Deendoon is a Form, not a zero-field confirmation — it requires at least one Reason for Transfer and at least one Requested Service (both Reference Data-backed multi-select), optional Notes, and Client Declaration acceptance, matching `03_Functional_Requirements.md` v1.12 (FR-072) and `04_Business_Rules.md` v1.8 (BRL-078). The Deendoon Hand-off tab's Displayed Data now also lists Reasons, Requested Services, Notes, and the Declaration acceptance record for an existing Request. This corrects a discrepancy where this document still described the pre-amendment "no additional fields required" workflow. Scope Baseline updated to cite `03` v1.12 and `04` v1.8. | Claude |
 | 1.7 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Integrated Module 13 (`03_Functional_Requirements.md` FR-077–FR-084) into the existing UI architecture: two new screens — **SCR-050 Subscription (Business Owner)** and **SCR-051 Storage (Business Owner)** — both live-verified against the implemented Customer Mobile App, reusing the existing single-column Form/List screen pattern rather than introducing a new interaction model; the "Request Plan Change" and "Request Storage Add-on" actions are documented as bottom-sheet Forms embedded within their parent screen's own Sections/Validation, matching how SCR-025 already documents "Submit Case to Deendoon" as an embedded action rather than a separate screen. Amended SCR-046 (My Profile / Account Settings) to note the Account menu's "Subscription" tile (Business Owner only) as the entry point into SCR-050, which is itself the entry point into SCR-051 (no separate top-level "Storage" menu entry). Updated §4 Navigation Specification, §9 Screen Inventory, and §17 Traceability to include SCR-050/SCR-051, matching how the Professional Collection Requests addition (v1.1) updated the same three places. No new application interface, actor, or RBAC role was introduced — both screens live inside the existing Customer Mobile App, reachable only by the Business Owner. Scope Baseline updated to cite `03` v1.13 and `04` v1.9. | Claude |
 | 1.8 | 2026-08-08 | **Documentation Consistency Sweep (Product Owner Decision): current implemented app + backend are the final product.** Corrected every remaining "Notes & Attachments" reference to match reality: the Component Library's File Upload entry no longer lists Notes as a use case (Notes is a plain text field, not a file upload); SCR-008 (Customer Details) had its "Notes" tab removed entirely — the Customer entity carries no Notes field in the final product, unlike Debt and Collection Case, which do (`02_Business_Requirements.md` v1.7, BR-022); SCR-014 (Debt Details) and SCR-025 (Collection Case Details) now list "Notes (free-text, BR-022)" instead of "Notes & Attachments." No screen was added or removed beyond SCR-008's tab count change; no workflow changed. | Claude |
+| 1.9 | 2026-08-19 | **Manual Mobile-Money Subscription Payment Flow Amendment (Product Owner-approved decision), extending Module 13.** SCR-050's "Request This Plan" action now navigates to three new screens instead of opening the original single-field bottom sheet: **SCR-052 Payment Information** (Payment Phone required, Transaction Reference optional, Plan/Amount/Business Name read-only), **SCR-053 Payment Saved / Send Money** (confirmation, Platform Payment Destination Number, "Dir Lacagta" device-dialer action that never marks the request paid), and **SCR-054 Payment Status** (focused Pending Verification / Approved / Rejected view, with "Try Again" on Rejected). The original bottom sheet is retired — it could not collect the now-required Payment Phone (BRL-092). SCR-051 (Storage) and its Request Storage Add-on bottom sheet are unchanged; this amendment is scoped to Subscription Change Requests only. Updated §9 Screen Inventory and §17 Traceability to add SCR-052/053/054. No new application interface, actor, or RBAC role was introduced — all three screens live inside the existing Customer Mobile App, reachable only by the Business Owner. Scope Baseline updated to cite `03` v1.17 and `04` v1.11. | Claude |
+| 1.10 | 2026-08-20 | **Final UX direction for the Manual Mobile-Money Subscription Payment Flow (Product Owner-approved decision), superseding v1.9's SCR-053/054 shape.** **SCR-053** (renamed "Payment Instructions / Send Money") redesigned: removed the Plan/Amount/Duration summary Card, the generic "Dir Lacagta" button, the "Payment Status: Pending Verification" notice, and "View Payment Status"; replaced with two fixed-label buttons, **SAALAM BANK** (`*799*32666663*5#`) and **EVC PLUS** (`*712*615514692*5#`) — Product-Owner-given USSD codes, not sourced from the backend and not admin-configurable — and a "Done" exit. **SCR-054 (Payment Status) marked Retired** (content preserved for history, matching this document's SCR-026 precedent) — no dedicated status view exists anymore in this flow. Added **SCR-055 — Thank You / Support**: a static terminal screen ("Mahadsanid") reusing the existing Contact Deendoon Support component as-is, with no payment/subscription outcome displayed anywhere. Updated §9 Screen Inventory and §17 Traceability accordingly. No new application interface, actor, or RBAC role introduced; no backend change of any kind. Scope Baseline updated to cite `03` v1.18 and `04` v1.12. | Claude |
+| 1.11 | 2026-08-20 | **Third payment operator added (Product Owner-approved decision), extending v1.10's SCR-053.** Added a third fixed-label button, **E-DAHAB** (`*712*625514692*5#`), alongside SAALAM BANK and EVC PLUS — same USSD-launch mechanism, same non-status-changing guarantee. Updated §9 Screen Inventory and §17 Traceability only where the operator count is mentioned; no other section changed. No new application interface, actor, or RBAC role introduced; no backend change. Scope Baseline updated to cite `03` v1.19 and `04` v1.13. | Claude |
 
 ---
 
@@ -300,6 +303,10 @@ Each entry defines behavior only — visual styling follows §2.
 | SCR-049 | Professional Collection Requests (Super Admin) *(added)* | 7 |
 | SCR-050 | Subscription (Business Owner) *(added)* | 13 |
 | SCR-051 | Storage (Business Owner) *(added)* | 13 |
+| SCR-052 | Payment Information (Business Owner) *(added)* | 13 |
+| SCR-053 | Payment Instructions / Send Money (Business Owner) *(redesigned, was "Payment Saved / Send Money")* | 13 |
+| SCR-054 | Payment Status (Business Owner) *(Retired)* | 13 |
+| SCR-055 | Thank You / Support (Business Owner) *(added)* | 13 |
 
 Every Module (1–13) is represented; every screen named in your Screen Inventory request (Authentication, Dashboard, Customer, Debt, Credit & Risk, Recovery Workflow, Payments, Collection Cases, Documents, Reports, Notifications, Calendar, Global Search, Administration, Settings, Audit Trail, Profile, Account) is present above. Professional Collection Requests (Module 7, reopened) is integrated as one new screen (SCR-049) plus amendments to three existing screens (SCR-005, SCR-006, SCR-025) rather than a parallel set of new screens — consistent with the instruction to reuse the existing UX pattern set rather than assume new surfaces are required. Subscription & Storage Self-Service (Module 13, catch-up) is integrated as two new screens (SCR-050, SCR-051) plus an amendment to SCR-046 (Account menu entry point) — both new screens reuse the existing single-column Form/List pattern and the bottom-sheet Form pattern already established elsewhere in this document (§6), not a new interaction model.
 
@@ -1154,17 +1161,17 @@ Every Module (1–13) is represented; every screen named in your Screen Inventor
 - **Purpose:** The Business Owner's single screen for viewing their tenant's current Subscription, browsing the fixed Plan Catalog, requesting a plan change, and reviewing/cancelling their own Subscription Change Request history.
 - **Users:** Business Owner only.
 - **Layout:** Single-column screen: summary Card at top, Plan Catalog list/grid below, Change Request history as a scrollable list beneath.
-- **Sections:** Current Subscription summary Card (plan name, price, trial/subscription status with end/expiry date if applicable, Customer usage vs. limit, Storage usage vs. effective limit, Analytics availability, read-only-state indicator if applicable, per FR-077); Plan Catalog (five plan Cards: Trial, Free, Small Business, Medium Business, Corporate, each showing price, Customer Limit or "Unlimited," Storage allowance, Analytics included/not, and a "Request This Plan" action, disabled on the tenant's current plan); Change Request History list (requested plan, prior plan, Status Chip, submitted date; a Cancel action on the one Pending entry, if any). **Request Plan Change bottom sheet** *(embedded modal Form, same pattern as SCR-025's "Submit Case to Deendoon")*: opened from a Plan Catalog Card's "Request This Plan" action — Payment Reference text field (required) and a confirmation of the selected plan; Submit/Cancel.
+- **Sections:** Current Subscription summary Card (plan name, price, trial/subscription status with end/expiry date if applicable, Customer usage vs. limit, Storage usage vs. effective limit, Analytics availability, read-only-state indicator if applicable, per FR-077); Plan Catalog (five plan Cards: Trial, Free, Small Business, Medium Business, Corporate, each showing price, Customer Limit or "Unlimited," Storage allowance, Analytics included/not, and a "Request This Plan" action, disabled on the tenant's current plan); Change Request History list (requested plan, prior plan, Status Chip, submitted date; a Cancel action on the one Pending entry, if any).
 - **Displayed Data:** Per FR-077 (current Subscription, Plan Catalog) and FR-079 (Change Request history).
-- **Primary Actions:** Request This Plan (per Plan Catalog Card, → Request Plan Change bottom sheet); Navigate to Storage (→ SCR-051).
+- **Primary Actions:** Request This Plan (per Plan Catalog Card, → **SCR-052 Payment Information**, Manual Mobile-Money Subscription Payment Flow amendment, Revision History 1.7 → 1.9 — replaces the original single-field bottom sheet cited in earlier revisions of this document, since the now-required Payment Phone (BRL-092) cannot be collected by a Payment-Reference-only Form); Navigate to Storage (→ SCR-051).
 - **Secondary Actions:** Cancel (on the one Pending Change Request entry, if any).
-- **Validation:** Request Plan Change bottom sheet: Payment Reference required (FR-078, E2); "Request This Plan" disabled on the tenant's current plan (FR-078, E4) and disabled entirely while another Change Request is already Pending (FR-078, E3).
+- **Validation:** "Request This Plan" disabled on the tenant's current plan (FR-078, E4) and disabled entirely while another Change Request is already Pending (FR-078, E3); Payment Information field validation lives on SCR-052.
 - **Empty State:** Change Request History: "No plan change requests yet."
-- **Loading State:** Skeleton for the summary Card and Plan Catalog; Skeleton rows for history; bottom sheet Submit button Loading Spinner.
-- **Error State:** Error State with Retry (screen-level); inline error on bottom sheet submission failure.
+- **Loading State:** Skeleton for the summary Card and Plan Catalog; Skeleton rows for history.
+- **Error State:** Error State with Retry (screen-level).
 - **Permission Behavior:** Screen restricted to the Business Owner role; not reachable by the Deendoon Platform Administrator (a distinct interface, Section 4).
 - **Navigation Entry:** SCR-046 "Subscription" menu tile.
-- **Navigation Exit:** SCR-051 (Storage); SCR-046 (Back).
+- **Navigation Exit:** SCR-051 (Storage); SCR-052 (Payment Information, on "Request This Plan"); SCR-046 (Back).
 - **Related Functional Requirements:** FR-077, FR-078, FR-079.
 
 ### SCR-051 — Storage (Business Owner) *(added — Subscription & Storage Self-Service, Module 13)*
@@ -1183,6 +1190,84 @@ Every Module (1–13) is represented; every screen named in your Screen Inventor
 - **Navigation Entry:** SCR-050 "Navigate to Storage."
 - **Navigation Exit:** SCR-050 (Back).
 - **Related Functional Requirements:** FR-080, FR-081, FR-082.
+
+### SCR-052 — Payment Information (Business Owner) *(added — Manual Mobile-Money Subscription Payment Flow, Revision History 1.9)*
+- **Purpose:** Collect the mobile-money payment phone number (required) and an optional transaction reference for a Subscription Change Request, with the selected Plan, Amount, and the tenant's own Business Name shown read-only.
+- **Users:** Business Owner only.
+- **Layout:** Single-column Form screen.
+- **Sections:** Read-only summary (Business Name, Selected Plan, Amount — none re-enterable); Payment Phone text field (required); Transaction Reference text field (optional, with helper text noting it may be added later).
+- **Displayed Data:** Business Name and current tenant context; the Plan selected on SCR-050 (name, monthly price), per FR-078.
+- **Primary Actions:** Continue Payment (→ **SCR-053 Payment Instructions / Send Money**, on success).
+- **Secondary Actions:** Back (→ SCR-050, no request created).
+- **Validation:** Payment Phone required (FR-078, E2); Transaction Reference has no required-ness validation (optional, BRL-092).
+- **Empty State:** Not applicable (a Form screen).
+- **Loading State:** Continue Payment button Loading Spinner while the request is submitted.
+- **Error State:** Inline error on submission failure (e.g., a pending request already exists, FR-078 E3); screen stays on the Form.
+- **Permission Behavior:** Screen restricted to the Business Owner role.
+- **Navigation Entry:** SCR-050 "Request This Plan."
+- **Navigation Exit:** SCR-053 (Payment Instructions, on success); SCR-050 (Back).
+- **Related Functional Requirements:** FR-078.
+
+### SCR-053 — Payment Instructions / Send Money (Business Owner) *(redesigned — Manual Mobile-Money Subscription Payment Flow, Revision History 1.10; third operator added, Revision History 1.11; originally added under Revision History 1.9)*
+
+> **Redesigned 2026-08-20 (Product Owner final UX direction).** The Plan/Amount/Duration summary Card, the generic single "Dir Lacagta" button, the "Payment Status: Pending Verification" notice, and the "View Payment Status" exit are all removed from this screen; replaced by named-operator USSD buttons and a "Done" exit to the new SCR-055. This is the same screen/route as before (Payment Saved and Send Money were always the same step; the name is tightened to match), not a new one. **Amended again, Revision History 1.11:** a third operator button, E-DAHAB, added.
+
+- **Purpose:** Confirm the Subscription Change Request was saved (status Pending), show the Platform Payment Destination Number (FR-086), and let the Business Owner open their device's dialer pre-filled with one of three fixed, Product-Owner-approved USSD codes for the three supported mobile-money operators.
+- **Users:** Business Owner only.
+- **Layout:** Single-column confirmation screen.
+- **Sections:** Success message ("Xogtaada waa la keydiyay." / "Your information has been saved.") and instruction line ("Fadlan lacagta ku dir lambarka Deendoon ee hoose." / "Please send the money to the Deendoon number below."); Platform Payment Destination Number (or an explicit "not set yet" message if the Deendoon Platform Administrator hasn't set one); three fixed-label buttons, **SAALAM BANK**, **EVC PLUS**, and **E-DAHAB**.
+- **Displayed Data:** The live Platform Payment Destination Number (FR-086, `GET /subscription/payment-info` — never hardcoded client-side). The three USSD codes themselves are **not** displayed data — they are fixed application constants (BRL-092), not sourced from the backend and not admin-configurable, distinct from the destination-number display above them.
+- **Primary Actions:**
+  - **SAALAM BANK** — opens the device dialer pre-filled with `*799*32666663*5#` (`tel:*799*32666663*5%23`, percent-encoded).
+  - **EVC PLUS** — opens the device dialer pre-filled with `*712*615514692*5#` (`tel:*712*615514692*5%23`, percent-encoded).
+  - **E-DAHAB** — opens the device dialer pre-filled with `*712*625514692*5#` (`tel:*712*625514692*5%23`, percent-encoded).
+  - No button changes the request's status regardless of outcome (BRL-092/Scope Boundary — the system never assumes or simulates a successful payment; there is no reliable signal that the user completed anything in the external dialer app).
+  - **Done** — a neutral navigation action (not a success claim) to **SCR-055 (Thank You / Support)**, tapped by the Business Owner once they return to Deendoon from the external dialer/mobile-money app.
+- **Secondary Actions:** None.
+- **Validation:** Not applicable (a confirmation/display screen).
+- **Empty State:** Destination number not yet set → explicit message; the three USSD buttons remain available regardless (they don't depend on the destination-number display).
+- **Loading State:** Skeleton while the destination number loads.
+- **Error State:** Snackbar if the device dialer fails to open for any button.
+- **Permission Behavior:** Screen restricted to the Business Owner role.
+- **Navigation Entry:** SCR-052 "Continue Payment," on success.
+- **Navigation Exit:** SCR-055 (Thank You / Support, on "Done").
+- **Related Functional Requirements:** FR-078, FR-086.
+
+### SCR-054 — Payment Status (Business Owner) — **Retired** *(Manual Mobile-Money Subscription Payment Flow, Revision History 1.10)*
+
+> **Retired 2026-08-20 (Product Owner final UX direction).** No dedicated Payment Status screen exists anymore — the flow terminates at SCR-055 (Thank You / Support) without displaying Pending/Approved/Rejected state, "Subscription Activated," or a "Try Again" action anywhere in this flow. The existing Subscription Change Request history on SCR-050 (unchanged) remains the only in-app place status is ever shown, and the backend Platform Administrator approval workflow (unchanged) remains the sole source of truth for the eventual outcome. Content below preserved for history, matching this document's existing precedent for retired screens (e.g. SCR-026), not deleted.
+
+- **Purpose:** A focused, single-request view of a Subscription Change Request's current status — Pending Verification, Approved, or Rejected — as a nicer presentation of the same data SCR-050's Change Request History already shows, adding no new backend surface.
+- **Users:** Business Owner only.
+- **Layout:** Single-column status screen.
+- **Sections:** Status Card: 🟠 Pending Verification (with an explanatory message), 🟢 Approved (heading "Subscription Activated," the plan name, and — once available — the resulting Subscription's expiry date, per FR-077), or 🔴 Rejected (with the selected Rejection Reason(s) and any free-text notes, per FR-084); a "Check for Updates" action re-fetches the Change Request (reusing FR-079's history endpoint, matched by id — there is no dedicated single-request endpoint).
+- **Displayed Data:** Per FR-078 (the request itself) and, once Approved, FR-077 (the resulting Subscription's expiry date).
+- **Primary Actions:** Try Again (Rejected state only, → SCR-050, to submit a new request — a Rejected request never blocks a new one, BRL-084).
+- **Secondary Actions:** Check for Updates (pull-to-refresh and an explicit button).
+- **Validation:** Not applicable (a display screen).
+- **Empty State:** Not applicable.
+- **Loading State:** Spinner on the refresh action.
+- **Error State:** Snackbar if the refresh fails; the last-known status remains displayed.
+- **Permission Behavior:** Screen restricted to the Business Owner role.
+- **Navigation Entry:** SCR-053 "View Payment Status."
+- **Navigation Exit:** SCR-050 (on "Try Again," Rejected state only).
+
+### SCR-055 — Thank You / Support (Business Owner) *(added — Manual Mobile-Money Subscription Payment Flow, Revision History 1.10)*
+- **Purpose:** The terminal screen of the Manual Mobile-Money Subscription Payment Flow — thanks the Business Owner and offers a way to contact Support, without displaying or implying any payment/subscription outcome.
+- **Users:** Business Owner only.
+- **Layout:** Single-column screen.
+- **Sections:** "Mahadsanid" heading; "Waad ku mahadsan tahay isticmaalka Deendoon." message; the existing Contact Deendoon Support component (Section 6 component library — Phone/WhatsApp/Email actions), embedded as-is, not a new or duplicated support-contact affordance.
+- **Displayed Data:** None specific to this screen beyond the reused Support component's own already-approved data (phone, WhatsApp, email — unchanged).
+- **Primary Actions:** None (Support's own Phone/WhatsApp/Email actions belong to the reused component, not a new action of this screen).
+- **Secondary Actions:** None.
+- **Validation:** Not applicable.
+- **Empty State:** Not applicable.
+- **Loading State:** Not applicable (fully static).
+- **Error State:** Handled entirely within the reused Support component (unchanged).
+- **Permission Behavior:** Screen restricted to the Business Owner role.
+- **Navigation Entry:** SCR-053 "Done."
+- **Navigation Exit:** None forward — this is the flow's terminal screen; standard back navigation only.
+- **Related Functional Requirements:** FR-078.
 
 ---
 
@@ -1329,6 +1414,10 @@ This specification supports every approved Functional Requirement in `03_Functio
 | SCR-049 Professional Collection Requests (Super Admin) | FR-073, FR-075, FR-076 |
 | SCR-050 Subscription (Business Owner) | FR-077, FR-078, FR-079 |
 | SCR-051 Storage (Business Owner) | FR-080, FR-081, FR-082 |
+| SCR-052 Payment Information (Business Owner) | FR-078 |
+| SCR-053 Payment Instructions / Send Money (Business Owner) | FR-078, FR-086 |
+| SCR-054 Payment Status (Business Owner) — Retired | FR-078, FR-084 |
+| SCR-055 Thank You / Support (Business Owner) | FR-078 |
 
 Every Functional Requirement from FR-001 through FR-084 is covered by at least one screen above. FR-072 and FR-074 are covered by SCR-005/SCR-025 as noted; FR-073, FR-075, and FR-076 are covered by SCR-049 (Super Admin side) and, for FR-075, also by SCR-025 (tenant side of the shared Conversation Thread). FR-083 (subscription-driven Customer read-only) is covered by SCR-050's summary Card (read-only-state indicator) and, on the Customer side, by the existing Archived/read-only rendering already specified for SCR-008/SCR-010 (§14 UI State Catalog, "Archived Record" row) — no new UI state is introduced for it. FR-084 (Platform Administrator review) has no dedicated screen in this document (see §4's Subscription & Storage Navigation note) — it is not omitted, but deliberately not specified beyond that note, since no live-verified Super Admin Web Panel screen design exists to document.
 

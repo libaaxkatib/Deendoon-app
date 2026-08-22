@@ -40,4 +40,11 @@ enum AuditAction: string
     case SubscriptionChangeRequestStatusChanged = 'subscription_change_request_status_changed';
     case StorageAddonStatusChanged = 'storage_addon_status_changed';
     case Deleted = 'deleted';
+
+    /**
+     * Manual Mobile-Money Subscription Payment Flow (Product Owner
+     * decision): the Platform Administrator changed the platform-level
+     * destination mobile-money number shown to Business Owners.
+     */
+    case PlatformPaymentDestinationChanged = 'platform_payment_destination_changed';
 }

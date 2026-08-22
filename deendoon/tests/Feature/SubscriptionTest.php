@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ReferenceDataCategory;
 use App\Models\Customer;
+use App\Models\PlatformPaymentSetting;
 use App\Models\ReferenceData;
 use App\Models\StorageAddon;
 use App\Models\SubscriptionChangeRequest;
@@ -63,6 +64,7 @@ class SubscriptionTest extends TestCase
         $this->getJson('/api/v1/subscription/plans')->assertStatus(401);
         $this->getJson('/api/v1/subscription/change-requests')->assertStatus(401);
         $this->postJson('/api/v1/subscription/upgrade-request')->assertStatus(401);
+        $this->getJson('/api/v1/subscription/payment-info')->assertStatus(401);
         $this->getJson('/api/v1/subscription/storage')->assertStatus(401);
         $this->postJson('/api/v1/subscription/storage-addon-request')->assertStatus(401);
     }
@@ -83,7 +85,8 @@ class SubscriptionTest extends TestCase
         $this->getJson('/api/v1/subscription')->assertStatus(403);
         $this->getJson('/api/v1/subscription/plans')->assertStatus(403);
         $this->getJson('/api/v1/subscription/change-requests')->assertStatus(403);
-        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1'])->assertStatus(403);
+        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-1'])->assertStatus(403);
+        $this->getJson('/api/v1/subscription/payment-info')->assertStatus(403);
         $this->getJson('/api/v1/subscription/storage')->assertStatus(403);
         $this->postJson('/api/v1/subscription/storage-addon-request', ['storage_package' => '10gb', 'payment_reference' => 'REF-1'])->assertStatus(403);
     }
@@ -264,6 +267,27 @@ class SubscriptionTest extends TestCase
         $this->assertSame([], $response->json('data.0.features'));
     }
 
+    // --- GET /subscription/payment-info ---
+
+    public function test_payment_info_returns_the_destination_number_set_by_the_platform_administrator(): void
+    {
+        PlatformPaymentSetting::create(['destination_mobile_money_number' => '61XXXXXXX']);
+        $this->actingAsTenantUser(Tenant::create(['business_name' => 'Acme Co']));
+
+        $this->getJson('/api/v1/subscription/payment-info')
+            ->assertStatus(200)
+            ->assertJsonPath('data.destination_mobile_money_number', '61XXXXXXX');
+    }
+
+    public function test_payment_info_returns_null_when_no_destination_number_has_been_set(): void
+    {
+        $this->actingAsTenantUser(Tenant::create(['business_name' => 'Acme Co']));
+
+        $this->getJson('/api/v1/subscription/payment-info')
+            ->assertStatus(200)
+            ->assertJsonPath('data.destination_mobile_money_number', null);
+    }
+
     // --- GET /subscription/change-requests ---
 
     public function test_change_requests_returns_only_the_authenticated_tenants_own_requests(): void
@@ -310,11 +334,13 @@ class SubscriptionTest extends TestCase
 
         $response = $this->postJson('/api/v1/subscription/upgrade-request', [
             'requested_plan_id' => $targetPlan->id,
+            'payment_phone' => '+252611234567',
             'payment_reference' => 'REF-123',
         ]);
 
         $response->assertStatus(201)
             ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.payment_phone', '+252611234567')
             ->assertJsonPath('data.payment_reference', 'REF-123')
             ->assertJsonPath('data.requested_plan.name', 'Small Business');
 
@@ -334,7 +360,7 @@ class SubscriptionTest extends TestCase
         $this->actingAsTenantUser($tenant);
         $targetPlan = SubscriptionPlan::factory()->create();
 
-        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => $targetPlan->id, 'payment_reference' => 'REF-1'])
+        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => $targetPlan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-1'])
             ->assertStatus(201);
 
         $this->assertDatabaseMissing('tenant_subscriptions', ['tenant_id' => $tenant->id, 'plan_id' => $targetPlan->id]);
@@ -350,21 +376,37 @@ class SubscriptionTest extends TestCase
             ->assertJsonValidationErrors(['requested_plan_id']);
     }
 
-    public function test_upgrade_request_requires_a_payment_reference(): void
+    public function test_upgrade_request_requires_a_payment_phone(): void
     {
         $this->actingAsTenantUser(Tenant::create(['business_name' => 'Acme Co']));
         $plan = SubscriptionPlan::factory()->create();
 
-        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => $plan->id])
+        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1'])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['payment_reference']);
+            ->assertJsonValidationErrors(['payment_phone']);
+    }
+
+    public function test_upgrade_request_does_not_require_a_payment_reference(): void
+    {
+        // Manual Mobile-Money Subscription Payment Flow (Product Owner
+        // decision): the approved UX flow lets a Business Owner submit
+        // before the external mobile-money transaction reference is
+        // known, so payment_reference must remain optional.
+        $this->actingAsTenantUser(Tenant::create(['business_name' => 'Acme Co']));
+        $plan = SubscriptionPlan::factory()->create();
+
+        $response = $this->postJson('/api/v1/subscription/upgrade-request', [
+            'requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567',
+        ]);
+
+        $response->assertStatus(201)->assertJsonPath('data.payment_reference', null);
     }
 
     public function test_upgrade_request_rejects_a_nonexistent_plan_id(): void
     {
         $this->actingAsTenantUser(Tenant::create(['business_name' => 'Acme Co']));
 
-        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => 'not-a-real-id', 'payment_reference' => 'REF-1'])
+        $this->postJson('/api/v1/subscription/upgrade-request', ['requested_plan_id' => 'not-a-real-id', 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-1'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['requested_plan_id']);
     }
@@ -496,7 +538,7 @@ class SubscriptionTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/v1/subscription/upgrade-request', [
-            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-2',
+            'requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-2',
         ]);
 
         $response->assertStatus(409)->assertJson(['success' => false]);
@@ -515,7 +557,7 @@ class SubscriptionTest extends TestCase
 
         $this->actingAsTenantUser($tenantA);
         $this->postJson('/api/v1/subscription/upgrade-request', [
-            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1',
+            'requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-1',
         ])->assertStatus(201);
     }
 
@@ -534,7 +576,7 @@ class SubscriptionTest extends TestCase
         ]);
 
         $this->postJson('/api/v1/subscription/upgrade-request', [
-            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-2',
+            'requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-2',
         ])->assertStatus(201);
     }
 
@@ -548,7 +590,7 @@ class SubscriptionTest extends TestCase
         ]);
 
         $this->postJson('/api/v1/subscription/upgrade-request', [
-            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-2',
+            'requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-2',
         ])->assertStatus(201);
     }
 
@@ -616,7 +658,7 @@ class SubscriptionTest extends TestCase
         $plan = SubscriptionPlan::factory()->create();
 
         $response = $this->postJson('/api/v1/subscription/upgrade-request', [
-            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1',
+            'requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-1',
         ]);
 
         $changeRequestId = $response->json('data.id');
@@ -626,7 +668,7 @@ class SubscriptionTest extends TestCase
             'action' => 'subscription_upgrade_requested',
             'entity_type' => 'subscription_change_request',
             'entity_id' => $changeRequestId,
-            'reason' => "requested_plan_id={$plan->id}; payment_reference=REF-1",
+            'reason' => "requested_plan_id={$plan->id}; payment_phone=+252611234567; payment_reference=REF-1",
         ]);
     }
 
@@ -661,7 +703,7 @@ class SubscriptionTest extends TestCase
         TenantSubscription::factory()->for($tenant, 'tenant')->for($plan, 'plan')->active()->create();
 
         $this->postJson('/api/v1/subscription/upgrade-request', [
-            'requested_plan_id' => $plan->id, 'payment_reference' => 'REF-1',
+            'requested_plan_id' => $plan->id, 'payment_phone' => '+252611234567', 'payment_reference' => 'REF-1',
         ])->assertStatus(409)->assertJson(['success' => false]);
     }
 

@@ -33,13 +33,17 @@ class SubscriptionRepository {
 
   Future<SubscriptionChangeRequest> requestUpgrade({
     required String requestedPlanId,
-    required String paymentReference,
+    required String paymentPhone,
+    String? paymentReference,
   }) => _guard(
     () => _api.requestUpgrade(
       requestedPlanId: requestedPlanId,
+      paymentPhone: paymentPhone,
       paymentReference: paymentReference,
     ),
   );
+
+  Future<String?> fetchPaymentInfo() => _guard(() => _api.fetchPaymentInfo());
 
   Future<SubscriptionChangeRequest> cancelChangeRequest(String id) =>
       _guard(() => _api.cancelChangeRequest(id));

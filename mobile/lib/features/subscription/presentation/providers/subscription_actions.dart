@@ -30,10 +30,12 @@ class SubscriptionActions {
   /// is invalidated, not `subscriptionProvider`.
   Future<SubscriptionChangeRequest> requestUpgrade({
     required String requestedPlanId,
-    required String paymentReference,
+    required String paymentPhone,
+    String? paymentReference,
   }) async {
     final changeRequest = await _repository.requestUpgrade(
       requestedPlanId: requestedPlanId,
+      paymentPhone: paymentPhone,
       paymentReference: paymentReference,
     );
     _ref.invalidate(subscriptionChangeRequestListProvider);

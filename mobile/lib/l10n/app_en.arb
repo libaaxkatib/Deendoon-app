@@ -1046,6 +1046,30 @@
   "subscriptionPaymentReferenceRequiredValidator": "Payment reference is required",
   "subscriptionPaymentReferenceMaxLengthValidator": "Payment reference must be 100 characters or fewer",
 
+  "paymentInformationTitle": "Payment Information",
+  "paymentInformationBusinessNameLabel": "Business Name",
+  "paymentInformationPlanLabel": "Selected Plan",
+  "paymentInformationAmountLabel": "Amount",
+  "paymentInformationPhoneLabel": "Payment Phone Number",
+  "paymentInformationPhoneHint": "The number you will send the payment from",
+  "paymentInformationPhoneRequiredValidator": "Payment phone number is required",
+  "paymentInformationContinueButton": "Continue Payment",
+
+  "paymentSavedTitle": "Payment Instructions",
+  "paymentSavedSuccessMessage": "Your information has been saved.",
+  "paymentSavedInstructionMessage": "Please send the money to the Deendoon number below.",
+  "paymentSavedDestinationNumberLabel": "Deendoon Payment Number",
+  "paymentSavedDestinationNumberUnavailable": "Not set yet — please contact support.",
+  "paymentSavedSaalamBankButton": "SAALAM BANK",
+  "paymentSavedEvcPlusButton": "EVC PLUS",
+  "paymentSavedEDahabButton": "E-DAHAB",
+  "paymentSavedCouldNotOpenDialerMessage": "Could not open the dialer.",
+  "paymentSavedDoneButton": "Done",
+
+  "thankYouTitle": "Thank You",
+  "thankYouHeading": "Mahadsanid",
+  "thankYouMessage": "Waad ku mahadsan tahay isticmaalka Deendoon.",
+
   "storageTitle": "Storage",
   "storageAddonRequestSubmittedMessage": "Storage Add-on request for {label} submitted — pending Platform Administrator approval.",
   "@storageAddonRequestSubmittedMessage": {

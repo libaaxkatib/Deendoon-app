@@ -10,13 +10,22 @@ import 'subscription_plan.dart';
 /// `requestedPlan`/`currentPlan` are always present in practice (the
 /// Business Owner-scoped controller methods always eager-load both), but
 /// stay nullable to match the resource's own `whenLoaded` contract.
+///
+/// Manual Mobile-Money Subscription Payment Flow (Product Owner decision):
+/// `paymentPhone` (the mobile-money number the payment was sent from) is
+/// now required at submission, so it's always present on a request created
+/// through the new flow — but stays nullable here since older/other rows in
+/// the same table may not have one. `paymentReference` (the mobile-money
+/// transaction reference) became optional at submission for the same
+/// decision, so it's nullable too.
 class SubscriptionChangeRequest {
   final String id;
   final String tenantId;
   final String? tenantName;
   final SubscriptionPlan? requestedPlan;
   final SubscriptionPlan? currentPlan;
-  final String paymentReference;
+  final String? paymentPhone;
+  final String? paymentReference;
   final String status;
   final DateTime requestedAt;
   final String? reviewedBy;
@@ -30,6 +39,7 @@ class SubscriptionChangeRequest {
     required this.tenantName,
     required this.requestedPlan,
     required this.currentPlan,
+    required this.paymentPhone,
     required this.paymentReference,
     required this.status,
     required this.requestedAt,
@@ -54,7 +64,8 @@ class SubscriptionChangeRequest {
             : SubscriptionPlan.fromJson(
                 json['current_plan'] as Map<String, dynamic>,
               ),
-        paymentReference: json['payment_reference'] as String,
+        paymentPhone: json['payment_phone'] as String?,
+        paymentReference: json['payment_reference'] as String?,
         status: json['status'] as String,
         requestedAt: DateTime.parse(json['requested_at'] as String),
         reviewedBy: json['reviewed_by']?.toString(),

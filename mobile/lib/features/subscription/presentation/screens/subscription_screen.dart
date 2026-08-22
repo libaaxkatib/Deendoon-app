@@ -16,7 +16,6 @@ import '../../domain/subscription_plan.dart';
 import '../providers/subscription_actions.dart';
 import '../providers/subscription_change_request_list_provider.dart';
 import '../providers/subscription_providers.dart';
-import '../widgets/request_plan_change_sheet.dart';
 
 /// Business Owner Subscription — read-only view of the tenant's own
 /// current Subscription (`GET /subscription`) and Change Request history
@@ -28,12 +27,16 @@ import '../widgets/request_plan_change_sheet.dart';
 /// summary/messages split).
 ///
 /// Selecting a plan is a client-side affordance only — it reveals a
-/// "Request Plan Change" button that opens `showRequestPlanChangeSheet`,
-/// which collects the payment reference and calls the real
-/// `SubscriptionActions.requestUpgrade`. Approval/activation is entirely
-/// backend-owned (Platform Administrator only) — this screen only ever
-/// shows the request as Pending, never as active, and never computes an
-/// expiry date itself.
+/// "Request Plan Change" button. Manual Mobile-Money Subscription Payment
+/// Flow (Product Owner decision): tapping it now navigates to the dedicated
+/// `PaymentInformationScreen` (which collects `payment_phone` + the
+/// optional transaction reference and calls the real
+/// `SubscriptionActions.requestUpgrade`) instead of opening an inline
+/// bottom sheet — the sheet only ever collected a payment reference, which
+/// cannot satisfy the now-required `payment_phone` field. Approval/
+/// activation is entirely backend-owned (Platform Administrator only) —
+/// this screen only ever shows the request as Pending, never as active,
+/// and never computes an expiry date itself.
 ///
 /// "Manage Storage" is this screen's own entry point to `StorageScreen`
 /// (Phase 5 Step 6) — reached at `/account/subscription`, with Storage one
@@ -62,42 +65,24 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     );
   }
 
-  void _scrollToHistory() {
-    final historyContext = _historySectionKey.currentContext;
-    if (historyContext == null) return;
-    Scrollable.ensureVisible(
-      historyContext,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-    );
-  }
-
   void _onPlanSelected(String planId) {
     setState(() => _selectedPlanId = _selectedPlanId == planId ? null : planId);
   }
 
-  /// Opens the real request sheet. On a genuine success (the sheet only
-  /// pops `true` after `SubscriptionActions.requestUpgrade` actually
-  /// succeeds — see `showRequestPlanChangeSheet`), deselects the plan and
-  /// scrolls down to the history section, where the new request now shows
-  /// with a Pending badge (`subscriptionChangeRequestListProvider` was
-  /// already invalidated by the action itself). Never claims the plan is
-  /// active — only that the request was submitted.
+  /// Manual Mobile-Money Subscription Payment Flow (Product Owner
+  /// decision): navigates to the dedicated `PaymentInformationScreen`
+  /// instead of opening an inline sheet. That screen (and the
+  /// `PaymentSavedScreen`/`ThankYouScreen` it leads to) own the
+  /// submission itself and all of its confirmation feedback — this screen
+  /// only resets the client-side plan selection once the user returns to
+  /// it, regardless of outcome, so a stale selection is never left behind.
+  /// The invalidated `subscriptionChangeRequestListProvider` (from
+  /// `SubscriptionActions.requestUpgrade` itself) means the history
+  /// section below already reflects a submitted request by the time the
+  /// user navigates back here.
   Future<void> _onRequestPlanChange(SubscriptionPlan plan) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final l10n = AppLocalizations.of(context);
-    final submitted = await showRequestPlanChangeSheet(context, plan);
-    if (submitted != true || !mounted) return;
-
-    setState(() => _selectedPlanId = null);
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          l10n.subscriptionPlanChangeRequestSubmittedMessage(plan.name),
-        ),
-      ),
-    );
-    _scrollToHistory();
+    await context.push('/account/subscription/payment-information', extra: plan);
+    if (mounted) setState(() => _selectedPlanId = null);
   }
 
   @override
@@ -662,7 +647,7 @@ class _ChangeRequestCard extends StatelessWidget {
           const SizedBox(height: 8),
           _InfoRow(
             label: l10n.subscriptionPaymentReferenceLabel,
-            value: request.paymentReference,
+            value: request.paymentReference ?? '—',
           ),
           const SizedBox(height: 8),
           _InfoRow(

@@ -158,6 +158,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('subscription', [SubscriptionController::class, 'show']);
         Route::get('subscription/plans', [SubscriptionController::class, 'plans']);
+        Route::get('subscription/payment-info', [SubscriptionController::class, 'paymentInfo']);
         Route::get('subscription/change-requests', [SubscriptionController::class, 'changeRequests']);
         Route::post('subscription/upgrade-request', [SubscriptionController::class, 'upgradeRequest']);
         Route::post('subscription/change-requests/{subscriptionChangeRequest}/cancel', [SubscriptionController::class, 'cancelChangeRequest']);

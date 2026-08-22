@@ -19,6 +19,7 @@ use App\Models\SubscriptionChangeRequest;
 use App\Models\SubscriptionPlan;
 use App\Services\CustomerReadOnlyService;
 use App\Services\DocumentService;
+use App\Services\PlatformPaymentSettingsService;
 use App\Services\ReferenceDataService;
 use App\Services\StorageAddonService;
 use App\Services\SubscriptionService;
@@ -54,6 +55,7 @@ class SubscriptionController extends Controller
         private readonly DocumentService $documents,
         private readonly ReferenceDataService $referenceData,
         private readonly CustomerReadOnlyService $customerReadOnly,
+        private readonly PlatformPaymentSettingsService $paymentSettings,
     ) {}
 
     public function show(Request $request): JsonResponse
@@ -137,6 +139,7 @@ class SubscriptionController extends Controller
         $changeRequest = $this->subscriptions->requestUpgrade(
             $tenant,
             $request->validated('requested_plan_id'),
+            $request->validated('payment_phone'),
             $request->validated('payment_reference'),
             $request->user(),
         );
@@ -146,6 +149,22 @@ class SubscriptionController extends Controller
             'Upgrade request submitted successfully',
             201,
         );
+    }
+
+    /**
+     * Manual Mobile-Money Subscription Payment Flow (Product Owner
+     * decision): the platform's destination mobile-money number, shown on
+     * the "Send Money" step. Read-only, Business-Owner-gated like every
+     * other endpoint on this controller — never hardcoded client-side, so
+     * the Platform Administrator can change it without an app release.
+     */
+    public function paymentInfo(): JsonResponse
+    {
+        Gate::authorize('admin-only');
+
+        return $this->successResponse([
+            'destination_mobile_money_number' => $this->paymentSettings->current()?->destination_mobile_money_number,
+        ]);
     }
 
     public function storage(Request $request): JsonResponse

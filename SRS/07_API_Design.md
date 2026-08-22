@@ -4,12 +4,12 @@
 |---|---|
 | **Document ID** | SRS-DEENDOON-07 |
 | **Document Title** | API Design |
-| **Version** | 1.7 |
-| **Status** | Reopened — Section 5.4 (Collection Cases) amended; Section 5.11 and Section 15 added by the Subscription & Storage Self-Service Catch-Up; Documentation Consistency Sweep applied |
+| **Version** | 1.8 |
+| **Status** | Reopened — Section 5.4 (Collection Cases) amended; Section 5.11 and Section 15 added by the Subscription & Storage Self-Service Catch-Up; Documentation Consistency Sweep applied; Section 5.11 and Section 15 further amended by the Manual Mobile-Money Subscription Payment Flow Amendment |
 | **Author** | Business Analyst / Solution Architect (Claude) |
 | **Approved By** | Pending |
-| **Last Updated** | 2026-08-08 |
-| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.6) · `02_Business_Requirements.md` (Reopened v1.7) · `03_Functional_Requirements.md` (v1.15 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.10) · `05_UI_UX_Specification.md` (Reopened, v1.8) · `06_Database_Design.md` (Reopened v1.7 — §6.1, §6.10) |
+| **Last Updated** | 2026-08-19 |
+| **Scope Baseline** | `01_Project_Overview.md` (Reopened v1.6) · `02_Business_Requirements.md` (Reopened v1.7) · `03_Functional_Requirements.md` (v1.17 — **Module 12 still awaiting its original approval**) · `04_Business_Rules.md` (Reopened v1.11) · `05_UI_UX_Specification.md` (Reopened, v1.9) · `06_Database_Design.md` (Reopened v1.9 — §6.1, §6.10) |
 
 ---
 
@@ -24,6 +24,7 @@
 | 1.4 | 2026-07-31 | **Scope Baseline metadata correction (Documentation Consistency Audit — Scope Baseline synchronization).** Updated the Scope Baseline field to cite the current approved versions of `02`, `03`, `04`, `05`, and `06` (previously stale). No endpoint, method, request/response shape, FR, or business rule changed. | Claude |
 | 1.5 | 2026-07-31 | **Scope Baseline metadata correction (Product Vision Amendment ripple).** Updated the Scope Baseline field to cite `01` (v1.4), `03` (v1.10), `04` (v1.6), `05` (Reopened, v1.3), and `06` (v1.6) following those documents' own updates. No endpoint or contract changed. | Claude |
 | 1.6 | 2026-08-08 | **Subscription & Storage Self-Service Catch-Up (Product Owner Decision): current implemented app + backend are the final product.** Added **Section 5.11 — Subscription & Storage (Module 13)**, listing all 16 implemented endpoints (8 Business Owner-facing, 8 Platform Administrator-facing — corrected in-section from an initial undercount of 12 after re-reading `routes/api.php` directly). Added **Section 15 — Subscription & Storage Self-Service APIs**, the full dedicated surface (`SubscriptionPlan`/`TenantSubscription`/`SubscriptionChangeRequest`/`StorageAddon` models, request/response shapes, authorization detail), mirroring Section 10's Professional Collection APIs treatment. Added `/subscription/change-requests`, `/admin/subscription/change-requests`, and `/admin/storage-addons` to Section 8's paginated-endpoint list. Added a new row to Section 13's API Traceability Matrix. Scope Baseline updated to cite `03` v1.13, `04` v1.9, `05` v1.7, `06` v1.7. No existing endpoint, method, request/response shape, FR, or business rule changed. | Claude |
+| 1.8 | 2026-08-19 | **Manual Mobile-Money Subscription Payment Flow Amendment (Product Owner-approved decision), extending Section 5.11/Section 15.** `POST /subscription/upgrade-request` request shape amended: `paymentPhone` is now required, `paymentReference` is now optional (previously required) — BRL-092. Added `GET /subscription/payment-info` (new Business Owner-facing endpoint, FR-086) and its response shape. `SubscriptionChangeRequest` model gains `paymentPhone`. Noted the new Platform-Administrator-only Blade-form endpoint (`POST /admin/settings/payment-destination`) alongside the existing `/admin/settings/*` Subscription Plan management endpoints. Section 13's API Traceability Matrix row updated to add FR-086 and `platform_payment_settings`. No existing endpoint, method, or unrelated request/response shape changed. Scope Baseline updated to cite `03` v1.17, `04` v1.11, `05` v1.9, `06` v1.9. | Claude |
 | 1.7 | 2026-08-08 | **Documentation Consistency Sweep (Product Owner Decision): current implemented app + backend are the final product.** Section 13's "Note & Attachment uploads" note and Section 14's Decision Required item 1 both resolved rather than left as open items: Notes (`02_Business_Requirements.md` v1.7, BR-022) is a plain field on the Debt/Collection Case resource, already covered by their existing `PUT` endpoints — no dedicated endpoint exists or is needed. Attachments (arbitrary file upload) were never implemented and are confirmed out of scope, not a gap awaiting an endpoint shape. | Claude |
 
 ---
@@ -262,7 +263,7 @@ Advanced Filtering (FR-064) is not a separate endpoint — it's the shared set o
 
 ### 5.11 Subscription & Storage (Module 13) *(added — Subscription & Storage Self-Service Catch-Up)*
 
-Full detail: Section 15. Business Owner-facing endpoints (8) act only on the authenticated session's own tenant, never a client-supplied tenant identifier. Platform Administrator-facing endpoints (8 — 4 for Subscription Change Requests, 4 for Storage Add-on Requests, prefixed `/admin/subscription/*` and `/admin/storage-addons*`) are cross-tenant, matching the `/admin/*` convention already established in Section 5.10. **Verification note:** an earlier characterization of this capability described 12 total endpoints (8 Business Owner + 4 Platform Administrator, omitting the 4 Storage Add-on Approval Center endpoints). Reading `routes/api.php` directly during this catch-up found **16** endpoints — the 4 admin endpoints are a full symmetric copy of the Subscription Change Request Approval Center for Storage Add-on Requests (`storageAddonApprovalCenter`, `storageAddonRejectionReasons`, `approveStorageAddon`, `rejectStorageAddon`) — corrected here rather than silently under-documented.
+Full detail: Section 15. Business Owner-facing endpoints (9, was 8 — see the amendment note below) act only on the authenticated session's own tenant, never a client-supplied tenant identifier. Platform Administrator-facing endpoints (8 — 4 for Subscription Change Requests, 4 for Storage Add-on Requests, prefixed `/admin/subscription/*` and `/admin/storage-addons*`) are cross-tenant, matching the `/admin/*` convention already established in Section 5.10. **Verification note:** an earlier characterization of this capability described 12 total endpoints (8 Business Owner + 4 Platform Administrator, omitting the 4 Storage Add-on Approval Center endpoints). Reading `routes/api.php` directly during this catch-up found **16** endpoints — the 4 admin endpoints are a full symmetric copy of the Subscription Change Request Approval Center for Storage Add-on Requests (`storageAddonApprovalCenter`, `storageAddonRejectionReasons`, `approveStorageAddon`, `rejectStorageAddon`) — corrected here rather than silently under-documented. **Manual Mobile-Money Subscription Payment Flow Amendment (Revision History 1.8):** added `GET /subscription/payment-info` (9th Business Owner-facing endpoint); a 17th, Platform-Administrator-only, Blade-form endpoint (`POST /admin/settings/payment-destination`, on the Super Admin Web Panel, not this JSON API) lives alongside the existing `/admin/settings/*` Subscription Plan management endpoints (Section 5.10), not under `/admin/subscription/*`.
 
 | Method | Path | Purpose | FR | Actor |
 |---|---|---|---|---|
@@ -270,6 +271,7 @@ Full detail: Section 15. Business Owner-facing endpoints (8) act only on the aut
 | `GET` | `/subscription/plans` 🔒 | The fixed Plan Catalog (active plans only) | FR-077 | Business Owner |
 | `GET` | `/subscription/change-requests` 🔒 | Own Subscription Change Request history *(list endpoint required by SCR-050)* | FR-079 | Business Owner |
 | `POST` | `/subscription/upgrade-request` 🔒 | Request a plan upgrade/downgrade | FR-078 | Business Owner |
+| `GET` | `/subscription/payment-info` 🔒 *(added, Revision History 1.8)* | The Platform Payment Destination Number, for the Payment Saved / Send Money screen | FR-086 | Business Owner |
 | `POST` | `/subscription/change-requests/{id}/cancel` 🔒 | Cancel own Pending Subscription Change Request | FR-079 | Business Owner |
 | `GET` | `/subscription/storage` 🔒 | Storage Overview: usage, effective limit, remaining, purchased Add-ons *(list endpoint required by SCR-051)* | FR-080, FR-082 | Business Owner |
 | `POST` | `/subscription/storage-addon-request` 🔒 | Request a Storage Add-on | FR-081 | Business Owner |
@@ -559,7 +561,7 @@ Rejected with `409 CONFLICT` if the target status isn't a valid transition from 
 | `/notifications/*`, `/calendar` | FR-058–FR-062 | `notifications`, `follow_up_history`, `promises_to_pay`, `collection_cases` |
 | `/search` | FR-063 | Read-only across `customers`, `debts`, `payments`, `receipts`, `demand_letters`, `statements`, `collection_cases` |
 | `/admin/*` | FR-066–FR-071 | `users`, `roles`, `user_roles`, `tenants`, `system_settings`, `document_templates`, `reference_data`, `audit_log` |
-| `/subscription/*`, `/admin/subscription/*`, `/admin/storage-addons*` *(added)* | FR-077–FR-084 | `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons`; `customers.is_read_only` (FR-083, no dedicated endpoint — see Section 15) |
+| `/subscription/*`, `/admin/subscription/*`, `/admin/storage-addons*` *(added)* | FR-077–FR-084, FR-086 | `subscription_plans`, `tenant_subscriptions`, `subscription_change_requests`, `subscription_change_request_rejection_reasons`, `storage_addons`, `storage_addon_rejection_reasons`, `platform_payment_settings` *(added, Revision History 1.8)*; `customers.is_read_only` (FR-083, no dedicated endpoint — see Section 15) |
 
 Every table in `06_Database_Design.md` Section 6 is reachable through at least one endpoint above, except `roles` (seeded, no CRUD endpoint — Section 5, `06` §6.1) and `user_roles` (mutated only via `PATCH /admin/users/{id}/role`, never listed/queried directly). `subscription_plans` is seeded, platform-owned, read-only data (Section 6.10) — reachable via `GET /subscription/plans`, but, like `roles`, has no create/update/delete endpoint anywhere in this API.
 
@@ -578,7 +580,7 @@ Consistent with `06`'s Section 13, surfaced rather than assumed:
 
 ## 15. Subscription & Storage Self-Service APIs *(added — Subscription & Storage Self-Service Catch-Up)*
 
-The full, dedicated surface for the retroactively-documented Module 13 capability (FR-077–FR-084), mirroring how Section 10 consolidates Professional Collection with complete detail. A real, live-verified capability found fully implemented in both the backend and the Customer Mobile App — every field below is transcribed directly from the implemented `SubscriptionController`/`SubscriptionPlanResource`/`SubscriptionChangeRequestResource`/`StorageAddonResource`, not designed fresh.
+The full, dedicated surface for the retroactively-documented Module 13 capability (FR-077–FR-084, FR-086), mirroring how Section 10 consolidates Professional Collection with complete detail. A real, live-verified capability found fully implemented in both the backend and the Customer Mobile App — every field below is transcribed directly from the implemented `SubscriptionController`/`SubscriptionPlanResource`/`SubscriptionChangeRequestResource`/`StorageAddonResource`, not designed fresh.
 
 ### `GET /subscription` response
 ```json
@@ -616,9 +618,15 @@ The full, dedicated surface for the retroactively-documented Module 13 capabilit
 
 ### `POST /subscription/upgrade-request` request / response
 ```json
-{ "requestedPlanId": "01J...ULID", "paymentReference": "MPESA-TXN-00123456" }
+{ "requestedPlanId": "01J...ULID", "paymentPhone": "+252611234567", "paymentReference": "MPESA-TXN-00123456" }
 ```
-`201 Created`, body: `SubscriptionChangeRequest` (below). `409 CONFLICT` if a Pending request already exists for the tenant, or if `requestedPlanId` is the tenant's current plan (FR-078, E3/E4).
+**Amended, Manual Mobile-Money Subscription Payment Flow (Revision History 1.8):** `paymentPhone` is now **required** (the mobile-money number the payment is sent from, max 20 chars); `paymentReference` is now **optional** (max 100 chars, may be `null` — was required before this amendment, BRL-092). `201 Created`, body: `SubscriptionChangeRequest` (below). `422` if `paymentPhone` or `requestedPlanId` is missing (a missing `paymentReference` is not a validation error). `409 CONFLICT` if a Pending request already exists for the tenant, or if `requestedPlanId` is the tenant's current plan (FR-078, E3/E4).
+
+### `GET /subscription/payment-info` response *(added, Revision History 1.8)*
+```json
+{ "destinationMobileMoneyNumber": "61XXXXXXX" }
+```
+`200 OK`. `destinationMobileMoneyNumber` is `null` if the Deendoon Platform Administrator has not yet set one (FR-086) — the Customer Mobile App shows an explicit "not set yet" message in that case rather than a blank value.
 
 ### `SubscriptionChangeRequest` model
 ```json
@@ -628,6 +636,7 @@ The full, dedicated surface for the retroactively-documented Module 13 capabilit
   "tenantName": "Iftin Supermarket",
   "requestedPlan": { "id": "01J...ULID", "name": "Medium Business", "...": "SubscriptionPlan fields" },
   "currentPlan": { "id": "01J...ULID", "name": "Small Business", "...": "SubscriptionPlan fields" },
+  "paymentPhone": "+252611234567",
   "paymentReference": "MPESA-TXN-00123456",
   "status": "pending",
   "requestedAt": "2026-08-08T09:00:00Z",
@@ -637,7 +646,7 @@ The full, dedicated surface for the retroactively-documented Module 13 capabilit
   "rejectionReasons": []
 }
 ```
-`status` is one of `pending`/`approved`/`rejected`/`cancelled` (BRL-084/BRL-085/BRL-091). `tenantName` is present only on the Platform Administrator's Approval Center response (`whenLoaded`); absent on the Business Owner's own `GET /subscription/change-requests` (a tenant already knows which business they are).
+`status` is one of `pending`/`approved`/`rejected`/`cancelled` (BRL-084/BRL-085/BRL-091). `tenantName` is present only on the Platform Administrator's Approval Center response (`whenLoaded`); absent on the Business Owner's own `GET /subscription/change-requests` (a tenant already knows which business they are). `paymentPhone` *(added, Revision History 1.8)* — see the amendment note above; `paymentReference` may now be `null`.
 
 ### `GET /subscription/change-requests` response
 ```json

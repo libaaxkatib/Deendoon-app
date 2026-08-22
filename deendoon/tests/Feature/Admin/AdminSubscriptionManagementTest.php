@@ -408,4 +408,50 @@ class AdminSubscriptionManagementTest extends TestCase
         $response->assertSee('Hodan Trading');
         $response->assertSee('Barwaqo Imports');
     }
+
+    // --- Cross-tenant Payment Requests queue (Manual Mobile-Money
+    // Subscription Payment Flow, Product Owner decision) ---
+
+    public function test_platform_administrator_can_view_the_payment_requests_queue_across_tenants(): void
+    {
+        $tenantA = Tenant::factory()->create(['business_name' => 'Hodan Trading']);
+        $tenantB = Tenant::factory()->create(['business_name' => 'Barwaqo Imports']);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenantA->id, 'status' => 'pending', 'payment_phone' => '+252611234567',
+        ]);
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create([
+            'tenant_id' => $tenantB->id, 'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($this->platformAdmin())->get('/admin/payment-requests');
+
+        $response->assertOk();
+        $response->assertSee('Hodan Trading');
+        $response->assertSee('Barwaqo Imports');
+        $response->assertSee('+252611234567');
+    }
+
+    public function test_payment_requests_queue_filters_by_status(): void
+    {
+        $tenant = Tenant::factory()->create(['business_name' => 'Hodan Trading']);
+        $plan = SubscriptionPlan::factory()->create();
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create(['tenant_id' => $tenant->id, 'status' => 'pending']);
+        SubscriptionChangeRequest::factory()->for($plan, 'requestedPlan')->create(['tenant_id' => $tenant->id, 'status' => 'rejected']);
+
+        $response = $this->actingAs($this->platformAdmin())->get('/admin/payment-requests?status=rejected');
+
+        $response->assertOk();
+        // The list view renders the status label as text for whichever
+        // rows are returned — asserting the row count via the paginator
+        // is more precise here than string-matching page content twice.
+        $response->assertViewHas('requests', fn ($requests) => $requests->total() === 1);
+    }
+
+    public function test_a_business_owner_cannot_view_the_payment_requests_queue(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        $this->actingAs($this->businessOwner($tenant))->get('/admin/payment-requests')->assertForbidden();
+    }
 }

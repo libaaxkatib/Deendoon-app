@@ -4475,6 +4475,132 @@ abstract class AppLocalizations {
   /// **'Payment reference must be 100 characters or fewer'**
   String get subscriptionPaymentReferenceMaxLengthValidator;
 
+  /// No description provided for @paymentInformationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Information'**
+  String get paymentInformationTitle;
+
+  /// No description provided for @paymentInformationBusinessNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Name'**
+  String get paymentInformationBusinessNameLabel;
+
+  /// No description provided for @paymentInformationPlanLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected Plan'**
+  String get paymentInformationPlanLabel;
+
+  /// No description provided for @paymentInformationAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get paymentInformationAmountLabel;
+
+  /// No description provided for @paymentInformationPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Phone Number'**
+  String get paymentInformationPhoneLabel;
+
+  /// No description provided for @paymentInformationPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The number you will send the payment from'**
+  String get paymentInformationPhoneHint;
+
+  /// No description provided for @paymentInformationPhoneRequiredValidator.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment phone number is required'**
+  String get paymentInformationPhoneRequiredValidator;
+
+  /// No description provided for @paymentInformationContinueButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Payment'**
+  String get paymentInformationContinueButton;
+
+  /// No description provided for @paymentSavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Instructions'**
+  String get paymentSavedTitle;
+
+  /// No description provided for @paymentSavedSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your information has been saved.'**
+  String get paymentSavedSuccessMessage;
+
+  /// No description provided for @paymentSavedInstructionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please send the money to the Deendoon number below.'**
+  String get paymentSavedInstructionMessage;
+
+  /// No description provided for @paymentSavedDestinationNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deendoon Payment Number'**
+  String get paymentSavedDestinationNumberLabel;
+
+  /// No description provided for @paymentSavedDestinationNumberUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set yet — please contact support.'**
+  String get paymentSavedDestinationNumberUnavailable;
+
+  /// No description provided for @paymentSavedSaalamBankButton.
+  ///
+  /// In en, this message translates to:
+  /// **'SAALAM BANK'**
+  String get paymentSavedSaalamBankButton;
+
+  /// No description provided for @paymentSavedEvcPlusButton.
+  ///
+  /// In en, this message translates to:
+  /// **'EVC PLUS'**
+  String get paymentSavedEvcPlusButton;
+
+  /// No description provided for @paymentSavedEDahabButton.
+  ///
+  /// In en, this message translates to:
+  /// **'E-DAHAB'**
+  String get paymentSavedEDahabButton;
+
+  /// No description provided for @paymentSavedCouldNotOpenDialerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the dialer.'**
+  String get paymentSavedCouldNotOpenDialerMessage;
+
+  /// No description provided for @paymentSavedDoneButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get paymentSavedDoneButton;
+
+  /// No description provided for @thankYouTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank You'**
+  String get thankYouTitle;
+
+  /// No description provided for @thankYouHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Mahadsanid'**
+  String get thankYouHeading;
+
+  /// No description provided for @thankYouMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Waad ku mahadsan tahay isticmaalka Deendoon.'**
+  String get thankYouMessage;
+
   /// No description provided for @storageTitle.
   ///
   /// In en, this message translates to:

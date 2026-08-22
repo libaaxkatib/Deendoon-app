@@ -6,6 +6,7 @@
         ['route' => 'admin.debtors.index', 'label' => 'Debtors', 'icon' => 'users', 'matches' => 'admin.debtors.*'],
         ['route' => 'admin.payments.index', 'label' => 'Payments', 'icon' => 'card', 'matches' => 'admin.payments.*'],
         ['route' => 'admin.subscriptions.index', 'label' => 'Subscriptions', 'icon' => 'stack', 'matches' => 'admin.subscriptions.*'],
+        ['route' => 'admin.payment-requests.index', 'label' => 'Payment Requests', 'icon' => 'card', 'matches' => 'admin.payment-requests.*'],
         ['route' => 'admin.professional-collection.index', 'label' => 'Professional Collection', 'icon' => 'briefcase', 'matches' => 'admin.professional-collection.*'],
         ['route' => 'admin.reports.overview', 'label' => 'Reports & Analytics', 'icon' => 'chart', 'matches' => 'admin.reports.*'],
         ['route' => 'admin.support-tickets.index', 'label' => 'Support & Tickets', 'icon' => 'support', 'matches' => 'admin.support-tickets.*'],

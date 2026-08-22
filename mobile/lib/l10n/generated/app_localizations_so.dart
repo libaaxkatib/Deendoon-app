@@ -2410,6 +2410,74 @@ class AppLocalizationsSo extends AppLocalizations {
       'Tixraaca lacag-bixinta waa inuu ka koobnaadaa 100 xaraf ama ka yar';
 
   @override
+  String get paymentInformationTitle => 'Macluumaadka Lacag-bixinta';
+
+  @override
+  String get paymentInformationBusinessNameLabel => 'Magaca Ganacsiga';
+
+  @override
+  String get paymentInformationPlanLabel => 'Qorshaha La Doortay';
+
+  @override
+  String get paymentInformationAmountLabel => 'Qiimaha';
+
+  @override
+  String get paymentInformationPhoneLabel => 'Lambarka Lacag-bixinta';
+
+  @override
+  String get paymentInformationPhoneHint =>
+      'Lambarka aad lacagta ka soo dirayso';
+
+  @override
+  String get paymentInformationPhoneRequiredValidator =>
+      'Lambarka lacag-bixinta waa lagama maarmaan';
+
+  @override
+  String get paymentInformationContinueButton => 'Sii Wad Lacag-bixinta';
+
+  @override
+  String get paymentSavedTitle => 'Tilmaamaha Lacag-bixinta';
+
+  @override
+  String get paymentSavedSuccessMessage => 'Xogtaada waa la keydiyay.';
+
+  @override
+  String get paymentSavedInstructionMessage =>
+      'Fadlan lacagta ku dir lambarka Deendoon ee hoose.';
+
+  @override
+  String get paymentSavedDestinationNumberLabel =>
+      'Lambarka Lacag-bixinta Deendoon';
+
+  @override
+  String get paymentSavedDestinationNumberUnavailable =>
+      'Weli lama dejin — fadlan la xiriir taageerada.';
+
+  @override
+  String get paymentSavedSaalamBankButton => 'SAALAM BANK';
+
+  @override
+  String get paymentSavedEvcPlusButton => 'EVC PLUS';
+
+  @override
+  String get paymentSavedEDahabButton => 'E-DAHAB';
+
+  @override
+  String get paymentSavedCouldNotOpenDialerMessage => 'Dialer-ka lama furin.';
+
+  @override
+  String get paymentSavedDoneButton => 'Dhammee';
+
+  @override
+  String get thankYouTitle => 'Mahadsanid';
+
+  @override
+  String get thankYouHeading => 'Mahadsanid';
+
+  @override
+  String get thankYouMessage => 'Waad ku mahadsan tahay isticmaalka Deendoon.';
+
+  @override
   String get storageTitle => 'Kaydinta';
 
   @override

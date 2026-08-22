@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/localization/somali_fallback_delegates.dart';
-import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/subscription/data/subscription_repository.dart';
 import 'package:mobile/features/subscription/domain/subscription.dart';
 import 'package:mobile/features/subscription/domain/subscription_change_request.dart';
@@ -100,6 +99,7 @@ final _pendingChangeRequest = SubscriptionChangeRequest(
   tenantName: null,
   requestedPlan: _smallBusinessPlan,
   currentPlan: _freePlan,
+  paymentPhone: '+252611234567',
   paymentReference: 'PAY-REF-001',
   status: 'pending',
   requestedAt: DateTime.utc(2026, 8, 1),
@@ -115,6 +115,7 @@ final _cancelledChangeRequest = SubscriptionChangeRequest(
   tenantName: null,
   requestedPlan: _smallBusinessPlan,
   currentPlan: _freePlan,
+  paymentPhone: '+252611234567',
   paymentReference: 'PAY-REF-001',
   status: 'cancelled',
   requestedAt: DateTime.utc(2026, 8, 1),
@@ -175,14 +176,80 @@ Future<void> _pumpScreen(
   );
 }
 
-/// Opens the request sheet for [planName] from an already-pumped screen —
-/// selects the plan card, then taps the resulting "Request Plan Change to
-/// X" button.
-Future<void> _openRequestSheet(WidgetTester tester, String planName) async {
-  await tester.tap(find.text(planName));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Request Plan Change to $planName'));
-  await tester.pumpAndSettle();
+/// Pumps `SubscriptionScreen` behind a real `GoRouter` with a stub
+/// destination at `/account/subscription/payment-information`, so
+/// navigation triggered by tapping "Request Plan Change to X" can be
+/// observed directly (same pattern as the existing "Manage Storage
+/// navigates..." test below).
+Future<GoRouter> _pumpScreenWithRouter(
+  WidgetTester tester, {
+  required _MockSubscriptionRepository repository,
+  Subscription? subscription,
+  List<SubscriptionPlan>? plans,
+  List<SubscriptionChangeRequest> changeRequests = const [],
+}) async {
+  tester.view.physicalSize = const Size(400, 2800);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  if (subscription != null) {
+    when(
+      () => repository.fetchSubscription(),
+    ).thenAnswer((_) async => subscription);
+  }
+  if (plans != null) {
+    when(() => repository.fetchPlans()).thenAnswer((_) async => plans);
+  }
+  when(
+    () => repository.fetchChangeRequests(page: any(named: 'page')),
+  ).thenAnswer(
+    (_) async => SubscriptionChangeRequestPage(
+      changeRequests: changeRequests,
+      currentPage: 1,
+      lastPage: 1,
+      total: changeRequests.length,
+    ),
+  );
+
+  final router = GoRouter(
+    initialLocation: '/account/subscription',
+    routes: [
+      GoRoute(
+        path: '/account/subscription',
+        builder: (_, _) => const SubscriptionScreen(),
+      ),
+      GoRoute(
+        path: '/account/subscription/payment-information',
+        builder: (_, state) => Scaffold(
+          body: Text(
+            'Payment Information for ${(state.extra! as SubscriptionPlan).name}',
+          ),
+        ),
+      ),
+    ],
+  );
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [subscriptionRepositoryProvider.overrideWithValue(repository)],
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          SomaliMaterialLocalizationsDelegate(),
+          SomaliCupertinoLocalizationsDelegate(),
+        ],
+      ),
+    ),
+  );
+
+  return router;
 }
 
 void main() {
@@ -316,16 +383,11 @@ void main() {
   });
 
   testWidgets(
-    'a valid submission calls requestUpgrade with the exact payload and shows Pending feedback',
+    'tapping Request Plan Change navigates to Payment Information with the selected plan '
+    '(Manual Mobile-Money Subscription Payment Flow — full submission coverage now lives in '
+    'payment_information_screen_test.dart, since the sheet this used to open no longer exists)',
     (tester) async {
-      when(
-        () => mockRepository.requestUpgrade(
-          requestedPlanId: 'plan-small',
-          paymentReference: 'PAY-REF-001',
-        ),
-      ).thenAnswer((_) async => _pendingChangeRequest);
-
-      await _pumpScreen(
+      await _pumpScreenWithRouter(
         tester,
         repository: mockRepository,
         subscription: _activeSubscription,
@@ -333,129 +395,22 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await _openRequestSheet(tester, 'Small Business');
-      expect(find.text('Request Plan Change'), findsOneWidget);
-
-      await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
-      await tester.tap(find.text('Submit Request'));
+      await tester.tap(find.text('Small Business'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Request Plan Change to Small Business'));
       await tester.pumpAndSettle();
 
-      verify(
-        () => mockRepository.requestUpgrade(
-          requestedPlanId: 'plan-small',
-          paymentReference: 'PAY-REF-001',
-        ),
-      ).called(1);
       expect(
-        find.text(
-          'Plan change request to Small Business submitted — status: Pending.',
-        ),
+        find.text('Payment Information for Small Business'),
         findsOneWidget,
       );
-      // Never claims activation — the word "active"/"activated" is never shown for the request itself.
-      expect(find.textContaining('now active'), findsNothing);
-    },
-  );
-
-  testWidgets(
-    'leaving payment reference empty shows a client-side validation error and never calls the repository',
-    (tester) async {
-      await _pumpScreen(
-        tester,
-        repository: mockRepository,
-        subscription: _activeSubscription,
-        plans: [_freePlan, _smallBusinessPlan],
-      );
-      await tester.pumpAndSettle();
-
-      await _openRequestSheet(tester, 'Small Business');
-      await tester.tap(find.text('Submit Request'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Payment reference is required'), findsOneWidget);
       verifyNever(
         () => mockRepository.requestUpgrade(
           requestedPlanId: any(named: 'requestedPlanId'),
+          paymentPhone: any(named: 'paymentPhone'),
           paymentReference: any(named: 'paymentReference'),
         ),
       );
-    },
-  );
-
-  testWidgets(
-    '409 conflict from a pending request already existing shows the exact backend message',
-    (tester) async {
-      when(
-        () => mockRepository.requestUpgrade(
-          requestedPlanId: any(named: 'requestedPlanId'),
-          paymentReference: any(named: 'paymentReference'),
-        ),
-      ).thenThrow(
-        const ApiException(
-          message:
-              'A pending Subscription Change Request already exists for this tenant.',
-          statusCode: 409,
-        ),
-      );
-
-      await _pumpScreen(
-        tester,
-        repository: mockRepository,
-        subscription: _activeSubscription,
-        plans: [_freePlan, _smallBusinessPlan],
-      );
-      await tester.pumpAndSettle();
-
-      await _openRequestSheet(tester, 'Small Business');
-      await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
-      await tester.tap(find.text('Submit Request'));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text(
-          'A pending Subscription Change Request already exists for this tenant.',
-        ),
-        findsOneWidget,
-      );
-      // The sheet stays open on failure, not silently dismissed.
-      expect(find.text('Submit Request'), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    '422 validation failure from the backend shows the exact backend message',
-    (tester) async {
-      when(
-        () => mockRepository.requestUpgrade(
-          requestedPlanId: any(named: 'requestedPlanId'),
-          paymentReference: any(named: 'paymentReference'),
-        ),
-      ).thenThrow(
-        const ApiException(
-          message: 'The given data was invalid.',
-          statusCode: 422,
-          fieldErrors: {
-            'payment_reference': [
-              'The payment reference field must not be greater than 100 characters.',
-            ],
-          },
-        ),
-      );
-
-      await _pumpScreen(
-        tester,
-        repository: mockRepository,
-        subscription: _activeSubscription,
-        plans: [_freePlan, _smallBusinessPlan],
-      );
-      await tester.pumpAndSettle();
-
-      await _openRequestSheet(tester, 'Small Business');
-      await tester.enterText(find.byType(TextFormField), 'PAY-REF-001');
-      await tester.tap(find.text('Submit Request'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('The given data was invalid.'), findsOneWidget);
     },
   );
 
@@ -533,16 +488,11 @@ void main() {
   );
 
   testWidgets(
-    'selecting a cheaper plan (downgrade) works through the exact same flow as an upgrade',
+    'selecting a cheaper plan (downgrade) still reveals the Request Plan Change button and navigates '
+    'through the exact same flow as an upgrade (price-direction-agnostic; the actual submission — '
+    'downgrade included — is covered in payment_information_screen_test.dart)',
     (tester) async {
-      when(
-        () => mockRepository.requestUpgrade(
-          requestedPlanId: 'plan-free',
-          paymentReference: 'PAY-REF-002',
-        ),
-      ).thenAnswer((_) async => _pendingChangeRequest);
-
-      await _pumpScreen(
+      await _pumpScreenWithRouter(
         tester,
         repository: mockRepository,
         subscription: _smallBusinessSubscription,
@@ -550,17 +500,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await _openRequestSheet(tester, 'Free');
-      await tester.enterText(find.byType(TextFormField), 'PAY-REF-002');
-      await tester.tap(find.text('Submit Request'));
+      await tester.tap(find.text('Free'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Request Plan Change to Free'));
       await tester.pumpAndSettle();
 
-      verify(
-        () => mockRepository.requestUpgrade(
-          requestedPlanId: 'plan-free',
-          paymentReference: 'PAY-REF-002',
-        ),
-      ).called(1);
+      expect(find.text('Payment Information for Free'), findsOneWidget);
     },
   );
 

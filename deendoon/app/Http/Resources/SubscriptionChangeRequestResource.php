@@ -19,6 +19,7 @@ class SubscriptionChangeRequestResource extends JsonResource
             'requested_plan' => new SubscriptionPlanResource($this->whenLoaded('requestedPlan')),
             'current_plan' => new SubscriptionPlanResource($this->whenLoaded('currentPlan')),
             'payment_reference' => $this->payment_reference,
+            'payment_phone' => $this->payment_phone,
             'status' => $this->status,
             'requested_at' => $this->requested_at,
             'reviewed_by' => $this->reviewed_by,

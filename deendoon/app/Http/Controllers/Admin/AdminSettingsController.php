@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSubscriptionPlanRequest;
+use App\Http\Requests\UpdatePlatformPaymentDestinationRequest;
 use App\Http\Requests\UpdateSubscriptionPlanRequest;
 use App\Models\SubscriptionPlan;
 use App\Services\AuditLogService;
+use App\Services\PlatformPaymentSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,19 +17,27 @@ use Illuminate\View\View;
 /**
  * Admin Panel — Settings (Module 11): Platform-Administrator-only, gated
  * by the same `can:platform-admin-only` Gate as every other Admin
- * controller. V1 scope is exactly Subscription Plan management (Product
- * Owner Decision 1) — the one genuine platform-level settings gap found
- * during the Module 11 audit. `SubscriptionPlan` is a global, non-tenant-
- * scoped catalog table (see its own docblock) that already had every
- * field this needs in its Fillable list but no admin write path — until
- * now, changing a plan required editing SubscriptionPlanSeeder directly.
+ * controller. V1 scope was originally exactly Subscription Plan
+ * management (Product Owner Decision 1); the Manual Mobile-Money
+ * Subscription Payment Flow (Product Owner decision) added the platform's
+ * destination mobile-money number as a second, equally platform-level
+ * setting on this same page rather than a new admin section, since both
+ * are "one Platform-Administrator-editable value with no per-resource
+ * concept." `SubscriptionPlan` is a global, non-tenant-scoped catalog
+ * table (see its own docblock) that already had every field this needs in
+ * its Fillable list but no admin write path — until now, changing a plan
+ * required editing SubscriptionPlanSeeder directly.
  *
  * No Policy: nothing here is per-resource (same reasoning as
- * AdminSystemController), and SubscriptionPlan has no tenant to scope by.
+ * AdminSystemController), and neither SubscriptionPlan nor
+ * PlatformPaymentSetting has a tenant to scope by.
  */
 class AdminSettingsController extends Controller
 {
-    public function __construct(private readonly AuditLogService $auditLog) {}
+    public function __construct(
+        private readonly AuditLogService $auditLog,
+        private readonly PlatformPaymentSettingsService $paymentSettings,
+    ) {}
 
     public function index(): View
     {
@@ -35,7 +45,15 @@ class AdminSettingsController extends Controller
             'title' => 'Settings',
             'pageTitle' => 'Subscription Plans',
             'plans' => SubscriptionPlan::orderBy('monthly_price')->orderBy('name')->get(),
+            'paymentSettings' => $this->paymentSettings->current(),
         ]);
+    }
+
+    public function updatePaymentDestination(UpdatePlatformPaymentDestinationRequest $request): RedirectResponse
+    {
+        $this->paymentSettings->update($request->validated('destination_mobile_money_number'), $request->user());
+
+        return redirect()->route('admin.settings.index')->with('status', 'Destination mobile-money number updated.');
     }
 
     public function create(): View
