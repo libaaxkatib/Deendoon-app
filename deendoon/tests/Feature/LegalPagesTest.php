@@ -58,4 +58,24 @@ class LegalPagesTest extends TestCase
         $this->get('/privacy-policy')->assertDontSee('once that channel is available');
         $this->get('/terms-conditions')->assertDontSee('once that channel is available');
     }
+
+    public function test_account_deletion_page_is_publicly_accessible_without_authentication(): void
+    {
+        $response = $this->get('/account-deletion');
+
+        $response->assertOk();
+        $response->assertSee('Account Deletion');
+        $response->assertSee('Deendoon');
+    }
+
+    public function test_account_deletion_page_contains_real_content_not_placeholder_text(): void
+    {
+        $response = $this->get('/account-deletion');
+
+        $response->assertSee('Close Account');
+        $response->assertSee('does not currently define a fixed retention');
+        $response->assertDontSee('permanently deleted');
+        $response->assertDontSee('Lorem ipsum');
+        $response->assertDontSee('placeholder', false);
+    }
 }

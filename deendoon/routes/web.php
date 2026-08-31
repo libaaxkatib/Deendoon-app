@@ -21,13 +21,16 @@ Route::redirect('/', '/admin/login');
 
 /**
  * Public, unauthenticated legal pages (Mobile Play Store Readiness, Fix
- * #3 Part A) — Google Play Console requires a publicly accessible HTTPS
- * Privacy Policy URL; Terms & Conditions is served alongside it for the
- * same purpose. No session, no tenant scoping, content mirrors the
- * mobile app's existing in-app copy exactly.
+ * #3 Parts A & C) — Google Play Console requires a publicly accessible
+ * HTTPS Privacy Policy URL and an Account Deletion URL; Terms &
+ * Conditions is served alongside them for the same purpose. No session,
+ * no tenant scoping. Privacy Policy/Terms content mirrors the mobile
+ * app's existing in-app copy exactly; Account Deletion describes the
+ * in-app "Close Account" flow (Fix #3 Part B, `AccountClosureService`).
  */
 Route::get('/privacy-policy', [LegalController::class, 'privacyPolicy'])->name('legal.privacy-policy');
 Route::get('/terms-conditions', [LegalController::class, 'termsConditions'])->name('legal.terms-conditions');
+Route::get('/account-deletion', [LegalController::class, 'accountDeletion'])->name('legal.account-deletion');
 
 /**
  * Admin Panel — Deendoon Super Admin Web Panel (Product Owner decision:
