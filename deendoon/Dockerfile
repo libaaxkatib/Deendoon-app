@@ -1,13 +1,13 @@
-# Render deployment image for the Deendoon Laravel API.
-# Prepared for a short-term customer demo — see deendoon/RENDER_DEPLOYMENT.md
-# for the full deployment plan, required environment variables, and the
-# documented trade-offs (local file storage, no worker/queue/cron) behind
-# the choices made here.
+# Portable deployment image for the Deendoon Laravel API + admin panel.
+# Runs on any container host that injects a PORT env var and points it at
+# a PostgreSQL database (e.g. Railway). No app server other than PHP's
+# built-in `artisan serve` is used — see the CMD comment below for why,
+# and for the documented trade-offs of that choice.
 
 # ---- Stage 1: frontend asset build -----------------------------------------
-# Builds public/build so Laravel's stub "/" welcome view (which references
-# @vite) doesn't throw a Vite-manifest exception on request. The /api/v1
-# surface the Flutter app actually talks to does not depend on this build.
+# Builds public/build, which is required by the compiled Vite assets in
+# resources/views/admin/layout.blade.php and admin/auth/login.blade.php
+# (the entire admin panel's CSS/JS), as well as the stub "/" welcome view.
 FROM node:20-alpine AS assets
 WORKDIR /app
 COPY package.json ./
@@ -33,23 +33,25 @@ RUN composer install --no-dev --no-interaction --optimize-autoloader \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/testing storage/framework/views storage/logs bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Render injects $PORT at runtime. `php artisan serve` is used as the
-# simplest reliable option for a short-lived demo (no nginx/php-fpm process
-# supervision to configure) — a deliberate simplification, not a
-# recommendation for an extended/production deployment.
+# The host injects $PORT at runtime (Railway and Render both use this
+# convention: bind to 0.0.0.0:$PORT). `php artisan serve` is used as the
+# simplest reliable option (no nginx/php-fpm process supervision to
+# configure) — a deliberate simplification, not a recommendation for a
+# deployment that needs real request concurrency.
 #
 # route:cache is intentionally NOT run at startup: routes/web.php's stub
 # "/" route is a closure, which route:cache cannot serialize — running it
 # would break the container on every boot.
 #
-# `migrate --force` runs first, before config:cache/view:cache/serve —
-# see deendoon/RENDER_DEPLOYMENT.md's "Migrations" section for why this
-# replaced the earlier manual-step design (SESSION_DRIVER=database and
-# CACHE_STORE=database mean nearly every request touches the database,
-# so a freshly-provisioned Postgres instance with no tables applied
-# produces a 500 on every request until migrations run). `migrate` only
-# applies migrations not yet recorded in the `migrations` table, so this
-# is a safe no-op on every boot after the first successful run — never
-# `migrate:fresh`/`migrate:refresh`, never drops or resets anything.
+# Migrations and seeding are deliberately NOT run here. SESSION_DRIVER=
+# database and CACHE_STORE=database mean nearly every request touches
+# Postgres, so the database must already be migrated before this
+# container starts — that step belongs in the deploy platform's
+# pre-deploy/release-phase hook (`php artisan migrate --force &&
+# php artisan db:seed --force`), which runs once per deploy in its own
+# container, ahead of traffic being routed here. Running migrate/seed
+# inside this CMD would re-run it on every container boot/restart,
+# risking concurrent migration runs if the platform ever restarts a
+# crashed container or scales to multiple replicas.
 EXPOSE 8000
-CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --force && php artisan config:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "php artisan config:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
