@@ -83,37 +83,55 @@ class MessageTemplateService
         return [
             [
                 'name' => 'First Reminder',
-                'body' => "Mudane/Marwo {customer_name},\n"
+                'body' => "Walaal {customer_name},\n"
+                    ."\n"
                     ."Waxaan rajaynaynaa inaad caafimaad qabto.\n"
-                    ."Waxaan kuu xusuusinaynaa si saaxiibtinimo ah inaad leedahay deyn dhan {amount_due}, taas oo la filayo in la bixiyo ugu dambeyn {due_date}.\n"
-                    ."Haddii aad hore u bixisay, fadlan iska indhatir fariintan. Haddii aadan weli bixin, waxaan si xushmad leh kuugu codsanaynaa inaad bixiso marka kuugu horreysa.\n"
+                    ."\n"
+                    ."Waxaan ku xusuusinaynaa in lagugu leeyahay deyn dhan {amount_due}, taas oo lagaa rabay inaad bixiso ugu dambayn {due_date}.\n"
+                    ."\n"
+                    ."Waxaan si xushmad leh kaaga codsanaynaa inaad bixiso deyntaada.\n"
+                    ."\n"
+                    ."Haddii ay jirto cabasho ama warbixin dheeraad ah, fadlan nala wadaag sida ugu dhaqsaha badan.\n"
+                    ."\n"
                     ."Mahadsanid,\n"
                     .'{company_name}',
             ],
             [
                 'name' => 'Second Reminder',
-                'body' => "Mudane/Marwo {customer_name},\n"
-                    ."Tani waa xasuusintii labaad ee ku saabsan deyntaada dhan {amount_due}, taas oo waqtigeedii bixintu ahaa {due_date}.\n"
-                    ."Ilaa hadda ma aanan helin lacagta ama jawaab kaa timid. Haddii aad qabto caqabado dhinaca lacagta ah, fadlan nala soo xiriir si aan uga wada hadalno qorshe lacag-bixin oo kugu habboon.\n"
+                'body' => "Walaal {customer_name},\n"
+                    ."\n"
+                    ."Tani waa xasuusintii 2aad. Waxaa lagugu leeyahay deyn dhan {amount_due}, taas oo lagaa rabay inaad bixiso ugu dambayn {due_date}.\n"
+                    ."\n"
+                    ."Ilaa hadda ma aanan helin lacagtii deynta. Haddii aad qabto caqabado dhinaca lacagta ah, fadlan nala soo xiriir si aan uga wada hadalno qorshe lacag-bixin oo kugu habboon.\n"
+                    ."\n"
                     ."Jawaabtaada degdegga ah waxay naga caawinaysaa inaan arrintan si fudud u dhamayno.\n"
+                    ."\n"
                     ."Mahadsanid,\n"
                     .'{company_name}',
             ],
             [
                 'name' => 'Third Reminder',
-                'body' => "Asc {customer_name},\n"
-                    ."Inkasta oo aan kuu dirnay xasuusinno hore, deyntaada oo dhan {amount_due} ee waqtigeedii bixintu ahaa {due_date} wali lama bixin.\n"
-                    ."Waxaan si xushmad leh kuugu codsanaynaa inaad nala soo xiriirto ama aad bixiso deyntaada 2 maalmood oo shaqo gudahood. Haddii ay jirto sabab kaa hor istaagaysa bixinta, fadlan nala wadaag si aan u helno xal ku habboon.\n"
+                'body' => "Walaal {customer_name},\n"
+                    ."\n"
+                    ."Inkasta oo aan hore kuugu dirnay xasuusino hore, waxaa kugu taagan lacag dhan {amount_due}, taas oo lagaa rabay inaad bixiso ugu dambayn {due_date}, welina lama bixin.\n"
+                    ."\n"
+                    ."Waxaan si xushmad leh kaaga codsanaynaa inaad nala soo xiriirto ama aad bixiso deyntaada 2 maalmood gudahood. Haddii ay jirto sabab kaa hor istaagaysa bixinta, fadlan nala wadaag si aan u helno xal ku habboon.\n"
+                    ."\n"
                     ."Waxaan rajaynaynaa jawaabtaada sida ugu dhaqsaha badan.\n"
+                    ."\n"
                     ."Mahadsanid,\n"
                     .'{company_name}',
             ],
             [
                 'name' => 'Last Reminder',
-                'body' => "Mudane/Marwo {customer_name},\n"
-                    ."Tani waa xasuusintii ugu dambeysay ee ku saabsan deyntaada oo dhan {amount_due}, ee waqtigeedii bixintu ahaa {due_date}.\n"
+                'body' => "Walaal {customer_name},\n"
+                    ."\n"
+                    ."Inkasta oo aan hore kuugu soo dirnay xasuusino hore, tani waa xasuusintii ugu dambeysay ee ku saabsan deyntaada oo dhan {amount_due}, taas oo lagaa rabay inaad bixiso ugu dambayn {due_date}.\n"
+                    ."\n"
                     ."Waxaan dhowr jeer isku daynay inaan kula xiriirno fariimo iyo wicitaanno, balse kama aanan helin wax jawaab ah. Fadlan nala soo xiriir ama bixi deyntaada 7 maalmood gudahood.\n"
+                    ."\n"
                     ."Haddii aan jawaab kaa helin muddadaas, {company_name} wuxuu go'aansan karaa inuu kiiska u gudbiyo habab kale oo sharci waafaqsan.\n"
+                    ."\n"
                     ."Mahadsanid,\n"
                     .'{company_name}',
             ],
@@ -124,27 +142,38 @@ class MessageTemplateService
                 // MessageRenderingService only substitutes
                 // {customer_name}/{amount_due}/{due_date}/{company_name} —
                 // confirmed with the Product Owner before seeding.
-                'body' => "Mudane/Marwo {customer_name},\n"
-                    ."Waxaan jeclaan lahayn inaan kulan kula yeelanno si aan uga wada hadalno deyntaada oo dhan {amount_due}, ee waqtigeedii bixintu ahaa {due_date}, si aan u helno xal ku habboon labada dhinac.\n"
+                'body' => "Walaal {customer_name},\n"
+                    ."\n"
+                    ."Waxaan jeclaan lahayn inaan kulan kula yeelanno si aan uga wada hadalno deyntaada oo dhan {amount_due}, taas oo lagaa rabay inaad bixiso ugu dambayn {due_date}, si aan u helno xal ku habboon labada dhinac.\n"
+                    ."\n"
                     ."Fadlan noo sheeg waqtiga kugu habboon.\n"
+                    ."\n"
                     ."Waxaan rajaynaynaa wada-shaqeyn wanaagsan.\n"
+                    ."\n"
                     ."Mahadsanid,\n"
                     .'{company_name}',
             ],
             [
                 'name' => 'Phone Call Follow-up',
-                'body' => "Mudane/Marwo {customer_name},\n"
-                    ."Waxaan isku daynay inaan telefoon ku kula xiriirno arrinta deyntaada oo dhan {amount_due}, ee waqtigeedii bixintu ahaa {due_date}, laakiin kuma aanan helin.\n"
+                'body' => "Walaal {customer_name},\n"
+                    ."\n"
+                    ."Waxaan isku daynay inaan telefoon kugula xiriirno, waxaana kugu taagan deyn dhan {amount_due}, taas oo lagaa rabay inaad bixiso ugu dambayn {due_date}, laakiin kuma aanan helin.\n"
+                    ."\n"
                     ."Fadlan nala soo xiriir marka kuugu horreysa si aan uga wada hadalno arrintan.\n"
+                    ."\n"
                     ."Mahadsanid,\n"
                     .'{company_name}',
             ],
             [
                 'name' => 'Promise to Pay Confirmation',
-                'body' => "Mudane/Marwo {customer_name},\n"
+                'body' => "Walaal {customer_name},\n"
+                    ."\n"
                     ."Waad ku mahadsan tahay xaqiijinta ballantaada.\n"
+                    ."\n"
                     ."Sida aan ku heshiinnay, waxaad ballan qaaday inaad bixiso {amount_due} taariikhda {due_date}.\n"
-                    ."Waxaan rajaynaynaa inaad u fuliso ballantaada waqtigeeda.\n"
+                    ."\n"
+                    ."Waxaan rajaynaynaa inaad u fuliso ballantaas waqtigeeda.\n"
+                    ."\n"
                     ."Mahadsanid,\n"
                     .'{company_name}',
             ],
