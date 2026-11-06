@@ -10,7 +10,6 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * FR-068 (Company Profile & Branding) and FR-069 (System Preferences,
@@ -26,8 +25,6 @@ use Illuminate\Support\Facades\Storage;
  */
 class AdminSettingsService
 {
-    private const LOGO_DISK = 'local';
-
     public function __construct(private readonly AuditLogService $auditLog) {}
 
     public function updateCompanyProfile(Tenant $tenant, array $data, ?UploadedFile $logo, User $actor): Tenant
@@ -39,7 +36,7 @@ class AdminSettingsService
 
         if ($logo) {
             $path = "branding/{$tenant->id}/logo.".$logo->extension();
-            Storage::disk(self::LOGO_DISK)->put($path, file_get_contents($logo->getRealPath()));
+            AppFiles::put($path, AppFiles::contentsOf($logo));
             $tenant->logo_path = $path;
         }
 

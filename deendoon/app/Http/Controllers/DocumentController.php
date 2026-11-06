@@ -19,6 +19,7 @@ use App\Models\Invoice;
 use App\Models\MessageTemplate;
 use App\Models\Receipt;
 use App\Models\Statement;
+use App\Services\AppFiles;
 use App\Services\DocumentService;
 use App\Services\MessageDeliveryService;
 use App\Traits\ApiResponse;
@@ -27,7 +28,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -117,9 +117,14 @@ class DocumentController extends Controller
 
         $this->authorize('view', $model);
 
+        // Built before the event is recorded: a file that is gone returns
+        // 404 and must not leave a "downloaded" entry behind. The response
+        // only streams once it is returned.
+        $response = AppFiles::download($model->file_path, "{$model->reference_number}.pdf");
+
         $this->documents->recordDownload($type, $model->id, $model->tenant_id, request()->user());
 
-        return Storage::disk('local')->download($model->file_path, "{$model->reference_number}.pdf");
+        return $response;
     }
 
     /**

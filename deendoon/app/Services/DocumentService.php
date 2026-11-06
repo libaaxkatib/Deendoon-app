@@ -7,6 +7,7 @@ use App\Enums\DemandLetterTemplate;
 use App\Enums\DocumentEventType;
 use App\Enums\DocumentType;
 use App\Enums\NotificationType;
+use App\Exceptions\FileStorageException;
 use App\Models\CollectionCaseAttachment;
 use App\Models\Customer;
 use App\Models\CustomerAttachment;
@@ -27,8 +28,8 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -50,16 +51,12 @@ use Throwable;
  *
  * Storage: S3-compatible object storage is the approved architecture
  * (09_Non_Functional_Requirements.md), with tenant-scoped key prefixing
- * (08 §11). No real S3-compatible provider is configured in this
- * environment, so the 'local' disk is used via Laravel's Storage facade
- * — the same abstraction that already targets 's3' in config/filesystems.php
- * — keeping the code disk-agnostic; switching disks is a config change,
- * not a code change.
+ * (08 §11). The disk is chosen by {@see AppFiles} (`APP_FILES_DISK`:
+ * 'local' by default, 'r2' for Cloudflare R2) — switching disks is a
+ * config change, not a code change.
  */
 class DocumentService
 {
-    private const DISK = 'local';
-
     public function __construct(
         private readonly ReferenceNumberService $referenceNumbers,
         private readonly AuditLogService $auditLog,
@@ -281,8 +278,16 @@ class DocumentService
 
         $pdf = Pdf::loadView($view, $data);
         $output = $pdf->output();
+
+        // dompdf yields null when it fails to render, which the wrapper's
+        // `(string)` cast turns into ''; stored as-is that would be an
+        // empty PDF with a document row pointing at it.
+        if ($output === '') {
+            throw new RuntimeException("PDF rendering produced no output for [{$referenceNumber}].");
+        }
+
         $path = "documents/{$tenantId}/{$folder}/{$referenceNumber}.pdf";
-        Storage::disk(self::DISK)->put($path, $output);
+        AppFiles::put($path, $output);
 
         return ['path' => $path, 'size' => strlen($output)];
     }
@@ -345,7 +350,7 @@ class DocumentService
         $filename = Str::ulid()->toString().($extension !== '' ? ".{$extension}" : '');
         $path = "documents/{$tenant->id}/{$folder}/{$filename}";
 
-        Storage::disk(self::DISK)->put($path, file_get_contents($file->getRealPath()));
+        AppFiles::put($path, AppFiles::contentsOf($file));
 
         return [
             'path' => $path,
@@ -359,7 +364,9 @@ class DocumentService
     {
         $allowanceBytes = $this->lockAndGetEffectiveAllowanceBytes($tenant);
 
-        if ($this->storageUsage($tenant)['used_bytes'] >= $allowanceBytes) {
+        // Strict: this is the upload gate, so usage that cannot be measured
+        // must refuse the upload (503) rather than be under-counted.
+        if ($this->storageUsage($tenant, failOnStorageError: true)['used_bytes'] >= $allowanceBytes) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
                 'message' => 'Storage limit reached. Please free up space or purchase additional storage before uploading.',
@@ -417,9 +424,17 @@ class DocumentService
      * changing that was not part of what was approved; see the Phase 4.2
      * report's Risks section.
      *
+     * The logo is the one part read from the file disk rather than the
+     * database. For read-only callers (the storage-usage and subscription
+     * endpoints) an unreachable disk must not turn them into HTTP 500s, so
+     * by default the logo then counts as 0 bytes and the failure is logged.
+     * The upload gate ({@see assertCanUpload()}) passes
+     * `$failOnStorageError = true` instead: it must never under-count
+     * usage, so it raises a {@see FileStorageException} (503).
+     *
      * @return array{used_bytes: int, total_bytes: int, used_percentage: float}
      */
-    public function storageUsage(Tenant $tenant): array
+    public function storageUsage(Tenant $tenant, bool $failOnStorageError = false): array
     {
         $usedBytes = (int) Receipt::where('tenant_id', $tenant->id)->sum('file_size')
             + (int) DemandLetter::where('tenant_id', $tenant->id)->sum('file_size')
@@ -436,7 +451,7 @@ class DocumentService
                 'ticket',
                 fn ($q) => $q->where('tenant_id', $tenant->id),
             )->sum('file_size')
-            + $this->logoBytes($tenant);
+            + $this->logoBytes($tenant, $failOnStorageError);
 
         $totalBytes = (int) env('DOCUMENT_STORAGE_QUOTA_BYTES', 10 * 1024 * 1024 * 1024);
 
@@ -450,18 +465,39 @@ class DocumentService
     /**
      * The company logo (AdminSettingsService::updateCompanyProfile()) has
      * no `file_size` column anywhere to sum, unlike the four generated
-     * document tables — its size is read directly off the same `local`
-     * disk it was written to. 0 when the tenant has no logo, or if the
-     * path on `logo_path` no longer exists on disk.
+     * document tables — its size is read directly off the same files
+     * disk it was written to (see {@see AppFiles}). 0 when the tenant has
+     * no logo, or if the path on `logo_path` no longer exists on disk.
+     *
+     * If the disk cannot be read: 0 bytes plus a log entry (read-only
+     * callers), or a {@see FileStorageException} when $failOnStorageError.
+     * The driver's message goes to the log only, for diagnosis; it never
+     * reaches an HTTP response in either mode.
      */
-    private function logoBytes(Tenant $tenant): int
+    private function logoBytes(Tenant $tenant, bool $failOnStorageError): int
     {
         if ($tenant->logo_path === null) {
             return 0;
         }
 
-        return Storage::disk(self::DISK)->exists($tenant->logo_path)
-            ? Storage::disk(self::DISK)->size($tenant->logo_path)
-            : 0;
+        try {
+            $disk = AppFiles::disk();
+
+            return $disk->fileExists($tenant->logo_path)
+                ? $disk->size($tenant->logo_path)
+                : 0;
+        } catch (Throwable $e) {
+            if ($failOnStorageError) {
+                throw new FileStorageException('Could not measure the company logo.', 0, $e);
+            }
+
+            Log::warning('File storage unreachable while measuring the company logo; counted as 0 bytes.', [
+                'tenant_id' => $tenant->id,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return 0;
+        }
     }
 }

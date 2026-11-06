@@ -14,6 +14,7 @@ use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use App\Policies\CustomerAttachmentPolicy;
 use App\Services\AdminSettingsService;
+use App\Services\AppFiles;
 use App\Services\AuditLogService;
 use App\Services\CreditScoreService;
 use App\Services\CustomerDuplicateDetectionService;
@@ -25,7 +26,6 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
@@ -402,7 +402,7 @@ class CustomerController extends Controller
             $attachmentModel->delete();
         });
 
-        Storage::disk('local')->delete($attachmentModel->file_path);
+        AppFiles::delete($attachmentModel->file_path);
 
         return $this->successResponse(null, 'Attachment deleted successfully');
     }

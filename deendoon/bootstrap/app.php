@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\FileStorageException;
 use App\Http\Middleware\EnsureTokenIsNotIdle;
 use App\Http\Middleware\SecurityHeaders;
 use App\Services\SecurityEventLogger;
@@ -143,6 +144,20 @@ return Application::configure(basePath: dirname(__DIR__))
                     'data' => null,
                     'errors' => null,
                 ], 401);
+            }
+        });
+
+        // A file could not be stored or the file disk could not be reached.
+        // Reported as normal (the log keeps the driver exception), but the
+        // caller only learns that storage is temporarily unavailable.
+        $exceptions->render(function (FileStorageException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => FileStorageException::USER_MESSAGE,
+                    'data' => null,
+                    'errors' => null,
+                ], 503);
             }
         });
 

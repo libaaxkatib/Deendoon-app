@@ -15,6 +15,7 @@ use App\Models\AuditLog;
 use App\Models\CollectionCase;
 use App\Models\Debt;
 use App\Policies\CollectionCaseAttachmentPolicy;
+use App\Services\AppFiles;
 use App\Services\AuditLogService;
 use App\Services\CollectionCaseService;
 use App\Services\DocumentService;
@@ -23,7 +24,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CollectionCaseController extends Controller
 {
@@ -249,7 +249,7 @@ class CollectionCaseController extends Controller
             $attachmentModel->delete();
         });
 
-        Storage::disk('local')->delete($attachmentModel->file_path);
+        AppFiles::delete($attachmentModel->file_path);
 
         return $this->successResponse(null, 'Attachment deleted successfully');
     }

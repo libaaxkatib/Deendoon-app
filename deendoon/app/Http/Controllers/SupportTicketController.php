@@ -14,13 +14,13 @@ use App\Models\SupportTicket;
 use App\Models\User;
 use App\Policies\SupportTicketAttachmentPolicy;
 use App\Policies\SupportTicketPolicy;
+use App\Services\AppFiles;
 use App\Services\AuditLogService;
 use App\Services\SupportTicketService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -178,7 +178,7 @@ class SupportTicketController extends Controller
 
         $attachment = $ticket->attachments()->findOrFail($attachment);
 
-        return Storage::disk('local')->download($attachment->file_path, $attachment->original_filename);
+        return AppFiles::download($attachment->file_path, $attachment->original_filename);
     }
 
     /**
@@ -210,7 +210,7 @@ class SupportTicketController extends Controller
             $attachmentModel->delete();
         });
 
-        Storage::disk('local')->delete($attachmentModel->file_path);
+        AppFiles::delete($attachmentModel->file_path);
 
         return $this->successResponse(null, 'Attachment deleted successfully');
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\ProfessionalCollectionTimelineEventType;
+use App\Exceptions\FileStorageException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CloseProfessionalCollectionRequestRequest;
 use App\Http\Requests\PostRequestMessageRequest;
@@ -14,6 +15,7 @@ use App\Models\Invoice;
 use App\Models\ProfessionalCollectionRequest;
 use App\Models\Receipt;
 use App\Models\Statement;
+use App\Services\AppFiles;
 use App\Services\ProfessionalCollectionRequestService;
 use App\Services\ProfessionalCollectionTimelineService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -21,7 +23,6 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -239,6 +240,13 @@ class AdminProfessionalCollectionController extends Controller
             );
         } catch (HttpResponseException $e) {
             return $this->backWithServiceError($e);
+        } catch (FileStorageException $e) {
+            // Reported for the log, then shown as a plain message: no
+            // path, bucket or endpoint ever reaches the page. The upload ran
+            // in a transaction, so nothing was saved.
+            report($e);
+
+            return back()->withErrors(['file' => 'The attachment was not saved. '.FileStorageException::USER_MESSAGE]);
         }
 
         return redirect()->route('admin.professional-collection.show', $professionalCollectionRequest)
@@ -247,13 +255,21 @@ class AdminProfessionalCollectionController extends Controller
 
     public function recordTimelineEvent(StoreProfessionalCollectionTimelineEventRequest $request, ProfessionalCollectionRequest $professionalCollectionRequest): RedirectResponse
     {
-        $this->timeline->recordEvent($professionalCollectionRequest, [
-            'event_type' => $request->validated('event_type'),
-            'occurred_at' => $request->validated('occurred_at'),
-            'notes' => $request->validated('notes'),
-            'outcome' => $request->validated('outcome'),
-            'attachments' => $request->file('attachments', []),
-        ], $request->user());
+        try {
+            $this->timeline->recordEvent($professionalCollectionRequest, [
+                'event_type' => $request->validated('event_type'),
+                'occurred_at' => $request->validated('occurred_at'),
+                'notes' => $request->validated('notes'),
+                'outcome' => $request->validated('outcome'),
+                'attachments' => $request->file('attachments', []),
+            ], $request->user());
+        } catch (FileStorageException $e) {
+            // The event and its attachments are saved in one transaction, so
+            // a storage failure leaves no half-recorded event behind.
+            report($e);
+
+            return back()->withInput()->withErrors(['attachments' => 'The timeline event was not recorded. '.FileStorageException::USER_MESSAGE]);
+        }
 
         return redirect()->route('admin.professional-collection.show', $professionalCollectionRequest)
             ->with('status', 'Timeline event recorded.');
@@ -276,14 +292,14 @@ class AdminProfessionalCollectionController extends Controller
             default => abort(404),
         };
 
-        return Storage::disk('local')->download($model->file_path, "{$model->reference_number}.pdf");
+        return AppFiles::download($model->file_path, "{$model->reference_number}.pdf");
     }
 
     public function downloadAttachment(ProfessionalCollectionRequest $professionalCollectionRequest, string $attachment): StreamedResponse
     {
         $attachment = $professionalCollectionRequest->attachments()->findOrFail($attachment);
 
-        return Storage::disk('local')->download($attachment->file_path, $attachment->original_filename);
+        return AppFiles::download($attachment->file_path, $attachment->original_filename);
     }
 
     /**

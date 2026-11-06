@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\FileStorageException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReplySupportTicketRequest;
 use App\Http\Requests\TransitionSupportTicketStatusRequest;
 use App\Http\Requests\UploadSupportTicketAttachmentRequest;
 use App\Models\SupportTicket;
 use App\Models\Tenant;
+use App\Services\AppFiles;
 use App\Services\SupportTicketService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -180,6 +181,13 @@ class AdminSupportTicketController extends Controller
             $this->tickets->uploadAttachment($supportTicket, $request->file('file'), $request->user());
         } catch (HttpResponseException $e) {
             return $this->backWithServiceError($e);
+        } catch (FileStorageException $e) {
+            // Reported for the log, then shown as a plain message: no
+            // path, bucket or endpoint ever reaches the page. The upload ran
+            // in a transaction, so nothing was saved.
+            report($e);
+
+            return back()->withErrors(['file' => 'The attachment was not saved. '.FileStorageException::USER_MESSAGE]);
         }
 
         return redirect()->route('admin.support-tickets.show', $supportTicket)->with('status', 'Attachment uploaded.');
@@ -189,7 +197,7 @@ class AdminSupportTicketController extends Controller
     {
         $attachment = $supportTicket->attachments()->findOrFail($attachment);
 
-        return Storage::disk('local')->download($attachment->file_path, $attachment->original_filename);
+        return AppFiles::download($attachment->file_path, $attachment->original_filename);
     }
 
     /**

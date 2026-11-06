@@ -12,10 +12,10 @@ use App\Models\Reminder;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
+use App\Services\AppFiles;
 use App\Services\ReportingService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Admin Panel — Super Admin Dashboard (Product Owner-approved reference
@@ -299,11 +299,7 @@ class AdminDashboardService
 
     private function checkFileStorage(): bool
     {
-        try {
-            return Storage::disk('local')->exists('');
-        } catch (\Throwable) {
-            return false;
-        }
+        return AppFiles::isHealthy();
     }
 
     private function percentChange(int $previous, int $current): ?float

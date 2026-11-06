@@ -15,6 +15,7 @@ use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\Debt;
 use App\Policies\DebtAttachmentPolicy;
+use App\Services\AppFiles;
 use App\Services\AuditLogService;
 use App\Services\CreditScoreService;
 use App\Services\CustomerBalanceService;
@@ -26,7 +27,6 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class DebtController extends Controller
 {
@@ -390,7 +390,7 @@ class DebtController extends Controller
             $attachmentModel->delete();
         });
 
-        Storage::disk('local')->delete($attachmentModel->file_path);
+        AppFiles::delete($attachmentModel->file_path);
 
         return $this->successResponse(null, 'Attachment deleted successfully');
     }
