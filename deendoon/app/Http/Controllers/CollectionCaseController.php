@@ -66,7 +66,7 @@ class CollectionCaseController extends Controller
     {
         $this->authorize('viewAny', CollectionCase::class);
 
-        $query = CollectionCase::with(['debt.customer']);
+        $query = CollectionCase::with(['debt.customerWithTrashed']);
 
         if ($status = $request->string('status')->trim()->value()) {
             $query->where('case_status', $status);
@@ -97,7 +97,7 @@ class CollectionCaseController extends Controller
     {
         $this->authorize('view', $case);
 
-        $case->loadMissing(['debt.customer']);
+        $case->loadMissing(['debt.customerWithTrashed']);
 
         return $this->successResponse(new CollectionCaseResource($case));
     }
@@ -123,7 +123,7 @@ class CollectionCaseController extends Controller
             return $this->errorResponse('This debt has no collection case.', null, 404);
         }
 
-        $case->loadMissing(['debt.customer']);
+        $case->loadMissing(['debt.customerWithTrashed']);
 
         return $this->successResponse(new CollectionCaseResource($case));
     }

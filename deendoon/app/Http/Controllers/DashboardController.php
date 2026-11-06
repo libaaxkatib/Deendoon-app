@@ -114,7 +114,7 @@ class DashboardController extends Controller
 
         $limit = $request->filled('limit') ? $request->integer('limit') : 5;
 
-        $cases = CollectionCase::with(['debt.customer'])
+        $cases = CollectionCase::with(['debt.customerWithTrashed'])
             ->orderByDesc('updated_at')
             ->limit($limit)
             ->get();

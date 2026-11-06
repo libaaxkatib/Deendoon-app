@@ -41,6 +41,24 @@ class Debt extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    /**
+     * Display-only variant of {@see customer()} for historical records
+     * (e.g. CollectionCaseResource): an archived Customer must remain
+     * resolvable by name on Debts/Cases that existed before the archive,
+     * so this must never be used for business-logic decisions (read-only
+     * checks, risk/credit recalculation, message generation, etc.) — those
+     * intentionally keep using customer() so an archived customer keeps
+     * being excluded there.
+     */
+    public function customerWithTrashed(): BelongsTo
+    {
+        // The explicit `customer_id` foreign key is required here: without
+        // it, belongsTo() infers the FK column name from this method's own
+        // name (`customer_with_trashed_id`, which doesn't exist) rather
+        // than from `customer()`'s name, silently resolving to null.
+        return $this->belongsTo(Customer::class, 'customer_id')->withTrashed();
+    }
+
     public function followUpHistory(): HasMany
     {
         return $this->hasMany(FollowUpHistory::class);

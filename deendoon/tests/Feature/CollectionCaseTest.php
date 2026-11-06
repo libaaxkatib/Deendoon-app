@@ -292,6 +292,51 @@ class CollectionCaseTest extends TestCase
             ->assertJsonPath('data.outstanding_amount', '12988.00');
     }
 
+    /**
+     * Mobile QA Fix — Archived Customer: `Debt::customer()` is a plain
+     * belongsTo, so once a Customer is archived (SoftDeletes on
+     * `archived_at`), CustomerPolicy::archive() does not block archiving a
+     * customer that still has open Debts/Cases — the relation used to
+     * resolve to null and the mobile app showed "Unknown Customer" for
+     * every existing Case belonging to that customer. `customerWithTrashed()`
+     * keeps the name (and risk_level) resolvable for these historical
+     * records, and `customer_archived` lets the UI flag the state instead.
+     */
+    public function test_case_resource_still_shows_the_customer_name_after_the_customer_is_archived(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Ahmed Trading Co.']);
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create();
+        $this->actingAsTenantUser($tenant);
+        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+
+        $customer->delete();
+
+        $this->getJson('/api/v1/collection-cases')
+            ->assertStatus(200)
+            ->assertJsonPath('data.collection_cases.0.customer_name', 'Ahmed Trading Co.')
+            ->assertJsonPath('data.collection_cases.0.customer_archived', true);
+
+        $this->getJson("/api/v1/collection-cases/{$caseId}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.customer_name', 'Ahmed Trading Co.')
+            ->assertJsonPath('data.customer_archived', true);
+    }
+
+    public function test_case_resource_reports_customer_archived_false_for_an_active_customer(): void
+    {
+        $tenant = Tenant::create(['business_name' => 'Acme Co']);
+        $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Ahmed Trading Co.']);
+        $debt = Debt::factory()->for($tenant, 'tenant')->for($customer, 'customer')->create();
+        $this->actingAsTenantUser($tenant);
+        $caseId = $this->postJson("/api/v1/debts/{$debt->id}/collection-cases")->json('data.id');
+
+        $this->getJson("/api/v1/collection-cases/{$caseId}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.customer_name', 'Ahmed Trading Co.')
+            ->assertJsonPath('data.customer_archived', false);
+    }
+
     public function test_index_can_filter_by_high_risk_tab(): void
     {
         $tenant = Tenant::create(['business_name' => 'Acme Co']);
