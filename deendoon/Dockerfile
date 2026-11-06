@@ -10,11 +10,11 @@
 # (the entire admin panel's CSS/JS), as well as the stub "/" welcome view.
 FROM node:20-alpine AS assets
 WORKDIR /app
-COPY package.json ./
+COPY package.json package-lock.json ./
 COPY vite.config.js ./
 COPY resources ./resources
 COPY public ./public
-RUN npm install --ignore-scripts && npm run build
+RUN npm ci --ignore-scripts && npm run build
 
 # ---- Stage 2: PHP application -----------------------------------------------
 FROM php:8.4-cli-alpine
