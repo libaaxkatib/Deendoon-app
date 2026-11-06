@@ -23,6 +23,18 @@ RUN apk add --no-cache postgresql-dev libzip-dev icu-dev oniguruma-dev libpng-de
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql pgsql zip bcmath intl mbstring gd
 
+# The base image ships no active php.ini, so PHP's tiny compiled defaults
+# apply (upload_max_filesize=2M, post_max_size=8M) — both smaller than this
+# app's own validation rule for attachment uploads (UploadDebtAttachmentRequest
+# etc.: max 10MB). A real phone-camera photo between 2-10MB was being
+# silently truncated by PHP before Laravel's own, more permissive rule was
+# ever reached. Raised above that 10MB rule so validation, not PHP, remains
+# the single source of truth for the size limit.
+RUN { \
+        echo 'upload_max_filesize=12M'; \
+        echo 'post_max_size=13M'; \
+    } > /usr/local/etc/php/conf.d/deendoon-uploads.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
