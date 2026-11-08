@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Root-cause audit finding (C.4): applies to Android 6.0-11 (API 23-30) Auto
+  Backup, and is honored as a fallback on newer versions when
+  data_extraction_rules.xml (API 31+) doesn't otherwise apply.
+
+  Excludes only the two SharedPreferences files flutter_secure_storage 9.2.2
+  actually writes to on this device (confirmed directly against its Android
+  source, not guessed): "FlutterSecureStorage" (the encrypted values) and
+  "FlutterSecureKeyStorage" (the wrapped Keystore key material used by the
+  legacy cipher path this app's configuration exercises). Without this, Auto
+  Backup can restore that encrypted ciphertext on a fresh install while the
+  Android Keystore key needed to decrypt it cannot survive the same restore
+  (Keystore keys are device/install-bound) — the exact condition that
+  triggers flutter_secure_storage's `resetOnError` path (see C.3 in
+  RememberedCredentialsStorage). This is a targeted exclusion, not a
+  blanket android:allowBackup="false" — every other file this app may
+  reasonably want backed up is unaffected.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+</full-backup-content>

@@ -27,7 +27,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 /// Decision 10) — the Product Owner has since approved real static
 /// contact numbers/email, and a real ticket system exists to route to.
 ///
-/// The brand mark is the real logo asset (`assets/deendoon_logo.png`,
+/// The brand mark is the real logo asset (`assets/new deendoon_logo.png`,
 /// declared in `pubspec.yaml`) rather than a text wordmark or placeholder.
 /// Content (Somali) below it is the Product Owner's approved copy —
 /// intro, benefits, and closing — laid out per the approved reference.
@@ -87,7 +87,7 @@ class AboutDeendoonSection extends StatelessWidget {
           child: Column(
             children: [
               Image.asset(
-                'assets/deendoon_logo.png',
+                'assets/new deendoon_logo.png',
                 width: 104,
                 fit: BoxFit.contain,
               ),

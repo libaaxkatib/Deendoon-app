@@ -105,6 +105,8 @@
   "navReminders": "Reminders",
   "navDocuments": "Documents",
 
+  "shellExitConfirmationMessage": "Press back again to exit",
+
   "commonLoading": "Loading...",
   "commonViewAll": "View All",
 
@@ -508,6 +510,10 @@
   "debtDetailRelatedCaseHeading": "Related Case",
 
   "addEditDebtDueDateRequiredError": "Select a due date.",
+  "addEditDebtUnexpectedErrorMessage": "Something went wrong. Please try again.",
+  "@addEditDebtUnexpectedErrorMessage": {
+    "description": "Shown when saving the Debt fails with an error that isn't a normal API error (e.g. a stale picked-file path) — a safety net so the Save button never stays stuck loading with no feedback"
+  },
   "addEditDebtInvoiceUploadFailedMessage": "Debt saved, but the invoice failed: {message}",
   "@addEditDebtInvoiceUploadFailedMessage": {
     "description": "Snackbar shown when the Debt itself saved successfully but the attached invoice upload afterward failed",
@@ -633,6 +639,7 @@
   "editCaseNotesSaveButton": "Save Notes",
 
   "caseCardUnknownCustomer": "Unknown customer",
+  "caseCardArchivedCustomerLabel": "Archived",
   "caseCardOutstandingLabel": "Outstanding",
   "caseUnassignedLabel": "Unassigned",
 

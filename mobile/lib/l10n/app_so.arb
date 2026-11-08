@@ -98,6 +98,8 @@
   "navReminders": "Xasuusinta",
   "navDocuments": "Dukumentiyada",
 
+  "shellExitConfirmationMessage": "Mar labaad taabo dib si aad uga baxdo",
+
   "commonLoading": "Waa la soo raraya...",
   "commonViewAll": "Dhammaan Fiiri",
 
@@ -440,6 +442,7 @@
   "debtDetailRelatedCaseHeading": "Kiiska La Xiriira",
 
   "addEditDebtDueDateRequiredError": "Dooro taariikhda dhammaadka.",
+  "addEditDebtUnexpectedErrorMessage": "Wax baa qaldamay. Fadlan isku day mar kale.",
   "addEditDebtInvoiceUploadFailedMessage": "Daynta waa la keydiyay, laakiin qaansheegtu way fashilantay: {message}",
   "addEditDebtCreditLimitExceededTitle": "Xadka Deynta waa la Dhaafay",
   "addEditDebtAmountLabel": "Qadarka",
@@ -523,6 +526,7 @@
   "editCaseNotesSaveButton": "Kaydi Faallooyinka",
 
   "caseCardUnknownCustomer": "Macmiil aan la garanayn",
+  "caseCardArchivedCustomerLabel": "La kaydiyay",
   "caseCardOutstandingLabel": "Hadhaysa",
   "caseUnassignedLabel": "Aan La Xilsaarin",
 

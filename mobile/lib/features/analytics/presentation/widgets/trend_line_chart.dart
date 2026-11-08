@@ -6,8 +6,9 @@ import '../../../../core/theme/deendoon_colors.dart';
 import '../../domain/collections_trend.dart';
 
 String _formatAxisValue(double value) {
-  if (value >= 1000)
+  if (value >= 1000) {
     return '${(value / 1000).toStringAsFixed(value % 1000 == 0 ? 0 : 1)}K';
+  }
   if (value == value.roundToDouble()) return value.toStringAsFixed(0);
   return value.toStringAsFixed(1);
 }

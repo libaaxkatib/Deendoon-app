@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Root-cause audit finding (C.4): the Android 12+ (API 31+) replacement for
+  full-backup-content.xml — this app's targetSdk requires both to cover the
+  full range of supported OS versions. Same exclusions, same reasoning as
+  backup_rules.xml: only the two flutter_secure_storage-backed SharedPreferences
+  files are excluded (confirmed exact file names against its Android source),
+  never android:allowBackup itself. device-transfer covers Android's
+  same-account "Copy your data to this device" flow, which involves a
+  different physical device with its own separate Keystore — the same
+  undecryptable-ciphertext risk as a cloud backup restore, so it's excluded
+  here too.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+    </device-transfer>
+</data-extraction-rules>

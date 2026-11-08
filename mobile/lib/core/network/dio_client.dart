@@ -23,6 +23,10 @@ final dioProvider = Provider<Dio>((ref) {
       // though a manual retry (against the now-warm instance) succeeded.
       connectTimeout: const Duration(seconds: 45),
       receiveTimeout: const Duration(seconds: 45),
+      // Previously unset (unbounded) — a stalled multipart upload (e.g. an
+      // invoice photo) could hang indefinitely on the send phase instead of
+      // eventually failing as a normal, caught DioException/ApiException.
+      sendTimeout: const Duration(seconds: 45),
       contentType: 'application/json',
     ),
   );

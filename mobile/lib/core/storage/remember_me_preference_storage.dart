@@ -9,11 +9,14 @@ final rememberMePreferenceStorageProvider =
 /// Persists the Login screen's "Remember Me" checkbox choice — device-only,
 /// and holds no secret itself. This is NOT credential storage: it only
 /// remembers whether the checkbox was last left on, so the Login screen can
-/// restore that choice on its next appearance. The actual "remember this
-/// login" behavior is delegated entirely to the platform's own credential
-/// manager (Android Autofill / Google Password Manager, iOS Keychain) via
-/// `TextInput.finishAutofillContext(shouldSave: ...)` in `LoginForm` — the
-/// app never reads back, stores, or has custody of the saved password.
+/// restore that choice on its next appearance. The actual email/password are
+/// stored separately, in [RememberedCredentialsStorage] — this class only
+/// answers "was the box checked last time," it never reads or writes a
+/// credential itself. `LoginForm` additionally uses this same choice to
+/// decide whether to commit or cancel the platform's own Autofill/Password
+/// Manager save prompt via `AutofillGroup.onDisposeAction` — that native
+/// prompt is a separate mechanism from the app's own credential storage,
+/// not a replacement for it.
 class RememberMePreferenceStorage {
   static const _enabledKey = 'login_remember_me_enabled';
 

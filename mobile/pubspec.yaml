@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.12.2
@@ -71,16 +71,16 @@ dev_dependencies:
   # touching production code. Not a new package in the dependency graph.
   url_launcher_platform_interface: ^2.3.2
 
-# Generates mipmap-*/ic_launcher.png from the existing approved Deendoon
-# logo (assets/deendoon_logo.png) — run `dart run flutter_launcher_icons`
+# Generates mipmap-*/ic_launcher.png from the approved Deendoon logo
+# (assets/new deendoon_logo.png) — run `dart run flutter_launcher_icons`
 # after changing this. Adaptive icon background uses AppColors.background
 # (#121417), the same brand dark surface used throughout the app, not an
 # invented color.
 flutter_launcher_icons:
   android: true
-  image_path: "assets/deendoon_logo.png"
+  image_path: "assets/new deendoon_logo.png"
   adaptive_icon_background: "#121417"
-  adaptive_icon_foreground: "assets/deendoon_logo.png"
+  adaptive_icon_foreground: "assets/new deendoon_logo.png"
 
 # Generates the native splash screen (both launch_background.xml variants)
 # from the same approved logo, on the same brand background color, so the
@@ -89,7 +89,7 @@ flutter_launcher_icons:
 # this.
 flutter_native_splash:
   color: "#121417"
-  image: "assets/deendoon_logo.png"
+  image: "assets/new deendoon_logo.png"
   android: true
   ios: false
   web: false
@@ -124,7 +124,7 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   assets:
-    - assets/deendoon_logo.png
+    - "assets/new deendoon_logo.png"
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

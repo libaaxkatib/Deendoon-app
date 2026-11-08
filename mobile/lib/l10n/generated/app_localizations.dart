@@ -596,6 +596,12 @@ abstract class AppLocalizations {
   /// **'Documents'**
   String get navDocuments;
 
+  /// No description provided for @shellExitConfirmationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get shellExitConfirmationMessage;
+
   /// No description provided for @commonLoading.
   ///
   /// In en, this message translates to:
@@ -2348,6 +2354,12 @@ abstract class AppLocalizations {
   /// **'Select a due date.'**
   String get addEditDebtDueDateRequiredError;
 
+  /// Shown when saving the Debt fails with an error that isn't a normal API error (e.g. a stale picked-file path) — a safety net so the Save button never stays stuck loading with no feedback
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get addEditDebtUnexpectedErrorMessage;
+
   /// Snackbar shown when the Debt itself saved successfully but the attached invoice upload afterward failed
   ///
   /// In en, this message translates to:
@@ -2761,6 +2773,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unknown customer'**
   String get caseCardUnknownCustomer;
+
+  /// No description provided for @caseCardArchivedCustomerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get caseCardArchivedCustomerLabel;
 
   /// No description provided for @caseCardOutstandingLabel.
   ///

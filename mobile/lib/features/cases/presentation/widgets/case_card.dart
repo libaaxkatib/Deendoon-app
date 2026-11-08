@@ -49,14 +49,28 @@ class CaseCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      collectionCase.customerName ??
-                          l10n.caseCardUnknownCustomer,
-                      style: AppTypography.body.copyWith(
-                        color: context.colors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            collectionCase.customerName ??
+                                l10n.caseCardUnknownCustomer,
+                            style: AppTypography.body.copyWith(
+                              color: context.colors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (collectionCase.customerArchived &&
+                            collectionCase.customerName != null) ...[
+                          const SizedBox(width: 6),
+                          _Tag(
+                            label: l10n.caseCardArchivedCustomerLabel,
+                            color: context.colors.textSecondary,
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(

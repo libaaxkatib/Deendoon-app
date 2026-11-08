@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/network/api_exception.dart';
@@ -126,6 +128,31 @@ void main() {
       ),
     );
   });
+
+  test(
+    'uploadAttachment wraps a non-Dio failure (e.g. a stale picked-file '
+    'path) as an ApiException instead of letting it propagate raw',
+    () async {
+      when(
+        () => mockApi.upload(
+          entityPathPrefix: 'debts/01DEBT',
+          filePath: '/tmp/gone.pdf',
+          fileName: 'gone.pdf',
+          description: 'Invoice',
+        ),
+      ).thenThrow(const FileSystemException('No such file or directory'));
+
+      expect(
+        () => repository.uploadAttachment(
+          entityPathPrefix: 'debts/01DEBT',
+          filePath: '/tmp/gone.pdf',
+          fileName: 'gone.pdf',
+          description: 'Invoice',
+        ),
+        throwsA(isA<ApiException>()),
+      );
+    },
+  );
 
   test('deleteAttachment delegates to the api', () async {
     when(

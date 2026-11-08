@@ -12,7 +12,7 @@ failing.
 **Always build the final release APK with:**
 
 ```bash
-flutter build apk --release --dart-define=API_BASE_URL=https://deendoon-app.onrender.com/api/v1
+flutter build appbundle --release --dart-define=API_BASE_URL=https://deendoon.net/api/v1
 ```
 
 (Substitute the confirmed current production URL if it has changed since this

@@ -227,6 +227,19 @@ class _AddEditDebtScreenState extends ConsumerState<AddEditDebtScreen> {
           _isSaving = false;
         });
       }
+    } catch (e) {
+      // Safety net: guarantees `_isSaving` can never get stuck on an
+      // exception type that isn't an `ApiException` (e.g. an unexpected
+      // response shape), leaving the button spinning forever with no
+      // error ever shown — the exact real-device symptom this closes.
+      if (mounted) {
+        setState(() {
+          _error = AppLocalizations.of(
+            context,
+          ).addEditDebtUnexpectedErrorMessage;
+          _isSaving = false;
+        });
+      }
     }
   }
 

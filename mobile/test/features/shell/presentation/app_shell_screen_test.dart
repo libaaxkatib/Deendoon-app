@@ -20,13 +20,19 @@ const _localizationsDelegates = [
 /// StatefulShellRoute structure, with trivial placeholder branch screens
 /// (no feature-screen dependencies to mock) — isolates AppShellScreen's
 /// own bottom-nav-label localization from the rest of the route tree.
-Future<void> _pumpShell(WidgetTester tester, {required Locale locale}) async {
+Future<void> _pumpShell(
+  WidgetTester tester, {
+  required Locale locale,
+  Future<void> Function()? onExit,
+  DateTime Function()? now,
+  String initialLocation = '/home',
+}) async {
   final router = GoRouter(
-    initialLocation: '/home',
+    initialLocation: initialLocation,
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) =>
-            AppShellScreen(navigationShell: shell),
+            AppShellScreen(navigationShell: shell, onExit: onExit, now: now),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -118,4 +124,92 @@ void main() {
       expect(find.text('Documents'), findsNothing);
     },
   );
+
+  group('Mobile QA Fix — Back Button', () {
+    testWidgets(
+      'Back on a non-Home branch root switches to Home instead of exiting',
+      (tester) async {
+        var exitCalls = 0;
+        await _pumpShell(
+          tester,
+          locale: const Locale('en'),
+          initialLocation: '/cases',
+          onExit: () async => exitCalls++,
+        );
+        expect(find.text('Cases Branch'), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Home Branch'), findsOneWidget);
+        expect(exitCalls, 0);
+      },
+    );
+
+    testWidgets(
+      'First Back on Home root shows the exit-confirmation snackbar without exiting',
+      (tester) async {
+        var exitCalls = 0;
+        await _pumpShell(
+          tester,
+          locale: const Locale('en'),
+          onExit: () async => exitCalls++,
+        );
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Press back again to exit'), findsOneWidget);
+        expect(exitCalls, 0);
+      },
+    );
+
+    testWidgets(
+      'Second Back on Home root within the exit window calls onExit',
+      (tester) async {
+        var exitCalls = 0;
+        await _pumpShell(
+          tester,
+          locale: const Locale('en'),
+          onExit: () async => exitCalls++,
+        );
+
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+
+        expect(exitCalls, 1);
+      },
+    );
+
+    testWidgets(
+      'A second Back after the exit window has elapsed shows the snackbar again instead of exiting',
+      (tester) async {
+        var exitCalls = 0;
+        // DateTime.now() isn't affected by tester.pump's fake clock, so a
+        // fake `now` is injected to simulate real time passing between
+        // the two back-presses.
+        var fakeNow = DateTime(2026);
+        await _pumpShell(
+          tester,
+          locale: const Locale('en'),
+          onExit: () async => exitCalls++,
+          now: () => fakeNow,
+        );
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        // Move the fake clock past the 2-second exit window.
+        fakeNow = fakeNow.add(const Duration(seconds: 3));
+
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+
+        expect(exitCalls, 0);
+        expect(find.text('Press back again to exit'), findsOneWidget);
+      },
+    );
+  });
 }

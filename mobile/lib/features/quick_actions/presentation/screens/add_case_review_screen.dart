@@ -143,7 +143,10 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
         // Best-effort, same "no rollback on a later failure" convention as
         // the rest of this chain — the Debt itself was created
         // successfully, so a failed invoice attach doesn't block Case
-        // creation below.
+        // creation below. `AttachmentRepository`'s guard now wraps every
+        // non-Dio failure (e.g. a stale picked-file path) as an
+        // `ApiException` too, so this catch alone is enough to guarantee
+        // this step can never leave `_state` stuck in `_Running()`.
       }
     }
 
@@ -152,13 +155,32 @@ class _AddCaseReviewScreenState extends ConsumerState<AddCaseReviewScreen> {
           .read(debtActionsProvider)
           .openCase(debt.id, customer.id);
       if (!mounted) return;
-      // `go()`, not `push()`/`pushReplacement()` — clears the whole wizard
-      // stack (entry sheet's pushed steps) now that the flow is complete,
-      // rather than leaving stale draft-collection screens behind Case
-      // Detail's back button.
-      GoRouter.of(context).go('/cases/${collectionCase.id}');
+      // `/cases/:id` is a flat, top-level route (not nested inside the
+      // Cases tab's branch) — calling `go()` directly on it would wipe the
+      // entire root Navigator stack, including the bottom-nav shell itself,
+      // leaving System Back with nothing to pop and no PopScope mounted to
+      // intercept it (it would exit the app). Instead: `go()` back to the
+      // Cases tab root first (clearing the wizard's own pushed steps, but
+      // keeping the shell mounted), then `push()` the detail on top — the
+      // same two-step pattern every other entry point into Case Detail
+      // already uses (e.g. `case_list_screen.dart`).
+      GoRouter.of(context).go('/cases');
+      GoRouter.of(context).push('/cases/${collectionCase.id}');
     } on ApiException catch (e) {
       if (mounted) setState(() => _state = _FailedAfterDebt(e.message, debt));
+    } catch (e) {
+      // Safety net: any non-`ApiException` failure from this step (or the
+      // invoice-upload step above bypassing its own catch somehow) must
+      // still leave the review screen showing an error, not spinning
+      // forever — the exact real-device symptom this closes.
+      if (mounted) {
+        setState(
+          () => _state = _FailedAfterDebt(
+            'Something went wrong. Please try again.',
+            debt,
+          ),
+        );
+      }
     }
   }
 

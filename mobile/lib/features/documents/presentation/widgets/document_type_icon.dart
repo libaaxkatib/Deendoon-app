@@ -62,8 +62,9 @@ String formatFileSize(BuildContext context, int? bytes) {
   if (bytes == null) return '—';
   final l10n = AppLocalizations.of(context);
   if (bytes < 1024) return '$bytes ${l10n.documentSizeUnitBytes}';
-  if (bytes < 1024 * 1024)
+  if (bytes < 1024 * 1024) {
     return '${(bytes / 1024).toStringAsFixed(1)} ${l10n.documentSizeUnitKb}';
+  }
   if (bytes < 1024 * 1024 * 1024) {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ${l10n.documentSizeUnitMb}';
   }

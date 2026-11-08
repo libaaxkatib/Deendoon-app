@@ -42,7 +42,7 @@ Future<void> _pumpLoginScreen(
           SomaliMaterialLocalizationsDelegate(),
           SomaliCupertinoLocalizationsDelegate(),
         ],
-        home: const LoginScreen(),
+        home: const LoginScreen(googleLoginEnabled: true),
       ),
     ),
   );
@@ -67,6 +67,47 @@ void main() {
 
     expect(find.text('Continue with Google'), findsOneWidget);
   });
+
+  testWidgets(
+    'Product Owner decision — Google Login temporarily hidden: the '
+    'default LoginScreen (no explicit opt-in) does not render "Continue '
+    'with Google" at all',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authApiProvider.overrideWithValue(mockApi),
+            googleAuthServiceProvider.overrideWithValue(
+              mockGoogleAuthService,
+            ),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              SomaliMaterialLocalizationsDelegate(),
+              SomaliCupertinoLocalizationsDelegate(),
+            ],
+            // Deliberately the real production shape — the exact
+            // `LoginScreen()` call app_router.dart itself uses, with no
+            // `googleLoginEnabled` override.
+            home: const LoginScreen(),
+          ),
+        ),
+      );
+
+      expect(find.text('Continue with Google'), findsNothing);
+      // Everything else on the Login screen must remain present and
+      // functional — this is a visibility-only change.
+      expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
+      expect(find.text('Remember Me'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Forgot password?'), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'shows a message instead of calling the SDK when Google sign-in is not configured',
@@ -230,7 +271,7 @@ void main() {
         routes: [
           GoRoute(
             path: RoutePaths.login,
-            builder: (_, _) => const LoginScreen(),
+            builder: (_, _) => const LoginScreen(googleLoginEnabled: true),
           ),
           GoRoute(
             path: RoutePaths.googleRegister,

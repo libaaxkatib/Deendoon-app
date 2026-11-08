@@ -263,6 +263,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navDocuments => 'Documents';
 
   @override
+  String get shellExitConfirmationMessage => 'Press back again to exit';
+
+  @override
   String get commonLoading => 'Loading...';
 
   @override
@@ -1207,6 +1210,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addEditDebtDueDateRequiredError => 'Select a due date.';
 
   @override
+  String get addEditDebtUnexpectedErrorMessage =>
+      'Something went wrong. Please try again.';
+
+  @override
   String addEditDebtInvoiceUploadFailedMessage(String message) {
     return 'Debt saved, but the invoice failed: $message';
   }
@@ -1441,6 +1448,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get caseCardUnknownCustomer => 'Unknown customer';
+
+  @override
+  String get caseCardArchivedCustomerLabel => 'Archived';
 
   @override
   String get caseCardOutstandingLabel => 'Outstanding';

@@ -41,6 +41,19 @@ class AttachmentRepository {
       return await call();
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      // Building the multipart upload reads the picked file from disk
+      // (`MultipartFile.fromFile`) before any request is sent — if that
+      // file's path has gone stale (e.g. Android reclaimed a picker/camera
+      // cache file while the user kept editing the form), this throws a
+      // plain FileSystemException, not a DioException. Left uncaught here,
+      // it would bypass every caller's `on ApiException` handler entirely
+      // and could leave a caller's loading state stuck forever.
+      throw const ApiException(
+        message: 'Could not upload the file. Please try again.',
+      );
     }
   }
 }

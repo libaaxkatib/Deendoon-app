@@ -110,6 +110,7 @@ Future<void> _pumpScreen(
         path: '/',
         builder: (_, _) => AddCaseReviewScreen(input: input),
       ),
+      GoRoute(path: '/cases', builder: (_, _) => const Text('Case List Screen')),
       GoRoute(
         path: '/cases/:id',
         builder: (_, state) =>
@@ -488,4 +489,54 @@ void main() {
       },
     );
   });
+
+  testWidgets(
+    'Case Detail has something to pop back to after the wizard completes, '
+    'instead of exiting (real-device Bug #3 regression: the wizard used to '
+    'go() straight to /cases/:id, wiping the whole navigator stack)',
+    (tester) async {
+      when(
+        () => mockDebtRepository.createDebt(
+          customerId: '01CUST',
+          amount: '500.00',
+          dueDate: '2026-08-15',
+          notes: null,
+        ),
+      ).thenAnswer((_) async => (debt: _debt, warning: null));
+      when(
+        () => mockDebtRepository.openCase('01DEBT'),
+      ).thenAnswer((_) async => _collectionCase);
+
+      await _pumpScreen(
+        tester,
+        input: const AddCaseReviewInput(
+          existingCustomer: _existingCustomer,
+          debtDraft: _debtDraft,
+        ),
+        customerRepository: mockCustomerRepository,
+        debtRepository: mockDebtRepository,
+      );
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Create Debt'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Case Detail 01CASE'), findsOneWidget);
+      final navigator = Navigator.of(
+        tester.element(find.text('Case Detail 01CASE')),
+      );
+      expect(
+        navigator.canPop(),
+        isTrue,
+        reason:
+            'Case Detail must have a route beneath it (the Cases list) to '
+            'pop back to — an empty stack here is exactly what let system '
+            'Back fall through to closing the whole app.',
+      );
+
+      navigator.pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Case List Screen'), findsOneWidget);
+    },
+  );
 }

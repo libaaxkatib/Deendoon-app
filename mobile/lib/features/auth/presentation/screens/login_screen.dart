@@ -5,7 +5,11 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../widgets/login_form.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  /// Threaded through to [LoginForm] — see its own doc comment. Defaults
+  /// to hidden; only test code opts back in.
+  final bool googleLoginEnabled;
+
+  const LoginScreen({super.key, this.googleLoginEnabled = false});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +35,7 @@ class LoginScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                const LoginForm(),
+                LoginForm(googleLoginEnabled: googleLoginEnabled),
               ],
             ),
           ),

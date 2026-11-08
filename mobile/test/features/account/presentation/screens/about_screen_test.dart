@@ -43,7 +43,10 @@ void main() {
     await tester.pump();
 
     final logo = tester.widget<Image>(find.byType(Image));
-    expect((logo.image as AssetImage).assetName, 'assets/deendoon_logo.png');
+    expect(
+      (logo.image as AssetImage).assetName,
+      'assets/new deendoon_logo.png',
+    );
     expect(
       find.text('The Modern Assistant for\nDebt Recovery'),
       findsOneWidget,

@@ -194,8 +194,9 @@ class _MessagePreviewScreenState extends ConsumerState<MessagePreviewScreen> {
       queryParameters: {'phone': digitsOnlyPhone, 'text': text},
     );
     try {
-      if (await launchUrl(nativeUri, mode: LaunchMode.externalApplication))
+      if (await launchUrl(nativeUri, mode: LaunchMode.externalApplication)) {
         return true;
+      }
     } on PlatformException {
       // WhatsApp not installed — fall through to the web fallback below.
     }

@@ -183,8 +183,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 ),
               ),
               data: (results) {
-                if (results == null)
+                if (results == null) {
                   return _RecentSearchesView(onSearch: _runSearch);
+                }
                 if (results.totalCount == 0) {
                   return SingleChildScrollView(
                     child: Center(

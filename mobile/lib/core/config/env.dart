@@ -11,8 +11,7 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 /// for the incident this addresses. Debug/profile builds keep defaulting
 /// to the emulator loopback address for local development.
 class Env {
-  static const _productionApiBaseUrl =
-      'https://deendoon-app.onrender.com/api/v1';
+  static const _productionApiBaseUrl = 'https://deendoon.net/api/v1';
   static const _emulatorApiBaseUrl = 'http://10.0.2.2:8000/api/v1';
 
   static const apiBaseUrl = String.fromEnvironment(

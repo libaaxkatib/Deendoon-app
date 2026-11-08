@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -196,7 +198,7 @@ void main() {
         () => mockRepository.createDebt(
           customerId: '01CUST',
           amount: '500.00',
-          dueDate: '2026-08-15',
+          dueDate: any(named: 'dueDate'),
           notes: null,
         ),
       ).thenAnswer((_) async => (debt: _existingDebt, warning: null));
@@ -670,5 +672,75 @@ void main() {
         ),
       );
     });
+
+    testWidgets(
+      'a non-ApiException failure during invoice upload still stops the '
+      'spinner and shows an error, instead of hanging forever '
+      '(real-device Bug #1 regression)',
+      (tester) async {
+        final mockAttachmentRepository = _MockAttachmentRepository();
+        when(
+          () => mockRepository.createDebt(
+            customerId: '01CUST',
+            amount: '500.00',
+            dueDate: any(named: 'dueDate'),
+            notes: null,
+          ),
+        ).thenAnswer((_) async => (debt: _existingDebt, warning: null));
+        // Simulates the real repository's `AttachmentRepository._guard`
+        // being bypassed entirely — a raw, non-ApiException failure (e.g.
+        // the picked file's cache path having gone stale by submit time)
+        // reaching `_uploadInvoiceIfPicked`'s `on ApiException catch`,
+        // which won't match it. Before the fix, this propagated out of
+        // `_save()` uncaught, leaving `_isSaving` stuck `true` forever.
+        when(
+          () => mockAttachmentRepository.uploadAttachment(
+            entityPathPrefix: 'debts/1',
+            filePath: '/tmp/invoice.jpg',
+            fileName: 'invoice.jpg',
+            description: 'Invoice',
+          ),
+        ).thenThrow(const FileSystemException('No such file or directory'));
+
+        await _pumpScreen(
+          tester,
+          repository: mockRepository,
+          customerId: '01CUST',
+          extraOverrides: [
+            attachmentRepositoryProvider.overrideWithValue(
+              mockAttachmentRepository,
+            ),
+            attachmentCameraProvider.overrideWithValue(
+              () async => (path: '/tmp/invoice.jpg', name: 'invoice.jpg'),
+            ),
+          ],
+        );
+
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Amount'),
+          '500.00',
+        );
+        await tester.tap(find.text('Select Due Date'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('15'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Scan Invoice'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Add Debt'));
+        await tester.pumpAndSettle();
+
+        // Before the fix this exact scenario left the spinner running
+        // forever with no error ever shown — confirm both are false now.
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(
+          find.text('Something went wrong. Please try again.'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

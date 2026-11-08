@@ -70,7 +70,14 @@ class AuthNotifier extends Notifier<AuthState> {
   /// pending biometric lock — this is also how the lock screen's "Use
   /// Password Instead" fallback resolves, since it just navigates to this
   /// same real login flow rather than a separate credential path.
-  Future<void> login(String email, String password) async {
+  ///
+  /// Root-cause audit finding (C.2): returns the resulting [AuthState] so
+  /// `LoginForm._submit()` can check whether login succeeded using this
+  /// call's own return value instead of reading `ref`/this notifier's
+  /// state again afterward — a successful login's state change reactively
+  /// navigates away from the Login screen (via the router's own refresh
+  /// listener), and a `WidgetRef` read after that navigation can throw.
+  Future<AuthState> login(String email, String password) async {
     state = const Authenticating();
     try {
       state = await _repository.login(email, password);
@@ -79,6 +86,7 @@ class AuthNotifier extends Notifier<AuthState> {
     } on ApiException catch (e) {
       state = AuthError(e.detailedMessage, fieldErrors: e.fieldErrors);
     }
+    return state;
   }
 
   Future<void> register({

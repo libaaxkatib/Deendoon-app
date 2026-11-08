@@ -50,8 +50,9 @@ class ContactDeendoonCard extends StatelessWidget {
       queryParameters: {'phone': _whatsappPhone},
     );
     try {
-      if (await launchUrl(nativeUri, mode: LaunchMode.externalApplication))
+      if (await launchUrl(nativeUri, mode: LaunchMode.externalApplication)) {
         return;
+      }
     } on PlatformException {
       // WhatsApp not installed — fall through to the web fallback below.
     }

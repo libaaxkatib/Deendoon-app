@@ -16,7 +16,16 @@ import '../../domain/google_registration_input.dart';
 import '../providers/auth_provider.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
-  const LoginForm({super.key});
+  /// Temporary Product Owner decision: Google Login is implemented and
+  /// fully functional, but hidden from the Login screen until it's
+  /// production-ready. Defaults to hidden everywhere except
+  /// `login_screen_google_test.dart`, which opts back in explicitly to
+  /// keep exercising the real implementation — nothing about
+  /// `_handleGoogleSignIn`/`GoogleAuthService` below is removed, only its
+  /// entry point's visibility.
+  final bool googleLoginEnabled;
+
+  const LoginForm({super.key, this.googleLoginEnabled = false});
 
   @override
   ConsumerState<LoginForm> createState() => _LoginFormState();
@@ -77,15 +86,32 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   }
 
   Future<void> _submit() async {
-    ref.read(authProvider.notifier).clearError();
+    final notifier = ref.read(authProvider.notifier);
+    notifier.clearError();
     if (_formKey.currentState?.validate() != true) return;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    await ref.read(authProvider.notifier).login(email, password);
-    if (_rememberMe && ref.read(authProvider) is Authenticated) {
-      await ref
-          .read(rememberedCredentialsStorageProvider)
-          .saveCredentials(email: email, password: password);
+
+    // Root-cause audit finding (C.2): a successful login's state change is
+    // observed synchronously by the router's own refresh listener
+    // (`RouterRefreshNotifier`), which reactively navigates away from this
+    // screen — there is no explicit navigation call here for that. If this
+    // widget is disposed before the save step below runs, using `ref`
+    // again (a `WidgetRef`) throws. `credentialsStorage` is captured now,
+    // before the `login()` await, and the outcome is read from `login()`'s
+    // own return value below — neither needs `ref` to be touched again
+    // after the await.
+    final credentialsStorage = _rememberMe
+        ? ref.read(rememberedCredentialsStorageProvider)
+        : null;
+
+    final result = await notifier.login(email, password);
+
+    if (credentialsStorage != null && result is Authenticated) {
+      await credentialsStorage.saveCredentials(
+        email: email,
+        password: password,
+      );
     }
     // Rebuilding on the new AuthError alone doesn't re-run each field's
     // validator (Flutter only does that on an explicit validate() call) —
@@ -239,30 +265,32 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               isLoading: isLoading,
               onPressed: _isGoogleLoading ? null : _submit,
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(l10n.authOrDivider),
-                ),
-                const Expanded(child: Divider()),
-              ],
-            ),
-            const SizedBox(height: 20),
-            OutlinedButton(
-              onPressed: (isLoading || _isGoogleLoading)
-                  ? null
-                  : _handleGoogleSignIn,
-              child: _isGoogleLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(l10n.googleLoginButton),
-            ),
+            if (widget.googleLoginEnabled) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(l10n.authOrDivider),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 20),
+              OutlinedButton(
+                onPressed: (isLoading || _isGoogleLoading)
+                    ? null
+                    : _handleGoogleSignIn,
+                child: _isGoogleLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(l10n.googleLoginButton),
+              ),
+            ],
             const SizedBox(height: 16),
             Center(
               child: TextButton(

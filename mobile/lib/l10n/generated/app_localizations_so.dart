@@ -269,6 +269,10 @@ class AppLocalizationsSo extends AppLocalizations {
   String get navDocuments => 'Dukumentiyada';
 
   @override
+  String get shellExitConfirmationMessage =>
+      'Mar labaad taabo dib si aad uga baxdo';
+
+  @override
   String get commonLoading => 'Waa la soo raraya...';
 
   @override
@@ -1229,6 +1233,10 @@ class AppLocalizationsSo extends AppLocalizations {
   String get addEditDebtDueDateRequiredError => 'Dooro taariikhda dhammaadka.';
 
   @override
+  String get addEditDebtUnexpectedErrorMessage =>
+      'Wax baa qaldamay. Fadlan isku day mar kale.';
+
+  @override
   String addEditDebtInvoiceUploadFailedMessage(String message) {
     return 'Daynta waa la keydiyay, laakiin qaansheegtu way fashilantay: $message';
   }
@@ -1471,6 +1479,9 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get caseCardUnknownCustomer => 'Macmiil aan la garanayn';
+
+  @override
+  String get caseCardArchivedCustomerLabel => 'La kaydiyay';
 
   @override
   String get caseCardOutstandingLabel => 'Hadhaysa';

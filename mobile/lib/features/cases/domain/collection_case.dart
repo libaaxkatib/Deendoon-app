@@ -1,7 +1,10 @@
 /// Mirrors `App\Http\Resources\CollectionCaseResource` exactly.
-/// `customer_id`, `customer_name`, `outstanding_amount`, and `risk_level`
-/// are embedded from the case's debt/customer (only populated when the
-/// backend eager-loads `debt.customer`, which `index()`/`show()` both do).
+/// `customer_id`, `customer_name`, `customer_archived`, `outstanding_amount`,
+/// and `risk_level` are embedded from the case's debt/customer. `customer_name`
+/// and `risk_level` resolve via the customer's `withTrashed()` relation
+/// specifically so an archived customer's historical cases still show its
+/// name instead of falling back to "Unknown" — `customer_archived` lets the
+/// UI flag that state without treating the customer as unresolvable.
 /// `assigned_officer_user_id` is an id only — there is no embedded officer
 /// name, and no endpoint reachable by a non-admin role resolves one to a
 /// name (see the Sprint 13 summary's "Missing Backend Support Required").
@@ -12,6 +15,7 @@ class CollectionCase {
   final String debtId;
   final String? customerId;
   final String? customerName;
+  final bool customerArchived;
   final String? outstandingAmount;
   final String? riskLevel;
   final String referenceNumber;
@@ -28,6 +32,7 @@ class CollectionCase {
     required this.debtId,
     required this.customerId,
     required this.customerName,
+    this.customerArchived = false,
     required this.outstandingAmount,
     required this.riskLevel,
     required this.referenceNumber,
@@ -45,6 +50,7 @@ class CollectionCase {
     debtId: json['debt_id'].toString(),
     customerId: json['customer_id']?.toString(),
     customerName: json['customer_name'] as String?,
+    customerArchived: json['customer_archived'] as bool? ?? false,
     outstandingAmount: json['outstanding_amount'] as String?,
     riskLevel: json['risk_level'] as String?,
     referenceNumber: json['reference_number'] as String,
