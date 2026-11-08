@@ -7,6 +7,7 @@ use App\Models\SecurityEvent;
 use App\Models\User;
 use App\Services\Admin\AdminDashboardService;
 use App\Services\Admin\DatabaseBackupService;
+use App\Services\AppFiles;
 use App\Services\SecurityEventLogger;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\RedirectResponse;
@@ -67,7 +68,7 @@ class AdminSystemController extends Controller
             'Database Driver' => (string) config('database.default'),
             'Cache Driver' => (string) config('cache.default'),
             'Queue Connection' => (string) config('queue.default'),
-            'Storage Disk' => (string) config('filesystems.default'),
+            'Storage Disk' => AppFiles::diskName(),
             'Environment' => (string) config('app.env'),
         ];
     }

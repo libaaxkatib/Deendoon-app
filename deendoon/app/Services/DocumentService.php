@@ -276,6 +276,8 @@ class DocumentService
         // for the correct duration.
         $this->assertCanUpload($data['tenant']);
 
+        $data['logoDataUri'] = $this->brandingLogoDataUri($data['tenant']);
+
         $pdf = Pdf::loadView($view, $data);
         $output = $pdf->output();
 
@@ -460,6 +462,70 @@ class DocumentService
             'total_bytes' => $totalBytes,
             'used_percentage' => $totalBytes > 0 ? round(($usedBytes / $totalBytes) * 100, 2) : 0.0,
         ];
+    }
+
+    /**
+     * The company logo as an inline `data:` image for the PDF letterhead, or
+     * null when the tenant has none or it cannot be used.
+     *
+     * `logo_path` is a key on the files disk, not a URL: dompdf cannot fetch
+     * it by itself, and with a private R2 bucket there is no local file or
+     * public address to point it at. The bytes are therefore read through
+     * {@see AppFiles} and embedded. They are also scaled down to the
+     * letterhead's size (shown at most 60px high) so a multi-megabyte logo
+     * does not bloat every receipt, statement and letter, and re-encoded as
+     * PNG, which drops any metadata in the original.
+     *
+     * A logo that cannot be read or decoded is logged and left out: the
+     * letterhead still has the business name, and document generation does
+     * not depend on the logo.
+     */
+    private function brandingLogoDataUri(Tenant $tenant): ?string
+    {
+        if ($tenant->logo_path === null) {
+            return null;
+        }
+
+        try {
+            $bytes = AppFiles::disk()->get($tenant->logo_path);
+            $info = is_string($bytes) ? @getimagesizefromstring($bytes) : false;
+
+            if ($info === false
+                || ! in_array($info[2], [IMAGETYPE_PNG, IMAGETYPE_JPEG], true)
+                || $info[0] * $info[1] > 16_000_000) {
+                throw new RuntimeException('Logo is missing or not a usable PNG/JPEG.');
+            }
+
+            $source = imagecreatefromstring($bytes);
+            if ($source === false) {
+                throw new RuntimeException('Logo could not be decoded.');
+            }
+
+            [$width, $height] = [$info[0], $info[1]];
+            $scale = min(1, 360 / $width, 120 / $height);
+            $targetWidth = max(1, (int) round($width * $scale));
+            $targetHeight = max(1, (int) round($height * $scale));
+
+            $canvas = imagecreatetruecolor($targetWidth, $targetHeight);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            imagefill($canvas, 0, 0, imagecolorallocatealpha($canvas, 0, 0, 0, 127));
+            imagecopyresampled($canvas, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+            ob_start();
+            imagepng($canvas);
+            $png = (string) ob_get_clean();
+
+            return 'data:image/png;base64,'.base64_encode($png);
+        } catch (Throwable $e) {
+            Log::warning('Company logo left out of a generated document.', [
+                'tenant_id' => $tenant->id,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     /**

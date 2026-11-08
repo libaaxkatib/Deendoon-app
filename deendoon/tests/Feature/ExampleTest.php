@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // "/" is deliberately a redirect to the Platform Administrator login.
+        $response->assertRedirect('/admin/login');
     }
 }

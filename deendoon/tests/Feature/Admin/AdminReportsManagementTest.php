@@ -307,6 +307,10 @@ class AdminReportsManagementTest extends TestCase
 
     public function test_professional_collection_report_shows_recovery_duration_once_closed_at_is_set(): void
     {
+        // The report defaults to "this month"; pin the clock mid-month so the
+        // request created 10 days ago is always inside that period.
+        $this->travelTo(now()->startOfMonth()->addDays(15));
+
         $tenant = Tenant::factory()->create(['business_name' => 'Hodan Trading']);
         $owner = $this->businessOwner($tenant);
         $customer = Customer::factory()->for($tenant, 'tenant')->create(['name' => 'Amina Ali']);

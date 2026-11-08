@@ -143,7 +143,7 @@ class AuthController extends Controller
         if (! $user || $user->password === null || ! Hash::check($request->validated('password'), $user->password)) {
             $this->securityLog->loginFailed($request->validated('email'), $request->ip());
 
-            return $this->errorResponse('Invalid credentials', null, 401);
+            return $this->errorResponse('User or password is incorrect.', null, 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

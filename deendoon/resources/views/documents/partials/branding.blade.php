@@ -7,8 +7,9 @@
     Development Roadmap's Phase 9 note, with no fabricated values.
 --}}
 <div style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
-    @if ($tenant->logo_path)
-        <img src="{{ $tenant->logo_path }}" alt="Logo" style="max-height: 60px;">
+    {{-- $logoDataUri is built by DocumentService from the files disk (never a public URL). --}}
+    @if (! empty($logoDataUri))
+        <img src="{{ $logoDataUri }}" alt="Logo" style="max-height: 60px;">
     @endif
     <h1 style="font-size: 20px; margin: 4px 0;">{{ $tenant->business_name }}</h1>
     @if ($tenant->address)
