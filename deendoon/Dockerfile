@@ -30,9 +30,18 @@ RUN apk add --no-cache postgresql-dev libzip-dev icu-dev oniguruma-dev libpng-de
 # silently truncated by PHP before Laravel's own, more permissive rule was
 # ever reached. Raised above that 10MB rule so validation, not PHP, remains
 # the single source of truth for the size limit.
+#
+# Errors are logged, never displayed. With no php.ini, display_errors is on
+# and output is unbuffered, so for a body over post_max_size PHP printed its
+# "POST Content-Length ... exceeds the limit" warning before Laravel booted.
+# That committed an HTTP 200 text/html response, and the API's JSON 413 never
+# reached the client, so an oversized upload looked like a success.
 RUN { \
         echo 'upload_max_filesize=12M'; \
         echo 'post_max_size=13M'; \
+        echo 'display_errors=Off'; \
+        echo 'html_errors=Off'; \
+        echo 'log_errors=On'; \
     } > /usr/local/etc/php/conf.d/deendoon-uploads.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

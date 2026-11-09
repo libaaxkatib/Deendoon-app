@@ -9,6 +9,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -158,6 +159,22 @@ return Application::configure(basePath: dirname(__DIR__))
                     'data' => null,
                     'errors' => null,
                 ], 503);
+            }
+        });
+
+        // A request body over PHP's post_max_size (set above the 10MB
+        // attachment rule — see the Dockerfile) is rejected by
+        // ValidatePostSize before any controller or Form Request runs, so
+        // it needs its own envelope or the client gets Laravel's bare
+        // {"message": ...} shape.
+        $exceptions->render(function (PostTooLargeException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The file is too large. Uploads must be 10 MB or smaller.',
+                    'data' => null,
+                    'errors' => null,
+                ], 413);
             }
         });
 
