@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/attachment.dart';
 
@@ -27,6 +30,11 @@ class AttachmentApi {
         .toList();
   }
 
+  /// The backend's `max:10240` rule (10MB), mirrored only so a file that is
+  /// certain to be refused is not pushed over a mobile connection first —
+  /// the server still enforces the real limit.
+  static const maxFileBytes = 10 * 1024 * 1024;
+
   /// `mimes:pdf,jpg,jpeg,png,doc,docx`, `max:10240` (10MB) — same
   /// validation on all three backend endpoints. `description` is
   /// optional, max 255 chars server-side.
@@ -36,6 +44,13 @@ class AttachmentApi {
     required String fileName,
     String? description,
   }) async {
+    if (await File(filePath).length() > maxFileBytes) {
+      throw const ApiException(
+        message:
+            'This file is larger than 10 MB. Please choose a smaller file.',
+      );
+    }
+
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath, filename: fileName),
       'description': ?description,
@@ -44,7 +59,21 @@ class AttachmentApi {
       '$entityPathPrefix/attachments',
       data: formData,
     );
-    return Attachment.fromJson(response.data['data'] as Map<String, dynamic>);
+
+    // A 2xx whose body is not the JSON envelope (e.g. an HTML page from a
+    // proxy or from PHP itself) is not a saved attachment — report it
+    // instead of failing later with an opaque cast error.
+    final body = response.data;
+    final data = body is Map<String, dynamic> ? body['data'] : null;
+    if (data is! Map<String, dynamic>) {
+      throw ApiException(
+        message:
+            'The server did not accept this upload. Check that the file is '
+            '10 MB or smaller, then try again.',
+        statusCode: response.statusCode,
+      );
+    }
+    return Attachment.fromJson(data);
   }
 
   /// Mobile Fix #4A — `DELETE {entityPathPrefix}/attachments/{id}`, mirrors
